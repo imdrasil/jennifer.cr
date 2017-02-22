@@ -1,5 +1,4 @@
 # Jennifer
-> v0.2.0
 
 Another one ActiveRecord pattern realization for Crystal with grate query DSL and migration mechanism.  
 

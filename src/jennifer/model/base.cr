@@ -3,6 +3,9 @@ require "../query_builder/query"
 module Jennifer
   module Model
     abstract class Base
+      extend Support
+      include Support
+
       TYPES = {
         Integer  => Int32,
         Int32    => Int32,
@@ -16,8 +19,18 @@ module Jennifer
       alias Supportable = Int32 | String | Float32 | Bool | Base
 
       macro mapping(properties)
+        @@field_names = [
+          {% for key, v in properties %}
+            "{{key.id}}",
+          {% end %}
+        ]
+
         def self.field_count
           {{properties.size}}
+        end
+
+        def self.field_names
+          @@field_names
         end
 
         # generating hash with options
@@ -88,10 +101,11 @@ module Jennifer
           {% end %}
         {% end %}
 
-        @new_record = false
+        @new_record = true
 
         # creates object from db tuple
         def initialize(%pull : MySql::ResultSet | MySql::TextResultSet)
+          @new_record = false
           {% for key, value in properties %}
             %var{key.id} = nil
             %found{key.id} = false
@@ -147,6 +161,10 @@ module Jennifer
           {% end %}
         end
 
+        def initialize(values : Hash | NamedTuple, @new_record)
+          initialize(values)
+        end
+
         #def attributes=(values : Hash)
         # {% for key, value in properties %}
         #    if !values[:{{key.id}}]?.nil?
@@ -168,7 +186,7 @@ module Jennifer
         end
 
         def new_record?
-          primary.nil?
+          @new_record
         end
 
         def self.create(values : Hash | NamedTuple)
@@ -250,7 +268,7 @@ module Jennifer
       end
 
       def self.table_name : String
-        @@table_name ||= self.to_s.underscore + "s"
+        @@table_name ||= pluralize(self.to_s.underscore)
       end
 
       def self.c(name)
@@ -276,35 +294,25 @@ module Jennifer
 
       macro has_many(name, klass, request = nil, foreign = nil, primary = nil)
         @@relations["{{name.id}}"] =
-          ::Jennifer::Model::Relation({{klass}}, {{@type}}).new("{{name.id}}", :has_many)
-        @@relation_set_callbacks["{{name.id}}"] = ->(obj : {{@type}}, rel : Hash(String, DB::Any | Int8 | Int16)) {
-          obj.set_{{name.id}}(rel)
-          nil
-        }
+          ::Jennifer::Model::Relation({{klass}}, {{@type}}).new("{{name.id}}", :has_many, {{foreign}}, {{primary}},
+            ::Jennifer::QueryBuilder::Query({{klass}}).new{% if request %}.where {{request}} {% end %})
+
+        {% RELATION_NAMES << "#{name.id}" %}
 
         @{{name.id}} = [] of {{klass}}
 
         def {{name.id}}_query
-          foreign_field =
-            {% if foreign %}
-              "{{foreign.id}}"
-            {% else %}
-              {{@type}}.table_name[0...-1] + "_id"
-            {% end %}
           primary_field =
             {% if primary %}
               {{primary.id}}
             {% else %}
               primary
             {% end %}
-          {{klass}}.where { c(foreign_field) == primary_field }
-          {% if request %}
-            .where {{request}}
-          {% end %}
+          @@relations["{{name.id}}"].condition_clause(primary_field)
         end
 
         def {{name.id}}
-          @{{name.id}} ||= {{name.id}}_query.to_a
+          @{{name.id}} ||= {{name.id}}_query.to_a.as(Array({{klass}}))
         end
 
         def set_{{name.id}}(rel : Hash)
@@ -318,12 +326,9 @@ module Jennifer
 
       macro belongs_to(name, klass, request = nil, foreign = nil, primary = nil)
         @@relations["{{name.id}}"] =
-          ::Jennifer::Model::Relation({{klass}}, {{@type}}).new("{{name.id}}", :belongs_to)
-        @@relation_set_callbacks["{{name.id}}"] = ->(obj : {{@type}}, rel : Hash(String, DB::Any | Int8 | Int16)) {
-          obj.set_{{name.id}}(rel)
-          nil
-        }
-
+          ::Jennifer::Model::Relation({{klass}}, {{@type}}).new("{{name.id}}", :belongs_to, {{foreign}}, {{primary}},
+            ::Jennifer::QueryBuilder::Query({{klass}}).new{% if request %}.where {{request}} {% end %})
+        {% RELATION_NAMES << "#{name.id}" %}
         @{{name.id}} : {{klass}}?
 
         def {{name.id}}
@@ -339,26 +344,14 @@ module Jennifer
         end
 
         def {{name.id}}_reload
-          this = self
           foreign_field =
             {% if foreign %}
               "{{foreign.id}}"
             {% else %}
-              {{klass}}.table_name[0...-1] + "_id"
-            {% end %}
-          primary_field =
-            {% if primary %}
-              "{{primary.id}}"
-            {% else %}
-              {{klass}}.primary_field_name
+              singularize({{klass}}.table_name) + "_id"
             {% end %}
 
-          @{{name.id}} =
-            {{klass}}.where { {{klass}}.c(primary_field) == this.attribute(foreign_field) }
-            {% if request %}
-              .where {{request}}
-            {% end %}
-            .first
+          @{{name.id}} = @@relations["{{name.id}}"].condition_clause(attribute(foreign_field)).first.as({{klass}} | Nil)
         end
 
         def set_{{name.id}}(rel : Hash)
@@ -368,11 +361,9 @@ module Jennifer
 
       macro has_one(name, klass, request = nil, foreign = nil, primary = nil)
         @@relations["{{name.id}}"] =
-          ::Jennifer::Model::Relation({{klass}}, {{@type}}).new("{{name.id}}", :has_one)
-        @@relation_set_callbacks["{{name.id}}"] = ->(obj : {{@type}}, rel : Hash(String, DB::Any | Int8 | Int16)) {
-          obj.set_{{name.id}}(rel)
-          nil
-        }
+          ::Jennifer::Model::Relation({{klass}}, {{@type}}).new("{{name.id}}", :has_one, {{foreign}}, {{primary}},
+            ::Jennifer::QueryBuilder::Query({{klass}}).new{% if request %}.where {{request}} {% end %})
+        {% RELATION_NAMES << "#{name.id}" %}
 
         @{{name.id}} : {{klass}}?
 
@@ -389,12 +380,6 @@ module Jennifer
         end
 
         def {{name.id}}_reload
-          foreign_field =
-            {% if foreign %}
-              "{{foreign.id}}"
-            {% else %}
-              self.class.table_name[0...-1] + "_id"
-            {% end %}
           primary_field =
             {% if primary %}
               {{primary.id}}
@@ -402,12 +387,7 @@ module Jennifer
               primary
             {% end %}
 
-          @{{name.id}} =
-            {{klass}}.where { {{klass}}.c(foreign_field) == primary }
-            {% if request %}
-              .where {{request}}
-            {% end %}
-            .first
+          @{{name.id}} = @@relations["{{name.id}}"].condition_clause(primary_field).first.as({{klass}} | Nil)
         end
 
         def set_{{name.id}}(rel : Hash)
@@ -416,15 +396,30 @@ module Jennifer
       end
 
       macro inherited
+        RELATION_NAMES = [] of String
         @@relations = {} of String => ::Jennifer::Model::IRelation
-        @@relation_set_callbacks = {} of String => self, Hash(String, DB::Any | Int8 | Int16) -> Nil
-
-        def set_relation(name, hash)
-          @@relation_set_callbacks[name].call(self, hash)
-        end
 
         def self.relations
           @@relations
+        end
+
+        def self.relation(name : String)
+          @@relations[name]
+        end
+
+        macro finished
+          def set_relation(name, hash)
+            \{% if RELATION_NAMES.size > 0 %}
+              case name
+              \{% for rel in RELATION_NAMES %}
+                when \{{rel}}
+                  set_\{{rel.id}}(hash)
+              \{% end %}
+              else
+                raise "Unknown relation name #{name}"
+              end
+            \{% end %}
+          end
         end
       end
 

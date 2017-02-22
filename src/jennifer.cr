@@ -21,5 +21,17 @@ module Jennifer
     def set_callback
       raise "stubed relation"
     end
+
+    def condition_clause
+      raise "stubed relation"
+    end
+
+    def condition_clause(a : DB::Any)
+      raise "stubed relation"
+    end
+
+    def join_query
+      raise "not_implemented"
+    end
   end
 end

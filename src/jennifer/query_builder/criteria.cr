@@ -6,11 +6,11 @@ module Jennifer
       getter rhs : Rightable
       getter operator, field, table
 
-      def initialize(name : String, @table : String)
-        @field = name
-        @rhs = ""
-        @operator = :bool
-        @negative = false
+      @rhs = ""
+      @operator = :bool
+      @negative = false
+
+      def initialize(@field : String, @table : String)
       end
 
       {% for op in [:<, :>, :<=, :>=, :<=>] %}

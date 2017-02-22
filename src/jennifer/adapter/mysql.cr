@@ -16,7 +16,8 @@ module Jennifer
 
       def insert(obj : Model::Base)
         opts = self.class.extract_arguments(obj.attributes_hash)
-        exec "INSERT INTO #{obj.class.table_name}(#{opts[:fields].join(", ")}) values (#{self.class.question_marks(opts[:fields].size)})", opts[:args]
+        query = "INSERT INTO #{obj.class.table_name}(#{opts[:fields].join(", ")}) values (#{self.class.question_marks(opts[:fields].size)})"
+        exec query, opts[:args]
       end
 
       def update(obj : Model::Base)

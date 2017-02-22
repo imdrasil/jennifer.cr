@@ -1,5 +1,7 @@
 require "../spec_helper"
 
+# TODO: add checking for log entries when we shouldn't hit db
+
 describe Jennifer::QueryBuilder::Query do
   Spec.before_each do
     Contact.all.delete
@@ -47,6 +49,14 @@ describe Jennifer::QueryBuilder::Query do
     end
   end
 
+  describe "#sql" do
+    it "creates raw sql criteria with given sql and parameters" do
+      c = query_builder.sql("contacts.name LIKE ?", ["%jo%"])
+      c.should be_a(Jennifer::QueryBuilder::RawSql)
+      c.field.should eq("contacts.name LIKE ?")
+    end
+  end
+
   describe "#set_tree" do
     context "argument is another query" do
       it "gets it's tree" do
@@ -86,6 +96,18 @@ describe Jennifer::QueryBuilder::Query do
       c = criteria_builder(field: "f1") & criteria_builder(field: "f2")
       q1.where { c("f1") & c("f2") }
       q1.tree.should eq(c)
+    end
+  end
+
+  describe "#having" do
+    it "returns correct entities" do
+      contact_create(name: "Ivan", age: 15)
+      contact_create(name: "Max", age: 19)
+      contact_create(name: "Ivan", age: 50)
+
+      res = Contact.all.group("name").having { age > 15 }.to_a
+      res.size.should eq(1)
+      res[0].name.should eq("Max")
     end
   end
 
@@ -129,8 +151,20 @@ describe Jennifer::QueryBuilder::Query do
     end
   end
 
-  describe "#incldudes" do
-    pending "not added yet" { }
+  describe "#includes" do
+    it "loads relation as well" do
+      c1 = contact_create(name: "asd")
+      address_create(contact_id: c1.id, street: "asd asd")
+
+      res = Contact.all.includes(:addresses).first!
+      res.addresses[0].street.should eq("asd asd")
+    end
+  end
+
+  describe "#relation" do
+    pending "makes join with given foreign key" do
+      # Contact.all.relation(:addresses)
+    end
   end
 
   describe "#destroy" do
@@ -147,7 +181,14 @@ describe Jennifer::QueryBuilder::Query do
   end
 
   describe "#exists?" do
-    pending "check if there is any row with given conditions" do
+    it "returns true if there is such object with given condition" do
+      contact_create(name: "Anton")
+      Contact.where { name == "Anton" }.exists?.should be_true
+    end
+
+    it "returns false if there is no such object with given condition" do
+      contact_create(name: "Anton")
+      Contact.where { name == "Jhon" }.exists?.should be_false
     end
   end
 
@@ -156,11 +197,6 @@ describe Jennifer::QueryBuilder::Query do
       contact_create(name: "Asd")
       contact_create(name: "BBB")
       Contact.where { name.like("%A%") }.count.should eq(1)
-    end
-  end
-
-  describe "#uniqe" do
-    pending "returns only unique values on given columns" do
     end
   end
 
@@ -227,6 +263,53 @@ describe Jennifer::QueryBuilder::Query do
   end
 
   describe "#distinct" do
+    it "returns correct names" do
+      contact_create(name: "a1")
+      contact_create(name: "a2")
+      contact_create(name: "a1")
+
+      r = Contact.all.distinct("name")
+      r.should eq(["a1", "a2"])
+    end
+
+    pending "using table as argument" do
+    end
+  end
+
+  describe "#group_by" do
+    context "given column" do
+      it "returns unique values by given field" do
+        contact_create(name: "a1")
+        contact_create(name: "a2")
+        contact_create(name: "a1")
+
+        r = Contact.all.group("name").to_a
+        r.size.should eq(2)
+        r[0].name.should eq("a1")
+        r[1].name.should eq("a2")
+      end
+    end
+
+    context "given columns" do
+      it "returns unique values by given field" do
+        c1 = contact_create(name: "a1", age: 29)
+        c2 = contact_create(name: "a2", age: 29)
+        c3 = contact_create(name: "a1", age: 29)
+        a1 = address_create(street: "asd", contact_id: c1.id)
+        r = Contact.all.group("name", "age").to_a
+        r.size.should eq(2)
+        r[0].name.should eq("a1")
+        r[0].age.should eq(29)
+
+        r[1].name.should eq("a2")
+        r[1].age.should eq(29)
+      end
+    end
+
+    context "given named tuple" do
+      pending "returns unique values by given field and tables" do
+      end
+    end
   end
 
   describe "#update" do
@@ -283,6 +366,14 @@ describe Jennifer::QueryBuilder::Query do
 
     it "includes limit clause" do
       s.select_query.should match(/#{Regex.escape(s.limit_clause)}/)
+    end
+
+    pending "includes group_clause" do
+    end
+  end
+
+  describe "#group_clause" do
+    pending "correctly generates sql" do
     end
   end
 
@@ -380,7 +471,7 @@ describe Jennifer::QueryBuilder::Query do
       a1 = address_create(street: "a1", contact_id: c1.id)
       a2 = address_create(street: "a2", contact_id: c1.id)
 
-      p = passport_create(contact_id: c2.id)
+      p = passport_create(contact_id: c2.id, enn: "12345")
 
       res = Contact.all.left_join(Address) { id == Address._contact_id }
                        .left_join(Passport) { id == Passport._contact_id }
@@ -390,6 +481,10 @@ describe Jennifer::QueryBuilder::Query do
       res[0].addresses.size.should eq(2)
       res[1].addresses.size.should eq(0)
       res[0].passport.should be_nil
+
+      res = Passport.all.join(Contact) { contact_id == Contact._id }.with(:contact).first!
+
+      res.contact!.name.should eq("b")
     end
   end
 end

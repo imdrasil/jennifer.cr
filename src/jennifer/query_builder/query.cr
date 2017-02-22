@@ -9,16 +9,32 @@ module Jennifer
       include Enumerable(T)
 
       @tree : Criteria | LogicOperator | Nil
+      @having : Criteria | LogicOperator | Nil
+      @table = ""
       @limit : Int32?
       @offset : Int32?
 
       property :tree
 
-      def initialize(@table : String)
+      def initialize
         @tree = nil
         @joins = [] of Join
         @order = {} of String => String
         @relations = [] of String
+        @group = {} of String => Array(String)
+        @having = nil
+      end
+
+      def initialize(@table : String)
+        initialize
+      end
+
+      def table
+        @table.empty? ? T.table_name : @table
+      end
+
+      def empty?
+        @tree.nil? && @limit.nil? && @offset.nil? && @joins.empty? && order.empty? && @relations.empty?
       end
 
       def to_s
@@ -41,8 +57,12 @@ module Jennifer
         end
       end
 
+      def sql(query : String, args = [] of DB::Any)
+        RawSql.new(query, args.map { |e| e.as(DB::Any) })
+      end
+
       def c(name : String)
-        Criteria.new(name, @table)
+        Criteria.new(name, table)
       end
 
       def c(name : String, table_name : String)
@@ -64,7 +84,7 @@ module Jennifer
       end
 
       def where(&block)
-        ac = Query(T).new(@table)
+        ac = Query(T).new(table)
         other = with ac yield
         set_tree(other)
       end
@@ -73,10 +93,10 @@ module Jennifer
         join(klass.table_name, type) { with self yield }
       end
 
-      def join(table : String, type = :inner)
-        ac = Query(T).new(@table)
+      def join(_table : String, type = :inner)
+        ac = Query(T).new(_table)
         other = with ac yield
-        @joins << Join.new(table, other, type)
+        @joins << Join.new(_table, other, type)
         self
       end
 
@@ -84,8 +104,8 @@ module Jennifer
         join(klass, :left) { with self yield }
       end
 
-      def left_join(table : String)
-        join(table, :left) { with self yield }
+      def left_join(_table : String)
+        join(_table, :left) { with self yield }
       end
 
       def right_join(klass : Class)
@@ -97,7 +117,29 @@ module Jennifer
         self
       end
 
-      def includes(relation : String)
+      def relation(name, type = :inner)
+        name = name.to_s
+        rel = T.relation(name)
+        join(rel.model_class, type) { rel.condition_clause.not_nil! }
+        self
+      end
+
+      def includes(*names)
+        names.each do |name|
+          includes(name)
+        end
+        self
+      end
+
+      def includes(name : String | Symbol)
+        relation(name).with(name.to_s)
+      end
+
+      def having
+        ac = Query(T).new(table)
+        other = with ac yield
+        @having = other
+        self
       end
 
       def destroy
@@ -110,6 +152,13 @@ module Jennifer
       end
 
       def exists?
+        @limit = 1
+        body = from_clause + body_section
+        query = "SELECT EXISTS(SELECT 1 #{body})"
+        ::Jennifer::Adapter.adapter.scalar(query, select_args) == 1
+      rescue e
+        puts query
+        raise e
       end
 
       def count : Int32
@@ -117,7 +166,38 @@ module Jennifer
         ::Jennifer::Adapter.adapter.scalar("SELECT COUNT(*) #{body}", select_args).as(Int64).to_i
       end
 
-      def unique(*columns)
+      def distinct(column, _table)
+        query = "SELECT DISTINCT #{_table}.#{column}\n" + from_clause + body_section
+        result = [] of DB::Any | Int16 | Int8
+        ::Jennifer::Adapter.adapter.query(query, select_args) do |rs|
+          rs.each do
+            result << ::Jennifer::Adapter.adapter_class.result_to_array(rs)[0]
+          end
+        end
+        result
+      end
+
+      def distinct(column : String)
+        distinct(column, table)
+      end
+
+      def group(column : String)
+        arr = _groups(table)
+        arr << column
+        self
+      end
+
+      def group(*columns)
+        _groups(table).concat(columns.to_a)
+        self
+      end
+
+      def group(**columns)
+        columns.each do |t, fields|
+          arr = _groups(t.to_s)
+          arr += fields
+        end
+        self
       end
 
       def limit(count)
@@ -137,7 +217,7 @@ module Jennifer
 
       def first!
         @limit = 1
-        to_a[0]
+        to_a[0] # TODO: change out of bound to own exception
       end
 
       # don't properly works if using "with"
@@ -184,12 +264,8 @@ module Jennifer
         self
       end
 
-      def distinct(*fields)
-        unique(*fields)
-      end
-
       def update(options : Hash)
-        str = "UPDATE #{@table} SET #{options.map { |k, v| k.to_s + "= ?" }.join(", ")}\n"
+        str = "UPDATE #{table} SET #{options.map { |k, v| k.to_s + "= ?" }.join(", ")}\n"
         args = [] of DB::Any
         options.each do |k, v|
           args << v
@@ -207,21 +283,34 @@ module Jennifer
         select_clause + body_section
       end
 
+      def group_clause
+        if @group.empty?
+          ""
+        else
+          fields = @group.map { |t, fields| fields.map { |f| "#{t}.#{f}" }.join(", ") }.join(", ") # TODO: make building better
+          "GROUP BY #{fields}\n"
+        end
+      end
+
+      def having_clause
+        return "" unless @having
+        "HAVING #{@having.not_nil!.to_sql}\n"
+      end
+
       def select_clause
-        tables = [@table]
+        tables = [table]
         tables += @relations.map { |r| T.relations[r].table_name } unless @relations.empty?
-        str = "SELECT #{tables.map { |e| e + ".*" }.join(", ")}\n"
-        str + from_clause
+        "SELECT #{tables.map { |e| e + ".*" }.join(", ")}\n" + from_clause
       rescue e : KeyError
         raise "Unknown relation #{(@relations - T.relations.keys).first}"
       end
 
       def from_clause
-        "FROM #{@table}\n"
+        "FROM #{table}\n"
       end
 
       def body_section
-        where_clause + join_clause + order_clause + limit_clause
+        where_clause + join_clause + order_clause + limit_clause + group_clause + having_clause
       end
 
       def join_clause
@@ -249,6 +338,7 @@ module Jennifer
         @joins.each do |join|
           args += join.sql_args
         end
+        args += @having.not_nil!.sql_args if @having
         args
       end
 
@@ -276,8 +366,15 @@ module Jennifer
         end
         result
       rescue e
+        puts "Broken query:"
         puts select_query
         raise e
+      end
+
+      # ========= private ==============
+
+      private def _groups(name)
+        @group[name] ||= [] of String
       end
 
       private def to_a_with_relations
@@ -289,14 +386,14 @@ module Jennifer
             main_field = T.primary_field_name
             next unless h[T.table_name][main_field]?
 
-            obj = (h_result[h[T.table_name][main_field].to_s] ||= T.new(h[T.table_name]))
+            obj = (h_result[h[T.table_name][main_field].to_s] ||= T.new(h[T.table_name], false))
             build_relations(h, nested_hash, obj)
           end
         end
         h_result.values
       end
 
-      private def build_relations(parsed_hash, nested_hash, obj)
+      private def build_relations(parsed_hash, nested_hash, obj : T)
         @relations.each_with_index do |rel_name, i|
           rel = T.relations[rel_name]
           rel_class = rel.model_class

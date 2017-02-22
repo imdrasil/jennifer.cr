@@ -190,7 +190,8 @@ It defines next methods:
 | method | args | description |
 | --- | --- | --- |
 | `#initialize` | Hash(String \| Symbol, DB::Any), NamedTuple, MySql::ResultSet | constructors |
-| `::field_count`| | namber of fields |
+| `::field_count`| | number of fields |
+| `::field_names`| | all fields names |
 | `#{{field_name}}` | | getter |
 | `#{{field_name}}=`| | setter |
 | `::_{{field_name}}` | | helper method for building queries |
@@ -205,13 +206,13 @@ It defines next methods:
 | `#attribute` | `String \| Symbol` | returns attribute value by it's name |
 | `#attributes_hash` | | returns `to_h` with deleted `nil` entries |
 
-Automatically model is associated with table with underscored class name and "s" at the end (not perfect solution - I know it). So models like `Address` or `Mouse` should specify name using `::table_name` method in own body.
+Automatically model is associated with table with underscored class name and "s" at the end (not perfect solution - I know it). So models like `Address` or `Mouse` should specify name using `::table_name` method in own body before using any relation.
 
 Another one restriction - even you use "id" as primary field - mark it as primary in mapping.
 
 #### Prepared queries (scopes)
 
-Also you can specify prepared query statement. This feature is not tested and for now has not so flexible (far far from normal realization). You can do something like next:
+Also you can specify prepared query statement. This feature is not tested and for now is not so flexible (far far from normal realization). You can do something like next:
 ```crystal
 scope :query_name, { c("some_field") > 10 }
 scope :query_with_arguments, [a, b], { (c("f1") == a) && (c("f2").in(b) }
@@ -317,6 +318,13 @@ And operator-like methods:
 | `not` | `NOT` and provided value (or as unary operator if no one is given) |
 | `in` | `IN` |
 
+To specify exact sql query use `#sql` method:
+```crystal
+Contact.all.where { sql("age > ?",  [15]) & (name == "Stephan") } # it behaves like regular criteria
+```
+
+Query will be inserted "as is".
+
 **Tips**
 
 - all regexp methods accepts string representation of regexp
@@ -331,6 +339,16 @@ At the end - several examples:
 Contact.where { (id > 40) & name.regexp("^[a-d]") }
 
 Address.where { contact_id.is(nil) }
+```
+
+#### Delete and Destroy
+
+For now they both are the same - creates delete query with given conditions. After adding callbacks `destroy` will firstly loads objects and run callbacks.
+
+It can be only at the end of chain.
+
+```crystal
+Address.where { main.not }.delete
 ```
 
 #### Joins
@@ -351,15 +369,61 @@ Contact.all.left_join(Address) { id == Address._contact_id }
 Contact.all.right_join("addresses") { id == Address.c("contact_id") }
 ```
 
-#### Delete and Destroy
+#### Relation
 
-For now they both are the same - creates delete query with given conditions. After adding callbacks `destroy` will firstly loads objects and run callbacks.
-
-It can be only at the end of chain.
+To join model relation (has_many, belongs_to and has_one) pass it's name and join type:
 
 ```crystal
-Address.where { main.not }.delete
+Contact.all.relation("addresses").relation(:passport, :left)
 ```
+
+#### Includes
+
+To preload some relation use `includes` and pass relation name: 
+
+```crystal
+Contact.all.includes("addresses")
+```
+
+It is just alias for `relation(name).with(name)` methods call chain.
+
+#### Group
+
+```crystal
+Contact.all.group("name", "id")
+```
+
+`#group` allows to add columns for `GROUP BY` section. If passing arguments are tuple of strings or just one string - all columns will be parsed as current table columns. If there is a need to group on joined table or using fields from several tables use next: 
+ 
+ ```crystal
+ Contact.all.relation("addresses").group(addresses: ["street"], contacts: ["name"])
+ ```
+ 
+ Here keys should be *table names*.
+
+#### Having
+
+```crystal 
+Contact.all.group("name").having { age > 15 }
+```
+
+`#having` allows to add `HAVING` part of query. It accepts block same way as `#where` does.
+
+#### Exists
+
+```crystal
+Contact.where { age > 42 }.exists? # returns true or false
+```
+
+`#exists?` check is there is any record with provided conditions. Can be only at the end of query chain - it hit the db.
+
+#### Distinct
+
+```crystal
+Contant.all.distinct("age") # returns array of ages (Array(DB::Any | Int16 | Int8))
+```
+
+`#distinct` retrieves from db column values without repeats. Can accept column name and as optional second parameter - table name. Can be only as at he end of call chain - hit the db.  
 
 #### Count
 
@@ -453,8 +517,16 @@ There are still a lot of work to do. Some parts (especially sql string generatio
 - [ ] add more operators
 - [ ] add callbacks
 - [ ] add validation
-- [ ] extend join functionality
-- [ ] add json serialization (not sure this stuff should be here)
+- [x] extend join functionality
+- [ ] lazy attributes update during object saving
+- [ ] make scopes more flexible
+- [ ] add logger
+- [ ] adds possibility for `#group` accept any sql string
+- [ ] add STI
+- [ ] add polymorphic associations
+- [ ] add through relations
+- [ ] add many-to-many relation
+- [ ] add table aliasing
 - [ ] add more thinks below...
 
 ## Contributing

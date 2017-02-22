@@ -14,6 +14,8 @@ class DB::ResultSet
   end
 end
 
+alias DB_HASH = Hash(String, DB::Any | Int8 | Int16)
+
 module Jennifer
   module Adapter
     abstract class Base
@@ -51,6 +53,7 @@ module Jennifer
         {args: args, fields: fields}
       end
 
+      # converts single ResultSet to hash
       def self.result_to_hash(rs)
         h = {} of String => DB::Any | Int16 | Int8
         rs.columns.each do |col|
@@ -62,6 +65,7 @@ module Jennifer
         h
       end
 
+      # converts single ResultSet which contains several tables
       def self.table_row_hash(rs)
         h = {} of String => Hash(String, DB::Any | Int16 | Int8)
         rs.columns.each do |col|
@@ -72,6 +76,18 @@ module Jennifer
           end
         end
         h
+      end
+
+      def self.result_to_array(rs)
+        a = [] of DB::Any | Int16 | Int8
+        rs.columns.each do |col|
+          temp = rs.read
+          if temp.is_a?(Int8)
+            temp = (temp == 1i8).as(Bool)
+          end
+          a << temp
+        end
+        a
       end
 
       def self.arg_replacement(arr)

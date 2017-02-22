@@ -467,7 +467,7 @@ There are still a lot of work to do. Some parts (especially sql string generatio
 
 Please ask me before start to work on some feature.
 
-Also if someone want to use it in you application (for now shard is not ready for use in production) - ping me please, my email you can find in my profile.
+Also if you want to use it in your application (for now shard is not ready for use in production) - ping me please, my email you can find in my profile.
 
 To run test use regular `crystal spec`. All migrations is under `./examples/migrations` directory. They all runs automatically.
 

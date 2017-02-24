@@ -1,6 +1,6 @@
 # Jennifer
 
-Another one ActiveRecord pattern realization for Crystal with grate query DSL and migration mechanism.  
+Another one ActiveRecord pattern realization for Crystal with grate query DSL and migration mechanism.
 
 ## Installation
 
@@ -14,13 +14,13 @@ dependencies:
     github: crystal-lang/crystal-mysql
 ```
 
-Also you need to choose one of existing adapters for your db. Now the only supported one is for [mysql](https://github.com/crystal-lang/crystal-mysql) (much more preferable is Postgre but from historical reason mysql was chosen).
+Also you need to choose one of existing adapters for your db. Now the only supported one is for [mysql](https://github.com/crystal-lang/crystal-mysql) (much more preferable is PostgreSQL but from historical reason mysql was chosen).
 
 ## Usage
 
 ### Configuration
 
-Put 
+Put
 ```crystal
 require "jennifer"
 ```
@@ -46,14 +46,14 @@ Default values:
 
 ### Migration
 
-There are several existing task manager for crystal but for now no one is suitable. So create (e.g.) `make.cr` file in the root of your project and fill it with 
+There are several existing task manager for crystal but for now no one is suitable. So create (e.g.) `make.cr` file in the root of your project and fill it with
 ```crystal
 require "./your_configuration_folder/*"
 require "./migrations/*"
 require "jennifer/src/make"
 # if last line fail comment it and uncomment next one
 # require "./lib/jennifer/src/make"
-``` 
+```
 
 #### Commands
 Now you can use next commands:
@@ -66,7 +66,7 @@ $ crystal make.cr -- db:create
 ```shell
 $ crystal make.cr -- db:drop
 ```
-- run all migrations (only new ones will be runned)
+- run all migrations (only new ones will be run)
 ```shell
 $ crystal make.cr -- db:migrate
 ```
@@ -81,7 +81,7 @@ $ crystal make.cr -- -h
 
 #### Migration DSL
 
-generator will create template file for you with next name  pattern "timestamp_your_underscored_migration_name.cr". Empty file looks like this:
+Generator will create template file for you with next name  pattern "timestamp_your_underscored_migration_name.cr". Empty file looks like this:
 ```crystal
 class YourCamelcasedMigrationName20170119011451314 < Jennifer::Migration::Base
   def up
@@ -95,14 +95,14 @@ end
 
 `up` method is needed for placing your db changes there, `down` - for reverting your changes back. For now reverting is not supported (no command yet but will be added in next version).
 
-For now only 3 types are officially supported: `String` (`varchar`), `Int`, `Text`, `Bool`.  If you pefer using different type (e.g. `char` instead of `varchar`) you can pass `:type => :char` to options. Regular example for creating table:
+For now only 3 types are officially supported: `String` (`varchar`), `Int`, `Text`, `Bool`.  If you prefer using different type (e.g. `char` instead of `varchar`) you can pass `:type => :char` to options. Regular example for creating table:
 
 ```crystal
-	create(:addresses) do |t|
-      t.reference :contact # creates field contact_id with Int type and allows null values
-      t.string :street, {:size => 20, :sql_type => "char"} # creates string field with CHAR(20) db type
-      t.bool :main, {:default => false} # sets false as default value
-    end
+  create(:addresses) do |t|
+    t.reference :contact # creates field contact_id with Int type and allows null values
+    t.string :street, {:size => 20, :sql_type => "char"} # creates string field with CHAR(20) db type
+    t.bool :main, {:default => false} # sets false as default value
+  end
 ```
 
 Allowed optional options for `bool`, `string` and `integer`:
@@ -132,7 +132,7 @@ Altering existing table via DSL for now is not supported but you still can use p
 ```crystal
 execute("ALTER TABLE addresses CHANGE street st VARCHAR(20)")
 ```
-All changes are executed one by one so you also could add data changes here (in `up` method) but if execution of `up` method fails - `down` method will be called and all process will stop - be ready for such behavior. 
+All changes are executed one by one so you also could add data changes here (in `up` method) but if execution of `up` method fails - `down` method will be called and all process will stop - be ready for such behavior.
 
 To be sure that your db is up to date before run tests or your application, add `Jennifer::Migration::Runner.migrate`.
 
@@ -173,7 +173,7 @@ end
 
 ```
 
-`mapping` macros stand for describing all model attributes. If field has no extra parameter, you can just specify name and type (type in case of crystal language): `field_name: :Type`. But you can use tuple and provide next parameters: 
+`mapping` macros stand for describing all model attributes. If field has no extra parameter, you can just specify name and type (type in case of crystal language): `field_name: :Type`. But you can use tuple and provide next parameters:
 
 | argument | description |
 | --- | --- |
@@ -220,7 +220,7 @@ scope :query_with_arguments, [a, b], { (c("f1") == a) && (c("f2").in(b) }
 As you can see arguments are next:
 
 - scope (query) name
-- array with scope arguments (optional - can be avoided) 
+- array with scope arguments (optional - can be avoided)
 - body (for where clause - you couldn't specify any `join` or any other stuff - given block will be used for `#where`)
 
 Another one limit is that scope call can be only as root method in chain and can be only one - for now chaining scope is also impossible. So you could do only:
@@ -271,9 +271,9 @@ My favorite part. Jennifer allows you to build lazy evaluated queries with chain
 Contact.all
 ```
 
-Specifying where clause is really flexible. Except several things: nested queries and several operators (honestly - a lot but them are less popular then added ones). 
+Specifying where clause is really flexible. Except several things: nested queries and several operators (honestly - a lot but them are less popular then added ones).
 
-Method accepts block which represents where clause of request (or it's part - you can chain several `where` and they will be concatenated using `AND`). 
+Method accepts block which represents where clause of request (or it's part - you can chain several `where` and they will be concatenated using `AND`).
 
 To specify field use `c` method which accepts string as field name. Also as I've mentioned after declaring model attributes you can use there names inside of block: `field_name` if it is for current table and `ModelName._field_name` if for another model. Several examples:
 ```crystal
@@ -330,7 +330,7 @@ Query will be inserted "as is".
 - use parenthesis for binary operators (`&` and `|`)
 - `nil` given to `!=` and `==` will be transformed to `IS NOT NULL` and `IS NULL`
 - `is` and `not` operator accepts next values: `:nil`, `nil`, `:unknown`, `true`, `false`
-- as was said previously - no nested queries 
+- as was said previously - no nested queries
 
 At the end - several examples:
 
@@ -359,7 +359,7 @@ table = "passports"
 Contact.all.join(Address) { id == Address._contact_id }.join(table) { id == c(field, table) }
 ```
 
-Query built in block will passed to `ON` section of `JOIN`. 
+Query built in block will passed to `ON` section of `JOIN`.
 
 Also there is two shortcuts for left and right joins:
 
@@ -378,7 +378,7 @@ Contact.all.relation("addresses").relation(:passport, :left)
 
 #### Includes
 
-To preload some relation use `includes` and pass relation name: 
+To preload some relation use `includes` and pass relation name:
 
 ```crystal
 Contact.all.includes("addresses")
@@ -392,17 +392,17 @@ It is just alias for `relation(name).with(name)` methods call chain.
 Contact.all.group("name", "id")
 ```
 
-`#group` allows to add columns for `GROUP BY` section. If passing arguments are tuple of strings or just one string - all columns will be parsed as current table columns. If there is a need to group on joined table or using fields from several tables use next: 
- 
+`#group` allows to add columns for `GROUP BY` section. If passing arguments are tuple of strings or just one string - all columns will be parsed as current table columns. If there is a need to group on joined table or using fields from several tables use next:
+
  ```crystal
  Contact.all.relation("addresses").group(addresses: ["street"], contacts: ["name"])
  ```
- 
+
  Here keys should be *table names*.
 
 #### Having
 
-```crystal 
+```crystal
 Contact.all.group("name").having { age > 15 }
 ```
 
@@ -422,7 +422,7 @@ Contact.where { age > 42 }.exists? # returns true or false
 Contant.all.distinct("age") # returns array of ages (Array(DB::Any | Int16 | Int8))
 ```
 
-`#distinct` retrieves from db column values without repeats. Can accept column name and as optional second parameter - table name. Can be only as at he end of call chain - hit the db.  
+`#distinct` retrieves from db column values without repeats. Can accept column name and as optional second parameter - table name. Can be only as at he end of call chain - hit the db.
 
 #### Count
 
@@ -456,12 +456,12 @@ Contact.all.update(age: 1, name: "Wonder")
 
 #### Eager load
 
-As was said Jennifer provide lazy query evaluation  so it will be performed only after trying to access to element from collection (any array method - it realize Enumerable). Also you can extract first entity via `first`. If you are sure that at least one entity in db satisfies you query you can call `#first!`.  
+As was said Jennifer provide lazy query evaluation  so it will be performed only after trying to access to element from collection (any array method - it realize Enumerable). Also you can extract first entity via `first`. If you are sure that at least one entity in db satisfies you query you can call `#first!`.
 
 To extract only some fields rather then entire objects use `pluck`:
 
 ```crystal
-Contact.all.pluck(:id, "name") 
+Contact.all.pluck(:id, "name")
 ```
 
 It returns array of hashes with provided fields as keys ( `String => DB::Any | Int8 | Int16`)
@@ -478,7 +478,7 @@ Transaction mechanism provides block-like syntax:
 
 ```crystal
 Jennifer::Adapter.adapter.transaction do |tx|
-	Contact.create({:name => "Chose", :age => 20})
+  Contact.create({:name => "Chose", :age => 20})
 end
 ```
 
@@ -506,7 +506,7 @@ There are still a lot of work to do. Some parts (especially sql string generatio
 - [ ] move query string generation to adapter
 - [ ] make access to adapter method more clear
 - [ ] add PostgreSQL support
-- [ ] increase test coverage to accceptable level
+- [ ] increase test coverage to acceptable level
 - [ ] add more field type:
   - [ ] Time
   - [ ] Float

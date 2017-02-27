@@ -47,8 +47,10 @@ module Jennifer
 
       def self.generate(name)
         time = Time.now.to_s("%Y%m%d%H%M%S%L")
-        str = "class #{name.camelcase + time} < Jennifer::Migration::Base\n  def up\n  end\n\n  def down\n  end\nend"
+        migration_name = name.camelcase + time
+        str = "class #{migration_name} < Jennifer::Migration::Base\n  def up\n  end\n\n  def down\n  end\nend\n"
         File.write(File.join(Config.migration_files_path.to_s, "#{time}_#{name.underscore}.cr"), str)
+        puts "Migration #{migration_name} was generated"
       end
     end
   end

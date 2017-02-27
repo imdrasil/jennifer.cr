@@ -38,6 +38,7 @@ end
 ```
 
 Default values:
+
 | attribute | value |
 | --- | --- |
 | `migration_files_path` | `"./db/migrations"` |
@@ -46,13 +47,14 @@ Default values:
 
 ### Migration
 
-There are several existing task manager for crystal but for now no one is suitable. So create (e.g.) `make.cr` file in the root of your project and fill it with
+For command management Jennifer now uses [Sam](https://github.com/imdrasil/sam.cr). So in your `sam.cr` just add loading migrations and Jennifer hooks.
+
 ```crystal
 require "./your_configuration_folder/*"
 require "./migrations/*"
-require "jennifer/src/make"
-# if last line fail comment it and uncomment next one
-# require "./lib/jennifer/src/make"
+load_dependencies "./", "jennifer"
+# your another tasks here
+Sam.help
 ```
 
 #### Commands
@@ -60,23 +62,19 @@ Now you can use next commands:
 
 - create database
 ```shell
-$ crystal make.cr -- db:create
+$ crystal sam.cr -- db:create
 ```
 - drop database
 ```shell
-$ crystal make.cr -- db:drop
+$ crystal sam.cr -- db:drop
 ```
 - run all migrations (only new ones will be run)
 ```shell
-$ crystal make.cr -- db:migrate
+$ crystal sam.cr -- db:migrate
 ```
 - generate new migration file
 ```shell
-$ crystal make.cr -- -g your_migration_name
-```
-- call helper
-```shell
-$ crystal make.cr -- -h
+$ crystal sam.cr -- jennifer:migration:generate your_migration_name
 ```
 
 #### Migration DSL

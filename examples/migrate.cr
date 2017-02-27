@@ -10,4 +10,7 @@ Jennifer::Config.configure do |conf|
   conf.migration_files_path = "./examples/migrations"
 end
 
-require "../src/make"
+# require "../src/make"
+require "sam"
+require "../src/sam"
+Sam.help

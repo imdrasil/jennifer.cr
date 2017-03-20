@@ -8,7 +8,7 @@ module Jennifer
       abstract def join_query
       abstract def type
       abstract def condition_clause
-      abstract def condition_clause(a : DB::Any)
+      abstract def condition_clause(a)
     end
 
     class Relation(T, Q) < IRelation

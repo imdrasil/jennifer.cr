@@ -74,9 +74,9 @@ describe Jennifer::QueryBuilder::Criteria do
     context "anything else" do
       it "renders question mark" do
         c1 = criteria_builder
-        c1.filter_out(1).should eq("?")
-        c1.filter_out("s").should eq("?")
-        c1.filter_out(false).should eq("?")
+        c1.filter_out(1).should eq("%s")
+        c1.filter_out("s").should eq("%s")
+        c1.filter_out(false).should eq("%s")
       end
     end
   end
@@ -94,7 +94,7 @@ describe Jennifer::QueryBuilder::Criteria do
       end
 
       it "correctly renders IN part (mysql)" do
-        criteria_builder.in([1, "asd"]).to_sql.should match(/IN\(\?\, \?\)/)
+        criteria_builder.in([1, "asd"]).to_sql.should match(/IN\(%s\, %s\)/)
       end
     end
 
@@ -104,7 +104,7 @@ describe Jennifer::QueryBuilder::Criteria do
       end
 
       it "renders escape symbol if rhs is regular argument" do
-        (criteria_builder != 1).to_sql.should match(/\?$/)
+        (criteria_builder != 1).to_sql.should match(/%s$/)
       end
 
       it "renders field if rhs is criteria" do

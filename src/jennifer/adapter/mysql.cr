@@ -1,9 +1,11 @@
 require "mysql"
+require "./base"
+require "./request_methods"
 
 module Jennifer
   module Adapter
     class Mysql < Base
-      include Support
+      include RequestMethods
 
       TYPE_TRANSLATIONS = {
         :int    => "int",
@@ -12,41 +14,28 @@ module Jennifer
         :text   => "text",
       }
 
-      # runtime queries =========================
-
-      def insert(obj : Model::Base)
-        opts = self.class.extract_arguments(obj.attributes_hash)
-        query = "INSERT INTO #{obj.class.table_name}(#{opts[:fields].join(", ")}) values (#{self.class.question_marks(opts[:fields].size)})"
-        exec query, opts[:args]
+      def type_translations
+        TYPE_TRANSLATIONS
       end
 
-      def update(obj : Model::Base)
-        opts = self.class.extract_arguments(obj.attributes_hash)
-        opts[:args] << obj.primary
-        exec "
-        UPDATE #{obj.class.table_name} SET #{opts[:fields].map { |f| f + "= ?" }.join(", ")}
-        WHERE #{obj.class.primary_field_name} = ?", opts[:args]
-      end
-
-      def transaction
-        result = false
-        @connection.transaction do |tx|
-          begin
-            result = yield(tx)
-            tx.rollback unless result
-          rescue
-            tx.rollback
-          end
+      def parse_query(query, args)
+        arr = [] of String
+        args.each do
+          arr << "?"
         end
-        result
+        query % arr
       end
 
-      def truncate(klass : Class)
-        truncate(klass.table_name)
+      def parse_query(query)
+        query
       end
 
-      def truncate(table_name : String)
-        exec "TRUNCATE #{table_name}"
+      def table_exist?(table)
+        v = scalar "
+          SELECT COUNT(*)
+          FROM information_schema.TABLES
+          WHERE (TABLE_SCHEMA = '#{Config.db}') AND (TABLE_NAME = '#{table}')"
+        v == 1
       end
 
       # is enough unsafe. prefer to use `transaction` with block
@@ -66,78 +55,39 @@ module Jennifer
       #  @connection.rollback_transaction
       #  # exec "ROLLBACK"
       # end
-
-      # ========================================================
-
-      def self.t(field)
-        case field
-        when Nil
-          "NULL"
-        when String
-          "'" + field + "'"
-        else
-          field
-        end
-      end
-
-      def table_exist?(table)
-        v = scalar "
-          SELECT COUNT(*)
-          FROM information_schema.TABLES
-          WHERE (TABLE_SCHEMA = '#{Config.db}') AND (TABLE_NAME = '#{table}')"
-        v == 1
-      end
-
-      def ready_to_migrate!
-        unless table_exist?(Migration::Base::TABLE_NAME)
-          tb = Migration::TableBuilder::CreateTable.new(Migration::Base::TABLE_NAME)
-          tb.integer(:id, {primary: true, auto_increment: true})
-            .string(:version, {size: 18})
-          create_table(tb)
-        end
-      end
-
-      def change_table(builder : Migration::TableBuilder::ChangeTable)
-        table_name = builder.name
-        builder.fields.each do |k, v|
-          case k
-          when :rename
-            exec "ALTER TABLE #{table_name} RENAME #{v[:name]}"
-            table_name = v[:name]
-          end
-        end
-      end
-
-      def drop_table(builder : Migration::TableBuilder::DropTable)
-        exec "DROP TABLE #{builder.name} IF EXISTS"
-      end
-
-      def create_table(builder : Migration::TableBuilder::CreateTable)
-        buffer = "CREATE TABLE #{builder.name.to_s} ("
-        builder.fields.each do |name, options|
-          type = options[:serial]? ? "serial" : options[:sql_type]? || TYPE_TRANSLATIONS[options[:type]]
-          suffix = ""
-          suffix += "(#{options[:size]})" if options[:size]?
-          suffix += " NOT NULL" if options[:null]?
-          suffix += " PRIMARY KEY" if options[:primary]?
-          suffix += " DEFAULT #{self.class.t(options[:default])}" if options[:default]?
-          suffix += " AUTO_INCREMENT" if options[:auto_increment]?
-          buffer += "#{name.to_s} #{type}#{suffix},"
-        end
-        exec buffer[0...-1] + ")"
-      end
-
-      def self.drop_database
-        db_connection do |db|
-          db.exec "DROP DATABASE #{Config.db}"
-        end
-      end
-
-      def self.create_database
-        db_connection do |db|
-          db.exec "CREATE DATABASE #{Config.db}"
-        end
-      end
     end
+
+    def table_row_hash(rs)
+      h = {} of String => Hash(String, DB::Any | Int16 | Int8)
+      rs.columns.each do |col|
+        h[col.table] ||= {} of String => DB::Any | Int16 | Int8
+        h[col.table][col.name] = rs.read
+        if h[col.table][col.name].is_a?(Int8)
+          h[col.table][col.name] = h[col.table][col.name] == 1i8
+        end
+      end
+      h
+    end
+  end
+end
+
+::Jennifer::Adapter.register_adapter("mysql", ::Jennifer::Adapter::Mysql)
+
+class DB::ResultSet
+  getter column_index
+
+  @column_index = 0
+  @columns = [] of MySql::ColumnSpec
+
+  def current_column
+    @columns[@column_index]
+  end
+
+  def current_column_name
+    column_name(@column_index)
+  end
+
+  def columns
+    @columns
   end
 end

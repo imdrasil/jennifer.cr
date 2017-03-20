@@ -11,7 +11,7 @@ module Jennifer
           when :bool
             "#({@field})"
           when :in
-            "(#{@field}) IN(#{::Jennifer::Adapter.question_marks(@rhs.as(Array).size)})"
+            "(#{@field}) IN(#{::Jennifer::Adapter.escape_string(@rhs.as(Array).size)})"
           else
             "(#{@field}) #{@operator.to_s} #{@operator.as(Operator).filterable_rhs? ? filter_out(@rhs) : @rhs}"
           end

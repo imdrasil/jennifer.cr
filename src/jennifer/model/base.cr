@@ -104,7 +104,7 @@ module Jennifer
         @new_record = true
 
         # creates object from db tuple
-        def initialize(%pull : MySql::ResultSet | MySql::TextResultSet)
+        def initialize(%pull : DB::ResultSet)
           @new_record = false
           {% for key, value in properties %}
             %var{key.id} = nil
@@ -112,15 +112,15 @@ module Jennifer
           {% end %}
 
           {{properties.size}}.times do |i|
-            column = %pull.columns[%pull.column_index]
-            case column.name
+            column = %pull.column_name(%pull.column_index)
+            case column
             {% for key, value in properties %}
               when {{value[:column_name] || key.id.stringify}}
                 %found{key.id} = true
                 %var{key.id} = %pull.read({{value[:parsed_type].id}})
             {% end %}
             else
-              raise "Unknown column #{column.name}"
+              raise "Unknown column #{column}"
             end
           end
 
@@ -275,13 +275,7 @@ module Jennifer
         ::Jennifer::QueryBuilder::Criteria.new(name, table_name)
       end
 
-      def primary
-        id
-      end
-
-      def id
-        raise ArgumentError.new
-      end
+      abstract def primary
 
       macro scope(name, opts, block = nil)
         def self.{{name.id}}({% if block %} {{ opts.map(&.stringify).map { |e| "_" + e[1..-1] }.join(", ").id }} {% end %})

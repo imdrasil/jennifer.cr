@@ -4,11 +4,16 @@ Sam.namespace "db" do
   end
 
   task "drop" do |t, args|
-    Jennifer::Migration::Runner.drop
+    puts "asd"
+    puts Jennifer::Migration::Runner.drop
   end
 
   task "create" do |t, args|
-    Jennifer::Migration::Runner.create
+    puts Jennifer::Migration::Runner.create
+  end
+
+  task "version" do
+    puts Jennifer::Migration::Version.all.to_a[-1].version
   end
 end
 

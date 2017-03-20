@@ -1,21 +1,5 @@
 require "db"
 
-class DB::ResultSet
-  getter column_index
-
-  @column_index = 0
-
-  def current_column
-    @columns[@column_index]
-  end
-
-  def current_column_name
-    column_name(@column_index)
-  end
-end
-
-alias DB_HASH = Hash(String, DB::Any | Int8 | Int16)
-
 module Jennifer
   module Adapter
     abstract class Base
@@ -29,10 +13,66 @@ module Jennifer
         @connection = DB.open(Base.connection_string(:db))
       end
 
+      def transaction
+        result = false
+        @connection.transaction do |tx|
+          begin
+            result = yield(tx)
+            tx.rollback unless result
+          rescue
+            tx.rollback
+          end
+        end
+        result
+      end
+
+      def truncate(klass : Class)
+        truncate(klass.table_name)
+      end
+
+      def truncate(table_name : String)
+        exec "TRUNCATE #{table_name}"
+      end
+
+      def delete(query : QueryBuilder::Query)
+        body = String.build do |s|
+          query.from_clause(s)
+          s << query.body_section
+        end
+        args = query.select_args
+        exec "DELETE #{parse_query(body, args)}", args
+      end
+
+      def exists?(query)
+        args = query.select_args
+        body = String.build do |s|
+          s << "SELECT EXISTS(SELECT 1 "
+          query.from_clause(s)
+          s << parse_query(query.body_section, args) << ")"
+        end
+        scalar(body, args) == 1
+      rescue e
+        puts body
+        raise e
+      end
+
+      # TODO: refactore this to use regular request
+      def count(query)
+        body = String.build do |s|
+          query.from_clause(s)
+          s << query.body_section
+        end
+        args = query.select_args
+        scalar("SELECT COUNT(*) #{parse_query(body, args)}", args).as(Int64).to_i
+      end
+
       def self.db_connection
+        puts "c"
         DB.open(connection_string) do |db|
           yield(db)
         end
+      rescue e
+        puts e
       end
 
       def self.connection_string(*options)
@@ -54,31 +94,12 @@ module Jennifer
       end
 
       # converts single ResultSet to hash
-      def self.result_to_hash(rs)
-        h = {} of String => DB::Any | Int16 | Int8
-        rs.columns.each do |col|
-          h[col.name] = rs.read
-          if h[col.name].is_a?(Int8)
-            h[col.name] = (h[col.name] == 1i8).as(Bool)
-          end
-        end
-        h
-      end
+      abstract def result_to_hash(rs)
 
       # converts single ResultSet which contains several tables
-      def self.table_row_hash(rs)
-        h = {} of String => Hash(String, DB::Any | Int16 | Int8)
-        rs.columns.each do |col|
-          h[col.table] ||= {} of String => DB::Any | Int16 | Int8
-          h[col.table][col.name] = rs.read
-          if h[col.table][col.name].is_a?(Int8)
-            h[col.table][col.name] = h[col.table][col.name] == 1i8
-          end
-        end
-        h
-      end
+      abstract def table_row_hash(rs)
 
-      def self.result_to_array(rs)
+      def result_to_array(rs)
         a = [] of DB::Any | Int16 | Int8
         rs.columns.each do |col|
           temp = rs.read
@@ -91,21 +112,94 @@ module Jennifer
       end
 
       def self.arg_replacement(arr)
-        question_marks(arr.size)
+        escape_string(arr.size)
       end
 
-      def self.question_marks(size = 1)
+      def self.escape_string(size = 1)
         case size
         when 1
-          "?"
+          "%s"
         when 2
-          "?, ?"
+          "%s, %s"
         when 3
-          "?, ?, ?"
+          "%s, %s, %s"
         else
-          size.times.map { "?" }.join(", ")
+          size.times.map { "%s" }.join(", ")
         end
       end
+
+      def self.drop_database
+        db_connection do |db|
+          db.exec "DROP DATABASE #{Config.db}"
+        end
+      end
+
+      def self.create_database
+        db_connection do |db|
+          puts db.exec "CREATE DATABASE #{Config.db}"
+        end
+      end
+
+      # filter out value; should be refactored
+      def self.t(field)
+        case field
+        when Nil
+          "NULL"
+        when String
+          "'" + field + "'"
+        else
+          field
+        end
+      end
+
+      # migration ========================
+
+      def ready_to_migrate!
+        return if table_exist?(Migration::Base::TABLE_NAME)
+        tb = Migration::TableBuilder::CreateTable.new(Migration::Base::TABLE_NAME)
+        tb.integer(:id, {primary: true, auto_increment: true})
+          .string(:version, {size: 18})
+        create_table(tb)
+      end
+
+      def change_table(builder : Migration::TableBuilder::ChangeTable)
+        table_name = builder.name
+        builder.fields.each do |k, v|
+          case k
+          when :rename
+            exec "ALTER TABLE #{table_name} RENAME #{v[:name]}"
+            table_name = v[:name]
+          end
+        end
+      end
+
+      def drop_table(builder : Migration::TableBuilder::DropTable)
+        exec "DROP TABLE #{builder.name} IF EXISTS"
+      end
+
+      def create_table(builder : Migration::TableBuilder::CreateTable)
+        buffer = "CREATE TABLE #{builder.name.to_s} ("
+        builder.fields.each do |name, options|
+          type = options[:serial]? ? "serial" : options[:sql_type]? || type_translations[options[:type]]
+          suffix = ""
+          suffix += "(#{options[:size]})" if options[:size]?
+          suffix += " NOT NULL" if options[:null]?
+          suffix += " PRIMARY KEY" if options[:primary]?
+          suffix += " DEFAULT #{self.class.t(options[:default])}" if options[:default]?
+          suffix += " AUTO_INCREMENT" if options[:auto_increment]?
+          buffer += "#{name.to_s} #{type}#{suffix},"
+        end
+        exec buffer[0...-1] + ")"
+      end
+
+      abstract def update(obj)
+      abstract def update(q, h)
+      abstract def insert(obj)
+      abstract def distinct(q, c, t)
+      abstract def table_exist?(table)
+      abstract def type_translations
+      abstract def parse_query(query : QueryBuilder, args)
+      abstract def parse_query(query)
     end
   end
 end

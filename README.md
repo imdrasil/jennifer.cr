@@ -10,11 +10,9 @@ Add this to your application's `shard.yml`:
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-  mysql:
-    github: crystal-lang/crystal-mysql
 ```
 
-Also you need to choose one of existing adapters for your db. Now the only supported one is for [mysql](https://github.com/crystal-lang/crystal-mysql) (much more preferable is PostgreSQL but from historical reason mysql was chosen).
+**Also** you need to choose one of existing adapters for your db: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgre](https://github.com/will/crystal-pg).
 
 ## Usage
 
@@ -22,9 +20,17 @@ Also you need to choose one of existing adapters for your db. Now the only suppo
 
 Put
 ```crystal
-require "jennifer"
+require "jennifer" 
 ```
-before you load your application configurations (or at least models). For now you need to specify all configurations using dsl but in future support of yaml configuration files for different environments will be added. So this is regular configuration for playground environment:
+
+Next you need to require one of the **Jennifer** adapters:
+
+```crystal
+require "jennifer/adapter/mysql" # for mysql
+require "jennifer/dapter/postgres" # for postgres
+```
+
+This should be done before you load your application configurations (or at least models). For now you need to specify all configurations using dsl (in future support of yaml configuration files for different environments will be added). So this is regular configuration for playground environment:
 
 ```crystal
 Jennifer::Config.configure do |conf|
@@ -43,14 +49,13 @@ Default values:
 | --- | --- |
 | `migration_files_path` | `"./db/migrations"` |
 | `host`| `"localhost"` |
-| `adapter` | `"mysql"` |
 
 ### Migration
 
 For command management Jennifer now uses [Sam](https://github.com/imdrasil/sam.cr). So in your `sam.cr` just add loading migrations and Jennifer hooks.
 
 ```crystal
-require "./your_configuration_folder/*"
+require "./your_configuration_folder/*" # with requiring jennifer and her adapter
 require "./migrations/*"
 load_dependencies "./", "jennifer"
 # your another tasks here
@@ -76,6 +81,8 @@ $ crystal sam.cr -- db:migrate
 ```shell
 $ crystal sam.cr -- jennifer:migration:generate your_migration_name
 ```
+
+For `postgres` `create` and `drop` commands needs additional password manual authentication.
 
 #### Migration DSL
 
@@ -299,7 +306,7 @@ Supported operators:
 | `<=>` |`<=>` |
 | `=~` | `REGEXP` |
 | `&` | `AND` |
-| `\|` | `OR` |
+| `|` | `OR` |
 
 And operator-like methods:
 
@@ -317,7 +324,8 @@ And operator-like methods:
 
 To specify exact sql query use `#sql` method:
 ```crystal
-Contact.all.where { sql("age > ?",  [15]) & (name == "Stephan") } # it behaves like regular criteria
+# it behaves like regular criteria
+Contact.all.where { sql("age > ?",  [15]) & (name == "Stephan") } 
 ```
 
 Query will be inserted "as is".
@@ -337,6 +345,16 @@ Contact.where { (id > 40) & name.regexp("^[a-d]") }
 
 Address.where { contact_id.is(nil) }
 ```
+
+#### Select
+
+Raw sql for `SELECT` clause could be passed into `#select` method. This have highest priority during forming this query part.
+
+```crystal
+Contact.all.select("COUNT(id) as count, contacts.name").group("name")
+       .having { sql("COUNT(id)") > 1 }.pluck(:name)
+```
+
 
 #### Delete and Destroy
 
@@ -366,6 +384,8 @@ Contact.all.left_join(Address) { id == Address._contact_id }
 Contact.all.right_join("addresses") { id == Address.c("contact_id") }
 ```
 
+> For now Jennifer not supports table aliasing so that's why tables couldn't be joined several times and self join is not allowed as well. 
+
 #### Relation
 
 To join model relation (has_many, belongs_to and has_one) pass it's name and join type:
@@ -387,14 +407,15 @@ It is just alias for `relation(name).with(name)` methods call chain.
 #### Group
 
 ```crystal
-Contact.all.group("name", "id")
+Contact.all.group("name", "id").pluck(:name, :id)
 ```
 
 `#group` allows to add columns for `GROUP BY` section. If passing arguments are tuple of strings or just one string - all columns will be parsed as current table columns. If there is a need to group on joined table or using fields from several tables use next:
 
- ```crystal
- Contact.all.relation("addresses").group(addresses: ["street"], contacts: ["name"])
- ```
+```crystal
+Contact.all.relation("addresses").group(addresses: ["street"], contacts: ["name"])
+       .pluck("addresses.street", "contacts.name")
+```
 
  Here keys should be *table names*.
 
@@ -454,7 +475,7 @@ Contact.all.update(age: 1, name: "Wonder")
 
 #### Eager load
 
-As was said Jennifer provide lazy query evaluation  so it will be performed only after trying to access to element from collection (any array method - it realize Enumerable). Also you can extract first entity via `first`. If you are sure that at least one entity in db satisfies you query you can call `#first!`.
+As was said Jennifer provide lazy query evaluation  so it will be performed only after trying to access to element from collection (any array method - it implements Enumerable). Also you can extract first entity via `first`. If you are sure that at least one entity in db satisfies you query you can call `#first!`.
 
 To extract only some fields rather then entire objects use `pluck`:
 
@@ -462,7 +483,12 @@ To extract only some fields rather then entire objects use `pluck`:
 Contact.all.pluck(:id, "name")
 ```
 
-It returns array of hashes with provided fields as keys ( `String => DB::Any | Int8 | Int16`)
+It returns array of hashes with provided fields as keys (stringified). It accepts raw sql arguments so be care when using this with joining tables with same field names. But this allows to retrieve some custom data from specified select clause.
+
+```crystal
+Contact.all.select("COUNT(id) as count, contacts.name").group("name")
+       .having { sql("COUNT(id)") > 1 }.pluck(:count)
+```
 
 To load relations using same query joins needed tables (yep you should specify join on condition by yourself again) and specifies all needed relations in `with` (relation name not table).
 
@@ -501,9 +527,10 @@ For now you can't alias table or even field so that's why you can't join same ta
 
 There are still a lot of work to do. Some parts (especially sql string generation) are in wrong places. Tasks for next versions:
 
-- [ ] move query string generation to adapter
-- [ ] make access to adapter method more clear
-- [ ] add PostgreSQL support
+- [x] move query string generation to adapter
+- [ ] make access to adapter methods more clear
+- [x] add PostgreSQL support
+- [ ] add SQLite support
 - [ ] increase test coverage to acceptable level
 - [ ] add more field type:
   - [ ] Time
@@ -542,4 +569,4 @@ To run test use regular `crystal spec`. All migrations is under `./examples/migr
 
 ## Contributors
 
-- [imdrasil](https://github.com/[your-github-name]) Roman Kalnytskyi - creator, maintainer
+- [imdrasil](https://github.com/imdrasil) Roman Kalnytskyi - creator, maintainer

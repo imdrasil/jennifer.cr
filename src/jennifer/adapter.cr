@@ -2,19 +2,15 @@ require "./adapter/base"
 
 module Jennifer
   module Adapter
-    @@adapter : Adapter::Mysql? # TODO: make a Adapter::Base
+    @@adapter : Base?
+    @@adapters = {} of String => Base.class
 
     def self.adapter
       @@adapter ||= adapter_class.not_nil!.new
     end
 
     def self.adapter_class
-      case Config.adapter
-      when "mysql"
-        Adapter::Mysql
-      else
-        raise "unspecified adapter type"
-      end
+      adapters[Config.adapter]
     end
 
     def self.t(value)
@@ -25,8 +21,16 @@ module Jennifer
       adapter_class.arg_replacement(rhs)
     end
 
-    def self.question_marks(size = 1)
-      adapter_class.question_marks(size)
+    def self.escape_string(size = 1)
+      adapter_class.escape_string(size)
+    end
+
+    def self.adapters
+      @@adapters
+    end
+
+    def self.register_adapter(name, adapter)
+      adapters[name] = adapter
     end
   end
 end

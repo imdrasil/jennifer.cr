@@ -7,20 +7,21 @@ module Jennifer
         Adapter.adapter.ready_to_migrate!
         return if ::Jennifer::Migration::Base::REGISTERED_MIGRATIONS.empty?
         interpolation = {} of String => typeof(Base::REGISTERED_MIGRATIONS[0])
-        Base::REGISTERED_MIGRATIONS.each { |m| interpolation[m.to_s[-18..-1]] = m }
-        pending = interpolation.keys - Version.all.pluck(:version).flat_map(&.values)
+        Base::REGISTERED_MIGRATIONS.each { |m| interpolation[m.version] = m }
+
+        pending = interpolation.keys - Version.all.pluck(:version).flat_map(&.values).map(&.as(String))
         return if pending.empty?
-        brocken = Version.where { version.in(pending) }.pluck(:version).flat_map(&.values)
+        brocken = Version.where { version.in(pending) }.pluck(:version).flat_map(&.values).map(&.as(String))
         unless brocken.empty?
           puts "Can't run migrations because some of them are older then relase version."
           puts "They are:"
-          brocken.each do |v|
+          brocken.sort.each do |v|
             puts "- #{v}"
           end
           return
         end
 
-        pending.each do |p|
+        pending.sort.each do |p|
           klass = interpolation[p]
           puts "Migration #{klass}"
           instance = klass.new
@@ -33,11 +34,15 @@ module Jennifer
           end
           Version.create(version: p)
         end
+      rescue e
+        puts "error"
+        puts e.inspect
       end
 
       def self.create
-        puts Adapter.adapter_class.create_database
+        r = Adapter.adapter_class.create_database
         puts "DB created!"
+        r
       end
 
       def self.drop

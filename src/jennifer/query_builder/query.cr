@@ -3,26 +3,20 @@ require "./*"
 module Jennifer
   module QueryBuilder
     abstract class IQuery
-    end
-
-    class Query(T) < IQuery
-      include Enumerable(T)
-
       @tree : Criteria | LogicOperator | Nil
       @having : Criteria | LogicOperator | Nil
       @table = ""
       @limit : Int32?
       @offset : Int32?
+      @raw_select : String?
 
       property :tree
 
       def initialize
-        @tree = nil
         @joins = [] of Join
         @order = {} of String => String
         @relations = [] of String
         @group = {} of String => Array(String)
-        @having = nil
       end
 
       def initialize(@table : String)
@@ -30,7 +24,7 @@ module Jennifer
       end
 
       def table
-        @table.empty? ? T.table_name : @table
+        @table
       end
 
       def empty?
@@ -83,6 +77,107 @@ module Jennifer
         raise ArgumentError
       end
 
+      def select_query(fields = [] of String)
+        select_clause(fields) + body_section
+      end
+
+      def group_clause
+        if @group.empty?
+          ""
+        else
+          fields = @group.map { |t, fields| fields.map { |f| "#{t}.#{f}" }.join(", ") }.join(", ") # TODO: make building better
+          "GROUP BY #{fields}\n"
+        end
+      end
+
+      def having_clause
+        return "" unless @having
+        "HAVING #{@having.not_nil!.to_sql}\n"
+      end
+
+      # TODO: refactor string join
+      def select_clause(exact_fields = [] of String)
+        String.build do |s|
+          s << "SELECT "
+          unless @raw_select
+            if exact_fields.size > 0
+              s << exact_fields.map { |f| "#{table}.#{f}" }.join(", ")
+            else
+              tables = [table]
+              tables.concat(@relations.map { |r| model_class.relations[r].table_name }) unless @relations.empty?
+              s << tables.map { |e| e + ".*" }.join(", ")
+            end
+          else
+            s << @raw_select
+          end
+          s << "\n"
+          from_clause(s)
+        end
+      rescue e : KeyError
+        raise "Unknown relation #{(@relations - model_class.relations.keys).first}"
+      end
+
+      def from_clause(io)
+        io << "FROM " << table << "\n"
+      end
+
+      def body_section
+        String.build do |s|
+          s << where_clause << join_clause
+          order_clause(s)
+          s << limit_clause << group_clause << having_clause
+        end
+      end
+
+      def join_clause
+        @joins.map(&.to_sql).join(' ')
+      end
+
+      def where_clause
+        @tree ? "WHERE #{@tree.not_nil!.to_sql}\n" : ""
+      end
+
+      def limit_clause
+        str = ""
+        str += "LIMIT #{@limit}\n" if @limit
+        str += "OFFSET #{@offset}\n" if @offset
+        str
+      end
+
+      def order_clause(io)
+        return if @order.empty?
+        io << "ORDER BY "
+        @order.each_with_index do |(k, v), i|
+          io << ", " if i > 0
+          io << k << " " << v.upcase
+        end
+        io << "\n"
+      end
+
+      def select_args
+        args = [] of DB::Any
+        args += @tree.not_nil!.sql_args if @tree
+        @joins.each do |join|
+          args += join.sql_args
+        end
+        args += @having.not_nil!.sql_args if @having
+        args
+      end
+
+      abstract def model_class
+    end
+
+    class Query(T) < IQuery
+      include Enumerable(T)
+
+      def model_class
+        T
+      end
+
+      def table
+        @table.empty? ? T.table_name : @table
+      end
+
       def where(&block)
         ac = Query(T).new(table)
         other = with ac yield
@@ -97,6 +192,11 @@ module Jennifer
         ac = Query(T).new(_table)
         other = with ac yield
         @joins << Join.new(_table, other, type)
+        self
+      end
+
+      def select(raw_sql : String)
+        @raw_select = raw_sql
         self
       end
 
@@ -147,38 +247,24 @@ module Jennifer
       end
 
       def delete
-        body = from_clause + body_section
-        ::Jennifer::Adapter.adapter.exec "DELETE #{body}", select_args
+        ::Jennifer::Adapter.adapter.delete(self)
       end
 
       def exists?
         @limit = 1
-        body = from_clause + body_section
-        query = "SELECT EXISTS(SELECT 1 #{body})"
-        ::Jennifer::Adapter.adapter.scalar(query, select_args) == 1
-      rescue e
-        puts query
-        raise e
+        ::Jennifer::Adapter.adapter.exists?(self)
       end
 
       def count : Int32
-        body = from_clause + body_section
-        ::Jennifer::Adapter.adapter.scalar("SELECT COUNT(*) #{body}", select_args).as(Int64).to_i
+        ::Jennifer::Adapter.adapter.count(self)
       end
 
       def distinct(column, _table)
-        query = "SELECT DISTINCT #{_table}.#{column}\n" + from_clause + body_section
-        result = [] of DB::Any | Int16 | Int8
-        ::Jennifer::Adapter.adapter.query(query, select_args) do |rs|
-          rs.each do
-            result << ::Jennifer::Adapter.adapter_class.result_to_array(rs)[0]
-          end
-        end
-        result
+        ::Jennifer::Adapter.adapter.distinct(self, column, _table)
       end
 
       def distinct(column : String)
-        distinct(column, table)
+        ::Jennifer::Adapter.adapter.distinct(self, column, table)
       end
 
       def group(column : String)
@@ -194,8 +280,7 @@ module Jennifer
 
       def group(**columns)
         columns.each do |t, fields|
-          arr = _groups(t.to_s)
-          arr += fields
+          _groups(t.to_s).concat(fields)
         end
         self
       end
@@ -222,19 +307,11 @@ module Jennifer
 
       # don't properly works if using "with"
       def pluck(*fields)
-        arr = fields.map(&.to_s)
-        result = [] of Hash(String, DB::Any | Int16 | Int8)
-        ::Jennifer::Adapter.adapter.query(select_query, select_args) do |rs|
-          rs.each do
-            h = {} of String => DB::Any | Int8 | Int16
-            res_hash = ::Jennifer::Adapter.adapter_class.result_to_hash(rs)
-            arr.each do |k|
-              h[k] = res_hash[k]
-            end
-            result << h
-          end
-        end
-        result
+        ::Jennifer::Adapter.adapter.pluck(self, fields.map(&.to_s))
+      rescue e
+        puts "brocken query"
+        puts select_query(fields)
+        raise e
       end
 
       # def pluck(**fields)
@@ -265,81 +342,11 @@ module Jennifer
       end
 
       def update(options : Hash)
-        str = "UPDATE #{table} SET #{options.map { |k, v| k.to_s + "= ?" }.join(", ")}\n"
-        args = [] of DB::Any
-        options.each do |k, v|
-          args << v
-        end
-        str += body_section
-        args += select_args
-        ::Jennifer::Adapter.adapter.exec(str, args)
+        ::Jennifer::Adapter.adapter.update(self, options)
       end
 
       def update(**options)
         update(options.to_h)
-      end
-
-      def select_query
-        select_clause + body_section
-      end
-
-      def group_clause
-        if @group.empty?
-          ""
-        else
-          fields = @group.map { |t, fields| fields.map { |f| "#{t}.#{f}" }.join(", ") }.join(", ") # TODO: make building better
-          "GROUP BY #{fields}\n"
-        end
-      end
-
-      def having_clause
-        return "" unless @having
-        "HAVING #{@having.not_nil!.to_sql}\n"
-      end
-
-      def select_clause
-        tables = [table]
-        tables += @relations.map { |r| T.relations[r].table_name } unless @relations.empty?
-        "SELECT #{tables.map { |e| e + ".*" }.join(", ")}\n" + from_clause
-      rescue e : KeyError
-        raise "Unknown relation #{(@relations - T.relations.keys).first}"
-      end
-
-      def from_clause
-        "FROM #{table}\n"
-      end
-
-      def body_section
-        where_clause + join_clause + order_clause + limit_clause + group_clause + having_clause
-      end
-
-      def join_clause
-        @joins.map(&.to_sql).join(' ')
-      end
-
-      def where_clause
-        @tree ? "WHERE #{@tree.not_nil!.to_sql}\n" : ""
-      end
-
-      def limit_clause
-        str = ""
-        str += "LIMIT #{@limit}\n" if @limit
-        str += "OFFSET #{@offset}\n" if @offset
-        str
-      end
-
-      def order_clause
-        @order.empty? ? "" : "ORDER BY #{@order.map { |k, v| "#{k} #{v.upcase}" }.join(", ")}\n"
-      end
-
-      def select_args
-        args = [] of DB::Any
-        args += @tree.not_nil!.sql_args if @tree
-        @joins.each do |join|
-          args += join.sql_args
-        end
-        args += @having.not_nil!.sql_args if @having
-        args
       end
 
       def each
@@ -348,8 +355,8 @@ module Jennifer
         end
       end
 
-      def each_result_set
-        ::Jennifer::Adapter.adapter.query(select_query, select_args) do |rs|
+      def each_result_set(&block)
+        ::Jennifer::Adapter.adapter.select(self) do |rs|
           rs.each do
             yield rs
           end
@@ -359,7 +366,7 @@ module Jennifer
       def to_a
         return to_a_with_relations if @relations.size > 0
         result = [] of T
-        ::Jennifer::Adapter.adapter.query(select_query, select_args) do |rs|
+        ::Jennifer::Adapter.adapter.select(self) do |rs|
           rs.each do
             result << T.new(rs)
           end
@@ -368,6 +375,9 @@ module Jennifer
       rescue e
         puts "Broken query:"
         puts select_query
+        puts e.class
+        puts e.message
+        puts "000"
         raise e
       end
 
@@ -380,9 +390,9 @@ module Jennifer
       private def to_a_with_relations
         h_result = {} of String => T
         nested_hash = @relations.map { |e| {} of String => Bool }
-        ::Jennifer::Adapter.adapter.query(select_query, select_args) do |rs|
+        ::Jennifer::Adapter.adapter.select(self) do |rs|
           rs.each do
-            h = ::Jennifer::Adapter.adapter_class.table_row_hash(rs)
+            h = ::Jennifer::Adapter.adapter.table_row_hash(rs)
             main_field = T.primary_field_name
             next unless h[T.table_name][main_field]?
 

@@ -7,6 +7,10 @@ module Jennifer
       abstract def up
       abstract def down
 
+      def self.version
+        to_s[-17..-1]
+      end
+
       def create(name, id = true)
         tb = TableBuilder::CreateTable.new(name)
         tb.integer(:id, {primary: true, auto_increment: true}) if id

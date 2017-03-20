@@ -1,5 +1,7 @@
 require "./jennifer/*"
-require "./jennifer/adapter/*"
+
+# require "./jennifer/adapter/*"
+require "./jennifer/adapter/base"
 require "./jennifer/migration/table_builder/*"
 require "./jennifer/migration/*"
 require "./jennifer/model/*"

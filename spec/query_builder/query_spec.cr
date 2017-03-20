@@ -105,9 +105,9 @@ describe Jennifer::QueryBuilder::Query do
       contact_create(name: "Max", age: 19)
       contact_create(name: "Ivan", age: 50)
 
-      res = Contact.all.group("name").having { age > 15 }.to_a
+      res = Contact.all.select("COUNT(id) as count, contacts.name").group("name").having { sql("COUNT(id)") > 1 }.pluck(:name)
       res.size.should eq(1)
-      res[0].name.should eq("Max")
+      res[0]["name"].should eq("Ivan")
     end
   end
 
@@ -215,7 +215,8 @@ describe Jennifer::QueryBuilder::Query do
       c1 = contact_create(age: 15)
       c2 = contact_create(age: 15)
 
-      Contact.all.where { age == 15 }.first.not_nil!.id.should eq(c1.id)
+      r = Contact.all.where { age == 15 }.first!
+      r.id.should eq(c1.id)
     end
 
     it "returns nil if ther eis no such records" do
@@ -233,6 +234,13 @@ describe Jennifer::QueryBuilder::Query do
         res[0].keys.should eq(["name", "age"])
         res[0]["name"].should eq("a")
         res[1]["age"].should eq(2)
+      end
+
+      it "accepts plain sql" do
+        contact_create(name: "a", age: 1)
+        res = Contact.all.select("COUNT(id) + 1 as test").pluck(:test)
+        res[0].keys.should eq(["test"])
+        res[0]["test"].should eq(2)
       end
 
       pending "properly works with #with" do
@@ -283,10 +291,10 @@ describe Jennifer::QueryBuilder::Query do
         contact_create(name: "a2")
         contact_create(name: "a1")
 
-        r = Contact.all.group("name").to_a
+        r = Contact.all.group("name").pluck(:name)
         r.size.should eq(2)
-        r[0].name.should eq("a1")
-        r[1].name.should eq("a2")
+        r[0]["name"].should eq("a1")
+        r[1]["name"].should eq("a2")
       end
     end
 
@@ -296,13 +304,13 @@ describe Jennifer::QueryBuilder::Query do
         c2 = contact_create(name: "a2", age: 29)
         c3 = contact_create(name: "a1", age: 29)
         a1 = address_create(street: "asd", contact_id: c1.id)
-        r = Contact.all.group("name", "age").to_a
+        r = Contact.all.group("name", "age").pluck(:name, :age)
         r.size.should eq(2)
-        r[0].name.should eq("a1")
-        r[0].age.should eq(29)
+        r[0]["name"].should eq("a1")
+        r[0]["age"].should eq(29)
 
-        r[1].name.should eq("a2")
-        r[1].age.should eq(29)
+        r[1]["name"].should eq("a2")
+        r[1]["age"].should eq(29)
       end
     end
 
@@ -339,13 +347,13 @@ describe Jennifer::QueryBuilder::Query do
     s = Contact.all.join(Address) { id == Contact._id }.with(:addresses)
 
     it "includes from clause" do
-      s.select_clause.should match(/#{Regex.escape(s.from_clause)}/)
+      s.select_clause.should match(/#{Regex.escape(String.build { |io| s.from_clause(io) })}/)
     end
   end
 
   describe "#from_clause" do
     it "build correct from clause" do
-      Contact.all.from_clause.should eq("FROM contacts\n")
+      String.build { |io| Contact.all.from_clause(io) }.should eq("FROM contacts\n")
     end
   end
 
@@ -361,7 +369,8 @@ describe Jennifer::QueryBuilder::Query do
     end
 
     it "includes order clause" do
-      s.select_query.should match(/#{Regex.escape(s.order_clause)}/)
+      body = String.build { |q| s.order_clause(q) }
+      s.select_query.should match(/#{Regex.escape(body)}/)
     end
 
     it "includes limit clause" do
@@ -389,7 +398,7 @@ describe Jennifer::QueryBuilder::Query do
   describe "#where_clause" do
     context "condition exists" do
       it "includes its sql" do
-        Contact.where { id == 1 }.where_clause.should eq("WHERE contacts.id = ?\n")
+        Contact.where { id == 1 }.where_clause.should eq("WHERE contacts.id = %s\n")
       end
     end
 
@@ -412,11 +421,15 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#order_clause" do
     it "returns empty string if there is no orders" do
-      Contact.all.order_clause.should eq("")
+      String.build do |s|
+        Contact.all.order_clause(s)
+      end.should eq("")
     end
 
     it "returns all orders" do
-      Contact.all.order(age: :desc, name: :asc).order_clause.should match(/ORDER BY age DESC, name ASC/)
+      String.build do |s|
+        Contact.all.order(age: :desc, name: :asc).order_clause(s)
+      end.should match(/ORDER BY age DESC, name ASC/)
     end
   end
 
@@ -448,6 +461,7 @@ describe Jennifer::QueryBuilder::Query do
       i = 0
       Contact.all.each_result_set do |rs|
         rs.should be_a DB::ResultSet
+        Contact.new(rs)
         i += 1
       end
       i.should eq(2)
@@ -475,9 +489,11 @@ describe Jennifer::QueryBuilder::Query do
 
       res = Contact.all.left_join(Address) { id == Address._contact_id }
                        .left_join(Passport) { id == Passport._contact_id }
+                       .order("contacts.id": :asc)
                        .with(:addresses, :passport).to_a
 
       res.size.should eq(2)
+
       res[0].addresses.size.should eq(2)
       res[1].addresses.size.should eq(0)
       res[0].passport.should be_nil

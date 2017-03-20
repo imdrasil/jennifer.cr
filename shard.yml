@@ -1,16 +1,20 @@
 name: jennifer
-version: 0.2.0
+version: 0.2.2
 
 authors:
   - Roman Kalnytskyi <moranibaca@gmail.com>
 
-crystal: 0.20.3
+crystal: 0.21.0
 
 license: MIT
 
 development_dependencies:
   mysql:
     github: crystal-lang/crystal-mysql
+  pg:
+    github: will/crystal-pg
+  sqlite3: 
+    github: crystal-lang/crystal-sqlite3
 dependencies:
   sam:
     github: imdrasil/sam.cr

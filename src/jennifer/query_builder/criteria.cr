@@ -124,7 +124,7 @@ module Jennifer
         if arg.is_a?(Criteria)
           arg.to_sql
         else
-          ::Jennifer::Adapter.question_marks(1)
+          ::Jennifer::Adapter.escape_string(1)
         end
       end
 
@@ -135,7 +135,7 @@ module Jennifer
           when :bool
             _field
           when :in
-            "#{_field} IN(#{::Jennifer::Adapter.question_marks(@rhs.as(Array).size)})"
+            "#{_field} IN(#{::Jennifer::Adapter.escape_string(@rhs.as(Array).size)})"
           else
             "#{_field} #{@operator.to_s} #{@operator.as(Operator).filterable_rhs? ? filter_out(@rhs) : @rhs}"
           end

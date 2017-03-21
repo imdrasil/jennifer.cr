@@ -399,6 +399,8 @@ module Jennifer
 
         def self.relation(name : String)
           @@relations[name]
+        rescue e : KeyError
+          raise Jennifer::UnknownRelation.new(self.to_s, /"(?<r>.*)"$/.match(e.message.to_s).try &.["r"])
         end
 
         macro finished
@@ -410,7 +412,7 @@ module Jennifer
                   set_\{{rel.id}}(hash)
               \{% end %}
               else
-                raise "Unknown relation name #{name}"
+                raise Jennifer::UnknownRelation.new({{@type}}, name)
               end
             \{% end %}
           end

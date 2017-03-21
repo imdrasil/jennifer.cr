@@ -1,4 +1,4 @@
-# Jennifer
+# Jennifer [![Build Status](https://travis-ci.org/imdrasil/jennifer.cr.svg)](https://travis-ci.org/imdrasil/jennifer.cr)
 
 Another one ActiveRecord pattern realization for Crystal with grate query DSL and migration mechanism.
 

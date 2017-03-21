@@ -37,24 +37,6 @@ module Jennifer
           WHERE (TABLE_SCHEMA = '#{Config.db}') AND (TABLE_NAME = '#{table}')"
         v == 1
       end
-
-      # is enough unsafe. prefer to use `transaction` with block
-      # def transaction(autocommit : Bool = true)
-      #  @connection.start_transaction
-      #  # exec autocommit ? "BEGIN" : "START TRANSACTION"
-      # end
-
-      # is unsafe
-      # def commit
-      #  @connection.commit_transaction
-      #  # exec "COMMIT"
-      # end
-
-      # is unsafe
-      # def rollback
-      #  @connection.rollback_transaction
-      #  # exec "ROLLBACK"
-      # end
     end
 
     def table_row_hash(rs)
@@ -71,23 +53,6 @@ module Jennifer
   end
 end
 
+require "./mysql/result_set"
+
 ::Jennifer::Adapter.register_adapter("mysql", ::Jennifer::Adapter::Mysql)
-
-class DB::ResultSet
-  getter column_index
-
-  @column_index = 0
-  @columns = [] of MySql::ColumnSpec
-
-  def current_column
-    @columns[@column_index]
-  end
-
-  def current_column_name
-    column_name(@column_index)
-  end
-
-  def columns
-    @columns
-  end
-end

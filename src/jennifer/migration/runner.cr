@@ -13,8 +13,7 @@ module Jennifer
         return if pending.empty?
         brocken = Version.where { version.in(pending) }.pluck(:version).flat_map(&.values).map(&.as(String))
         unless brocken.empty?
-          puts "Can't run migrations because some of them are older then relase version."
-          puts "They are:"
+          puts "Can't run migrations because some of them are older then relase version.\nThey are:"
           brocken.sort.each do |v|
             puts "- #{v}"
           end
@@ -35,7 +34,6 @@ module Jennifer
           Version.create(version: p)
         end
       rescue e
-        puts "error"
         puts e.inspect
       end
 

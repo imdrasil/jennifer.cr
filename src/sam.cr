@@ -4,7 +4,6 @@ Sam.namespace "db" do
   end
 
   task "drop" do |t, args|
-    puts "asd"
     puts Jennifer::Migration::Runner.drop
   end
 

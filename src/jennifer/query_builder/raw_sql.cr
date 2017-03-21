@@ -9,7 +9,7 @@ module Jennifer
         str =
           case @operator
           when :bool
-            "#({@field})"
+            "(#{@field})"
           when :in
             "(#{@field}) IN(#{::Jennifer::Adapter.escape_string(@rhs.as(Array).size)})"
           else

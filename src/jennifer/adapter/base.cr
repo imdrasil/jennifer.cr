@@ -7,10 +7,34 @@ module Jennifer
 
       getter connection
 
-      delegate exec, query, scalar, to: @connection
+      # delegate exec, query, scalar, to: @connection
 
       def initialize
         @connection = DB.open(Base.connection_string(:db))
+      end
+
+      def exec(_query, args = [] of DB::Any)
+        @connection.exec(_query, args)
+      rescue e : Exception
+        raise BadQuery.new(e.message, _query)
+      end
+
+      def query(_query, args = [] of DB::Any)
+        @connection.query(_query, args)
+      rescue e : Exception
+        raise BadQuery.new(e.message, _query)
+      end
+
+      def query(_query, args = [] of DB::Any)
+        @connection.query(_query, args) { |rs| yield rs }
+      rescue e : Exception
+        raise BadQuery.new(e.message, _query)
+      end
+
+      def scalar(_query, args = [] of DB::Any)
+        @connection.scalar(_query, args)
+      rescue e : Exception
+        raise BadQuery.new(e.message, _query)
       end
 
       def transaction
@@ -51,9 +75,6 @@ module Jennifer
           s << parse_query(query.body_section, args) << ")"
         end
         scalar(body, args) == 1
-      rescue e
-        puts body
-        raise e
       end
 
       # TODO: refactore this to use regular request
@@ -67,7 +88,6 @@ module Jennifer
       end
 
       def self.db_connection
-        puts "c"
         DB.open(connection_string) do |db|
           yield(db)
         end

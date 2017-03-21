@@ -13,8 +13,6 @@ development_dependencies:
     github: crystal-lang/crystal-mysql
   pg:
     github: will/crystal-pg
-  sqlite3: 
-    github: crystal-lang/crystal-sqlite3
 dependencies:
   sam:
     github: imdrasil/sam.cr

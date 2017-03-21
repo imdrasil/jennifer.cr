@@ -1,3 +1,4 @@
+require "./jennifer/exceptions"
 require "./jennifer/*"
 
 # require "./jennifer/adapter/*"

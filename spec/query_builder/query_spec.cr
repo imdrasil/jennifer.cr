@@ -145,7 +145,7 @@ describe Jennifer::QueryBuilder::Query do
     it "raises error if given relation is invalid" do
       q1 = Contact.all
       q1.with(:relation)
-      expect_raises(Exception, "Unknown relation relation") do
+      expect_raises(Jennifer::UnknownRelation, "Unknown relation for Contact: relation") do
         q1.select_clause
       end
     end

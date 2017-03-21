@@ -1,1 +1,10 @@
 language: crystal
+services:
+  - postgresql
+addons:
+  postgresql: 9.4
+before_script:
+  - export PG_USER=postgres
+  - export PG_PASSWORD=""
+  - psql -c 'create database jennifer_test;' -U postgres
+  - crystal ./examples/migrate.cr -- db:migrate

@@ -96,7 +96,7 @@ module Jennifer
       end
 
       def in(arr : Array(DB::Any))
-        raise "IN array can't be empty" if arr.empty?
+        raise ArgumentError.new("IN array can't be empty") if arr.empty?
         @rhs = arr.map { |e| e.as(DB::Any) }
         @operator = :in
         self

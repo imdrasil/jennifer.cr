@@ -1,6 +1,7 @@
 module Jennifer
   module QueryBuilder
     struct Operator
+      RAW_OPERATORS = [:is, :is_not]
       getter type
 
       def initialize(@type : Symbol)
@@ -32,7 +33,7 @@ module Jennifer
       end
 
       def filterable_rhs?
-        ![:is, :is_not].includes?(@type)
+        !RAW_OPERATORS.includes?(@type)
       end
 
       def sql_args

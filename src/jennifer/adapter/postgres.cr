@@ -71,9 +71,6 @@ module Jennifer
           s << parse_query(query.body_section, args) << ")"
         end
         scalar(body, args)
-      rescue e
-        puts body
-        raise e
       end
 
       def self.extract_arguments(hash)

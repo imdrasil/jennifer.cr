@@ -9,6 +9,8 @@ module Jennifer
         opts = self.class.extract_arguments(obj.attributes_hash)
         query = "INSERT INTO #{obj.class.table_name}(#{opts[:fields].join(", ")}) values (#{self.class.escape_string(opts[:fields].size)})"
         exec parse_query(query, opts[:args]), opts[:args]
+      rescue e : Exception
+        raise BadQuery.new(e.message, body)
       end
 
       def update(obj : Model::Base)

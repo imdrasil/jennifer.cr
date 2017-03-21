@@ -27,7 +27,7 @@ Next you need to require one of the **Jennifer** adapters:
 
 ```crystal
 require "jennifer/adapter/mysql" # for mysql
-require "jennifer/dapter/postgres" # for postgres
+require "jennifer/adapter/postgres" # for postgres
 ```
 
 This should be done before you load your application configurations (or at least models). For now you need to specify all configurations using dsl (in future support of yaml configuration files for different environments will be added). So this is regular configuration for playground environment:

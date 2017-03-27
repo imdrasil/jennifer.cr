@@ -4,7 +4,7 @@ describe Jennifer::Adapter::Base do
   describe Jennifer::BadQuery do
     describe "query" do
       it "raises BadRequest if there was problem during method execution" do
-        expect_raises(Jennifer::BadQuery, %(column "asd" does not exist.\nOriginal query was:\nSELECT COUNT(id) as count FROM contacts where asd > $1)) do
+        expect_raises(Jennifer::BadQuery, /Original query was/) do
           Jennifer::Adapter.adapter.query(
             "SELECT COUNT(id) as count FROM contacts where asd > $1", [1]) do |rs|
             rs.each do

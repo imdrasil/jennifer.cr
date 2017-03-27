@@ -12,7 +12,7 @@ dependencies:
     github: imdrasil/jennifer.cr
 ```
 
-**Also** you need to choose one of existing adapters for your db: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgre](https://github.com/will/crystal-pg).
+**Also** you need to choose one of existing adapters for your db: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgres](https://github.com/will/crystal-pg).
 
 ## Usage
 
@@ -20,15 +20,12 @@ dependencies:
 
 Put
 ```crystal
+require "jennifer/adapter/mysql" # for mysql
+require "jennifer/adapter/postgres" # for postgres
 require "jennifer" 
 ```
 
-Next you need to require one of the **Jennifer** adapters:
-
-```crystal
-require "jennifer/adapter/mysql" # for mysql
-require "jennifer/adapter/postgres" # for postgres
-```
+> Be attentive - adapter should be required before main staff.
 
 This should be done before you load your application configurations (or at least models). For now you need to specify all configurations using dsl (in future support of yaml configuration files for different environments will be added). So this is regular configuration for playground environment:
 
@@ -77,6 +74,18 @@ $ crystal sam.cr -- db:drop
 ```shell
 $ crystal sam.cr -- db:migrate
 ```
+- rollback last migration
+```shell
+$ crystal sam.cr -- db:rollback
+```
+- rollback `n` migrations
+```shell
+$ crystal sam.cr -- db:rollback n
+```
+- rollback untill version `a`
+```shell
+$ crystal sam.cr -- db:rollback -v a
+```
 - generate new migration file
 ```shell
 $ crystal sam.cr -- jennifer:migration:generate your_migration_name
@@ -100,7 +109,7 @@ end
 
 `up` method is needed for placing your db changes there, `down` - for reverting your changes back. For now reverting is not supported (no command yet but will be added in next version).
 
-For now only 3 types are officially supported: `String` (`varchar`), `Int`, `Text`, `Bool`.  If you prefer using different type (e.g. `char` instead of `varchar`) you can pass `:type => :char` to options. Regular example for creating table:
+Regular example for creating table:
 
 ```crystal
   create(:addresses) do |t|
@@ -114,13 +123,20 @@ Allowed optional options for `bool`, `string` and `integer`:
 
 - `:type` - internal field type description
 
-| value | SQL interpretation |
-| --- | --- |
-| `:int` | `int` |
-| `:string` | `varchar` |
-| `:bool` | `bool` |
-| `:text` | `text` |
-
+| internal alias | PostgreSQL | MySql | Crystal type |
+| --- | --- | --- | --- |
+| `:integer` | `int` | `int` | `Int32` |
+| `:string` | `varchar(254)` | `varchar(254)` | `String` |
+| `:bool` | `boolean` | `bool` | `Bool` |
+| `:char` | `char` | - | `String` |
+| `:float` | `real` | `float` | `Float32` |
+| `:double` | `double precision` | `double` | `Float64` |
+| `:short` | `smallint` | `smallint` | `Int16` |
+| `:time_stamp` | `timestamp` | `timestamp` | `Time` |
+| `:date_time` | `datetime` | `datetime` | `Time` |
+| `:blob` | `blob` | `blob` | `Bytes` |
+| `:var_string` | `varchar(254)` | `varstring` | `String` |
+| `:json` | `json` | `json` | `JSON::Any` |
 
 - `:sql_type` - gets exact (except size) field type;
 - `:null` - represent nullable if field (by default is false for all types and field);
@@ -133,13 +149,55 @@ To drop table just write
 ```crystal
 drop(:addresses) # drops if exists
 ```
-Altering existing table via DSL for now is not supported but you still can use plain SQL:
+
+To alter existing table use next methods:
+ - `#change_column(name, [new_name], options)` - to change column definition; postgres has slighly another implementation of this than mysql one - check source code for details;
+ - `#add_column(name, type, options)` - add new column;
+ - `#drop_column(name)` - drops existing column
+ - `#add_index(name : String, field : Symbol, type : Symbol, order : Symbol?, length : Int32?)` - adds new index (postgres doesn't support length parameter and only support `:unique` type);
+ - `#drop_index(name : String)` - drops existing index;
+ - `#rename_table(new_name)` - renames table.
+
+Also next support methods are available:
+- `#table_exists?(name)`
+- `index_exists?(table, name)`
+- `column_exists?(table, name)`
+
+Here is quick example:
+
+```crystal
+def up
+  change(:contacts) do |t|
+    t.change_column(:age, :short, {default: 0})
+    t.add_column(:description, :text)
+    t.add_index("contacts_description_index", :description, type: :uniq, order: :asc)
+  end
+
+  change(:addresses) do |t|
+    t.add_column(:details, :json)
+  end
+end
+
+def down
+  change(:contacts) do |t|
+    t.change_column(:age, :integer, {default: 0})
+    t.drop_column(:description)
+  end
+
+  change(:addresses) do |t|
+    t.drop_column(:details)
+  end
+end
+```
+
+Also plain SQL could be executed as well:
+
 ```crystal
 execute("ALTER TABLE addresses CHANGE street st VARCHAR(20)")
 ```
 All changes are executed one by one so you also could add data changes here (in `up` method) but if execution of `up` method fails - `down` method will be called and all process will stop - be ready for such behavior.
 
-To be sure that your db is up to date before run tests or your application, add `Jennifer::Migration::Runner.migrate`.
+To be sure that your db is up to date before run tests of your application, add `Jennifer::Migration::Runner.migrate`.
 
 ### Model
 
@@ -197,6 +255,7 @@ It defines next methods:
 | `::field_count`| | number of fields |
 | `::field_names`| | all fields names |
 | `#{{field_name}}` | | getter |
+| `#{{field_name}}!` | | getter with `not_nil!` if `null: true` passed |
 | `#{{field_name}}=`| | setter |
 | `::_{{field_name}}` | | helper method for building queries |
 | `#primary` | | value of primary key field |
@@ -269,6 +328,14 @@ Also there is `::destroy_all` and `::delete_all` shortcut. They is useful when c
 
 My favorite part. Jennifer allows you to build lazy evaluated queries with chaining syntax. But some of them could be only at the and of a chain or it's beginning. Here is a list of all dsl methods:
 
+#### Find
+
+Object could be retrieved by id using `find` (returns `T?`) and `find!` (returns `T` or raise `RecordNotFound` exception) methods.
+
+```crystal
+Contact.find!(1)
+```
+
 #### Where
 
 `all` retrieves everything (only at the beginning; creates empty request)
@@ -303,7 +370,6 @@ Supported operators:
 | `<=` |`<=` |
 | `>` |`>` |
 | `>=` |`>=` |
-| `<=>` |`<=>` |
 | `=~` | `REGEXP` |
 | `&` | `AND` |
 | `|` | `OR` |
@@ -313,8 +379,6 @@ And operator-like methods:
 | Method | SQL variant |
 | --- | --- |
 | `regexp` | `REGEXP` (accepts `String`) |
-| `rlike` | `REGEXP` |
-| `not_rlike` | `NOT REGEXP` |
 | `not_regexp` |`NOT REGEXP` |
 | `like` | `LIKE` |
 | `not_like` | `NOT LIKE` |
@@ -483,7 +547,7 @@ To extract only some fields rather then entire objects use `pluck`:
 Contact.all.pluck(:id, "name")
 ```
 
-It returns array of hashes with provided fields as keys (stringified). It accepts raw sql arguments so be care when using this with joining tables with same field names. But this allows to retrieve some custom data from specified select clause.
+It returns array of values if only one field was given and array of arrays if more. It accepts raw sql arguments so be care when using this with joining tables with same field names. But this allows to retrieve some custom data from specified select clause.
 
 ```crystal
 Contact.all.select("COUNT(id) as count, contacts.name").group("name")
@@ -532,12 +596,8 @@ There are still a lot of work to do. Some parts (especially sql string generatio
 - [x] add PostgreSQL support
 - [ ] add SQLite support
 - [ ] increase test coverage to acceptable level
-- [ ] add more field type:
-  - [ ] Time
-  - [ ] Float
-  - [ ] Text
-  - [ ] Json
-- [ ] add internal error classes to support all exception cases
+- [x] add more field type
+- [x] add internal error classes to support all exception cases
 - [ ] add more operators
 - [ ] add callbacks
 - [ ] add validation
@@ -552,6 +612,16 @@ There are still a lot of work to do. Some parts (especially sql string generatio
 - [ ] add many-to-many relation
 - [ ] add table aliasing
 - [ ] add more thinks below...
+
+## Development
+
+Before development create user (information is in /spec/config.cr file), run
+```crystal
+$ crystal example/migrate.cr -- db:create
+$ crystal example/migrate.cr -- db:migrate
+```
+
+For now travis use only postgres database but support both of them (mysql as well) are critical so before push run tests using both adapter. 
 
 ## Contributing
 

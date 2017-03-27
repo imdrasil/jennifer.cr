@@ -1,6 +1,9 @@
 require "./adapter/base"
 
 module Jennifer
+  alias AnyResult = DB::Any | Int8 | Int16 | JSON::Any
+  alias AnyArgument = AnyResult | Array(AnyResult)
+
   module Adapter
     @@adapter : Base?
     @@adapters = {} of String => Base.class

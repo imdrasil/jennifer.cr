@@ -107,7 +107,7 @@ describe Jennifer::QueryBuilder::Query do
 
       res = Contact.all.select("COUNT(id) as count, contacts.name").group("name").having { sql("COUNT(id)") > 1 }.pluck(:name)
       res.size.should eq(1)
-      res[0]["name"].should eq("Ivan")
+      res[0].should eq("Ivan")
     end
   end
 
@@ -226,21 +226,19 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#pluck" do
     context "given list of attributes" do
-      it "returns array of hashes" do
+      it "returns array of arrays" do
         contact_create(name: "a", age: 1)
         contact_create(name: "b", age: 2)
         res = Contact.all.pluck(:name, :age)
         res.size.should eq(2)
-        res[0].keys.should eq(["name", "age"])
-        res[0]["name"].should eq("a")
-        res[1]["age"].should eq(2)
+        res[0][0].should eq("a")
+        res[1][1].should eq(2)
       end
 
       it "accepts plain sql" do
         contact_create(name: "a", age: 1)
         res = Contact.all.select("COUNT(id) + 1 as test").pluck(:test)
-        res[0].keys.should eq(["test"])
-        res[0]["test"].should eq(2)
+        res[0].should eq(2)
       end
 
       pending "properly works with #with" do
@@ -293,8 +291,8 @@ describe Jennifer::QueryBuilder::Query do
 
         r = Contact.all.group("name").pluck(:name)
         r.size.should eq(2)
-        r[0]["name"].should eq("a1")
-        r[1]["name"].should eq("a2")
+        r[0].should eq("a1")
+        r[1].should eq("a2")
       end
     end
 
@@ -306,11 +304,11 @@ describe Jennifer::QueryBuilder::Query do
         a1 = address_create(street: "asd", contact_id: c1.id)
         r = Contact.all.group("name", "age").pluck(:name, :age)
         r.size.should eq(2)
-        r[0]["name"].should eq("a1")
-        r[0]["age"].should eq(29)
+        r[0][0].should eq("a1")
+        r[0][1].should eq(29)
 
-        r[1]["name"].should eq("a2")
-        r[1]["age"].should eq(29)
+        r[1][0].should eq("a2")
+        r[1][1].should eq(29)
       end
     end
 

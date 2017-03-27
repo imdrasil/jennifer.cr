@@ -4,7 +4,7 @@ module Jennifer
   class Config
     include Support
 
-    {% for field in [:user, :password, :db, :host, :adapter, :migration_files_path] %}
+    {% for field in [:user, :password, :db, :host, :adapter, :migration_files_path, :schema] %}
       @@{{field.id}} = ""
 
       def self.{{field.id}}=(value)
@@ -19,9 +19,14 @@ module Jennifer
     @@host = "localhost"
     @@migration_files_path = "./db/migrations"
     @@adapter = "mysql"
+    @@schema = "public"
+
+    def self.configure(&block)
+      yield self
+    end
 
     def self.configure
-      yield self
+      self
     end
   end
 end

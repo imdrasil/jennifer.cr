@@ -19,8 +19,20 @@ module Jennifer
         end
       end
 
+      macro as_sym_hash(hash, types)
+        begin
+          %buf = {} of Symbol => \{{types.id}}
+          \{{hash.id}}.each { |k, v| %buf[k] = v.as(\{{types.id}}) }
+          %buf
+        end
+      end
+
       macro sym_hash(hash, types)
         Support.typed_hash(\{{hash}}, Symbol, \{{types}})
+      end
+
+      macro str_hash(hash, types)
+        Support.typed_hash(\{{hash}}, String, \{{types}})
       end
 
       macro arr_cast(arr, klass)

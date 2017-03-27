@@ -2,50 +2,42 @@ module Jennifer
   module Migration
     module TableBuilder
       class CreateTable < Base
+        DEFAULT_TYPES = [:string, :integer, :bool, :float, :double, :short, :time_stamp,
+                         :date_time, :blob, :var_string, :text, :json]
+
         def process
           Adapter.adapter.create_table(self)
+          @indexes.each { |n, options| Adapter.adapter.add_index(@name, n, options) }
         end
 
-        def string(name : String | Symbol, options : Hash(Symbol, EAllowedTypes) | NamedTuple)
-          defaults = sym_hash({:type => :string, :size => 254}, AllowedTypes | Symbol)
-          @fields[name.to_s] = defaults.merge(options.to_h)
-          self
-        end
+        {% for method in DEFAULT_TYPES %}
+          def {{method.id}}(name, options = Hash(Symbol, EAllowedTypes).new)
+            defaults = sym_hash({:type => {{method}}}, EAllowedTypes)
+            @fields[name.to_s] = defaults.merge(options)
+            self
+          end
+        {% end %}
 
-        def integer(name : String | Symbol, options : Hash(Symbol, EAllowedTypes) | NamedTuple)
-          defaults = sym_hash({:type => :int}, EAllowedTypes)
-          @fields[name.to_s] = defaults.merge(options.to_h)
-          self
-        end
-
-        def reference(name : String | Symbol)
+        def reference(name)
           @fields[name.to_s + "_id"] = {:type => :int, :null => true}
           self
         end
 
-        def bool(name : String | Symbol, options : Hash(Symbol, EAllowedTypes) | NamedTuple)
-          defaults = sym_hash({:type => :bool}, EAllowedTypes)
-          @fields[name.to_s] = defaults.merge(options.to_h)
-          self
+        def time_stamps(options = {} of Symbol => EAllowedTypes)
+          time_stamp(:created_at)
+          time_stamp(:updated_at)
         end
 
-        def string(name : String | Symbol)
-          @fields[name.to_s] = sym_hash({:type => :string, :size => 254}, EAllowedTypes)
-          self
+        def index(name, field : String | Symbol, options = {} of Symbol => HAllowedTypes)
+          index(name, [field], {:order => {field => options[:order]?}, :length => {field => options[:length]?}})
         end
 
-        def integer(name : String | Symbol)
-          @fields[name.to_s] = sym_hash({:type => :int}, EAllowedTypes)
+        def index(name, fields : Array, options = {} of Symbol => HAllowedTypes)
+          @indexes[name.to_s] =
+            sym_hash({:_fields => fields, :length => {} of Symbol => Int32, :order => {} of Symbol => Symbol}, HAllowedTypes)
+                       .merge(sym_hash(options, HAllowedTypes))
           self
         end
-
-        def bool(name : String | Symbol)
-          @fields[name.to_s] = sym_hash({:type => :bool}, EAllowedTypes)
-          self
-        end
-
-        # TODO: clean up duplications
-        # TODO: add text method
       end
     end
   end

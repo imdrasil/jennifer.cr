@@ -19,7 +19,11 @@ describe Jennifer::QueryBuilder::Operator do
 
       context "operator =~" do
         it "returns regexp operator" do
-          (criteria_builder =~ "asd").to_sql.should match(/REGEXP/)
+          if Jennifer::Adapter.adapters.keys.last == "postgres"
+            (criteria_builder =~ "asd").to_sql.should match(/~/)
+          else
+            (criteria_builder =~ "asd").to_sql.should match(/REGEXP/)
+          end
         end
       end
 

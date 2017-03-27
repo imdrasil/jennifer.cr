@@ -11,6 +11,9 @@ module Jennifer
         end
       @cause = base_exception.cause
     end
+
+    def initialize(@message)
+    end
   end
 
   class BadQuery < BaseException

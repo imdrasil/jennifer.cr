@@ -7,8 +7,6 @@ module Jennifer
 
       getter connection
 
-      # delegate exec, query, scalar, to: @connection
-
       def initialize
         @connection = DB.open(Base.connection_string(:db))
       end
@@ -16,25 +14,25 @@ module Jennifer
       def exec(_query, args = [] of DB::Any)
         @connection.exec(_query, args)
       rescue e : Exception
-        raise BadQuery.new(e.message, _query)
+        raise BadQuery.new(e.message, _query + " | #{args.inspect}")
       end
 
       def query(_query, args = [] of DB::Any)
         @connection.query(_query, args)
       rescue e : Exception
-        raise BadQuery.new(e.message, _query)
+        raise BadQuery.new(e.message, _query + " | #{args.inspect}")
       end
 
       def query(_query, args = [] of DB::Any)
         @connection.query(_query, args) { |rs| yield rs }
       rescue e : Exception
-        raise BadQuery.new(e.message, _query)
+        raise BadQuery.new(e.message, _query + " | #{args.inspect}")
       end
 
       def scalar(_query, args = [] of DB::Any)
         @connection.scalar(_query, args)
       rescue e : Exception
-        raise BadQuery.new(e.message, _query)
+        raise BadQuery.new(e.message, _query + " | #{args.inspect}")
       end
 
       def transaction
@@ -104,7 +102,7 @@ module Jennifer
       end
 
       def self.extract_arguments(hash)
-        args = [] of DB::Any
+        args = [] of DBAny
         fields = [] of String
         hash.each do |key, value|
           fields << key.to_s
@@ -113,14 +111,8 @@ module Jennifer
         {args: args, fields: fields}
       end
 
-      # converts single ResultSet to hash
-      abstract def result_to_hash(rs)
-
-      # converts single ResultSet which contains several tables
-      abstract def table_row_hash(rs)
-
       def result_to_array(rs)
-        a = [] of DB::Any | Int16 | Int8
+        a = [] of DBAny
         rs.columns.each do |col|
           temp = rs.read
           if temp.is_a?(Int8)
@@ -129,6 +121,23 @@ module Jennifer
           a << temp
         end
         a
+      end
+
+      def result_to_array_by_names(rs, names)
+        buf = {} of String => DBAny
+        names.each { |n| buf[n] = nil }
+        count = names.size
+        rs.column_count.times do |col|
+          col_name = rs.column_name(col)
+          if buf.has_key?(col_name)
+            buf[col_name] = rs.read.as(DBAny)
+            count -= 1
+          else
+            rs.read
+          end
+          break if count == 0
+        end
+        buf.values
       end
 
       def self.arg_replacement(arr)
@@ -177,39 +186,83 @@ module Jennifer
       def ready_to_migrate!
         return if table_exist?(Migration::Base::TABLE_NAME)
         tb = Migration::TableBuilder::CreateTable.new(Migration::Base::TABLE_NAME)
-        tb.integer(:id, {primary: true, auto_increment: true})
-          .string(:version, {size: 18})
+        tb.integer(:id, {:primary => true, :auto_increment => true})
+          .string(:version, {:size => 17})
         create_table(tb)
       end
 
-      def change_table(builder : Migration::TableBuilder::ChangeTable)
-        table_name = builder.name
-        builder.fields.each do |k, v|
-          case k
-          when :rename
-            exec "ALTER TABLE #{table_name} RENAME #{v[:name]}"
-            table_name = v[:name]
+      def rename_table(old_name, new_name)
+        exec "ALTER TABLE #{old_name.to_s} RENAME #{new_name}"
+      end
+
+      def add_index(table, name, options)
+        query = String.build do |s|
+          s << "CREATE "
+          if options[:type]?
+            s <<
+              case options[:type]
+              when :unique, :uniq
+                "UNIQUE "
+              when :fulltext
+                "FULLTEXT "
+              when :spatial
+                "SPATIAL "
+              else
+                raise ArgumentError.new("Unknown index type: #{options[:type]}")
+              end
           end
+          s << "INDEX " << name << " ON " << table << "("
+          fields = options.as(Hash)[:_fields].as(Array)
+          fields.each_with_index do |f, i|
+            s << "," if i != 0
+            s << f
+            s << "(" << options[:length].as(Hash)[f] << ")" if options[:length]? && options[:length].as(Hash)[f]?
+            s << " " << options[:order].as(Hash)[f].to_s.upcase if options[:order]? && options[:order].as(Hash)[f]?
+          end
+          s << ")"
         end
+        exec query
+      end
+
+      def drop_index(table, name)
+        exec "DROP INDEX #{name} ON #{table}"
+      end
+
+      def drop_column(table, name)
+        exec "ALTER TABLE #{table} DROP COLUMN #{name}"
+      end
+
+      def add_column(table, name, opts)
+        query = String.build do |s|
+          s << "ALTER TABLE " << table << " ADD COLUMN "
+          column_definition(name, opts, s)
+        end
+
+        exec query
+      end
+
+      def change_column(table, old_name, new_name, opts)
+        query = String.build do |s|
+          s << "ALTER TABLE " << table << " CHANGE COLUMN " << old_name << " "
+          column_definition(new_name, opts, s)
+        end
+
+        exec query
       end
 
       def drop_table(builder : Migration::TableBuilder::DropTable)
-        exec "DROP TABLE #{builder.name} IF EXISTS"
+        exec "DROP TABLE #{builder.name}"
       end
 
       def create_table(builder : Migration::TableBuilder::CreateTable)
-        buffer = "CREATE TABLE #{builder.name.to_s} ("
-        builder.fields.each do |name, options|
-          type = options[:serial]? ? "serial" : options[:sql_type]? || type_translations[options[:type]]
-          suffix = ""
-          suffix += "(#{options[:size]})" if options[:size]?
-          suffix += " NOT NULL" if options[:null]?
-          suffix += " PRIMARY KEY" if options[:primary]?
-          suffix += " DEFAULT #{self.class.t(options[:default])}" if options[:default]?
-          suffix += " AUTO_INCREMENT" if options[:auto_increment]?
-          buffer += "#{name.to_s} #{type}#{suffix},"
+        buffer = String.build do |s|
+          s << "CREATE TABLE " << builder.name << " ("
+          builder.fields.each_with_index do |(name, options), i|
+            s << ", " if i != 0
+            column_definition(name, options, s)
+          end
         end
-        exec buffer[0...-1] + ")"
+        exec buffer + ")"
       end
 
       abstract def update(obj)
@@ -217,9 +270,34 @@ module Jennifer
       abstract def insert(obj)
       abstract def distinct(q, c, t)
       abstract def table_exist?(table)
-      abstract def type_translations
+      abstract def index_exists?(table, name)
+      abstract def column_exists?(table, name)
+      abstract def translate_type(name)
+      abstract def default_type_size(name)
       abstract def parse_query(query : QueryBuilder, args)
       abstract def parse_query(query)
+      # converts single ResultSet to hash
+      abstract def result_to_hash(rs)
+
+      # converts single ResultSet which contains several tables
+      abstract def table_row_hash(rs)
+
+      private def column_definition(name, options, io)
+        type = options[:serial]? ? "serial" : (options[:sql_type]? || translate_type(options[:type].as(Symbol)))
+        size = options[:size]? || default_type_size(options[:type])
+        io << name << " " << type
+        io << "(#{size})" if size
+        if options.key?(:null)
+          if options[:null]
+            io << " NULL"
+          else
+            io << " NOT NULL"
+          end
+        end
+        io << " PRIMARY KEY" if options[:primary]?
+        io << " DEFAULT #{self.class.t(options[:default])}" if options[:default]?
+        io << " AUTO_INCREMENT" if options[:auto_increment]?
+      end
     end
   end
 end

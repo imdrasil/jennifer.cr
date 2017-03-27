@@ -3,7 +3,7 @@ def criteria_builder(field = "f1", table = "tests")
 end
 
 def db_array(*element)
-  element.to_a.map { |e| e.as(DB::Any) }
+  element.to_a.map { |e| e.as(Jennifer::DBAny) }
 end
 
 def join_builder(table = "tests", on = criteria_builder, type = :inner)
@@ -19,11 +19,11 @@ def query_builder
 end
 
 def contact_build(name = "Deepthi", age = 28)
-  Contact.new({:name => name, :age => age})
+  Contact.new({:name => name, :age => age.to_i16})
 end
 
-def address_build(main = false, street = "Ant St.", contact_id = nil)
-  Address.new({:main => main, :street => street, :contact_id => contact_id})
+def address_build(main = false, street = "Ant St.", contact_id = nil, details = nil)
+  Address.new({:main => main, :street => street, :contact_id => contact_id, :details => details})
 end
 
 def passport_build(enn = "asd", contact_id = nil)

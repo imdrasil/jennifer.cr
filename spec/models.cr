@@ -2,7 +2,8 @@ class Contact < Jennifer::Model::Base
   mapping(
     id: {type: Int32, primary: true},
     name: String,
-    age: {type: Int32, default: 10}
+    age: {type: Int16, default: 10_i16},
+    description: {type: String, null: true}
   )
 
   has_many :addresses, Address
@@ -14,7 +15,8 @@ class Address < Jennifer::Model::Base
     id: {type: Int32, primary: true},
     main: Bool,
     street: String,
-    contact_id: {type: Int32, null: true}
+    contact_id: {type: Int32, null: true},
+    details: {type: JSON::Any, null: true}
   )
 
   table_name "addresses"

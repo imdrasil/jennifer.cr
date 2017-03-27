@@ -1,4 +1,5 @@
 require "./jennifer/exceptions"
+require "json"
 require "./jennifer/*"
 
 # require "./jennifer/adapter/*"
@@ -6,6 +7,7 @@ require "./jennifer/adapter/base"
 require "./jennifer/migration/table_builder/*"
 require "./jennifer/migration/*"
 require "./jennifer/model/*"
+require "./jennifer/query_builder/*"
 
 module Jennifer
   class StubRelation < ::Jennifer::Model::IRelation
@@ -29,7 +31,7 @@ module Jennifer
       raise "stubed relation"
     end
 
-    def condition_clause(a : DB::Any)
+    def condition_clause(a)
       raise "stubed relation"
     end
 
@@ -38,3 +40,5 @@ module Jennifer
     end
   end
 end
+
+::Jennifer.after_load_hook

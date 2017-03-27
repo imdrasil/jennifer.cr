@@ -12,8 +12,8 @@ module Jennifer
         :text   => "text",
       }
 
-      def type_translations
-        TYPE_TRANSLATIONS
+      def translate_type(name)
+        TYPE_TRANSLATIONS[name]
       end
 
       def parse_query(query, args)
@@ -79,37 +79,12 @@ module Jennifer
       end
     end
   end
-end
 
-class SQLite3::ResultSet
-  def column_index
-    @column_index
-  end
+  macro after_hook
 
-  def columns
   end
 end
 
-class PQ::Field
-  @@table_names = {} of Int32 => String
-
-  def table
-    val = @@table_names[@col_oid]?
-    if val
-      val.not_nil!
-    else
-      @@table_names[@col_oid] = load_table_name
-    end
-  end
-
-  private def load_table_name : String
-    ::Jennifer::Adapter.adapter.query("select relname from pg_class where oid = $1", @col_oid) do |rs|
-      rs.each do
-        return rs.read(String)
-      end
-    end
-    raise "table not found"
-  end
-end
+require "./sqlite3/result_set"
 
 ::Jennifer::Adapter.register_adapter("sqlite3", ::Jennifer::Adapter::Sqlite3)

@@ -6,19 +6,9 @@ module Jennifer
       extend Support
       include Support
 
-      TYPES = {
-        Integer  => Int32,
-        Int32    => Int32,
-        String   => String,
-        SmallInt => Int16,
-        Bool     => Bool,
-        Serial   => Int64,
-        Int64    => Int64,
-      }
+      alias Supportable = DBAny | Base
 
-      alias Supportable = Int32 | String | Float32 | Bool | Base
-
-      macro mapping(properties)
+      macro mapping(properties, strict = true)
         @@field_names = [
           {% for key, v in properties %}
             "{{key.id}}",
@@ -42,10 +32,9 @@ module Jennifer
           end
 
           {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
-            {% properties[key] = {type: TYPES[value], aliased_type: value} %}
+            {% properties[key] = {type: value} %}
           {% else %}
-            {% properties[key][:aliased_type] = properties[key][:type] %}
-            {% properties[key][:type] = TYPES[properties[key][:type]] %}
+            {% properties[key][:type] = properties[key][:type] %}
           {% end %}
           {% if properties[key][:primary] %}
             {% primary = key %}
@@ -69,6 +58,12 @@ module Jennifer
             def {{key.id}}
               @{{key.id}}
             end
+
+            {% if value[:null] == nil ? true : value[:null] %}
+              def {{key.id}}!
+                @{{key.id}}.not_nil!
+              end
+            {% end %}
           {% end %}
 
           def self._{{key}}
@@ -117,10 +112,23 @@ module Jennifer
             {% for key, value in properties %}
               when {{value[:column_name] || key.id.stringify}}
                 %found{key.id} = true
-                %var{key.id} = %pull.read({{value[:parsed_type].id}})
+                %var{key.id} =
+                  # if value[:type].is_a?(Path) || value[:type].is_a?(Generic)
+                  {% if value[:type].stringify == "JSON::Any" %}
+                    begin
+                      %temp{key.id} = %pull.read
+                      JSON.parse(%temp{key.id}.to_s) if %temp{key.id}
+                    end
+                  {% else %}
+                    %pull.read({{value[:parsed_type].id}})
+                  {% end %}
             {% end %}
             else
-              raise "Unknown column #{column}"
+              {% if strict %}
+                raise ::Jennifer::BaseException.new("Unknown column #{column}")
+              {% else %}
+                %pull.read
+              {% end %}
             end
           end
 
@@ -435,6 +443,18 @@ module Jennifer
         tree = with ac yield
         ac.set_tree(tree)
         ac
+      end
+
+      def self.find(id)
+        _id = id
+        this = self
+        where { this.primary == _id }.first
+      end
+
+      def self.find!(id)
+        _id = id
+        this = self
+        where { this.primary == _id }.first!
       end
 
       def self.all

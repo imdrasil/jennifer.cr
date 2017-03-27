@@ -13,7 +13,7 @@ module Jennifer
 
       def create(name, id = true)
         tb = TableBuilder::CreateTable.new(name)
-        tb.integer(:id, {primary: true, auto_increment: true}) if id
+        tb.integer(:id, {:primary => true, :auto_increment => true}) if id
         yield tb
         tb.process
       end

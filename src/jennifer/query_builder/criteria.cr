@@ -1,7 +1,7 @@
 module Jennifer
   module QueryBuilder
     class Criteria
-      alias Rightable = Criteria | DB::Any | Array(DB::Any)
+      alias Rightable = Criteria | DBAny | Array(DBAny)
 
       getter rhs : Rightable
       getter operator, field, table
@@ -13,7 +13,7 @@ module Jennifer
       def initialize(@field : String, @table : String)
       end
 
-      {% for op in [:<, :>, :<=, :>=, :<=>] %}
+      {% for op in [:<, :>, :<=, :>=] %}
         def {{op.id}}(value : Rightable)
           @rhs = value
           @operator = Operator.new({{op}})
@@ -23,21 +23,12 @@ module Jennifer
 
       def =~(value : String)
         regexp(value)
-        self
       end
 
       def regexp(value : String)
         @rhs = value
         @operator = Operator.new(:regexp)
         self
-      end
-
-      def rlike(value : String)
-        regexp(value)
-      end
-
-      def not_rlike(value : String)
-        not_regexp(value)
       end
 
       def not_regexp(value : String)
@@ -58,7 +49,24 @@ module Jennifer
         self
       end
 
+      # postgres only
+      def similar(value : String)
+        @rhs = value
+        @operator = Operator.new(:similar)
+        self
+      end
+
       def ==(value : Rightable)
+        if !value.nil?
+          @rhs = value
+          @operator = Operator.new(:==)
+        else
+          is(value)
+        end
+        self
+      end
+
+      def eq(value : Rightable)
         if !value.nil?
           @rhs = value
           @operator = Operator.new(:==)
@@ -95,9 +103,9 @@ module Jennifer
         self
       end
 
-      def in(arr : Array(DB::Any))
+      def in(arr : Array)
         raise ArgumentError.new("IN array can't be empty") if arr.empty?
-        @rhs = arr.map { |e| e.as(DB::Any) }
+        @rhs = arr.map { |e| e.as(DBAny) }
         @operator = :in
         self
       end

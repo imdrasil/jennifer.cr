@@ -142,9 +142,12 @@ module Jennifer
         result[0]
       end
 
-      # don't properly works if using "with"
+      def pluck(field)
+        ::Jennifer::Adapter.adapter.pluck(self, field.to_s)
+      end
+
       def pluck(*fields)
-        ::Jennifer::Adapter.adapter.pluck(self, fields.map(&.to_s))
+        ::Jennifer::Adapter.adapter.pluck(self, fields.to_a.map(&.to_s))
       end
 
       # def pluck(**fields)

@@ -5,7 +5,7 @@ require "./request_methods"
 alias PG_HASH = Hash(String, DB::Any | Int8 | Int16) # TODO: check if we need this
 
 module Jennifer
-  alias PGAny = Array(PG::BoolArray) | Array(PG::CharArray) | Array(PG::Float32Array) | Array(PG::Float64Array) |
+  alias DBAny = Array(PG::BoolArray) | Array(PG::CharArray) | Array(PG::Float32Array) | Array(PG::Float64Array) |
                 Array(PG::Int16Array) | Array(PG::Int32Array) | Array(PG::Int64Array) | Array(PG::StringArray) |
                 Bool | Char | Float32 | Float64 | Int16 | Int32 | Int64 | JSON::Any | PG::Geo::Box |
                 PG::Geo::Circle | PG::Geo::Line | PG::Geo::LineSegment | PG::Geo::Path | PG::Geo::Point |
@@ -16,14 +16,34 @@ module Jennifer
       include RequestMethods
 
       TYPE_TRANSLATIONS = {
-        :int    => "int",
-        :string => "varchar",
-        :bool   => "bool",
-        :text   => "text",
+        :integer    => "int",
+        :string     => "varchar",
+        :char       => "char",
+        :bool       => "boolean",
+        :text       => "text",
+        :float      => "real",
+        :double     => "double precision",
+        :short      => "SMALLINT",
+        :time_stamp => "timestamp",
+        :date_time  => "datetime",
+        :blob       => "blob",
+        :var_string => "varchar",
+        :json       => "json",
       }
 
-      def type_translations
-        TYPE_TRANSLATIONS
+      DEFAULT_SIZES = {
+        :string     => 254,
+        :var_string => 254,
+      }
+
+      def translate_type(name)
+        TYPE_TRANSLATIONS[name]
+      rescue e : KeyError
+        raise BaseException.new("Unknown data alias #{name}")
+      end
+
+      def default_type_size(name)
+        DEFAULT_SIZES[name]?
       end
 
       def parse_query(query, args)
@@ -49,7 +69,68 @@ module Jennifer
           )"
       end
 
+      def column_exists?(table, name)
+        scalar "SELECT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_name='#{table}' and column_name='#{name}'
+        )"
+      end
+
+      def index_exists?(table, name)
+        scalar "SELECT EXISTS (
+          SELECT 1
+          FROM   pg_class c
+          JOIN   pg_namespace n ON n.oid = c.relnamespace
+          WHERE  c.relname = #{name}
+          AND    n.nspname = #{Config.schema}
+        )"
+      end
+
       # =========== overrides
+
+      def add_index(table, name, options)
+        if options[:type]? && ![:uniq, :unique].includes?(options[:type])
+          raise ArgumentError.new("Unknown index type: #{options[:type]}")
+        end
+        super
+      end
+
+      def change_column(table, old_name, new_name, opts)
+        column_name_part = " ALTER COLUMN #{old_name} "
+        query = String.build do |s|
+          s << "ALTER TABLE " << table
+          if opts[:type]?
+            s << column_name_part << " TYPE "
+            column_type_definition(opts, s)
+            s << ","
+          end
+          if opts[:null]?
+            s << column_name_part
+            if opts[:null]
+              s << " DROP NOT NULL"
+            else
+              s << " SET NOT NULL"
+            end
+            s << ","
+          end
+          if opts[:default]?
+            s << column_name_part
+            if opts[:default].is_a?(Symbol) && opts[:default].as(Symbol) == :drop
+              s << "DROP DEFAULT "
+            else
+              s << "SET DEFAULT " << self.class.t(opts[:default])
+            end
+            s << ","
+          end
+          if old_name.to_s != new_name.to_s
+            s << " RENAME COLUMN " << old_name << " TO " << new_name
+            s << ","
+          end
+        end
+
+        exec query[0...-1]
+      end
 
       def insert(obj : Model::Base)
         opts = self.class.extract_arguments(obj.attributes_hash)
@@ -73,58 +154,10 @@ module Jennifer
         scalar(body, args)
       end
 
-      def self.extract_arguments(hash)
-        args = [] of DB::Any
-        fields = [] of String
-        hash.each do |key, value|
-          fields << key.to_s
-          args << value
-        end
-        {args: args, fields: fields}
-      end
-
-      # converts single ResultSet to hash
-      def result_to_hash(rs)
-        h = {} of String => PGAny
-        rs.column_count.times do |col|
-          col_name = rs.column_name(col)
-          h[col_name] = rs.read.as(PGAny)
-          if h[col_name].is_a?(Int8)
-            h[col_name] = (h[col_name] == 1i8).as(Bool)
-          end
-        end
-        h
-      end
-
-      # converts single ResultSet which contains several tables
-      def table_row_hash(rs)
-        h = {} of String => Hash(String, PGAny)
-        rs.columns.each do |col|
-          h[col.table] ||= {} of String => PGAny
-          h[col.table][col.name] = rs.read
-          if h[col.table][col.name].is_a?(Int8)
-            h[col.table][col.name] = h[col.table][col.name] == 1i8
-          end
-        end
-        h
-      end
-
-      def result_to_array(rs)
-        a = [] of PGAny
-        rs.columns.each do |col|
-          temp = rs.read
-          if temp.is_a?(Int8)
-            temp = (temp == 1i8).as(Bool)
-          end
-          a << temp
-        end
-        a
-      end
-
       def update(q, options : Hash)
         esc = self.class.escape_string(1)
         str = "UPDATE #{q.table} SET #{options.map { |k, v| k.to_s + "= #{esc}" }.join(", ")}\n"
-        args = [] of PGAny
+        args = [] of DBAny
         options.each do |k, v|
           args << v
         end
@@ -140,7 +173,7 @@ module Jennifer
           s << query.body_section
         end
         args = query.select_args
-        result = [] of PGAny
+        result = [] of DBAny
         query(parse_query(str, args), args) do |rs|
           rs.each do
             result << result_to_array(rs)[0]
@@ -149,30 +182,25 @@ module Jennifer
         result
       end
 
-      def pluck(query, fields)
-        result = [] of Hash(String, PGAny)
-        body = query.select_query(fields)
-        args = query.select_args
-        query(parse_query(body, args), args) do |rs|
-          rs.each do
-            result << result_to_hash(rs)
+      private def column_definition(name, options, io)
+        io << name
+        column_type_definition(options, io)
+        if options.key?(:null)
+          if options[:null]
+            io << " NULL"
+          else
+            io << " NOT NULL"
           end
         end
-        result
+        io << " PRIMARY KEY" if options[:primary]?
+        io << " DEFAULT #{self.class.t(options[:default])}" if options[:default]?
       end
 
-      def create_table(builder : Migration::TableBuilder::CreateTable)
-        buffer = "CREATE TABLE #{builder.name.to_s} ("
-        builder.fields.each do |name, options|
-          type = options[:serial]? || options[:auto_increment]? ? "serial" : options[:sql_type]? || type_translations[options[:type]]
-          suffix = ""
-          suffix += "(#{options[:size]})" if options[:size]?
-          suffix += " NOT NULL" if options[:null]?
-          suffix += " PRIMARY KEY" if options[:primary]?
-          suffix += " DEFAULT #{self.class.t(options[:default])}" if options[:default]?
-          buffer += "#{name.to_s} #{type}#{suffix},"
-        end
-        exec buffer[0...-1] + ")"
+      private def column_type_definition(options, io)
+        type = options[:serial]? || options[:auto_increment]? ? "serial" : options[:sql_type]? || translate_type(options[:type].as(Symbol))
+        size = options[:size]? || default_type_size(options[:type])
+        io << " " << type
+        io << "(#{size})" if size
       end
 
       def self.create_database
@@ -185,12 +213,8 @@ module Jennifer
     end
   end
 
-  module Model
-    abstract class Base
-      def initialize
-        initialize({} of Symbol => PGAny)
-      end
-    end
+  macro after_load_hook
+    require "./jennifer/adapter/postgres/operator"
   end
 end
 

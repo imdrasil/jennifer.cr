@@ -1,15 +1,20 @@
 require "../spec_helper"
 
 describe Jennifer::Model::Base do
-  Spec.before_each do
-    Contact.all.delete
-    Address.all.delete
-    Passport.all.delete
+  context "data types" do
+    describe "JSON" do
+      it "properly loads json field" do
+        c = address_create(street: "a", details: JSON.parse(%(["a", "b", 1])))
+        c = Address.find!(c.id)
+        c.details.should be_a(JSON::Any)
+        c.details![2].as_i.should eq(1)
+      end
+    end
   end
 
   describe "::field_count" do
     it "returns correct number of model fields" do
-      Contact.field_count.should eq(3)
+      Contact.field_count.should eq(4)
     end
   end
 

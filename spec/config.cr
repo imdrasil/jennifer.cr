@@ -1,6 +1,6 @@
 # require "../src/jennifer/adapter/mysql"
-require "../src/jennifer"
 require "../src/jennifer/adapter/postgres"
+require "../src/jennifer"
 
 adapter = "postgres"
 # adapter = "mysql"

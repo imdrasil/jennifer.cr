@@ -3,6 +3,16 @@ Sam.namespace "db" do
     Jennifer::Migration::Runner.migrate
   end
 
+  task "rollback" do |t, args|
+    if !args.raw.empty?
+      Jennifer::Migration::Runner.rollback({:count => args.raw.last.as(String).to_i})
+    elsif args["v"]?
+      Jennifer::Migration::Runner.rollback({:to => args["v"].as(String)})
+    else
+      Jennifer::Migration::Runner.rollback({:count => 1})
+    end
+  end
+
   task "drop" do |t, args|
     puts Jennifer::Migration::Runner.drop
   end
@@ -19,7 +29,7 @@ end
 Sam.namespace "jennifer" do
   namespace "migration" do
     task "generate" do |t, args|
-      Jennifer::Migration::Runner.generate(args["name"].as(String))
+      Jennifer::Migration::Runner.generate(args[0].as(String))
     end
   end
 end

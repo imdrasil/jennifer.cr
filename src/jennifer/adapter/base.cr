@@ -12,37 +12,40 @@ module Jennifer
       end
 
       def exec(_query, args = [] of DB::Any)
+        Config.logger.debug { regular_query_message(_query, args) }
         @connection.exec(_query, args)
       rescue e : Exception
-        raise BadQuery.new(e.message, _query + " | #{args.inspect}")
+        raise BadQuery.new(e.message, regular_query_message(_query, args))
       end
 
       def query(_query, args = [] of DB::Any)
-        @connection.query(_query, args)
-      rescue e : Exception
-        raise BadQuery.new(e.message, _query + " | #{args.inspect}")
-      end
-
-      def query(_query, args = [] of DB::Any)
+        Config.logger.debug { regular_query_message(_query, args) }
         @connection.query(_query, args) { |rs| yield rs }
       rescue e : Exception
-        raise BadQuery.new(e.message, _query + " | #{args.inspect}")
+        raise BadQuery.new(e.message, regular_query_message(_query, args))
       end
 
       def scalar(_query, args = [] of DB::Any)
+        Config.logger.debug { regular_query_message(_query, args) }
         @connection.scalar(_query, args)
       rescue e : Exception
-        raise BadQuery.new(e.message, _query + " | #{args.inspect}")
+        raise BadQuery.new(e.message, regular_query_message(_query, args))
       end
 
       def transaction
         result = false
         @connection.transaction do |tx|
           begin
+            Config.logger.debug("TRANSACTION START")
             result = yield(tx)
-            tx.rollback unless result
+            unless result
+              tx.rollback
+              Config.logger.debug("TRANSACTION ROLLBACK")
+            end
+            Config.logger.debug("TRANSACTION COMMIT")
           rescue
             tx.rollback
+            Config.logger.debug("TRANSACTION ROLLBACK")
           end
         end
         result
@@ -75,7 +78,7 @@ module Jennifer
         scalar(body, args) == 1
       end
 
-      # TODO: refactore this to use regular request
+      # TODO: refactor this to use regular request
       def count(query)
         body = String.build do |s|
           query.from_clause(s)
@@ -91,6 +94,7 @@ module Jennifer
         end
       rescue e
         puts e
+        raise e
       end
 
       def self.connection_string(*options)
@@ -297,6 +301,14 @@ module Jennifer
         io << " PRIMARY KEY" if options[:primary]?
         io << " DEFAULT #{self.class.t(options[:default])}" if options[:default]?
         io << " AUTO_INCREMENT" if options[:auto_increment]?
+      end
+
+      private def regular_query_message(query, args : Array)
+        args.empty? ? query : "#{query} | #{args.inspect}"
+      end
+
+      private def regular_query_message(query, arg = nil)
+        arg ? query : "#{query} | #{arg}"
       end
     end
   end

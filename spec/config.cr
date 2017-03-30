@@ -6,6 +6,7 @@ adapter = "postgres"
 # adapter = "mysql"
 
 Jennifer::Config.configure do |conf|
+  conf.logger.level = Logger::ERROR
   conf.host = "localhost"
   conf.adapter = adapter
   conf.migration_files_path = "./examples/migrations"

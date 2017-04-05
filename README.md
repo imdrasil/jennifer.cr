@@ -308,7 +308,7 @@ It defines next methods:
 | `::create` | Hash(String \| Symbol, DB::Any), NamedTuple | creates object, stores it to db and returns it |
 | `#save` | | saves object to db; returns `true` if success and `false` elsewhere |
 | `#to_h` | | returns hash with all attributes |
-| `#attribute` | `String | Symbol` | returns attribute value by it's name |
+| `#attribute` | `String \| Symbol` | returns attribute value by its name |
 | `#attributes_hash` | | returns `to_h` with deleted `nil` entries |
 
 Automatically model is associated with table with underscored class name and "s" at the end (not perfect solution - I know it). So models like `Address` or `Mouse` should specify name using `::table_name` method in own body before using any relation.

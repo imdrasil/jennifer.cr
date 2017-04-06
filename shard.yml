@@ -16,3 +16,9 @@ development_dependencies:
 dependencies:
   sam:
     github: imdrasil/sam.cr
+  inflector:
+    github: phoffer/inflector.cr
+    version: "~> 0.1.8"
+  accord:
+    github: neovintage/accord
+    version: "~> 1.1.0"

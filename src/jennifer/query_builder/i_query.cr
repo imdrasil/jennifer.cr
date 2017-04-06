@@ -1,9 +1,11 @@
+require "./expression_builder"
+
 module Jennifer
   module QueryBuilder
     abstract class IQuery
       @tree : Criteria | LogicOperator | Nil
       @having : Criteria | LogicOperator | Nil
-      @table = ""
+      @table : String = ""
       @limit : Int32?
       @offset : Int32?
       @raw_select : String?
@@ -11,14 +13,34 @@ module Jennifer
       property :tree
 
       def initialize
+        @expression = ExpressionBuilder.new(@table)
         @joins = [] of Join
         @order = {} of String => String
         @relations = [] of String
         @group = {} of String => Array(String)
+        @relation_used = false
       end
 
-      def initialize(@table : String)
+      def self.build(*opts)
+        q = new(*opts)
+        q.expression_builder.query = q
+        q
+      end
+
+      def with_relation!
+        @relation_used = true
+      end
+
+      def with_relation?
+        @relation_used
+      end
+
+      def initialize(@table)
         initialize
+      end
+
+      def expression_builder
+        @expression
       end
 
       def table
@@ -26,7 +48,12 @@ module Jennifer
       end
 
       def empty?
-        @tree.nil? && @limit.nil? && @offset.nil? && @joins.empty? && order.empty? && @relations.empty?
+        @tree.nil? && @limit.nil? && @offset.nil? &&
+          @joins.empty? && @order.empty? && @relations.empty?
+      end
+
+      def add_alias(table, aliass)
+        @alias_table[table] = aliass
       end
 
       def to_s
@@ -49,18 +76,6 @@ module Jennifer
         end
       end
 
-      def sql(query : String, args = [] of DB::Any)
-        RawSql.new(query, args.map { |e| e.as(DB::Any) })
-      end
-
-      def c(name : String)
-        Criteria.new(name, table)
-      end
-
-      def c(name : String, table_name : String)
-        Criteria.new(name, table_name)
-      end
-
       def set_tree(other : Criteria | LogicOperator | IQuery)
         other = other.tree if other.is_a? IQuery
         @tree = if !@tree.nil? && !other.nil?
@@ -72,7 +87,7 @@ module Jennifer
       end
 
       def set_tree(other : Nil)
-        raise ArgumentError
+        raise ArgumentError.new("Condition tree couldn't be nil")
       end
 
       def select_query(fields = [] of String)

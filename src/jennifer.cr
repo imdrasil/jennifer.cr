@@ -1,13 +1,16 @@
-require "./jennifer/exceptions"
 require "json"
+require "inflector"
+require "inflector/string"
+require "accord"
+
+require "./jennifer/exceptions"
 require "./jennifer/*"
 
-# require "./jennifer/adapter/*"
 require "./jennifer/adapter/base"
 require "./jennifer/migration/table_builder/*"
 require "./jennifer/migration/*"
-require "./jennifer/model/*"
 require "./jennifer/query_builder/*"
+require "./jennifer/model/*"
 
 module Jennifer
   class StubRelation < ::Jennifer::Model::IRelation

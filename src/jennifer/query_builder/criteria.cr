@@ -3,17 +3,17 @@ module Jennifer
     class Criteria
       alias Rightable = Criteria | DBAny | Array(DBAny)
 
-      getter rhs : Rightable
+      getter rhs : Rightable, relation : String?
       getter operator, field, table
 
       @rhs = ""
       @operator = :bool
       @negative = false
 
-      def initialize(@field : String, @table : String)
+      def initialize(@field : String, @table : String, @relation = nil)
       end
 
-      {% for op in [:<, :>, :<=, :>=] %}
+      {% for op in [:<, :>, :<=, :>=, :+, :-, :*, :/] %}
         def {{op.id}}(value : Rightable)
           @rhs = value
           @operator = Operator.new({{op}})
@@ -134,6 +134,10 @@ module Jennifer
         else
           ::Jennifer::Adapter.escape_string(1)
         end
+      end
+
+      def alias_tables(aliases)
+        @table = aliases[@relation.as(String)] if @relation
       end
 
       def to_sql

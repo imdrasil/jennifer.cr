@@ -7,7 +7,12 @@ class Contact < Jennifer::Model::Base
   )
 
   has_many :addresses, Address
+  has_one :main_address, Address, {where { _main }}
   has_one :passport, Passport
+
+  scope :main, {where { _age > 18 }}
+  scope :older, [age], {where { _age >= age }}
+  scope :ordered, {order(name: :asc)}
 end
 
 class Address < Jennifer::Model::Base
@@ -19,8 +24,9 @@ class Address < Jennifer::Model::Base
     details: {type: JSON::Any, null: true}
   )
 
-  table_name "addresses"
   belongs_to :contact, Contact
+
+  scope :main, {where { _main }}
 end
 
 class Passport < Jennifer::Model::Base

@@ -30,11 +30,15 @@ module Jennifer
       abstract def operator
 
       def to_s
-        "(" + @parts.map(&.to_s).join(" #{operator} ") + ")"
+        to_sql
+      end
+
+      def alias_tables(aliases)
+        @parts.each(&.alias_tables(aliases))
       end
 
       def to_sql
-        to_s
+        "(" + @parts.map(&.to_sql).join(" #{operator} ") + ")"
       end
 
       def sql_args : Array(DB::Any)
@@ -47,30 +51,36 @@ module Jennifer
     end
 
     class And < LogicOperator
+      OPERATOR = "AND"
+
       def &(other : LogicOperator | Criteria)
         add(other)
         self
       end
 
       def operator
-        "AND"
+        OPERATOR
       end
     end
 
     class Or < LogicOperator
+      OPERATOR = "OR"
+
       def |(other : Criteria | LogicOperator)
         add(other)
         self
       end
 
       def operator
-        "OR"
+        OPERATOR
       end
     end
 
     class Xor < LogicOperator
+      OPERATOR = "XOR"
+
       def operator
-        "XOR"
+        OPERATOR
       end
     end
   end

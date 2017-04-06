@@ -1,13 +1,5 @@
 module Jennifer
   module Support
-    def pluralize(str : String)
-      str + "s"
-    end
-
-    def singularize(str : String)
-      str[0...-1]
-    end
-
     macro render_macrosses
       macro typed_hash(hash, key, types)
         begin

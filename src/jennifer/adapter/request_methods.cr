@@ -4,7 +4,7 @@ module Jennifer
       # query ===========================
 
       def insert(obj : Model::Base)
-        opts = self.class.extract_arguments(obj.attributes_hash)
+        opts = obj.arguments_to_insert
         query = String.build do |s|
           s << "INSERT INTO " << obj.class.table_name << "("
           opts[:fields].join(", ", s)
@@ -16,7 +16,8 @@ module Jennifer
       end
 
       def update(obj : Model::Base)
-        opts = self.class.extract_arguments(obj.attributes_hash)
+        opts = obj.arguments_to_save
+        return DB::ExecResult.new(0i64, -1i64) if opts[:args].empty?
         opts[:args] << obj.primary
         esc = self.class.escape_string(1)
         query = String.build do |s|

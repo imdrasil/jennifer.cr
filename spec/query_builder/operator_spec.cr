@@ -31,7 +31,7 @@ describe Jennifer::QueryBuilder::Operator do
         it "finds correct results" do
           contact_create(name: "Abraham")
           contact_create(name: "Johny")
-          Contact.where { name.like("%oh%") }.count.should eq(1)
+          Contact.where { _name.like("%oh%") }.count.should eq(1)
         end
       end
     end

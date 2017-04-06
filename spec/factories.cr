@@ -10,6 +10,10 @@ def join_builder(table = "tests", on = criteria_builder, type = :inner)
   Jennifer::QueryBuilder::Join.new(table, on, type)
 end
 
+def expression_builder(table = "test_table")
+  Jennifer::QueryBuilder::ExpressionBuilder.new(table)
+end
+
 def operator_builder(type = :==)
   Jennifer::QueryBuilder::Operator.new(type)
 end

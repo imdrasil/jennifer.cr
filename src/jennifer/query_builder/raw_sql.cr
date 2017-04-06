@@ -1,8 +1,14 @@
 module Jennifer
   module QueryBuilder
     class RawSql < Criteria
-      def initialize(@field : String, @params : Array(DB::Any))
+      @params : Array(DB::Any)
+
+      def initialize(@field : String, args : Array)
         @table = ""
+        @params = args.map { |e| e.as(DB::Any) }
+      end
+
+      def alias_tables(aliases)
       end
 
       def to_sql

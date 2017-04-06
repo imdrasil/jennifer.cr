@@ -3,12 +3,6 @@ require "../spec_helper"
 # TODO: add checking for log entries when we shouldn't hit db
 
 describe Jennifer::QueryBuilder::Query do
-  Spec.before_each do
-    Contact.all.delete
-    Address.all.delete
-    Passport.all.delete
-  end
-
   describe "#to_sql" do
     context "if query tree is not epty" do
       it "retruns sql representation of condition" do
@@ -41,29 +35,14 @@ describe Jennifer::QueryBuilder::Query do
     end
   end
 
-  describe "#c" do
-    it "creates criteria with given field name" do
-      c = query_builder.c("some field")
-      c.should be_a(Jennifer::QueryBuilder::Criteria)
-      c.field.should eq("some field")
-    end
-  end
-
-  describe "#sql" do
-    it "creates raw sql criteria with given sql and parameters" do
-      c = query_builder.sql("contacts.name LIKE ?", ["%jo%"])
-      c.should be_a(Jennifer::QueryBuilder::RawSql)
-      c.field.should eq("contacts.name LIKE ?")
-    end
-  end
-
   describe "#set_tree" do
     context "argument is another query" do
       it "gets it's tree" do
         q1 = query_builder
         q2 = query_builder
-        q1.set_tree(q1.c("f1"))
+        q1.set_tree(expression_builder.c("f1"))
         q2.set_tree(q1)
+        q1.tree.should be(q2.tree)
       end
     end
 
@@ -114,7 +93,7 @@ describe Jennifer::QueryBuilder::Query do
   describe "#join" do
     it "addes inner join by default" do
       q1 = query_builder
-      q1.join(Address) { c("id") == Address.c("contact_id") }
+      q1.join(Address) { _test__id == _contact_id }
       q1.join_clause.should match(/JOIN addresses ON test\.id = addresses\.contact_id/)
     end
   end
@@ -122,7 +101,7 @@ describe Jennifer::QueryBuilder::Query do
   describe "#left_join" do
     it "addes left join" do
       q1 = query_builder
-      q1.left_join(Address) { c("id") == Address.c("contact_id") }
+      q1.left_join(Address) { _test__id == _contact_id }
       q1.join_clause.should match(/LEFT JOIN addresses ON test\.id = addresses\.contact_id/)
     end
   end
@@ -130,22 +109,30 @@ describe Jennifer::QueryBuilder::Query do
   describe "#right_join" do
     it "addes right join" do
       q1 = query_builder
-      q1.right_join(Address) { c("id") == Address.c("contact_id") }
+      q1.right_join(Address) { _test__id == _contact_id }
       q1.join_clause.should match(/RIGHT JOIN addresses ON test\.id = addresses\.contact_id/)
     end
   end
 
   describe "#with" do
     it "addes to select clause given relation" do
-      q1 = Contact.all
+      q1 = Contact.all.relation(:addresses)
       q1.with(:addresses)
       q1.select_clause.should match(/SELECT contacts\.\*, addresses\.\*/)
     end
 
-    it "raises error if given relation is invalid" do
+    it "raises error if given relation is not exists" do
       q1 = Contact.all
-      q1.with(:relation)
       expect_raises(Jennifer::UnknownRelation, "Unknown relation for Contact: relation") do
+        q1.with(:relation)
+        q1.select_clause
+      end
+    end
+
+    it "raises error if given relation is not joined" do
+      q1 = Contact.all
+      expect_raises(Jennifer::BaseException, /with should be called after correspond join: no such table/) do
+        q1.with(:addresses)
         q1.select_clause
       end
     end
@@ -162,8 +149,14 @@ describe Jennifer::QueryBuilder::Query do
   end
 
   describe "#relation" do
-    pending "makes join with given foreign key" do
-      # Contact.all.relation(:addresses)
+    it "makes join using relation scope" do
+      Contact.all.relation(:addresses).join_clause.should match(/JOIN addresses ON addresses.contact_id = contacts.id/)
+    end
+
+    context "with block" do
+      it "adds block result to JOIN clause" do
+        Contact.all.relation(:addresses) { _id > 1 }.join_clause.should match(/\(addresses.contact_id = contacts.id AND addresses.id >/)
+      end
     end
   end
 
@@ -175,7 +168,7 @@ describe Jennifer::QueryBuilder::Query do
       count = Contact.all.count
       c = contact_create(name: "Extra content")
       Contact.all.count.should eq(count + 1)
-      Contact.where { name == "Extra content" }.delete
+      Contact.where { _name == "Extra content" }.delete
       Contact.all.count.should eq(count)
     end
   end
@@ -183,12 +176,12 @@ describe Jennifer::QueryBuilder::Query do
   describe "#exists?" do
     it "returns true if there is such object with given condition" do
       contact_create(name: "Anton")
-      Contact.where { name == "Anton" }.exists?.should be_true
+      Contact.where { _name == "Anton" }.exists?.should be_true
     end
 
     it "returns false if there is no such object with given condition" do
       contact_create(name: "Anton")
-      Contact.where { name == "Jhon" }.exists?.should be_false
+      Contact.where { _name == "Jhon" }.exists?.should be_false
     end
   end
 
@@ -196,7 +189,7 @@ describe Jennifer::QueryBuilder::Query do
     it "returns count of rows for given query" do
       contact_create(name: "Asd")
       contact_create(name: "BBB")
-      Contact.where { name.like("%A%") }.count.should eq(1)
+      Contact.where { _name.like("%A%") }.count.should eq(1)
     end
   end
 
@@ -215,7 +208,7 @@ describe Jennifer::QueryBuilder::Query do
       c1 = contact_create(age: 15)
       c2 = contact_create(age: 15)
 
-      r = Contact.all.where { age == 15 }.first!
+      r = Contact.all.where { _age == 15 }.first!
       r.id.should eq(c1.id)
     end
 
@@ -233,6 +226,11 @@ describe Jennifer::QueryBuilder::Query do
         res.size.should eq(2)
         res[0][0].should eq("a")
         res[1][1].should eq(2)
+      end
+
+      it "correctly extracts json" do
+        address_create(details: JSON.parse({:city => "Duplin"}.to_json))
+        Address.all.pluck(:details)[0].should be_a(JSON::Any)
       end
 
       it "accepts plain sql" do
@@ -324,13 +322,13 @@ describe Jennifer::QueryBuilder::Query do
       contact_create(age: 2, name: "a")
       contact_create(age: 3, name: "a")
 
-      Contact.where { age < 3 }.update({:age => 10, :name => "b"})
-      Contact.where { (age == 10) & (name == "b") }.count.should eq(2)
+      Contact.where { _age < 3 }.update({:age => 10, :name => "b"})
+      Contact.where { (_age == 10) & (_name == "b") }.count.should eq(2)
     end
   end
 
   describe "#select_query" do
-    s = Contact.where { age == 1 }.join(Contact) { age == Contact._age }.order(age: :desc).limit(1)
+    s = Contact.where { _age == 1 }.join(Contact) { _age == Contact._age }.order(age: :desc).limit(1)
 
     it "includes select clause" do
       s.select_query.should match(/#{Regex.escape(s.select_clause)}/)
@@ -342,7 +340,7 @@ describe Jennifer::QueryBuilder::Query do
   end
 
   describe "#select_clause" do
-    s = Contact.all.join(Address) { id == Contact._id }.with(:addresses)
+    s = Contact.all.join(Address) { _id == Contact._id }.with(:addresses)
 
     it "includes from clause" do
       s.select_clause.should match(/#{Regex.escape(String.build { |io| s.from_clause(io) })}/)
@@ -356,7 +354,7 @@ describe Jennifer::QueryBuilder::Query do
   end
 
   describe "#body_section" do
-    s = Contact.where { age == 1 }.join(Contact) { age == Contact._age }.order(age: :desc).limit(1)
+    s = Contact.where { _age == 1 }.join(Contact) { _age == Contact._age }.order(age: :desc).limit(1)
 
     it "includes join clause" do
       s.select_query.should match(/#{Regex.escape(s.join_clause)}/)
@@ -386,8 +384,8 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#join_clause" do
     it "calls #to_sql on all parts" do
-      res = Contact.all.join(Address) { id == Address._contact_id }
-                       .join(Passport) { id == Passport._contact_id }
+      res = Contact.all.join(Address) { _id == Address._contact_id }
+                       .join(Passport) { _id == Passport._contact_id }
                        .join_clause
       res.split("JOIN").size.should eq(3)
     end
@@ -396,7 +394,7 @@ describe Jennifer::QueryBuilder::Query do
   describe "#where_clause" do
     context "condition exists" do
       it "includes its sql" do
-        Contact.where { id == 1 }.where_clause.should eq("WHERE contacts.id = %s\n")
+        Contact.where { _id == 1 }.where_clause.should eq("WHERE contacts.id = %s\n")
       end
     end
 
@@ -433,7 +431,7 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#select_args" do
     it "returns array of join and condition args" do
-      Contact.where { id == 2 }.join(Address) { name == "asd" }.select_args.should eq(db_array(2, "asd"))
+      Contact.where { _id == 2 }.join(Address) { _name == "asd" }.select_args.should eq(db_array(2, "asd"))
     end
   end
 
@@ -476,29 +474,46 @@ describe Jennifer::QueryBuilder::Query do
       res.size.should eq(2)
     end
 
-    it "correctly build nested objects" do
-      c1 = contact_create(name: "a")
-      c2 = contact_create(name: "b")
+    context "with nested objects" do
+      it "builds nested objects" do
+        c2 = contact_create(name: "b")
+        p = passport_create(contact_id: c2.id, enn: "12345")
+        res = Passport.all.join(Contact) { _id == _passport__contact_id }.with(:contact).first!
 
-      a1 = address_create(street: "a1", contact_id: c1.id)
-      a2 = address_create(street: "a2", contact_id: c1.id)
+        res.contact!.name.should eq("b")
+      end
+      context "when some records have no nested objects" do
+        it "correctly build nested objects" do
+          c1 = contact_create(name: "a")
+          c2 = contact_create(name: "b")
 
-      p = passport_create(contact_id: c2.id, enn: "12345")
+          a1 = address_create(street: "a1", contact_id: c1.id)
+          a2 = address_create(street: "a2", contact_id: c1.id)
 
-      res = Contact.all.left_join(Address) { id == Address._contact_id }
-                       .left_join(Passport) { id == Passport._contact_id }
-                       .order("contacts.id": :asc)
-                       .with(:addresses, :passport).to_a
+          p = passport_create(contact_id: c2.id, enn: "12345")
 
-      res.size.should eq(2)
+          res = Contact.all.left_join(Address) { _contact_id == _contact__id }
+                           .left_join(Passport) { _contact_id == _contact__id }
+                           .order("contacts.id": :asc)
+                           .with(:addresses, :passport).to_a
 
-      res[0].addresses.size.should eq(2)
-      res[1].addresses.size.should eq(0)
-      res[0].passport.should be_nil
+          res.size.should eq(2)
 
-      res = Passport.all.join(Contact) { contact_id == Contact._id }.with(:contact).first!
+          res[0].addresses.size.should eq(2)
+          res[1].addresses.size.should eq(0)
+          res[0].passport.should be_nil
+        end
+      end
 
-      res.contact!.name.should eq("b")
+      context "retrieving several relation to same table" do
+        it "uses auto aliasing" do
+          c1 = contact_create(name: "a")
+          c2 = contact_create(name: "b")
+
+          a1 = address_create(street: "a1", contact_id: c1.id)
+          a2 = address_create(street: "a2", contact_id: c1.id)
+        end
+      end
     end
   end
 end

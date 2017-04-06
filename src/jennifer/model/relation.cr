@@ -13,15 +13,16 @@ module Jennifer
 
     class Relation(T, Q) < IRelation
       getter type : Symbol
-      getter join_query : QueryBuilder::Query(T)
+      getter join_query : QueryBuilder::Criteria | QueryBuilder::LogicOperator?
       getter foreign : String?
       getter primary : String?
 
       @name : String
 
-      def initialize(@name, @type, foreign : String | Symbol | Nil, primary : String | Symbol | Nil, @join_query)
+      def initialize(@name, @type, foreign : String | Symbol?, primary : String | Symbol?, query)
         @foreign = foreign.to_s if foreign
         @primary = primary.to_s if primary
+        @join_query = query.tree
       end
 
       def model_class
@@ -31,22 +32,21 @@ module Jennifer
       def condition_clause
         _foreign = foreign_field
         _primary = primary_field
-        if @type != :belongs_to
-          @join_query.where { T.c(_foreign) == Q.c(_primary) }
-        else
-          @join_query.where { Q.c(_primary) == T.c(_foreign) }
-        end.tree
+        tree = if @type != :belongs_to
+                 T.c(_foreign) == Q.c(_primary)
+               else
+                 T.c(_primary) == Q.c(_foreign)
+               end
+        @join_query ? tree & @join_query.not_nil! : tree
       end
 
       def condition_clause(id)
-        _id = id
-        if @type != :belongs_to
-          _foreign = foreign_field
-          @join_query.where { T.c(_foreign) == _id }
-        else
-          _primary = primary_field
-          @join_query.where { Q.c(_primary) == _id }
-        end
+        tree = if @type != :belongs_to
+                 T.c(foreign_field) == id
+               else
+                 T.c(primary_field) == id
+               end
+        @join_query ? tree & @join_query.not_nil! : tree
       end
 
       def table_name
@@ -54,11 +54,11 @@ module Jennifer
       end
 
       private def foreign_field
-        @foreign || singularize(Q.table_name) + "_id"
+        @foreign || (@type != :belongs_to ? Q : T).singular_table_name + "_id"
       end
 
       private def primary_field
-        @primary || Q.primary_field_name
+        @primary || (@type != :belongs_to ? Q : T).primary_field_name
       end
     end
   end

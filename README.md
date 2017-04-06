@@ -297,9 +297,11 @@ It defines next methods:
 | `::field_count`| | number of fields |
 | `::field_names`| | all fields names |
 | `#{{field_name}}` | | getter |
-| `#{{field_name}}!` | | getter with `not_nil!` if `null: true` passed |
+| `#{{field_name}}!` | | getter with `not_nil!` if `null: true` was passed |
 | `#{{field_name}}=`| | setter |
 | `::_{{field_name}}` | | helper method for building queries |
+| `#{{field_name}}_changed?` | | shows if field was changed |
+| `#changed?` | | shows if any field was changed | 
 | `#primary` | | value of primary key field |
 | `::primary` | | returns criteria for primary field (query dsl) |
 | `::primary_field_name` | | name of primary field |
@@ -634,25 +636,26 @@ For now you can't alias table or even field so that's why you can't join same ta
 There are still a lot of work to do. Some parts (especially sql string generation) are in wrong places. Tasks for next versions:
 
 - [x] move query string generation to adapter
-- [ ] make access to adapter methods more clear
+- [x] make access to adapter methods more clear
 - [x] add PostgreSQL support
 - [ ] add SQLite support
 - [ ] increase test coverage to acceptable level
 - [x] add more field type
 - [x] add internal error classes to support all exception cases
-- [ ] add more operators
+- [x] add more operators
 - [ ] add callbacks
 - [ ] add validation
 - [x] extend join functionality
-- [ ] lazy attributes update during object saving
-- [ ] make scopes more flexible
+- [x] lazy attributes update during object saving
+- [x] make scopes more flexible
 - [x] add logger
 - [ ] adds possibility for `#group` accept any sql string
 - [ ] add STI
 - [ ] add polymorphic associations
 - [ ] add through relations
 - [ ] add many-to-many relation
-- [ ] add table aliasing
+- [x] add table aliasing
+- [ ] add subquery support
 - [ ] add more thinks below...
 
 ## Development

@@ -8,6 +8,16 @@ module Jennifer
     @@adapter : Base?
     @@adapters = {} of String => Base.class
 
+    {% for method in [:exec, :scalar] %}
+      def self.{{method.id}}(*opts)
+        adapter.{{method.id}}(*opts)
+      end
+    {% end %}
+
+    def self.query(_query, args = [] of DB::Any)
+      adapter.query(_query, args) { |rs| yield rs }
+    end
+
     def self.adapter
       @@adapter ||= adapter_class.not_nil!.new
     end

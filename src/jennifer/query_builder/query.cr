@@ -342,15 +342,15 @@ module Jennifer
         duplicates = extract_duplicates(table_names)
         return if duplicates.empty?
         i = 0
-        table_aliases = {} of String => String
+        @table_aliases.clear
         @joins.each do |j|
           if j.relation && duplicates.includes?(j.table)
-            table_aliases[j.relation.as(String)] = "t#{i}"
+            @table_aliases[j.relation.as(String)] = "t#{i}"
             i += 1
           end
         end
-        @joins.each { |j| j.alias_tables(table_aliases) }
-        @tree.not_nil!.alias_tables(table_aliases) if @tree
+        @joins.each { |j| j.alias_tables(@table_aliases) }
+        @tree.not_nil!.alias_tables(@table_aliases) if @tree
       end
 
       private def build_hash(rs, size)
@@ -363,7 +363,7 @@ module Jennifer
 
       private def extract_duplicates(arr)
         result = [] of String
-        entries = Hash(String, Int32).new(-1)
+        entries = Hash(String, Int32).new(0)
 
         arr.each do |name|
           entries[name] += 1

@@ -505,13 +505,20 @@ describe Jennifer::QueryBuilder::Query do
         end
       end
 
-      context "retrieving several relation to same table" do
+      context "retrieving several relation from same table" do
         it "uses auto aliasing" do
           c1 = contact_create(name: "a")
           c2 = contact_create(name: "b")
 
-          a1 = address_create(street: "a1", contact_id: c1.id)
-          a2 = address_create(street: "a2", contact_id: c1.id)
+          a1 = address_create(main: false, street: "a1", contact_id: c1.id)
+          a2 = address_create(main: false, street: "a2", contact_id: c1.id)
+          a3 = address_create(main: true, street: "a2", contact_id: c1.id)
+
+          q = Contact.all.includes(:addresses, :main_address)
+          r = q.to_a
+          r.size.should eq(1)
+          r[0].addresses.size.should eq(3)
+          r[0].main_address.nil?.should be_false
         end
       end
     end

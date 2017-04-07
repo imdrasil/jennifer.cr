@@ -17,20 +17,16 @@ module Jennifer
         @@table_name = value.to_s
       end
 
-      def self.table_name : String
-        @@table_name ||= self.to_s.underscore.pluralize
-      end
-
-      def self.singular_table_name
-        @@singular_table_name ||= self.to_s.underscore
-      end
-
       def self.singular_table_name(value : String | Symbol)
-        @@singular_table_name ||= value.to_s
+        @@singular_table_name = value.to_s
       end
 
       def self.c(name)
         ::Jennifer::QueryBuilder::Criteria.new(name, table_name)
+      end
+
+      def self.c(name, relation)
+        ::Jennifer::QueryBuilder::Criteria.new(name, table_name, relation)
       end
 
       abstract def primary
@@ -178,6 +174,14 @@ module Jennifer
 
         @@relations = {} of String => ::Jennifer::Model::IRelation
 
+        def self.table_name : String
+          @@table_name ||= {{@type}}.to_s.underscore.pluralize
+        end
+
+        def self.singular_table_name
+          @@singular_table_name ||= {{@type}}.to_s.underscore
+        end
+
         def self.relations
           @@relations
         end
@@ -186,6 +190,10 @@ module Jennifer
           @@relations[name]
         rescue e : KeyError
           raise Jennifer::UnknownRelation.new(self.to_s, /"(?<r>.*)"$/.match(e.message.to_s).try &.["r"])
+        end
+
+        def self.superclass
+          {{@type.superclass}}
         end
 
         macro finished

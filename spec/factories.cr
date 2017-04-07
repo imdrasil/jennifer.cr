@@ -34,20 +34,22 @@ def passport_build(enn = "asd", contact_id = nil)
   Passport.new({:enn => enn, :contact_id => contact_id})
 end
 
-def contact_create(**params)
-  c = contact_build(**params)
-  c.save
-  c
+def profile_build(login = "some_login", type = FacebookProfile.to_s)
+  Profile.new({:login => login, :type => type})
 end
 
-def address_create(**params)
-  a = address_build(**params)
-  a.save
-  a
+def facebook_profile_build(uid = "123", login = "some_login", contact_id = nil)
+  FacebookProfile.new({:login => login, :type => FacebookProfile.to_s, :uid => uid, :contact_id => contact_id})
 end
 
-def passport_create(**params)
-  p = passport_build(**params)
-  p.save
-  p
+def twitter_profile_build(email = "some_eamil@example.com", login = "some_login", contact_id = nil)
+  TwitterProfile.new({:login => login, :type => TwitterProfile.to_s, :email => email, :contact_id => contact_id})
 end
+
+{% for method in [:facebook_profile, :twitter_profile, :contact, :address, :passport] %}
+  def {{method.id}}_create(**params)
+    c = {{method.id}}_build(**params)
+    c.save
+    c
+  end
+{% end %}

@@ -1,72 +1,6 @@
 require "../spec_helper"
 
 describe Jennifer::Model::Base do
-  context "data types" do
-    describe "JSON" do
-      it "properly loads json field" do
-        c = address_create(street: "a", details: JSON.parse(%(["a", "b", 1])))
-        c = Address.find!(c.id)
-        c.details.should be_a(JSON::Any)
-        c.details![2].as_i.should eq(1)
-      end
-    end
-  end
-
-  describe "::field_count" do
-    it "returns correct number of model fields" do
-      Contact.field_count.should eq(4)
-    end
-  end
-
-  describe "attribute getter" do
-    it "provides getters" do
-      c = contact_build(name: "a")
-      c.name.should eq("a")
-    end
-  end
-
-  describe "attribute setter" do
-    it "provides setters" do
-      c = contact_build(name: "a")
-      c.name = "b"
-      c.name.should eq("b")
-    end
-  end
-
-  describe "criteria attribute class shortcut" do
-    it "adds criteria shortcut for class" do
-      c = Contact._name
-      c.table.should eq("contacts")
-      c.field.should eq("name")
-    end
-  end
-
-  describe "query criteria attribute shortcut" do
-    it "adds shortcut to query generator" do
-      c = Contact.where { _name == "a" }.tree.as(Jennifer::QueryBuilder::Criteria)
-      c.table.should eq("contacts")
-      c.field.should eq("name")
-    end
-  end
-
-  describe "#primary" do
-    context "defaul primary field" do
-      it "returns id valud" do
-        c = contact_build
-        c.id = -1
-        c.primary.should eq(-1)
-      end
-    end
-
-    context "custom field" do
-      it "returns valud of custom primary field" do
-        p = passport_build
-        p.enn = "1qaz"
-        p.primary.should eq("1qaz")
-      end
-    end
-  end
-
   describe "#changed?" do
     it "returns true if at list one field was changed" do
       c = contact_build
@@ -193,51 +127,10 @@ describe Jennifer::Model::Base do
     end
   end
 
-  describe "#attribute" do
-    it "returns attribute value by given name" do
-      c = contact_build(name: "Jessy")
-      c.attribute("name").should eq("Jessy")
-      c.attribute(:name).should eq("Jessy")
-    end
-  end
-
-  describe "#arguments_to_save" do
-    it "returns named tuple with correct keys" do
-      c = contact_build
-      c.name = "some another name"
-      r = c.arguments_to_save
-      r.is_a?(NamedTuple).should be_true
-      r.keys.should eq({:args, :fields})
-    end
-
-    it "returns tuple with empty arguments if no field was changed" do
-      r = contact_build.arguments_to_save
-      r[:args].empty?.should be_true
-      r[:fields].empty?.should be_true
-    end
-
-    it "returns tuple with changed arguments" do
-      c = contact_build
-      c.name = "some new name"
-      r = c.arguments_to_save
-      r[:args].should eq(db_array("some new name"))
-      r[:fields].should eq(db_array("name"))
-    end
-  end
-
-  describe "#to_h" do
-  end
-
-  describe "#attribute_hash" do
-  end
-
   describe "::table_name" do
   end
 
   describe "::c" do
-  end
-
-  describe "#id" do
   end
 
   describe "scope macro" do
@@ -267,7 +160,7 @@ describe Jennifer::Model::Base do
 
   describe "has_many macros" do
     it "adds relation name to RELATION_NAMES constant" do
-      Contact::RELATION_NAMES.size.should eq(3)
+      Contact::RELATION_NAMES.size.should eq(4)
       Contact::RELATION_NAMES[0].should eq("addresses")
     end
 
@@ -276,7 +169,7 @@ describe Jennifer::Model::Base do
         Contact.relation("addresses").condition_clause.to_sql.should eq("addresses.contact_id = contacts.id")
       end
 
-      context "when desclaration has additional block" do
+      context "when declaration has additional block" do
         it "sets correct query part" do
           Contact.relation("main_address").condition_clause.to_sql.should match(/addresses\.contact_id = contacts\.id AND addresses\.main/)
         end
@@ -289,6 +182,15 @@ describe Jennifer::Model::Base do
         q = c.addresses_query
         q.to_sql.should match(/addresses.contact_id = %s/)
         q.sql_args.should eq(db_array(c.id))
+      end
+
+      context "relation is a sti subclass" do
+        it "returns proper objects" do
+          c = contact_build
+          q = c.facebook_profiles_query
+          q.to_sql.should match(/profiles\.type = %s/)
+          q.sql_args.includes?("FacebookProfile").should be_true
+        end
       end
     end
 
@@ -382,7 +284,6 @@ describe Jennifer::Model::Base do
 
   describe "has_one macros" do
     it "adds relation name to RELATION_NAMES constant" do
-      Contact::RELATION_NAMES.size.should eq(3)
       Contact::RELATION_NAMES[0].should eq("addresses")
     end
 

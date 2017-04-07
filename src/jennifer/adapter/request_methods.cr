@@ -91,32 +91,6 @@ module Jennifer
         query(parse_query(body, args), args) { |rs| yield rs }
       end
 
-      # converts single ResultSet to hash
-      def result_to_hash(rs)
-        h = {} of String => DBAny
-        rs.column_count.times do |col|
-          col_name = rs.column_name(col)
-          h[col_name] = rs.read.as(DBAny)
-          if h[col_name].is_a?(Int8)
-            h[col_name] = (h[col_name] == 1i8).as(Bool)
-          end
-        end
-        h
-      end
-
-      # converts single ResultSet which contains several tables
-      def table_row_hash(rs)
-        h = {} of String => Hash(String, DBAny)
-        rs.columns.each do |col|
-          h[col.table] ||= {} of String => DBAny
-          h[col.table][col.name] = rs.read
-          if h[col.table][col.name].is_a?(Int8)
-            h[col.table][col.name] = h[col.table][col.name] == 1i8
-          end
-        end
-        h
-      end
-
       def result_to_array(rs)
         a = [] of DBAny
         rs.columns.each do |col|

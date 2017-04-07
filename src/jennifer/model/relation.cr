@@ -23,6 +23,7 @@ module Jennifer
         @foreign = foreign.to_s if foreign
         @primary = primary.to_s if primary
         @join_query = query.tree
+        @join_query.not_nil!.set_relation(T.table_name, @name) if @join_query
       end
 
       def model_class
@@ -33,11 +34,11 @@ module Jennifer
         _foreign = foreign_field
         _primary = primary_field
         tree = if @type != :belongs_to
-                 T.c(_foreign) == Q.c(_primary)
+                 T.c(_foreign, @name) == Q.c(_primary)
                else
-                 T.c(_primary) == Q.c(_foreign)
+                 T.c(_primary, @name) == Q.c(_foreign)
                end
-        @join_query ? tree & @join_query.not_nil! : tree
+        @join_query ? tree & @join_query.not_nil!.dup : tree
       end
 
       def condition_clause(id)
@@ -46,7 +47,7 @@ module Jennifer
                else
                  T.c(primary_field) == id
                end
-        @join_query ? tree & @join_query.not_nil! : tree
+        @join_query ? tree & @join_query.not_nil!.dup : tree
       end
 
       def table_name

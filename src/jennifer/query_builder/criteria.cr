@@ -13,6 +13,16 @@ module Jennifer
       def initialize(@field : String, @table : String, @relation = nil)
       end
 
+      def set_relation(table, name)
+        @relation = name if @relation.nil? && @table == table
+        @rhs.as(Criteria).set_relation(table, name) if @rhs.is_a?(Criteria)
+      end
+
+      def alias_tables(aliases)
+        @table = aliases[@relation.as(String)] if @relation
+        @rhs.as(Criteria).alias_tables(aliases) if @rhs.is_a?(Criteria)
+      end
+
       {% for op in [:<, :>, :<=, :>=, :+, :-, :*, :/] %}
         def {{op.id}}(value : Rightable)
           @rhs = value
@@ -134,10 +144,6 @@ module Jennifer
         else
           ::Jennifer::Adapter.escape_string(1)
         end
-      end
-
-      def alias_tables(aliases)
-        @table = aliases[@relation.as(String)] if @relation
       end
 
       def to_sql

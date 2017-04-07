@@ -27,8 +27,8 @@ Sam.namespace "db" do
 end
 
 Sam.namespace "jennifer" do
-  namespace "migration" do
-    task "generate" do |t, args|
+  namespace "generate" do
+    task "migration" do |t, args|
       Jennifer::Migration::Runner.generate(args[0].as(String))
     end
   end

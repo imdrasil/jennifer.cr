@@ -3,14 +3,14 @@ require "./expression_builder"
 module Jennifer
   module QueryBuilder
     abstract class IQuery
-      @tree : Criteria | LogicOperator | Nil
       @having : Criteria | LogicOperator | Nil
       @table : String = ""
       @limit : Int32?
       @offset : Int32?
       @raw_select : String?
+      @table_aliases = {} of String => String
 
-      property :tree
+      property tree : Criteria | LogicOperator?
 
       def initialize
         @expression = ExpressionBuilder.new(@table)
@@ -27,16 +27,16 @@ module Jennifer
         q
       end
 
+      def initialize(@table)
+        initialize
+      end
+
       def with_relation!
         @relation_used = true
       end
 
       def with_relation?
         @relation_used
-      end
-
-      def initialize(@table)
-        initialize
       end
 
       def expression_builder
@@ -50,10 +50,6 @@ module Jennifer
       def empty?
         @tree.nil? && @limit.nil? && @offset.nil? &&
           @joins.empty? && @order.empty? && @relations.empty?
-      end
-
-      def add_alias(table, aliass)
-        @alias_table[table] = aliass
       end
 
       def to_s
@@ -108,7 +104,6 @@ module Jennifer
         "HAVING #{@having.not_nil!.to_sql}\n"
       end
 
-      # TODO: refactor string join
       def select_clause(exact_fields = [] of String)
         String.build do |s|
           s << "SELECT "
@@ -121,7 +116,7 @@ module Jennifer
                 s << ", "
                 @relations.each_with_index do |r, i|
                   s << ", " if i != 0
-                  s << model_class.relations[r].table_name << ".*"
+                  s << (@table_aliases[r]? || model_class.relations[r].table_name) << ".*"
                 end
               end
             end
@@ -131,8 +126,6 @@ module Jennifer
           s << "\n"
           from_clause(s)
         end
-      rescue e : KeyError
-        raise Jennifer::UnknownRelation.new(model_class.to_s, /"(?<r>.*)"$/.match(e.message.to_s).try &.["r"])
       end
 
       def from_clause(io)

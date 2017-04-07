@@ -37,6 +37,10 @@ module Jennifer
         @parts.each(&.alias_tables(aliases))
       end
 
+      def set_relation(table, name)
+        @parts.each(&.set_relation(table, name))
+      end
+
       def to_sql
         "(" + @parts.map(&.to_sql).join(" #{operator} ") + ")"
       end

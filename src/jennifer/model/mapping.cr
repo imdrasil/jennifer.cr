@@ -1,39 +1,9 @@
 module Jennifer
   module Model
     module Mapping
-      macro mapping(properties, strict = true)
-        @@field_names = [
-          {% for key, v in properties %}
-            "{{key.id}}",
-          {% end %}
-        ]
-
-        def self.field_count
-          {{properties.size}}
-        end
-
-        def self.field_names
-          @@field_names
-        end
-
-        # generating hash with options
-        {% for key, value in properties %}
-          {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
-            {% properties[key] = {type: value} %}
-          {% else %}
-            {% properties[key][:type] = properties[key][:type] %}
-          {% end %}
-          {% if properties[key][:primary] %}
-            {% primary = key %}
-            {% primary_type = properties[key][:type] %}
-            {% primary_auto_incrementable = ["Int32", "Int64"].includes?(properties[key][:type].stringify) %}
-          {% end %}
-        {% end %}
-
+      macro __field_declaration(properties, primary_auto_incrementable)
         # creates getter and setters
         {% for key, value in properties %}
-          {% t_string = properties[key][:type].stringify %}
-          {% properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? t_string + "?" : t_string %}
           @{{key.id}} : {{value[:parsed_type].id}}
           @{{key.id}}_changed = false
 
@@ -81,7 +51,7 @@ module Jennifer
               {{value[:type]}}
             end
 
-            {% if primary && primary_auto_incrementable %}
+            {% if primary_auto_incrementable %}
               def init_primary_field(value : {{value[:type]}})
                 raise "Primary field is already initialized" if @{{key.id}}
                 @{{key.id}} = value
@@ -89,6 +59,40 @@ module Jennifer
             {% end %}
           {% end %}
         {% end %}
+      end
+
+      macro mapping(properties, strict = false)
+        FIELD_NAMES = [
+          {% for key, v in properties %}
+            "{{key.id}}",
+          {% end %}
+        ]
+
+        def self.field_count
+          {{properties.size}}
+        end
+
+        def self.field_names
+          FIELD_NAMES
+        end
+
+        # generating hash with options
+        {% for key, value in properties %}
+          {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
+            {% properties[key] = {type: value} %}
+          {% else %}
+            {% properties[key][:type] = properties[key][:type] %}
+          {% end %}
+          {% if properties[key][:primary] %}
+            {% primary = key %}
+            {% primary_type = properties[key][:type] %}
+            {% primary_auto_incrementable = ["Int32", "Int64"].includes?(properties[key][:type].stringify) %}
+          {% end %}
+          {% t_string = properties[key][:type].stringify %}
+          {% properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? t_string + "?" : t_string %}
+        {% end %}
+
+        __field_declaration({{properties}}, {{primary_auto_incrementable}})
 
         @new_record = true
 
@@ -131,7 +135,7 @@ module Jennifer
           {% end %}
         end
 
-        def initialize(values : Hash | NamedTuple)
+        def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
           {% for key, value in properties %}
             %var{key.id} = nil
             %found{key.id} = true
@@ -140,7 +144,35 @@ module Jennifer
           {% for key, value in properties %}
             if !values[:{{key.id}}]?.nil?
               %var{key.id} = values[:{{key.id}}]
-            elsif !values["{{key.id}}"]?.nil?
+            else
+              %found{key.id} = false
+            end
+          {% end %}
+
+
+          {% for key, value in properties %}
+            {% if value[:null] %}
+              {% if value[:default] != nil %}
+                @{{key.id}} = %found{key.id} ? %var{key.id}.as({{value[:parsed_type].id}}) : {{value[:default]}}
+              {% else %}
+                @{{key.id}} = %var{key.id}.as({{value[:parsed_type].id}})
+              {% end %}
+            {% elsif value[:default] != nil %}
+              @{{key.id}} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : %var{key.id}.as({{value[:parsed_type].id}})
+            {% else %}
+              @{{key.id}} = (%var{key.id}).as({{value[:parsed_type].id}})
+            {% end %}
+          {% end %}
+        end
+
+        def initialize(values : Hash(String, ::Jennifer::DBAny) | NamedTuple)
+          {% for key, value in properties %}
+            %var{key.id} = nil
+            %found{key.id} = true
+          {% end %}
+
+          {% for key, value in properties %}
+            if !values["{{key.id}}"]?.nil?
               %var{key.id} = values["{{key.id}}"]
             else
               %found{key.id} = false
@@ -247,19 +279,27 @@ module Jennifer
           }
         end
 
-        def attribute(name : String)
+        def to_str_h
+          {
+            {% for key, value in properties %}
+              {{key.stringify}} => @{{key.id}},
+            {% end %}
+          }
+        end
+
+        def attribute(name : String, raise_exception = true)
           case name
           {% for key, value in properties %}
           when "{{key.id}}"
             @{{key.id}}
           {% end %}
           else
-            raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}")
+            raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}") if raise_exception
           end
         end
 
-        def attribute(name : Symbol)
-          attribute(name.to_s)
+        def attribute(name : Symbol, raise_exception = true)
+          attribute(name.to_s, raise_exception)
         end
 
         def attributes_hash
@@ -322,6 +362,243 @@ module Jennifer
 
       macro mapping(**properties)
         mapping({{properties}})
+      end
+
+      macro sti_mapping(properties)
+        def self.sti_condition
+          c("type") == "{{@type.id}}"
+        end
+
+        def self.table_name
+          superclass.table_name
+        end
+
+        def self.singular_table_name
+          superclass.table_name
+        end
+
+        def self.table_name(name)
+          raise "You can't specify table name using STI on subclasses"
+        end
+
+        def self.singular_table_name(name)
+          raise "You can't specify table name using STI on subclasses"
+        end
+
+        FIELD_NAMES = [
+          {% for key, v in properties %}
+            "{{key.id}}",
+          {% end %}
+        ]
+
+        def self.field_count
+          super + {{properties.size}}
+        end
+
+        def self.field_names
+          super + FIELD_NAMES
+        end
+
+        # generating hash with options
+        {% for key, value in properties %}
+          {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
+            {% properties[key] = {type: value} %}
+          {% else %}
+            {% properties[key][:type] = properties[key][:type] %}
+          {% end %}
+          {% if properties[key][:primary] %}
+            {% primary = key %}
+            {% primary_type = properties[key][:type] %}
+            {% primary_auto_incrementable = ["Int32", "Int64"].includes?(properties[key][:type].stringify) %}
+          {% end %}
+          {% t_string = properties[key][:type].stringify %}
+          {% properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? t_string + "?" : t_string %}
+        {% end %}
+
+        __field_declaration({{properties}}, false)
+
+        @new_record = true
+
+        # creates object from db tuple
+        def initialize(%pull : DB::ResultSet)
+          initialize(::Jennifer::Adapter.adapter.result_to_hash(%pull), false)
+        end
+
+        def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
+          values[:type] = "{{@type.id}}" if values.is_a?(Hash)
+          super
+          {% for key, value in properties %}
+            %var{key.id} = nil
+            %found{key.id} = true
+          {% end %}
+
+          {% for key, value in properties %}
+            if !values[:{{key.id}}]?.nil?
+              %var{key.id} = values[:{{key.id}}]
+            else
+              %found{key.id} = false
+            end
+          {% end %}
+
+
+          {% for key, value in properties %}
+            {% if value[:null] %}
+              {% if value[:default] != nil %}
+                @{{key.id}} = %found{key.id} ? %var{key.id}.as({{value[:parsed_type].id}}) : {{value[:default]}}
+              {% else %}
+                @{{key.id}} = %var{key.id}.as({{value[:parsed_type].id}})
+              {% end %}
+            {% elsif value[:default] != nil %}
+              @{{key.id}} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : %var{key.id}.as({{value[:parsed_type].id}})
+            {% else %}
+              @{{key.id}} = (%var{key.id}).as({{value[:parsed_type].id}})
+            {% end %}
+          {% end %}
+        end
+
+        def initialize(values : Hash | NamedTuple)
+          values["type"] = "{{@type.id}}" if values.is_a?(Hash)
+          super
+          {% for key, value in properties %}
+            %var{key.id} = nil
+            %found{key.id} = true
+          {% end %}
+
+          {% for key, value in properties %}
+            if !values["{{key.id}}"]?.nil?
+              %var{key.id} = values["{{key.id}}"]
+            else
+              %found{key.id} = false
+            end
+          {% end %}
+
+
+          {% for key, value in properties %}
+            {% if value[:null] %}
+              {% if value[:default] != nil %}
+                @{{key.id}} = %found{key.id} ? %var{key.id}.as({{value[:parsed_type].id}}) : {{value[:default]}}
+              {% else %}
+                @{{key.id}} = %var{key.id}.as({{value[:parsed_type].id}})
+              {% end %}
+            {% elsif value[:default] != nil %}
+              @{{key.id}} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : %var{key.id}.as({{value[:parsed_type].id}})
+            {% else %}
+              @{{key.id}} = (%var{key.id}).as({{value[:parsed_type].id}})
+            {% end %}
+          {% end %}
+        end
+
+        def initialize(values : Hash | NamedTuple, @new_record)
+          initialize(values)
+        end
+
+        def initialize(**values)
+          initialize(values)
+        end
+
+        def initialize
+          initialize({} of Symbol => DB::Any)
+        end
+
+        def changed?
+          super ||
+          {% for key, value in properties %}
+            @{{key.id}}_changed ||
+          {% end %}
+          false
+        end
+
+        def to_h
+          hash = super
+          {% for key, value in properties %}
+            hash[:{{key.id}}] = @{{key.id}}
+          {% end %}
+          hash
+        end
+
+        def to_str_h
+          hash = super
+          {% for key, value in properties %}
+            hash[{{key.stringify}}] = @{{key.id}}
+          {% end %}
+          hash
+        end
+
+        def attribute(name : String, raise_exception = true)
+          if raise_exception && !{{@type}}.field_names.includes?(name)
+            raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}")
+          end
+          case name
+          {% for key, value in properties %}
+          when "{{key.id}}"
+            @{{key.id}}
+          {% end %}
+          else
+            super
+          end
+        end
+
+        def attributes_hash
+          hash = super
+          {% for key, value in properties %}
+            {% if !value[:null] || value[:primary] %}
+              hash.delete(:{{key}}) if hash[:{{key}}]?.nil?
+            {% end %}
+          {% end %}
+          hash
+        end
+
+        def arguments_to_save
+          res = super
+          args = res[:args]
+          fields = res[:fields]
+          {% for key, value in properties %}
+            {% unless value[:primary] %}
+              if @{{key.id}}_changed
+                args << {% if value[:type].stringify == "JSON::Any" %}
+                          @{{key.id}}.to_json
+                        {% else %}
+                          @{{key.id}}
+                        {% end %}
+                fields << "{{key.id}}"
+              end
+            {% end %}
+          {% end %}
+          {args: args, fields: fields}
+        end
+
+        def arguments_to_insert
+          res = super
+          args = res[:args]
+          fields = res[:fields]
+          {% for key, value in properties %}
+            {% unless value[:primary] && primary_auto_incrementable %}
+              args << {% if value[:type].stringify == "JSON::Any" %}
+                        (@{{key.id}} ? @{{key.id}}.to_json : nil)
+                      {% else %}
+                        @{{key.id}}
+                      {% end %}
+              fields << {{key.stringify}}
+            {% end %}
+          {% end %}
+
+          { args: args, fields: fields }
+        end
+
+        def self.all
+          ::Jennifer::QueryBuilder::Query({{@type}}).build(table_name).where { _type == {{@type.stringify}} }
+        end
+
+        private def after_save_callback
+          {% for key, value in properties %}
+            @{{key.id}}_changed = false
+          {% end %}
+          super
+        end
+      end
+
+      macro sti_mapping(**properties)
+        sti_mapping({{properties}})
       end
     end
   end

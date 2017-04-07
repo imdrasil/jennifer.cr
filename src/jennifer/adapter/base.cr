@@ -144,6 +144,32 @@ module Jennifer
         buf.values
       end
 
+      # converts single ResultSet to hash
+      def result_to_hash(rs)
+        h = {} of String => DBAny
+        rs.column_count.times do |col|
+          col_name = rs.column_name(col)
+          h[col_name] = rs.read.as(DBAny)
+          if h[col_name].is_a?(Int8)
+            h[col_name] = (h[col_name] == 1i8).as(Bool)
+          end
+        end
+        h
+      end
+
+      # converts single ResultSet which contains several tables
+      def table_row_hash(rs)
+        h = {} of String => Hash(String, DBAny)
+        rs.columns.each do |col|
+          h[col.table] ||= {} of String => DBAny
+          h[col.table][col.name] = rs.read
+          if h[col.table][col.name].is_a?(Int8)
+            h[col.table][col.name] = h[col.table][col.name] == 1i8
+          end
+        end
+        h
+      end
+
       def self.arg_replacement(arr)
         escape_string(arr.size)
       end
@@ -280,11 +306,6 @@ module Jennifer
       abstract def default_type_size(name)
       abstract def parse_query(query : QueryBuilder, args)
       abstract def parse_query(query)
-      # converts single ResultSet to hash
-      abstract def result_to_hash(rs)
-
-      # converts single ResultSet which contains several tables
-      abstract def table_row_hash(rs)
 
       private def column_definition(name, options, io)
         type = options[:serial]? ? "serial" : (options[:sql_type]? || translate_type(options[:type].as(Symbol)))

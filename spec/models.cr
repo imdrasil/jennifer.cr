@@ -7,6 +7,7 @@ class Contact < Jennifer::Model::Base
   )
 
   has_many :addresses, Address
+  has_many :facebook_profiles, FacebookProfile
   has_one :main_address, Address, {where { _main }}
   has_one :passport, Passport
 
@@ -35,4 +36,27 @@ class Passport < Jennifer::Model::Base
     contact_id: {type: Int32, null: true}
   )
   belongs_to :contact, Contact
+end
+
+class Profile < Jennifer::Model::Base
+  mapping(
+    id: {type: Int32, primary: true},
+    login: String,
+    contact_id: Int32?,
+    type: String
+  )
+
+  belongs_to :contact, Contact
+end
+
+class FacebookProfile < Profile
+  sti_mapping(
+    uid: String
+  )
+end
+
+class TwitterProfile < Profile
+  sti_mapping(
+    email: String
+  )
 end

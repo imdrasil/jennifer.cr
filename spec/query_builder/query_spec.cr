@@ -217,6 +217,24 @@ describe Jennifer::QueryBuilder::Query do
     end
   end
 
+  describe "#last" do
+    it "inverse all orders" do
+      c1 = contact_create(age: 15)
+      c2 = contact_create(age: 16)
+
+      r = Contact.all.order(age: :desc).last!
+      r.id.should eq(c1.id)
+    end
+
+    it "add order by primary key if no order was specified" do
+      c1 = contact_create(age: 15)
+      c2 = contact_create(age: 16)
+
+      r = Contact.all.last!
+      r.id.should eq(c2.id)
+    end
+  end
+
   describe "#pluck" do
     context "given list of attributes" do
       it "returns array of arrays" do

@@ -113,7 +113,7 @@ module Jennifer
       end
 
       def destroy
-        delete
+        to_a.each(&.destroy)
       end
 
       def delete
@@ -121,7 +121,6 @@ module Jennifer
       end
 
       def exists?
-        @limit = 1
         ::Jennifer::Adapter.adapter.exists?(self)
       end
 
@@ -270,7 +269,7 @@ module Jennifer
         result = [] of T
         ::Jennifer::Adapter.adapter.select(self) do |rs|
           rs.each do
-            result << T.new(rs)
+            result << T.build(rs)
           end
         end
         result
@@ -292,10 +291,8 @@ module Jennifer
               case v
               when "asc", "ASC"
                 "DESC"
-              when "desc", "DESC"
-                "ASC"
               else
-                raise BaseException.new("Unknown order: #{v}")
+                "ASC"
               end
           end
         end
@@ -315,7 +312,7 @@ module Jennifer
             h = build_hash(rs, T.field_count)
             main_field = T.primary_field_name
             if h[main_field]?
-              obj = (h_result[h[main_field].to_s] ||= T.new(h, false))
+              obj = (h_result[h[main_field].to_s] ||= T.build(h, false))
               models.each_with_index do |model, i|
                 h = build_hash(rs, model.field_count)
                 pfn = model.primary_field_name

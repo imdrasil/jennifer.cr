@@ -31,6 +31,12 @@ module Jennifer
         initialize
       end
 
+      {% for attr in [:having, :limit, :offset, :raw_select, :table_aliases, :joins, :order, :relations, :group] %}
+        protected def {{attr.id}}
+          @{{attr.id}}
+        end
+      {% end %}
+
       def with_relation!
         @relation_used = true
       end

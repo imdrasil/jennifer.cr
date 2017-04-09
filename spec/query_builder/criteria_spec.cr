@@ -16,8 +16,9 @@ describe Jennifer::QueryBuilder::Criteria do
     end
 
     it "works via == as well" do
-      c = criteria_builder(field: "f1")
-      (c == nil).to_sql.should eq("tests.f1 IS NULL")
+      c = criteria_builder(field: "f1") == nil
+      c.to_sql.should eq("tests.f1 IS NULL")
+      c.sql_args.empty?.should be_true
     end
   end
 

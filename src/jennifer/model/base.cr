@@ -29,6 +29,42 @@ module Jennifer
         ::Jennifer::QueryBuilder::Criteria.new(name, table_name, relation)
       end
 
+      def self.build(pull : DB::ResultSet)
+        o = new(pull)
+        o.__after_initialize_callback
+        o
+      end
+
+      def self.build(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
+        o = new(values)
+        o.__after_initialize_callback
+        o
+      end
+
+      def self.build(values : Hash(String, ::Jennifer::DBAny))
+        o = new(values)
+        o.__after_initialize_callback
+        o
+      end
+
+      def self.build(values : Hash | NamedTuple, new_record)
+        o = new(values, new_record)
+        o.__after_initialize_callback
+        o
+      end
+
+      def self.build(**values)
+        o = new(values)
+        o.__after_initialize_callback
+        o
+      end
+
+      def self.build
+        o = new
+        o.__after_initialize_callback
+        o
+      end
+
       abstract def primary
 
       macro scope(name, opts, block = nil)
@@ -79,7 +115,7 @@ module Jennifer
         end
 
         def set_{{name.id}}(rel : Hash)
-          @{{name.id}} << {{klass}}.new(rel)
+          @{{name.id}} << {{klass}}.build(rel)
         end
 
         def {{name.id}}_reload
@@ -122,7 +158,7 @@ module Jennifer
         end
 
         def set_{{name.id}}(rel : Hash)
-          @{{name.id}} = {{klass}}.new(rel)
+          @{{name.id}} = {{klass}}.build(rel)
         end
       end
 
@@ -163,8 +199,44 @@ module Jennifer
         end
 
         def set_{{name.id}}(rel : Hash)
-          @{{name.id}} = {{klass}}.new(rel)
+          @{{name.id}} = {{klass}}.build(rel)
         end
+      end
+
+      macro before_save(*names)
+        {% for name in names %}
+          {% BEFORE_SAVE_CALLBACKS << name.id.stringify %}
+        {% end %}
+      end
+
+      macro after_save(*names)
+        {% for name in names %}
+          {% AFTER_SAVE_CALLBACKS << name.id.stringify %}
+        {% end %}
+      end
+
+      macro before_create(*names)
+        {% for name in names %}
+          {% BEFORE_CREATE_CALLBACKS << name.id.stringify %}
+        {% end %}
+      end
+
+      macro after_create(*names)
+        {% for name in names %}
+          {% AFTER_CREATE_CALLBACKS << name.id.stringify %}
+        {% end %}
+      end
+
+      macro after_initialize(*names)
+        {% for name in names %}
+          {% AFTER_INITIALIZE_CALLBACKS << name.id.stringify %}
+        {% end %}
+      end
+
+      macro before_destroy(*names)
+        {% for name in names %}
+          {% BEFORE_DESTROY_CALLBACKS << name.id.stringify %}
+        {% end %}
       end
 
       macro inherited
@@ -172,7 +244,16 @@ module Jennifer
 
         RELATION_NAMES = [] of String
 
+        BEFORE_SAVE_CALLBACKS = [] of String
+        AFTER_SAVE_CALLBACKS = [] of String
+        BEFORE_CREATE_CALLBACKS = [] of String
+        AFTER_CREATE_CALLBACKS = [] of String
+        AFTER_INITIALIZE_CALLBACKS = [] of String
+        BEFORE_DESTROY_CALLBACKS = [] of String
+
         @@relations = {} of String => ::Jennifer::Model::IRelation
+
+        after_save :__refresh_changes
 
         def self.table_name : String
           @@table_name ||= {{@type}}.to_s.underscore.pluralize
@@ -189,7 +270,7 @@ module Jennifer
         def self.relation(name : String)
           @@relations[name]
         rescue e : KeyError
-          raise Jennifer::UnknownRelation.new(self.to_s, /"(?<r>.*)"$/.match(e.message.to_s).try &.["r"])
+          raise Jennifer::UnknownRelation.new(self, /"(?<r>.*)"$/.match(e.message.to_s).try &.["r"])
         end
 
         def self.superclass
@@ -198,6 +279,42 @@ module Jennifer
 
         macro finished
           ::Jennifer::Model::Validation.finished_hook
+
+          def __before_save_callback
+            \{% for method in BEFORE_SAVE_CALLBACKS %}
+              \{{method.id}}
+            \{% end %}
+          end
+
+          def __after_save_callback
+            \{% for method in AFTER_SAVE_CALLBACKS %}
+              \{{method.id}}
+            \{% end %}
+          end
+
+          def __before_create_callback
+            \{% for method in BEFORE_CREATE_CALLBACKS %}
+              \{{method.id}}
+            \{% end %}
+          end
+
+          def __after_create_callback
+            \{% for method in AFTER_CREATE_CALLBACKS %}
+              \{{method.id}}
+            \{% end %}
+          end
+
+          def __after_initialize_callback
+            \{% for method in AFTER_INITIALIZE_CALLBACKS %}
+              \{{method.id}}
+            \{% end %}
+          end
+
+          def __before_destroy_callback
+            \{% for method in BEFORE_DESTROY_CALLBACKS %}
+              \{{method.id}}
+            \{% end %}
+          end
 
           def set_relation(name, hash)
             \{% if RELATION_NAMES.size > 0 %}
@@ -216,6 +333,7 @@ module Jennifer
 
       def destroy
         return if new_record?
+        __before_destroy_callback
         delete
       end
 
@@ -264,7 +382,14 @@ module Jennifer
       end
 
       def self.delete(*ids)
-        destroy(*ids)
+        _ids = ids
+        where do
+          if _ids.size == 1
+            c(primary_field_name) == _ids[0]
+          else
+            c(primary_field_name).in(_ids)
+          end
+        end.delete
       end
 
       def self.delete_all
@@ -275,7 +400,7 @@ module Jennifer
         result = [] of self
         ::Jennifer::Adapter.adapter.query(query, args) do |rs|
           rs.each do
-            result << new(rs)
+            result << build(rs)
           end
         end
         result

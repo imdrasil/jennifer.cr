@@ -23,6 +23,14 @@ module Jennifer
         @rhs.as(Criteria).alias_tables(aliases) if @rhs.is_a?(Criteria)
       end
 
+      def change_table(old_name, new_name)
+        if @table == old_name
+          @table = new_name
+          @relation = nil
+        end
+        @rhs.as(Criteria).change_table(old_name, new_name) if @rhs.is_a?(Criteria)
+      end
+
       {% for op in [:<, :>, :<=, :>=, :+, :-, :*, :/] %}
         def {{op.id}}(value : Rightable)
           @rhs = value
@@ -67,16 +75,6 @@ module Jennifer
       end
 
       def ==(value : Rightable)
-        if !value.nil?
-          @rhs = value
-          @operator = Operator.new(:==)
-        else
-          is(value)
-        end
-        self
-      end
-
-      def eq(value : Rightable)
         if !value.nil?
           @rhs = value
           @operator = Operator.new(:==)
@@ -163,7 +161,7 @@ module Jennifer
 
       def sql_args : Array(DB::Any)
         res = [] of DB::Any
-        if @operator != :bool
+        if filterable?
           if @operator == :in
             @rhs.as(Array).each do |e|
               res << e.as(DB::Any) unless e.is_a?(Criteria)
@@ -173,6 +171,11 @@ module Jennifer
           end
         end
         res
+      end
+
+      private def filterable?
+        return false if @operator == :bool
+        @operator.is_a?(Operator) ? @operator.as(Operator).filterable_rhs? : true
       end
 
       private def translate(value : Symbol | Bool | Nil)

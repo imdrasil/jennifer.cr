@@ -165,7 +165,7 @@ module Jennifer
           {% end %}
         end
 
-        def initialize(values : Hash(String, ::Jennifer::DBAny) | NamedTuple)
+        def initialize(values : Hash(String, ::Jennifer::DBAny))
           {% for key, value in properties %}
             %var{key.id} = nil
             %found{key.id} = true
@@ -245,10 +245,12 @@ module Jennifer
         def save(skip_validation = false)
           unless skip_validation
             validate!
-            return false unless valid?
+            #return false unless valid?
           end
+          __before_save_callback
           response =
             if new_record?
+              __before_create_callback
               res = ::Jennifer::Adapter.adapter.insert(self)
               {% if primary && primary_auto_incrementable %}
                 if primary.nil? && res.last_insert_id > -1
@@ -256,11 +258,12 @@ module Jennifer
                 end
               {% end %}
               @new_record = false if res.rows_affected != 0
+              __after_create_callback
               res
             else
               ::Jennifer::Adapter.adapter.update(self)
             end
-          after_save_callback
+          __after_save_callback
           response.rows_affected == 1
         end
 
@@ -353,7 +356,7 @@ module Jennifer
           }
         end
 
-        private def after_save_callback
+        private def __refresh_changes
           {% for key, value in properties %}
             @{{key.id}}_changed = false
           {% end %}
@@ -456,7 +459,7 @@ module Jennifer
           {% end %}
         end
 
-        def initialize(values : Hash | NamedTuple)
+        def initialize(values : Hash(String, ::Jennifer::DBAny))
           values["type"] = "{{@type.id}}" if values.is_a?(Hash)
           super
           {% for key, value in properties %}
@@ -589,7 +592,7 @@ module Jennifer
           ::Jennifer::QueryBuilder::Query({{@type}}).build(table_name).where { _type == {{@type.stringify}} }
         end
 
-        private def after_save_callback
+        private def __refresh_changes
           {% for key, value in properties %}
             @{{key.id}}_changed = false
           {% end %}

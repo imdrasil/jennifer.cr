@@ -10,10 +10,17 @@ class Contact < Jennifer::Model::Base
   has_many :facebook_profiles, FacebookProfile
   has_one :main_address, Address, {where { _main }}
   has_one :passport, Passport
+  after_save :printt
+
+  validate_inclucions :age, 13..75
 
   scope :main, {where { _age > 18 }}
   scope :older, [age], {where { _age >= age }}
   scope :ordered, {order(name: :asc)}
+
+  def printt
+    puts "yyy"
+  end
 end
 
 class Address < Jennifer::Model::Base

@@ -41,6 +41,10 @@ module Jennifer
         @parts.each(&.set_relation(table, name))
       end
 
+      def change_table(old_name, new_name)
+        @parts.each(&.change_table(old_name, new_name))
+      end
+
       def to_sql
         "(" + @parts.map(&.to_sql).join(" #{operator} ") + ")"
       end

@@ -15,6 +15,16 @@ module Jennifer
         raise BadQuery.new(e.message, body)
       end
 
+      def insert_join_table(table_name, opts : Hash | NamedTuple)
+        query = String.build do |s|
+          s << "INSERT INTO " << table_name << "("
+          opts.keys.join(", ", s)
+          s << ") values (" << self.class.escape_string(opts.keys.size) << ")"
+        end
+
+        exec(parse_query(query, opts.keys), opts.values)
+      end
+
       def update(obj : Model::Base)
         opts = obj.arguments_to_save
         return DB::ExecResult.new(0i64, -1i64) if opts[:args].empty?

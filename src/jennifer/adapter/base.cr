@@ -97,6 +97,10 @@ module Jennifer
         raise e
       end
 
+      def self.join_table_name(table1, table2)
+        [table1.to_s, table2.to_s].sort.join("_")
+      end
+
       def self.connection_string(*options)
         auth_part = Config.user
         auth_part += ":#{Config.password}" if Config.password && !Config.password.empty?
@@ -298,6 +302,7 @@ module Jennifer
       abstract def update(obj)
       abstract def update(q, h)
       abstract def insert(obj)
+      abstract def insert_join_table(a, b)
       abstract def distinct(q, c, t)
       abstract def table_exist?(table)
       abstract def index_exists?(table, name)

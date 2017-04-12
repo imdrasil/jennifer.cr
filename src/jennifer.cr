@@ -4,16 +4,38 @@ require "inflector/string"
 require "accord"
 
 require "./jennifer/exceptions"
-require "./jennifer/*"
+require "./jennifer/adapter"
+require "./jennifer/config"
+require "./jennifer/exceptions"
+require "./jennifer/support"
+require "./jennifer/version"
 
 require "./jennifer/adapter/base"
 require "./jennifer/migration/table_builder/*"
 require "./jennifer/migration/*"
 require "./jennifer/query_builder/*"
+require "./jennifer/relation/base"
+require "./jennifer/relation/*"
 require "./jennifer/model/*"
 
 module Jennifer
-  class StubRelation < ::Jennifer::Model::IRelation
+  class StubRelation < ::Jennifer::Relation::IRelation
+    def insert(a, b)
+      raise "stubed relation"
+    end
+
+    def join_condition(a, b)
+      raise "stubed relation"
+    end
+
+    def join_condition(a, b, &block)
+      raise "stubed relation"
+    end
+
+    def query(a)
+      raise "stubed relation"
+    end
+
     def table_name
       raise "stubed relation"
     end

@@ -152,15 +152,11 @@ describe Jennifer::QueryBuilder::Query do
     it "makes join using relation scope" do
       Contact.all.relation(:addresses).join_clause.should match(/JOIN addresses ON addresses.contact_id = contacts.id/)
     end
-
-    context "with block" do
-      it "adds block result to JOIN clause" do
-        Contact.all.relation(:addresses) { _id > 1 }.join_clause.should match(/\(addresses.contact_id = contacts.id AND addresses.id >/)
-      end
-    end
   end
 
   describe "#destroy" do
+    pending "add" do
+    end
   end
 
   describe "#delete" do
@@ -290,7 +286,7 @@ describe Jennifer::QueryBuilder::Query do
       contact_create(name: "a2")
       contact_create(name: "a1")
 
-      r = Contact.all.distinct("name")
+      r = Contact.all.order(name: :asc).distinct("name")
       r.should eq(["a1", "a2"])
     end
 
@@ -449,7 +445,7 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#select_args" do
     it "returns array of join and condition args" do
-      Contact.where { _id == 2 }.join(Address) { _name == "asd" }.select_args.should eq(db_array(2, "asd"))
+      Contact.where { _id == 2 }.join(Address) { _name == "asd" }.select_args.should eq(db_array("asd", 2))
     end
   end
 

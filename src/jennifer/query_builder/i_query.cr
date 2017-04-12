@@ -140,7 +140,7 @@ module Jennifer
 
       def body_section
         String.build do |s|
-          s << where_clause << join_clause
+          s << join_clause << where_clause
           order_clause(s)
           s << limit_clause << group_clause << having_clause
         end
@@ -173,10 +173,10 @@ module Jennifer
 
       def select_args
         args = [] of DB::Any
-        args += @tree.not_nil!.sql_args if @tree
         @joins.each do |join|
           args += join.sql_args
         end
+        args += @tree.not_nil!.sql_args if @tree
         args += @having.not_nil!.sql_args if @having
         args
       end

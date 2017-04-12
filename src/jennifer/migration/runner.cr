@@ -70,7 +70,7 @@ module Jennifer
         versions.each do |v|
           klass = interpolation[v]
           klass.new.down
-          Version.all.where { _version.eq(v) }.limit(1).delete
+          Version.all.where { _version == v }.delete
           puts "Droped migration #{v}"
         end
       rescue e

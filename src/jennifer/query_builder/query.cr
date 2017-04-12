@@ -39,7 +39,7 @@ module Jennifer
       def join(_table : String, aliass : String? = nil, type = :inner, relation : String? = nil)
         eb = ExpressionBuilder.new(_table, relation, self)
         with_relation! if relation
-        other = with @expression yield eb
+        other = with eb yield eb
         @joins << Join.new(_table, other, type, relation)
         self
       end
@@ -76,17 +76,7 @@ module Jennifer
       end
 
       def relation(name, type = :inner)
-        name = name.to_s
-        rel = T.relation(name)
-        join(rel.model_class, type: type, relation: name) { rel.condition_clause.not_nil! }
-      end
-
-      def relation(name, type = :inner, &block)
-        name = name.to_s
-        rel = T.relation(name)
-        join(rel.model_class, type: type, relation: name) do |eb|
-          rel.condition_clause.not_nil! & (with eb yield)
-        end
+        T.relation(name.to_s).join_condition(self, type)
       end
 
       def includes(*names)
@@ -323,7 +313,7 @@ module Jennifer
                   break
                 else
                   existence[i][h[pfn].to_s] = true
-                  obj.set_relation(@relations[i], h)
+                  obj.append_relation(@relations[i], h)
                 end
               end
             else

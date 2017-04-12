@@ -1,5 +1,7 @@
 require "./mapping"
 require "./validation"
+require "./callback"
+require "./relation_definition"
 
 module Jennifer
   module Model
@@ -7,6 +9,8 @@ module Jennifer
       include Support
       include Mapping
       include Validation
+      include Callback
+      include RelationDefinition
 
       alias Supportable = DBAny | Base
 
@@ -47,7 +51,7 @@ module Jennifer
         o
       end
 
-      def self.build(values : Hash | NamedTuple, new_record)
+      def self.build(values : Hash | NamedTuple, new_record : Bool)
         o = new(values, new_record)
         o.__after_initialize_callback
         o
@@ -65,7 +69,13 @@ module Jennifer
         o
       end
 
+      def append_relation(name, hash)
+        raise Jennifer::UnknownRelation.new(self.class, name)
+      end
+
       abstract def primary
+      abstract def attribute(name)
+      abstract def set_attribute(name, value)
 
       macro scope(name, opts, block = nil)
         class Jennifer::QueryBuilder::Query(T)
@@ -89,169 +99,13 @@ module Jennifer
         end
       end
 
-      macro has_many(name, klass, request = nil, foreign = nil, primary = nil)
-        @@relations["{{name.id}}"] =
-          ::Jennifer::Model::Relation({{klass}}, {{@type}}).new("{{name.id}}", :has_many, {{foreign}}, {{primary}},
-            {{klass}}.all{% if request %}.exec {{request}} {% end %})
-
-        {% RELATION_NAMES << "#{name.id}" %}
-
-        @{{name.id}} = [] of {{klass}}
-
-        def {{name.id}}_query
-          primary_field =
-            {% if primary %}
-              {{primary.id}}
-            {% else %}
-              primary
-            {% end %}
-          condition = @@relations["{{name.id}}"].condition_clause(primary_field)
-          {{klass}}.where { condition }
-        end
-
-        def {{name.id}}
-          @{{name.id}} = {{name.id}}_query.to_a.as(Array({{klass}})) if @{{name.id}}.empty?
-          @{{name.id}}
-        end
-
-        def set_{{name.id}}(rel : Hash)
-          @{{name.id}} << {{klass}}.build(rel)
-        end
-
-        def {{name.id}}_reload
-          @{{name.id}} = {{name.id}}_query.to_a.as(Array({{klass}}))
-        end
-      end
-
-      macro belongs_to(name, klass, request = nil, foreign = nil, primary = nil)
-        @@relations["{{name.id}}"] =
-          ::Jennifer::Model::Relation({{klass}}, {{@type}}).new("{{name.id}}", :belongs_to, {{foreign}}, {{primary}},
-            {{klass}}.all{% if request %}.exec {{request}} {% end %})
-        {% RELATION_NAMES << "#{name.id}" %}
-        @{{name.id}} : {{klass}}?
-
-        def {{name.id}}
-          if @{{name.id}}
-            @{{name.id}}
-          else
-            {{name.id}}_reload
-          end
-        end
-
-        def {{name.id}}!
-          {{name.id}}.not_nil!
-        end
-
-        def {{name.id}}_query
-          foreign_field =
-            {% if foreign %}
-              "{{foreign.id}}"
-            {% else %}
-              {{klass}}.singular_table_name + "_id"
-            {% end %}
-          condition = @@relations["{{name.id}}"].condition_clause(attribute(foreign_field))
-          {{klass}}.where { condition }
-        end
-
-        def {{name.id}}_reload
-          @{{name.id}} = {{name.id}}_query.first
-        end
-
-        def set_{{name.id}}(rel : Hash)
-          @{{name.id}} = {{klass}}.build(rel)
-        end
-      end
-
-      macro has_one(name, klass, request = nil, foreign = nil, primary = nil)
-        @@relations["{{name.id}}"] =
-          ::Jennifer::Model::Relation({{klass}}, {{@type}}).new("{{name.id}}", :has_one, {{foreign}}, {{primary}},
-            {{klass}}.all{% if request %}.exec {{request}} {% end %})
-        {% RELATION_NAMES << "#{name.id}" %}
-
-        @{{name.id}} : {{klass}}?
-
-        def {{name.id}}
-          if @{{name.id}}
-            @{{name.id}}
-          else
-            {{name.id}}_reload
-          end
-        end
-
-        def {{name.id}}!
-          {{name.id}}.not_nil!
-        end
-
-        def {{name.id}}_query
-          primary_field =
-            {% if primary %}
-              {{primary.id}}
-            {% else %}
-              primary
-            {% end %}
-
-          condition = @@relations["{{name.id}}"].condition_clause(primary_field)
-          {{klass}}.where { condition }
-        end
-
-        def {{name.id}}_reload
-          @{{name.id}} = {{name.id}}_query.first
-        end
-
-        def set_{{name.id}}(rel : Hash)
-          @{{name.id}} = {{klass}}.build(rel)
-        end
-      end
-
-      macro before_save(*names)
-        {% for name in names %}
-          {% BEFORE_SAVE_CALLBACKS << name.id.stringify %}
-        {% end %}
-      end
-
-      macro after_save(*names)
-        {% for name in names %}
-          {% AFTER_SAVE_CALLBACKS << name.id.stringify %}
-        {% end %}
-      end
-
-      macro before_create(*names)
-        {% for name in names %}
-          {% BEFORE_CREATE_CALLBACKS << name.id.stringify %}
-        {% end %}
-      end
-
-      macro after_create(*names)
-        {% for name in names %}
-          {% AFTER_CREATE_CALLBACKS << name.id.stringify %}
-        {% end %}
-      end
-
-      macro after_initialize(*names)
-        {% for name in names %}
-          {% AFTER_INITIALIZE_CALLBACKS << name.id.stringify %}
-        {% end %}
-      end
-
-      macro before_destroy(*names)
-        {% for name in names %}
-          {% BEFORE_DESTROY_CALLBACKS << name.id.stringify %}
-        {% end %}
-      end
-
       macro inherited
         ::Jennifer::Model::Validation.inherited_hook
+        ::Jennifer::Model::Callback.inherited_hook
+        ::Jennifer::Model::RelationDefinition.inherited_hook
 
-        RELATION_NAMES = [] of String
 
-        BEFORE_SAVE_CALLBACKS = [] of String
-        AFTER_SAVE_CALLBACKS = [] of String
-        BEFORE_CREATE_CALLBACKS = [] of String
-        AFTER_CREATE_CALLBACKS = [] of String
-        AFTER_INITIALIZE_CALLBACKS = [] of String
-        BEFORE_DESTROY_CALLBACKS = [] of String
-
-        @@relations = {} of String => ::Jennifer::Model::IRelation
+        @@relations = {} of String => ::Jennifer::Relation::IRelation
 
         after_save :__refresh_changes
 
@@ -267,68 +121,25 @@ module Jennifer
           @@relations
         end
 
-        def self.relation(name : String)
-          @@relations[name]
-        rescue e : KeyError
-          raise Jennifer::UnknownRelation.new(self, /"(?<r>.*)"$/.match(e.message.to_s).try &.["r"])
-        end
-
         def self.superclass
           {{@type.superclass}}
         end
 
         macro finished
           ::Jennifer::Model::Validation.finished_hook
+          ::Jennifer::Model::Callback.finished_hook
+          ::Jennifer::Model::RelationDefinition.finished_hook
 
-          def __before_save_callback
-            \{% for method in BEFORE_SAVE_CALLBACKS %}
-              \{{method.id}}
-            \{% end %}
-          end
-
-          def __after_save_callback
-            \{% for method in AFTER_SAVE_CALLBACKS %}
-              \{{method.id}}
-            \{% end %}
-          end
-
-          def __before_create_callback
-            \{% for method in BEFORE_CREATE_CALLBACKS %}
-              \{{method.id}}
-            \{% end %}
-          end
-
-          def __after_create_callback
-            \{% for method in AFTER_CREATE_CALLBACKS %}
-              \{{method.id}}
-            \{% end %}
-          end
-
-          def __after_initialize_callback
-            \{% for method in AFTER_INITIALIZE_CALLBACKS %}
-              \{{method.id}}
-            \{% end %}
-          end
-
-          def __before_destroy_callback
-            \{% for method in BEFORE_DESTROY_CALLBACKS %}
-              \{{method.id}}
-            \{% end %}
-          end
-
-          def set_relation(name, hash)
-            \{% if RELATION_NAMES.size > 0 %}
-              case name
-              \{% for rel in RELATION_NAMES %}
-                when \{{rel}}
-                  set_\{{rel.id}}(hash)
-              \{% end %}
-              else
-                raise Jennifer::UnknownRelation.new({{@type}}, name)
-              end
-            \{% end %}
+          def self.relation(name : String)
+            @@relations[name]
+          rescue e : KeyError
+            raise Jennifer::UnknownRelation.new(self, /"(?<r>.*)"$/.match(e.message.to_s).try &.["r"])
           end
         end
+      end
+
+      def update_attributes(hash : Hash)
+        hash.each { |k, v| set_attribute(k, v) }
       end
 
       def destroy

@@ -9,6 +9,7 @@ Spec.before_each do
   Address.all.delete
   Passport.all.delete
   Profile.all.delete
+  Country.all.delete
 end
 
 # Spec2.random_order

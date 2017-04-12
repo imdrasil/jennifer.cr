@@ -1,4 +1,4 @@
-require "./../model/relation"
+# require "./../model/relation"
 require "../model/base"
 
 module Jennifer

@@ -18,6 +18,22 @@ module Jennifer
         tb.process
       end
 
+      def create_join_table(table1, table2, table_name : String? = nil)
+        create(table_name || Adapter.adapter_class.join_table_name(table1, table2), false) do |tb|
+          tb.integer(table1.to_s.singularize.foreign_key)
+          tb.integer(table2.to_s.singularize.foreign_key)
+          yield tb
+        end
+      end
+
+      def create_join_table(table1, table2, table_name : String? = nil)
+        create_join_table(table1, table2, table_name) { }
+      end
+
+      def drop_join_table(table1, table2)
+        drop(Adapter.adapter_class.join_table_name(table1, table2))
+      end
+
       def exec(string)
         TableBuilder::Raw.new(string).process
       end

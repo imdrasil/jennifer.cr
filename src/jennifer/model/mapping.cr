@@ -242,6 +242,30 @@ module Jennifer
           o
         end
 
+        def self.create!(values : Hash | NamedTuple)
+          o = new(values)
+          o.save!
+          o
+        end
+
+        def self.create!
+          a = {} of Symbol => Supportable
+          o = new(a)
+          o.save!
+          o
+        end
+
+        def self.create!(**values)
+          o = new(values.to_h)
+          o.save!
+          o
+        end
+
+        def save!(skip_validation = false)
+          raise Jennifer::BaseException.new("Record was not save") unless save(skip_validation)
+          true
+        end
+
         def save(skip_validation = false)
           unless skip_validation
             validate!
@@ -290,8 +314,24 @@ module Jennifer
           }
         end
 
-        def attribute(name : String, raise_exception = true)
-          case name
+        def set_attribute(name, value : Jennifer::DBAny)
+          case name.to_s
+          {% for key, value in properties %}
+          when "{{key.id}}"
+            if value.is_a?({{value[:parsed_type].id}})
+              local = value.as({{value[:parsed_type].id}})
+              @{{key.id}} = local
+            else
+              raise ::Jennifer::BaseException.new("rong type for #{name} : #{value.class}")
+            end
+          {% end %}
+          else
+            raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}")
+          end
+        end
+
+        def attribute(name : String | Symbol, raise_exception = true)
+          case name.to_s
           {% for key, value in properties %}
           when "{{key.id}}"
             @{{key.id}}
@@ -299,10 +339,6 @@ module Jennifer
           else
             raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}") if raise_exception
           end
-        end
-
-        def attribute(name : Symbol, raise_exception = true)
-          attribute(name.to_s, raise_exception)
         end
 
         def attributes_hash
@@ -527,6 +563,17 @@ module Jennifer
           hash
         end
 
+        def set_attribute(name, value)
+          case name.to_s
+          {% for key, value in properties %}
+          when "{{key.id}}"
+            @{{key.id}} = value.as({{value[:parsed_type].id}})
+          {% end %}
+          else
+            super
+          end
+        end
+
         def attribute(name : String, raise_exception = true)
           if raise_exception && !{{@type}}.field_names.includes?(name)
             raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}")
@@ -597,6 +644,10 @@ module Jennifer
             @{{key.id}}_changed = false
           {% end %}
           super
+        end
+
+        macro finished
+          ::Jennifer::Model::RelationDefinition.finished_hook
         end
       end
 

@@ -158,195 +158,24 @@ describe Jennifer::Model::Base do
     end
   end
 
-  describe "has_many macros" do
-    it "adds relation name to RELATION_NAMES constant" do
-      Contact::RELATION_NAMES.size.should eq(4)
-      Contact::RELATION_NAMES[0].should eq("addresses")
-    end
-
-    context "query" do
-      it "sets correct query part" do
-        Contact.relation("addresses").condition_clause.to_sql.should eq("addresses.contact_id = contacts.id")
-      end
-
-      context "when declaration has additional block" do
-        it "sets correct query part" do
-          Contact.relation("main_address").condition_clause.to_sql.should match(/addresses\.contact_id = contacts\.id AND addresses\.main/)
-        end
-      end
-    end
-
-    describe "relation_name_query" do
-      it "returns query object" do
-        c = contact_create
-        q = c.addresses_query
-        q.to_sql.should match(/addresses.contact_id = %s/)
-        q.sql_args.should eq(db_array(c.id))
-      end
-
-      context "relation is a sti subclass" do
-        it "returns proper objects" do
-          c = contact_build
-          q = c.facebook_profiles_query
-          q.to_sql.should match(/profiles\.type = %s/)
-          q.sql_args.includes?("FacebookProfile").should be_true
-        end
-      end
-    end
-
-    describe "relation_name" do
-      it "loads relation objects from db" do
-        c = contact_create
-        address_create(contact_id: c.id)
-        c.addresses.should be_a(Array(Address))
-        c.addresses.size.should eq(1)
-      end
-    end
-
-    describe "set_relation_name" do
-      it "builds new objects depending on given hash" do
-        c = contact_build
-        c.set_addresses({:main => true, :street => "some street", :contact_id => 1, :details => nil})
-        c.addresses.size.should eq(1)
-        c.addresses[0].street.should eq("some street")
-      end
-    end
-
-    describe "relation_name_reload" do
-      it "reloads objects" do
-        c = contact_create
-        a = address_create(contact_id: c.id)
-        c.addresses
-        a.street = "some strange street"
-        a.save
-        c.addresses_reload
-        c.addresses[0].street.should eq("some strange street")
-      end
-    end
-  end
-
-  describe "belongs_to macros" do
-    it "adds relation name to RELATION_NAMES constant" do
-      Address::RELATION_NAMES.size.should eq(1)
-      Address::RELATION_NAMES[0].should eq("contact")
-    end
-
-    context "query" do
-      it "sets correct query part" do
-        Address.relation("contact").condition_clause.to_sql.should eq("contacts.id = addresses.contact_id")
-      end
-
-      pending "when desclaration has additional block" do
-        it "sets correct query part" do
-          Address.relation("main_address").condition_clause.to_sql.should match(/addresses\.contact_id = contacts\.id AND addresses\.main/)
-        end
-      end
-    end
-
-    describe "relation_name_query" do
-      it "returns query object" do
-        a = address_create(contact_id: 1)
-        q = a.contact_query
-        q.to_sql.should match(/contacts.id = %s/)
-        q.sql_args.should eq(db_array(a.contact_id))
-      end
-    end
-
-    describe "relation_name" do
-      it "loads relation objects from db" do
-        c = contact_create
-        a = address_create(contact_id: c.id)
-        a.contact.should be_a(Contact?)
-        a.contact.nil?.should be_false
-      end
-    end
-
-    describe "set_relation_name" do
-      it "builds new objects depending on given hash" do
-        a = address_create
-        a.set_contact({:name => "some name", :age => 16i16})
-        a.contact!.name.should eq("some name")
-      end
-    end
-
-    describe "relation_name_reload" do
-      it "reloads objects" do
-        c = contact_create
-        a = address_create(contact_id: c.id)
-        a.contact
-        c.name = "some strange name"
-        c.save
-        a.contact_reload
-        a.contact_reload.not_nil!.name.should eq("some strange name")
-      end
-    end
-  end
-
-  describe "has_one macros" do
-    it "adds relation name to RELATION_NAMES constant" do
-      Contact::RELATION_NAMES[0].should eq("addresses")
-    end
-
-    context "query" do
-      it "sets correct query part" do
-        Contact.relation("passport").condition_clause.to_sql.should eq("passports.contact_id = contacts.id")
-      end
-
-      context "when desclaration has additional block" do
-        it "sets correct query part" do
-          Contact.relation("main_address").condition_clause.to_sql.should match(/addresses\.contact_id = contacts\.id AND addresses\.main/)
-        end
-      end
-    end
-
-    describe "relation_name_query" do
-      it "returns query object" do
-        c = contact_create
-        q = c.main_address_query
-        q.to_sql.should match(/addresses.contact_id = %s AND addresses.main/)
-        q.sql_args.should eq(db_array(c.id))
-      end
-    end
-
-    describe "relation_name" do
-      it "loads relation objects from db" do
-        c = contact_create
-        address_create(contact_id: c.id, main: true)
-        c.main_address.nil?.should be_false
-      end
-    end
-
-    describe "set_relation_name" do
-      it "builds new objects depending on given hash" do
-        c = contact_build
-        c.set_main_address({:main => true, :street => "some street", :contact_id => 1, :details => nil})
-        c.main_address.nil?.should be_false
-      end
-    end
-
-    describe "relation_name_reload" do
-      it "reloads objects" do
-        c = contact_create
-        a = address_create(contact_id: c.id, main: true)
-        c.main_address
-        a.street = "some strange street"
-        a.save
-        c.main_address_reload
-        c.main_address!.street.should eq("some strange street")
-      end
-    end
-  end
-
   describe "#set_relation" do
+    pending "add" do
+    end
   end
 
   describe "::relations" do
+    pending "add" do
+    end
   end
 
   describe "#destroy" do
+    pending "add" do
+    end
   end
 
   describe "#delete" do
+    pending "add" do
+    end
   end
 
   describe "::where" do
@@ -363,15 +192,23 @@ describe Jennifer::Model::Base do
   end
 
   describe "::destroy" do
+    pending "add" do
+    end
   end
 
   describe "::destroy_all" do
+    pending "add" do
+    end
   end
 
   describe "::delete" do
+    pending "add" do
+    end
   end
 
   describe "::delete_all" do
+    pending "add" do
+    end
   end
 
   describe "::search_by_sql" do

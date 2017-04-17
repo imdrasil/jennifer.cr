@@ -11,18 +11,6 @@ module Jennifer
           s << ") values (" << self.class.escape_string(opts[:fields].size) << ")"
         end
         exec parse_query(query, opts[:args]), opts[:args]
-      rescue e : Exception
-        raise BadQuery.new(e.message, body)
-      end
-
-      def insert_join_table(table_name, opts : Hash | NamedTuple)
-        query = String.build do |s|
-          s << "INSERT INTO " << table_name << "("
-          opts.keys.join(", ", s)
-          s << ") values (" << self.class.escape_string(opts.keys.size) << ")"
-        end
-
-        exec(parse_query(query, opts.keys), opts.values)
       end
 
       def update(obj : Model::Base)
@@ -46,7 +34,7 @@ module Jennifer
           s << "\n"
           s << q.body_section
         end
-        args = [] of DB::Any
+        args = [] of DBAny
         options.each do |k, v|
           args << v
         end
@@ -82,7 +70,8 @@ module Jennifer
         result
       end
 
-      def pluck(query, field : String)
+      def pluck(query, field)
+        field = field.to_s
         result = [] of DBAny
         body = query.select_query([field])
         args = query.select_args
@@ -112,8 +101,6 @@ module Jennifer
         end
         a
       end
-
-      # migration ========================
     end
   end
 end

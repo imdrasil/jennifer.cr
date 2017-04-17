@@ -10,6 +10,7 @@ Spec.before_each do
   Passport.all.delete
   Profile.all.delete
   Country.all.delete
+  ::Jennifer::QueryBuilder::PlainQuery.new("contacts_countries").delete
 end
 
 # Spec2.random_order

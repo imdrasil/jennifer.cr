@@ -35,6 +35,15 @@ module Jennifer
             @\{{name.id}} << \{{klass}}.build(rel, false)
           end
 
+          def remove_\{{name.id}}(rel : \{{klass}})
+            index = @\{{name.id}}.index { |e| e.primary == rel.primary }
+            if index
+              \{{@type}}.\{{name.id}}_relation.remove(self, rel)
+              @\{{name.id}}.delete_at(index)
+            end
+            rel
+          end
+
           def add_\{{name.id}}(rel : Hash)
             @\{{name.id}} << \{{@type}}.\{{name.id}}_relation.insert(self, rel).as(\{{klass}})
           end
@@ -54,6 +63,16 @@ module Jennifer
               \{{klass}}.all\{% if request %}.exec \{{request}} \{% end %})
 
           \{% RELATION_NAMES << "#{name.id}" %}
+
+          before_destroy :__\{{name.id}}_clean
+
+          def __\{{name.id}}_clean
+            relation = self.class.\{{name.id}}_relation
+            this = self
+            ::Jennifer::Adapter.adapter.delete(::Jennifer::QueryBuilder::PlainQuery.new(relation.join_table!).where do
+              c(relation.foreign_field) == this.attribute(relation.primary_field)
+            end)
+          end
 
           @\{{name.id}} = [] of \{{klass}}
 
@@ -79,6 +98,15 @@ module Jennifer
 
           def append_\{{name.id}}(rel : Hash)
             @\{{name.id}} << \{{klass}}.build(rel, false)
+          end
+
+          def remove_\{{name.id}}(rel : \{{klass}})
+            index = @\{{name.id}}.index { |e| e.primary == rel.primary }
+            if index
+              \{{@type}}.\{{name.id}}_relation.remove(self, rel)
+              @\{{name.id}}.delete_at(index)
+            end
+            rel
           end
 
           def add_\{{name.id}}(rel : Hash)
@@ -138,6 +166,11 @@ module Jennifer
             @\{{name.id}} = \{{klass}}.build(rel, false)
           end
 
+          def remove_\{{name.id}}
+            \{{@type}}.\{{name.id}}_relation.remove(self)
+            @\{{name.id}} = nil
+          end
+
           def add_\{{name.id}}(rel : Hash)
             @\{{name.id}} = \{{@type}}.\{{name.id}}_relation.insert(self, rel)
           end
@@ -192,6 +225,11 @@ module Jennifer
             @\{{name.id}} = \{{klass}}.build(rel, false)
           end
 
+          def remove_\{{name.id}}
+            \{{@type}}.\{{name.id}}_relation.remove(self)
+            @\{{name.id}} = nil
+          end
+
           def add_\{{name.id}}(rel : Hash)
             @\{{name.id}} = \{{@type}}.\{{name.id}}_relation.insert(self, rel)
           end
@@ -202,19 +240,6 @@ module Jennifer
         end
 
         macro update_relation_methods
-          def add_relation(name, hash)
-            \\{% if RELATION_NAMES.size > 0 %}
-              case name
-              \\{% for rel in RELATION_NAMES %}
-                when \\{{rel}}
-                  add_\\{{rel.id}}(hash)
-              \\{% end %}
-              else
-                raise Jennifer::UnknownRelation.new(\{{@type}}, name)
-              end
-            \\{% end %}
-          end
-
           def append_relation(name, hash)
             \\{% if RELATION_NAMES.size > 0 %}
               case name

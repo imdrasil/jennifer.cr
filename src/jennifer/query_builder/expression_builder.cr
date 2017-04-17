@@ -1,9 +1,7 @@
-require "./i_query"
-
 module Jennifer
   module QueryBuilder
     class ExpressionBuilder
-      property query : IQuery?
+      property query : PlainQuery?
 
       def initialize(@table : String, @relation : String? = nil, @query = nil)
       end

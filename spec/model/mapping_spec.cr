@@ -4,14 +4,14 @@ describe Jennifer::Model::Mapping do
   describe "mapping macro" do
     describe "::field_count" do
       it "returns correct number of model fields" do
-        Contact.field_count.should eq(4)
+        Contact.field_count.should eq(6)
       end
     end
 
     context "data types" do
       describe "JSON" do
         it "properly loads json field" do
-          c = address_create(street: "a", details: JSON.parse(%(["a", "b", 1])))
+          c = address_create(street: "a st.", details: JSON.parse(%(["a", "b", 1])))
           c = Address.find!(c.id)
           c.details.should be_a(JSON::Any)
           c.details![2].as_i.should eq(1)
@@ -56,6 +56,88 @@ describe Jennifer::Model::Mapping do
           p = passport_build
           p.enn = "1qaz"
           p.primary.should eq("1qaz")
+        end
+      end
+    end
+
+    describe "#update_columns" do
+      context "attribute exists" do
+        it "sets attribute if value has proper type" do
+          c = contact_create
+          c.update_columns({:name => "123"})
+          c.name.should eq("123")
+          c = Contact.find!(c.id)
+          c.name.should eq("123")
+        end
+
+        it "raises exeption if value has wrong type" do
+          c = contact_create
+          expect_raises(::Jennifer::BaseException) do
+            c.update_columns({:name => 123})
+          end
+        end
+      end
+
+      context "no such setter" do
+        it "raises exception" do
+          c = contact_build
+          expect_raises(::Jennifer::BaseException) do
+            c.update_columns({:asd => 123})
+          end
+        end
+      end
+    end
+
+    describe "#update_column" do
+      context "attribute exists" do
+        it "sets attribute if value has proper type" do
+          c = contact_create
+          c.update_column(:name, "123")
+          c.name.should eq("123")
+          c = Contact.find!(c.id)
+          c.name.should eq("123")
+        end
+
+        it "raises exeption if value has wrong type" do
+          c = contact_create
+          expect_raises(::Jennifer::BaseException) do
+            c.update_column(:name, 123)
+          end
+        end
+      end
+
+      context "no such setter" do
+        it "raises exception" do
+          c = contact_build
+          expect_raises(::Jennifer::BaseException) do
+            c.update_column(:asd, 123)
+          end
+        end
+      end
+    end
+
+    describe "#set_attribute" do
+      context "attribute exists" do
+        it "sets attribute if value has proper type" do
+          c = contact_build
+          c.set_attribute(:name, "123")
+          c.name.should eq("123")
+        end
+
+        it "raises exeption if value has wrong type" do
+          c = contact_build
+          expect_raises(::Jennifer::BaseException) do
+            c.set_attribute(:name, 123)
+          end
+        end
+      end
+
+      context "no such setter" do
+        it "raises exception" do
+          c = contact_build
+          expect_raises(::Jennifer::BaseException) do
+            c.set_attribute(:asd, 123)
+          end
         end
       end
     end
@@ -184,6 +266,33 @@ describe Jennifer::Model::Mapping do
     describe "#arguments_to_insert" do
       pending "returns all arguments" do
       end
+    end
+  end
+
+  describe "with_timestamps macro" do
+    it "adds callbacks" do
+      Contact::AFTER_CREATE_CALLBACKS.should contain("__update_created_at")
+      Contact::AFTER_SAVE_CALLBACKS.should contain("__update_updated_at")
+    end
+  end
+
+  describe "#__update_created_at" do
+    it "updates created_at field" do
+      c = contact_build
+      c.created_at.should be_nil
+      c.__update_created_at
+      c.created_at!.should_not be_nil
+      ((c.created_at! - Time.now).total_seconds < 1).should be_true
+    end
+  end
+
+  describe "#__update_updated_at" do
+    it "updates updated_at field" do
+      c = contact_build
+      c.updated_at.should be_nil
+      c.__update_updated_at
+      c.updated_at!.should_not be_nil
+      ((c.updated_at! - Time.now).total_seconds < 1).should be_true
     end
   end
 end

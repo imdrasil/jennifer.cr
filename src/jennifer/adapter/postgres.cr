@@ -24,7 +24,7 @@ module Jennifer
         :float      => "real",
         :double     => "double precision",
         :short      => "SMALLINT",
-        :time_stamp => "timestamp",
+        :timestamp  => "timestamp",
         :date_time  => "datetime",
         :blob       => "blob",
         :var_string => "varchar",

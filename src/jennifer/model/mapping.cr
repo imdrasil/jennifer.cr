@@ -2,7 +2,7 @@ module Jennifer
   module Model
     module Mapping
       macro __field_declaration(properties, primary_auto_incrementable)
-        # creates getter and setters
+        # generates getter and setters
         {% for key, value in properties %}
           @{{key.id}} : {{value[:parsed_type].id}}
           @{{key.id}}_changed = false
@@ -61,7 +61,20 @@ module Jennifer
         {% end %}
       end
 
-      macro mapping(properties, strict = false)
+      macro with_timestamps
+        after_create :__update_created_at
+        after_save :__update_updated_at
+
+        def __update_created_at
+          @created_at = Time.now
+        end
+
+        def __update_updated_at
+          @updated_at = Time.now
+        end
+      end
+
+      macro mapping(properties, strict = true)
         FIELD_NAMES = [
           {% for key, v in properties %}
             "{{key.id}}",
@@ -76,7 +89,7 @@ module Jennifer
           FIELD_NAMES
         end
 
-        # generating hash with options
+        # generates hash with options
         {% for key, value in properties %}
           {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
             {% properties[key] = {type: value} %}
@@ -112,7 +125,7 @@ module Jennifer
                 %found{key.id} = true
                 %var{key.id} =
                   # if value[:type].is_a?(Path) || value[:type].is_a?(Generic)
-                  {% if value[:type].stringify == "JSON::Any" %}
+                  {% if value[:type] == JSON::Any %}
                     begin
                       %temp{key.id} = %pull.read
                       JSON.parse(%temp{key.id}.to_s) if %temp{key.id}
@@ -123,7 +136,8 @@ module Jennifer
             {% end %}
             else
               {% if strict %}
-                raise ::Jennifer::BaseException.new("Unknown column #{column}")
+                puts column
+                raise ::Jennifer::BaseException.new("Undefined column #{column}")
               {% else %}
                 %pull.read
               {% end %}
@@ -216,7 +230,7 @@ module Jennifer
         end
 
         def initialize
-          initialize({} of Symbol => DB::Any)
+          initialize({} of Symbol => DBAny)
         end
 
         def new_record?
@@ -249,8 +263,7 @@ module Jennifer
         end
 
         def self.create!
-          a = {} of Symbol => Supportable
-          o = new(a)
+          o = new({} of Symbol => Supportable)
           o.save!
           o
         end
@@ -269,7 +282,7 @@ module Jennifer
         def save(skip_validation = false)
           unless skip_validation
             validate!
-            #return false unless valid?
+            return false unless valid?
           end
           __before_save_callback
           response =
@@ -314,16 +327,43 @@ module Jennifer
           }
         end
 
+        def update_column(name, value : Jennifer::DBAny)
+          update_columns({name => value})
+        end
+
+        def update_columns(values : Hash(String | Symbol, Jennifer::DBAny))
+          values.each do |name, value|
+            case name.to_s
+            {% for key, value in properties %}
+            when "{{key.id}}"
+              if value.is_a?({{value[:parsed_type].id}})
+                local = value.as({{value[:parsed_type].id}})
+                @{{key.id}} = local
+              else
+                raise ::Jennifer::BaseException.new("Wrong type for #{name} : #{value.class}")
+              end
+            {% end %}
+            else
+              raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}")
+            end
+          end
+
+          _primary = self.class.primary
+          _primary_value = primary
+          ::Jennifer::Adapter.adapter.update(self.class.all.where { _primary == _primary_value }, values)
+        end
+
         def set_attribute(name, value : Jennifer::DBAny)
           case name.to_s
           {% for key, value in properties %}
-          when "{{key.id}}"
-            if value.is_a?({{value[:parsed_type].id}})
-              local = value.as({{value[:parsed_type].id}})
-              @{{key.id}} = local
-            else
-              raise ::Jennifer::BaseException.new("rong type for #{name} : #{value.class}")
-            end
+            {% if value[:setter] == nil ? true : value[:setter] %}
+              when "{{key.id}}"
+                if value.is_a?({{value[:parsed_type].id}})
+                  self.{{key.id}} = value.as({{value[:parsed_type].id}})
+                else
+                  raise ::Jennifer::BaseException.new("wrong type for #{name} : #{value.class}")
+                end
+            {% end %}
           {% end %}
           else
             raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}")
@@ -563,11 +603,50 @@ module Jennifer
           hash
         end
 
-        def set_attribute(name, value)
+        def update_column(name, value : Jennifer::DBAny)
           case name.to_s
           {% for key, value in properties %}
           when "{{key.id}}"
-            @{{key.id}} = value.as({{value[:parsed_type].id}})
+            if value.is_a?({{value[:parsed_type].id}})
+              local = value.as({{value[:parsed_type].id}})
+              @{{key.id}} = local
+            else
+              raise ::Jennifer::BaseException.new("rong type for #{name} : #{value.class}")
+            end
+          {% end %}
+          end
+          super
+        end
+
+        def update_columns(values : Hash(String | Symbol, Jennifer::DBAny))
+          values.each do |name, value|
+            case name.to_s
+            {% for key, value in properties %}
+            when "{{key.id}}"
+              if value.is_a?({{value[:parsed_type].id}})
+                local = value.as({{value[:parsed_type].id}})
+                @{{key.id}} = local
+              else
+                raise ::Jennifer::BaseException.new("rong type for #{name} : #{value.class}")
+              end
+            {% end %}
+            end
+          end
+
+          super
+        end
+
+        def set_attribute(name, value)
+          case name.to_s
+          {% for key, value in properties %}
+            {% if value[:setter] == nil ? true : value[:setter] %}
+              when "{{key.id}}"
+                if value.is_a?({{value[:parsed_type].id}})
+                  self.{{key.id}} = value.as({{value[:parsed_type].id}})
+                else
+                  raise ::Jennifer::BaseException.new("rong type for #{name} : #{value.class}")
+                end
+            {% end %}
           {% end %}
           else
             super

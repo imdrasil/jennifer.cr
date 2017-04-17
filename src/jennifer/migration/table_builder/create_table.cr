@@ -2,7 +2,7 @@ module Jennifer
   module Migration
     module TableBuilder
       class CreateTable < Base
-        DEFAULT_TYPES = [:string, :integer, :bool, :float, :double, :short, :time_stamp,
+        DEFAULT_TYPES = [:string, :integer, :bool, :float, :double, :short, :timestamp,
                          :date_time, :blob, :var_string, :text, :json]
 
         def process
@@ -23,9 +23,9 @@ module Jennifer
           self
         end
 
-        def time_stamps(options = {} of Symbol => EAllowedTypes)
-          time_stamp(:created_at)
-          time_stamp(:updated_at)
+        def timestamps(options = {} of Symbol => EAllowedTypes)
+          timestamp(:created_at)
+          timestamp(:updated_at)
         end
 
         def index(name, field : String | Symbol, options = {} of Symbol => HAllowedTypes)

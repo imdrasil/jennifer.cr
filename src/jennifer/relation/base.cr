@@ -11,6 +11,10 @@ module Jennifer
       abstract def join_condition(a, b)
       abstract def query(a)
       abstract def insert(a, b)
+
+      def join_table!
+        @join_table.not_nil!
+      end
     end
 
     class Base(T, Q) < IRelation
@@ -68,21 +72,27 @@ module Jennifer
       def insert(obj : Q, rel : T)
         rel.set_attribute(foreign_field, obj.attribute(primary_field))
         rel.save!
+        rel
+      end
+
+      def remove(obj : Q, rel : T)
+        rel.update_column(foreign_field, nil) if rel.attribute(foreign_field) == obj.attribute(primary_field)
+        rel
       end
 
       def table_name
         T.table_name
       end
 
-      private def join_table_foreign_key
+      def join_table_foreign_key
         @join_foreign || T.to_s.foreign_key
       end
 
-      private def foreign_field
+      def foreign_field
         @foreign ||= Q.singular_table_name + "_id"
       end
 
-      private def primary_field
+      def primary_field
         @primary ||= Q.primary_field_name
       end
     end

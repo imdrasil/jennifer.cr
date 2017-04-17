@@ -8,23 +8,23 @@ module Jennifer
 
       def insert(obj : Q, rel : Hash)
         new_obj = T.create!(rel)
-        args = {
-          foreign_field          => obj.attribute(primary_field),
-          join_table_foreign_key => new_obj.primary,
-        }
-        Adapter.adapter.insert_join_table(join_table.not_nil!, args).inspect
+        add_join_table_record(obj, new_obj)
         new_obj
       end
 
       def insert(obj : Q, rel : T)
-        if rel.new_record?
-          rel.save!
-        end
-        args = {
-          foreign_field          => obj.attribute(primary_field),
-          join_table_foreign_key => rel.primary,
-        }
-        Adapter.adapter.insert_join_table(@join_table.not_nil!, args)
+        rel.save! if rel.new_record?
+        add_join_table_record(obj, rel)
+        rel
+      end
+
+      def remove(obj : Q, rel : T)
+        this = self
+        _obj = obj.attribute(primary_field)
+        _rel = rel.primary
+        QueryBuilder::PlainQuery.new(join_table!).where do
+          (c(this.foreign_field) == _obj) & (c(this.join_table_foreign_key) == _rel)
+        end.delete
         rel
       end
 
@@ -55,6 +55,18 @@ module Jennifer
         else
           q
         end
+      end
+
+      private def add_join_table_record(obj, rel)
+        keys = [foreign_field, join_table_foreign_key]
+        values = [obj.attribute(primary_field), rel.primary]
+        query = String.build do |s|
+          s << "INSERT INTO " << join_table! << "("
+          keys.join(", ", s)
+          s << ") values (" << Adapter.adapter_class.escape_string(2) << ")"
+        end
+
+        Adapter.adapter.exec(Adapter.adapter.parse_query(query, keys), values)
       end
     end
   end

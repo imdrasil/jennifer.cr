@@ -59,7 +59,7 @@ module Jennifer
         exec "TRUNCATE #{table_name}"
       end
 
-      def delete(query : QueryBuilder::Query)
+      def delete(query : QueryBuilder::PlainQuery)
         body = String.build do |s|
           query.from_clause(s)
           s << query.body_section
@@ -302,7 +302,6 @@ module Jennifer
       abstract def update(obj)
       abstract def update(q, h)
       abstract def insert(obj)
-      abstract def insert_join_table(a, b)
       abstract def distinct(q, c, t)
       abstract def table_exist?(table)
       abstract def index_exists?(table, name)

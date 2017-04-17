@@ -188,10 +188,6 @@ module Jennifer
         end.destroy
       end
 
-      def self.destroy_all
-        all.destroy
-      end
-
       def self.delete(*ids)
         _ids = ids
         where do
@@ -201,10 +197,6 @@ module Jennifer
             c(primary_field_name).in(_ids)
           end
         end.delete
-      end
-
-      def self.delete_all
-        destroy_all
       end
 
       def self.search_by_sql(query : String, args = [] of Supportable)

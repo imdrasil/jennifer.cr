@@ -87,13 +87,13 @@ describe Jennifer::Model::Validation do
 
     context "maximum" do
       it "pass valid names" do
-        a = contact_build(name: "1234567890")
+        a = contact_build(name: "123456789012345")
         a.validate!
         a.valid?.should be_true
       end
 
       it "doesn't pass invalid names" do
-        a = contact_build(name: "12345678901")
+        a = contact_build(name: "1234567890123456")
         a.validate!
         a.valid?.should be_false
       end

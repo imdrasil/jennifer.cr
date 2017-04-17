@@ -174,7 +174,7 @@ Allowed optional options for `bool`, `string` and `integer`:
 | `:float` | `real` | `float` | `Float32` |
 | `:double` | `double precision` | `double` | `Float64` |
 | `:short` | `smallint` | `smallint` | `Int16` |
-| `:time_stamp` | `timestamp` | `timestamp` | `Time` |
+| `:timestamp` | `timestamp` | `timestamp` | `Time` |
 | `:date_time` | `datetime` | `datetime` | `Time` |
 | `:blob` | `blob` | `blob` | `Bytes` |
 | `:var_string` | `varchar(254)` | `varstring` | `String` |
@@ -277,7 +277,7 @@ class Passport < Jennifer::Model::Base
 end
 
 ```
-
+!!!fields_count
 `mapping` macros stand for describing all model attributes. If field has no extra parameter, you can just specify name and type (type in case of crystal language): `field_name: :Type`. But you can use tuple and provide next parameters:
 
 | argument | description |
@@ -643,17 +643,17 @@ There are still a lot of work to do. Some parts (especially sql string generatio
 - [x] add more field type
 - [x] add internal error classes to support all exception cases
 - [x] add more operators
-- [ ] add callbacks
-- [ ] add validation
+- [x] add callbacks
+- [x] add validation
 - [x] extend join functionality
 - [x] lazy attributes update during object saving
 - [x] make scopes more flexible
 - [x] add logger
 - [ ] adds possibility for `#group` accept any sql string
-- [ ] add STI
+- [x] add STI
 - [ ] add polymorphic associations
 - [ ] add through relations
-- [ ] add many-to-many relation
+- [x] add many-to-many relation
 - [x] add table aliasing
 - [ ] add subquery support
 - [ ] add more thinks below...

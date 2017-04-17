@@ -1,9 +1,12 @@
 class Contact < Jennifer::Model::Base
+  with_timestamps
   mapping(
     id: {type: Int32, primary: true},
     name: String,
     age: {type: Int16, default: 10_i16},
-    description: {type: String, null: true}
+    description: {type: String, null: true},
+    created_at: {type: Time, null: true},
+    updated_at: {type: Time, null: true}
   )
 
   has_many :addresses, Address
@@ -14,7 +17,7 @@ class Contact < Jennifer::Model::Base
   has_one :passport, Passport
 
   validates_inclucions :age, 13..75
-  validates_length :name, minimum: 1, maximum: 10
+  validates_length :name, minimum: 1, maximum: 15
   validates_with_method :name_check
 
   scope :main, {where { _age > 18 }}

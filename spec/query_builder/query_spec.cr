@@ -130,10 +130,8 @@ describe Jennifer::QueryBuilder::Query do
     end
 
     it "raises error if given relation is not joined" do
-      q1 = Contact.all
       expect_raises(Jennifer::BaseException, /with should be called after correspond join: no such table/) do
-        q1.with(:addresses)
-        q1.select_clause
+        Contact.all.with(:addresses).select_clause
       end
     end
   end
@@ -141,10 +139,12 @@ describe Jennifer::QueryBuilder::Query do
   describe "#includes" do
     it "loads relation as well" do
       c1 = contact_create(name: "asd")
-      address_create(contact_id: c1.id, street: "asd asd")
-
+      address_create(contact_id: c1.id, street: "asd st.")
       res = Contact.all.includes(:addresses).first!
-      res.addresses[0].street.should eq("asd asd")
+      res.addresses[0].street.should eq("asd st.")
+    end
+
+    pending "with aliases" do
     end
   end
 
@@ -208,7 +208,7 @@ describe Jennifer::QueryBuilder::Query do
       r.id.should eq(c1.id)
     end
 
-    it "returns nil if ther eis no such records" do
+    it "returns nil if there is no such records" do
       Contact.all.first.should be_nil
     end
   end
@@ -234,12 +234,12 @@ describe Jennifer::QueryBuilder::Query do
   describe "#pluck" do
     context "given list of attributes" do
       it "returns array of arrays" do
-        contact_create(name: "a", age: 1)
-        contact_create(name: "b", age: 2)
+        contact_create(name: "a", age: 13)
+        contact_create(name: "b", age: 14)
         res = Contact.all.pluck(:name, :age)
         res.size.should eq(2)
         res[0][0].should eq("a")
-        res[1][1].should eq(2)
+        res[1][1].should eq(14)
       end
 
       it "correctly extracts json" do
@@ -248,7 +248,7 @@ describe Jennifer::QueryBuilder::Query do
       end
 
       it "accepts plain sql" do
-        contact_create(name: "a", age: 1)
+        contact_create(name: "a", age: 13)
         res = Contact.all.select("COUNT(id) + 1 as test").pluck(:test)
         res[0].should eq(2)
       end
@@ -261,21 +261,21 @@ describe Jennifer::QueryBuilder::Query do
   describe "#order" do
     context "using named tuple" do
       it "correctly sorts" do
-        contact_create(age: 1)
-        contact_create(age: 2)
+        contact_create(age: 13)
+        contact_create(age: 14)
 
-        Contact.all.order(age: :desc).first!.age.should eq(2)
-        Contact.all.order(age: :asc).first!.age.should eq(1)
+        Contact.all.order(age: :desc).first!.age.should eq(14)
+        Contact.all.order(age: :asc).first!.age.should eq(13)
       end
     end
 
     context "using hash" do
       it "correctly sorts" do
-        contact_create(age: 1)
-        contact_create(age: 2)
+        contact_create(age: 13)
+        contact_create(age: 14)
 
-        Contact.all.order({:age => :desc}).first!.age.should eq(2)
-        Contact.all.order({:age => :asc}).first!.age.should eq(1)
+        Contact.all.order({:age => :desc}).first!.age.should eq(14)
+        Contact.all.order({:age => :asc}).first!.age.should eq(13)
       end
     end
   end
@@ -313,7 +313,7 @@ describe Jennifer::QueryBuilder::Query do
         c1 = contact_create(name: "a1", age: 29)
         c2 = contact_create(name: "a2", age: 29)
         c3 = contact_create(name: "a1", age: 29)
-        a1 = address_create(street: "asd", contact_id: c1.id)
+        a1 = address_create(street: "asd st.", contact_id: c1.id)
         r = Contact.all.group("name", "age").pluck(:name, :age)
         r.size.should eq(2)
         r[0][0].should eq("a1")
@@ -332,12 +332,12 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#update" do
     it "updates given fields in all matched rows" do
-      contact_create(age: 1, name: "a")
-      contact_create(age: 2, name: "a")
-      contact_create(age: 3, name: "a")
+      contact_create(age: 13, name: "a")
+      contact_create(age: 14, name: "a")
+      contact_create(age: 15, name: "a")
 
-      Contact.where { _age < 3 }.update({:age => 10, :name => "b"})
-      Contact.where { (_age == 10) & (_name == "b") }.count.should eq(2)
+      Contact.where { _age < 15 }.update({:age => 20, :name => "b"})
+      Contact.where { (_age == 20) & (_name == "b") }.count.should eq(2)
     end
   end
 
@@ -451,22 +451,21 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#each" do
     it "yields each found row" do
-      contact_create(name: "a", age: 1)
-      contact_create(name: "b", age: 2)
-      i = 1
-
-      Contact.all.each do |c|
+      contact_create(name: "a", age: 13)
+      contact_create(name: "b", age: 14)
+      i = 13
+      Contact.all.order(age: :asc).each do |c|
         c.age.should eq(i)
         i += 1
       end
-      i.should eq(3)
+      i.should eq(15)
     end
   end
 
   describe "#each_result_set" do
     it "yields rows from result set" do
-      contact_create(name: "a", age: 1)
-      contact_create(name: "b", age: 2)
+      contact_create(name: "a", age: 13)
+      contact_create(name: "b", age: 14)
 
       i = 0
       Contact.all.each_result_set do |rs|
@@ -480,8 +479,8 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#to_a" do
     it "retruns array of models" do
-      contact_create(name: "a", age: 1)
-      contact_create(name: "b", age: 2)
+      contact_create(name: "a", age: 13)
+      contact_create(name: "b", age: 14)
       res = Contact.all.to_a
 
       res.should be_a Array(Contact)
@@ -501,8 +500,8 @@ describe Jennifer::QueryBuilder::Query do
           c1 = contact_create(name: "a")
           c2 = contact_create(name: "b")
 
-          a1 = address_create(street: "a1", contact_id: c1.id)
-          a2 = address_create(street: "a2", contact_id: c1.id)
+          a1 = address_create(street: "a1 st.", contact_id: c1.id)
+          a2 = address_create(street: "a2 st.", contact_id: c1.id)
 
           p = passport_create(contact_id: c2.id, enn: "12345")
 
@@ -524,9 +523,9 @@ describe Jennifer::QueryBuilder::Query do
           c1 = contact_create(name: "a")
           c2 = contact_create(name: "b")
 
-          a1 = address_create(main: false, street: "a1", contact_id: c1.id)
-          a2 = address_create(main: false, street: "a2", contact_id: c1.id)
-          a3 = address_create(main: true, street: "a2", contact_id: c1.id)
+          a1 = address_create(main: false, street: "a1 st.", contact_id: c1.id)
+          a2 = address_create(main: false, street: "a2 st.", contact_id: c1.id)
+          a3 = address_create(main: true, street: "a2 st.", contact_id: c1.id)
 
           q = Contact.all.includes(:addresses, :main_address)
           r = q.to_a

@@ -26,11 +26,11 @@ def contact_build(name = "Deepthi", age = 28, description = nil)
   Contact.build({:name => name, :age => age.to_i16, :description => description})
 end
 
-def address_build(main = false, street = "Ant St.", contact_id = nil, details = nil)
+def address_build(main = false, street = "Ant st.", contact_id = nil, details = nil)
   Address.build({:main => main, :street => street, :contact_id => contact_id, :details => details})
 end
 
-def passport_build(enn = "asd", contact_id = nil)
+def passport_build(enn = "dsa", contact_id = nil)
   Passport.build({:enn => enn, :contact_id => contact_id})
 end
 

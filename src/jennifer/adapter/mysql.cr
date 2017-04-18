@@ -38,18 +38,6 @@ module Jennifer
         DEFAULT_SIZES[name]?
       end
 
-      def parse_query(query, args)
-        arr = [] of String
-        args.each do
-          arr << "?"
-        end
-        query % arr
-      end
-
-      def parse_query(query)
-        query
-      end
-
       def table_exist?(table)
         v = scalar "
           SELECT COUNT(*)

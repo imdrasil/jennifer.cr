@@ -132,7 +132,7 @@ describe Jennifer::Model::RelationDefinition do
     describe "#add_/relation_name/" do
       it "builds new objects depending on given hash" do
         a = address_create
-        a.add_contact({:name => "some name", :age => 16i16})
+        a.add_contact({:name => "some name", :age => 16})
         a.contact!.name.should eq("some name")
       end
     end

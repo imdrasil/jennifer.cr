@@ -21,6 +21,9 @@ Sam.namespace "db" do
     puts Jennifer::Migration::Runner.create
   end
 
+  task "setup", ["create", "migrate"] do
+  end
+
   task "version" do
     puts Jennifer::Migration::Version.all.to_a[-1].version
   end

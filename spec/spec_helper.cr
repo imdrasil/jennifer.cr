@@ -5,12 +5,11 @@ require "./models.cr"
 require "./factories.cr"
 
 Spec.before_each do
-  Contact.all.delete
-  Address.all.delete
-  Passport.all.delete
-  Profile.all.delete
-  Country.all.delete
-  ::Jennifer::QueryBuilder::PlainQuery.new("contacts_countries").delete
+  Jennifer::Adapter.adapter.begin_transaction
+end
+
+Spec.after_each do
+  Jennifer::Adapter.adapter.rollback_transaction
 end
 
 # Spec2.random_order

@@ -178,6 +178,10 @@ module Jennifer
       end
 
       def self.destroy(*ids)
+        destroy(ids.to_a)
+      end
+
+      def self.destroy(ids : Array)
         _ids = ids
         where do
           if _ids.size == 1
@@ -189,6 +193,10 @@ module Jennifer
       end
 
       def self.delete(*ids)
+        delete(ids.to_a)
+      end
+
+      def self.delete(ids : Array)
         _ids = ids
         where do
           if _ids.size == 1

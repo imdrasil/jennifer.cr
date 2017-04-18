@@ -8,7 +8,6 @@ env:
   - DB=mysql DB_USER=root DB_PASSWORD=""
   - DB=postgres DB_USER=postgres DB_PASSWORD=""
 before_script:
-  - psql -c 'create database jennifer_test;' -U postgres
   - sh -c "if [ '$DB' = 'postgres' ]; then psql -c 'create database jennifer_test;' -U postgres; fi"
   - sh -c "if [ '$DB' = 'mysql' ]; then mysql -e 'CREATE DATABASE IF NOT EXISTS jennifer_test;'; fi"
   - crystal ./examples/run.cr -- db:migrate

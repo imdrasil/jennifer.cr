@@ -3,14 +3,14 @@ require "./expression_builder"
 module Jennifer
   module QueryBuilder
     class PlainQuery
-      @having : Criteria | LogicOperator | Nil
+      @having : Condition | LogicOperator | Nil
       @table : String = ""
       @limit : Int32?
       @offset : Int32?
       @raw_select : String?
       @table_aliases = {} of String => String
 
-      property tree : Criteria | LogicOperator?
+      property tree : Condition | LogicOperator?
 
       def initialize
         @expression = ExpressionBuilder.new(@table)
@@ -287,14 +287,21 @@ module Jennifer
         end
       end
 
-      def set_tree(other : Criteria | LogicOperator | PlainQuery)
-        other = other.tree if other.is_a? PlainQuery
+      def set_tree(other : LogicOperator | Condition)
         @tree = if !@tree.nil? && !other.nil?
-                  @tree.as(Criteria | LogicOperator) & other
+                  @tree.as(Condition | LogicOperator) & other
                 else
                   other
                 end
         self
+      end
+
+      def set_tree(other : PlainQuery)
+        set_tree(other.tree)
+      end
+
+      def set_tree(other : Criteria)
+        set_tree(Condition.new(other))
       end
 
       def set_tree(other : Nil)

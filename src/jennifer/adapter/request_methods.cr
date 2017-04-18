@@ -89,18 +89,6 @@ module Jennifer
         args = q.select_args
         query(parse_query(body, args), args) { |rs| yield rs }
       end
-
-      def result_to_array(rs)
-        a = [] of DBAny
-        rs.columns.each do |col|
-          temp = rs.read
-          if temp.is_a?(Int8)
-            temp = (temp == 1i8).as(Bool)
-          end
-          a << temp
-        end
-        a
-      end
     end
   end
 end

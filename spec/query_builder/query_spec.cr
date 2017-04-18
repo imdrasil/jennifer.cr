@@ -54,7 +54,7 @@ describe Jennifer::QueryBuilder::Query do
 
         q1.set_tree(c1)
         q1.set_tree(c2)
-        q1.tree.should eq(c1 & c2)
+        q1.tree.should be_a Jennifer::QueryBuilder::And
       end
     end
 
@@ -64,17 +64,17 @@ describe Jennifer::QueryBuilder::Query do
         c1 = criteria_builder
 
         q1.set_tree(c1)
-        q1.tree.should eq(c1)
+        q1.tree.as(Jennifer::QueryBuilder::Condition).lhs.should eq(c1)
       end
     end
   end
 
   describe "#where" do
-    it "allows to path criteria and sets via AND" do
+    it "allows to pass criteria and sets it via AND" do
       q1 = query_builder
       c = criteria_builder(field: "f1") & criteria_builder(field: "f2")
       q1.where { c("f1") & c("f2") }
-      q1.tree.should eq(c)
+      q1.tree.to_s.should match(/tests\.f1 AND tests\.f2/)
     end
   end
 
@@ -303,8 +303,8 @@ describe Jennifer::QueryBuilder::Query do
 
         r = Contact.all.group("name").pluck(:name)
         r.size.should eq(2)
-        r[0].should eq("a1")
-        r[1].should eq("a2")
+        r.should contain("a1")
+        r.should contain("a2")
       end
     end
 

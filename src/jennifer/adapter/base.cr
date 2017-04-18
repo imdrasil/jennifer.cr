@@ -3,12 +3,15 @@ require "db"
 module Jennifer
   module Adapter
     abstract class Base
-      @connection : DB::Database
+      @db : DB::Database
+      @connection : DB::Connection
+      @transaction : DB::Transaction? = nil
 
       getter connection
 
       def initialize
-        @connection = DB.open(Base.connection_string(:db))
+        @db = DB.open(Base.connection_string(:db))
+        @connection = @db.checkout
       end
 
       def exec(_query, args = [] of DB::Any)
@@ -32,23 +35,34 @@ module Jennifer
         raise BadQuery.new(e.message, regular_query_message(_query, args))
       end
 
-      def transaction
-        result = false
-        @connection.transaction do |tx|
+      def transaction(&block)
+        previous_transaction = @transaction
+        (@transaction || @connection).transaction do |tx|
+          @transaction = tx
           begin
             Config.logger.debug("TRANSACTION START")
-            result = yield(tx)
-            unless result
-              tx.rollback
-              Config.logger.debug("TRANSACTION ROLLBACK")
-            end
+            yield(tx)
             Config.logger.debug("TRANSACTION COMMIT")
-          rescue
-            tx.rollback
+          rescue e
             Config.logger.debug("TRANSACTION ROLLBACK")
+            raise e
+          ensure
+            @transaction = previous_transaction
           end
         end
-        result
+      end
+
+      def begin_transaction
+        raise "Couldn't use this if transaction is already started" if @transaction
+        Config.logger.debug("TRANSACTION START")
+        @transaction = @connection.begin_transaction
+      end
+
+      def rollback_transaction
+        t = @transaction.not_nil!
+        t.rollback
+        @transaction = nil
+        Config.logger.debug("TRANSACTION ROLLBACK")
       end
 
       def truncate(klass : Class)
@@ -174,6 +188,18 @@ module Jennifer
         h
       end
 
+      def parse_query(query, args)
+        arr = [] of String
+        args.each do
+          arr << "?"
+        end
+        query % arr
+      end
+
+      def parse_query(query)
+        query
+      end
+
       def self.arg_replacement(arr)
         escape_string(arr.size)
       end
@@ -226,7 +252,7 @@ module Jennifer
       end
 
       def rename_table(old_name, new_name)
-        exec "ALTER TABLE #{old_name.to_s} RENAME #{new_name}"
+        exec "ALTER TABLE #{old_name.to_s} RENAME #{new_name.to_s}"
       end
 
       def add_index(table, name, options)
@@ -308,8 +334,6 @@ module Jennifer
       abstract def column_exists?(table, name)
       abstract def translate_type(name)
       abstract def default_type_size(name)
-      abstract def parse_query(query : QueryBuilder, args)
-      abstract def parse_query(query)
 
       private def column_definition(name, options, io)
         type = options[:serial]? ? "serial" : (options[:sql_type]? || translate_type(options[:type].as(Symbol)))
@@ -333,7 +357,7 @@ module Jennifer
       end
 
       private def regular_query_message(query, arg = nil)
-        arg ? query : "#{query} | #{arg}"
+        arg ? "#{query} | #{arg}" : query
       end
     end
   end

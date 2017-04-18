@@ -6,7 +6,6 @@ require "accord"
 require "./jennifer/exceptions"
 require "./jennifer/adapter"
 require "./jennifer/config"
-require "./jennifer/exceptions"
 require "./jennifer/support"
 require "./jennifer/version"
 
@@ -36,34 +35,24 @@ module Jennifer
       raise "stubed relation"
     end
 
-    def table_name
-      raise "stubed relation"
-    end
-
-    def model_class
-      raise "stubed relation"
-    end
-
-    def type
-      raise "stubed relation"
-    end
-
-    def set_callback
-      raise "stubed relation"
-    end
-
-    def condition_clause
-      raise "stubed relation"
-    end
-
     def condition_clause(a)
       raise "stubed relation"
     end
 
-    def join_query
-      raise "not_implemented"
-    end
+    {% for method in [:table_name, :model_class, :type, :set_callback, :condition_clause, :join_query] %}
+      def {{method.id}}
+        raise "stubed relation"
+      end
+    {% end %}
   end
+end
+
+struct Time
+  def_clone
+end
+
+struct JSON::Any
+  def_clone
 end
 
 ::Jennifer.after_load_hook

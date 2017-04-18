@@ -2,9 +2,13 @@ module Jennifer
   module QueryBuilder
     class Join
       @type : Symbol
-      property table : String, :type, on : Criteria | LogicOperator, aliass : String?, relation : String?
+      property table : String, :type, on : Condition | LogicOperator, aliass : String?, relation : String?
 
       def initialize(@table, @on, @type, @aliass = nil, @relation = nil)
+      end
+
+      def initialize(@table, on : Criteria, @type, @aliass = nil, @relation = nil)
+        @on = Condition.new(on)
       end
 
       def to_sql

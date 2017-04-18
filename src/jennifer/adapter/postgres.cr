@@ -93,7 +93,31 @@ module Jennifer
         if options[:type]? && ![:uniq, :unique].includes?(options[:type])
           raise ArgumentError.new("Unknown index type: #{options[:type]}")
         end
-        super
+        query = String.build do |s|
+          s << "CREATE "
+          if options[:type]?
+            s <<
+              case options[:type]
+              when :unique, :uniq
+                "UNIQUE "
+              when :fulltext
+                "FULLTEXT "
+              when :spatial
+                "SPATIAL "
+              else
+                raise ArgumentError.new("Unknown index type: #{options[:type]}")
+              end
+          end
+          s << "INDEX " << name << " ON " << table << "("
+          fields = options.as(Hash)[:_fields].as(Array)
+          fields.each_with_index do |f, i|
+            s << "," if i != 0
+            s << f
+            s << " " << options[:order].as(Hash)[f].to_s.upcase if options[:order]? && options[:order].as(Hash)[f]?
+          end
+          s << ")"
+        end
+        exec query
       end
 
       def change_column(table, old_name, new_name, opts)
@@ -143,7 +167,7 @@ module Jennifer
         affected = 0i64
         transaction do
           affected = exec(parse_query(query, opts[:args]), opts[:args]).rows_affected
-          if affected > 0
+          if affected > 0 && obj.class.primary_auto_incrementable?
             id = scalar("SELECT currval(pg_get_serial_sequence('#{obj.class.table_name}', '#{obj.class.primary_field_name}'))").as(Int64)
           end
         end
@@ -192,7 +216,7 @@ module Jennifer
   end
 
   macro after_load_hook
-    require "./jennifer/adapter/postgres/operator"
+    require "./jennifer/adapter/postgres/condition"
   end
 end
 

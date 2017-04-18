@@ -18,7 +18,7 @@ module Jennifer
     end
 
     class Base(T, Q) < IRelation
-      getter join_query : QueryBuilder::Criteria | QueryBuilder::LogicOperator?
+      getter join_query : QueryBuilder::Condition | QueryBuilder::LogicOperator?
       getter foreign : String?
       getter primary : String?, join_table : String?, join_foreign : String?
 
@@ -40,12 +40,12 @@ module Jennifer
         _foreign = foreign_field
         _primary = primary_field
         tree = T.c(_foreign, @name) == Q.c(_primary)
-        @join_query ? tree & @join_query.not_nil!.dup : tree
+        @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
       def condition_clause(id)
         tree = T.c(foreign_field) == id
-        @join_query ? tree & @join_query.not_nil!.dup : tree
+        @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
       def join_condition(query, type)

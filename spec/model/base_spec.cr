@@ -192,22 +192,20 @@ describe Jennifer::Model::Base do
   end
 
   describe "::destroy" do
-    pending "add" do
-    end
-  end
-
-  describe "::destroy_all" do
-    pending "add" do
+    it "deletes from db by given ids" do
+      c = [] of Int32?
+      3.times { |i| c << contact_create.id }
+      Contact.destroy(c[0..1])
+      Contact.all.count.should eq(1)
     end
   end
 
   describe "::delete" do
-    pending "add" do
-    end
-  end
-
-  describe "::delete_all" do
-    pending "add" do
+    it "deletes from db by given ids" do
+      c = [] of Int32?
+      3.times { |i| c << contact_create.id }
+      Contact.delete(c[0..1])
+      Contact.all.count.should eq(1)
     end
   end
 

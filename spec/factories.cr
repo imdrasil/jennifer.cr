@@ -6,24 +6,20 @@ def db_array(*element)
   element.to_a.map { |e| e.as(Jennifer::DBAny) }
 end
 
-def join_builder(table = "tests", on = criteria_builder, type = :inner)
+def join_builder(table = "tests", on = (criteria_builder == 1), type = :inner)
   Jennifer::QueryBuilder::Join.new(table, on, type)
 end
 
-def expression_builder(table = "test_table")
+def expression_builder(table = "tests")
   Jennifer::QueryBuilder::ExpressionBuilder.new(table)
 end
 
-def operator_builder(type = :==)
-  Jennifer::QueryBuilder::Operator.new(type)
-end
-
-def query_builder
-  Jennifer::QueryBuilder::Query(Contact).new("test")
+def query_builder(table = "tests")
+  Jennifer::QueryBuilder::PlainQuery.new(table)
 end
 
 def contact_build(name = "Deepthi", age = 28, description = nil)
-  Contact.build({:name => name, :age => age.to_i16, :description => description})
+  Contact.build({:name => name, :age => age, :description => description})
 end
 
 def address_build(main = false, street = "Ant st.", contact_id = nil, details = nil)

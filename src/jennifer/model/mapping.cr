@@ -107,6 +107,10 @@ module Jennifer
 
         __field_declaration({{properties}}, {{primary_auto_incrementable}})
 
+        def self.primary_auto_incrementable?
+          {{primary_auto_incrementable}}
+        end
+
         @new_record = true
 
         # creates object from db tuple

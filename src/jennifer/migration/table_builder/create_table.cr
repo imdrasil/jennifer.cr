@@ -19,8 +19,7 @@ module Jennifer
         {% end %}
 
         def reference(name)
-          @fields[name.to_s + "_id"] = {:type => :int, :null => true}
-          self
+          integer(name.to_s + "_id", {:type => :integer, :null => true})
         end
 
         def timestamps(options = {} of Symbol => EAllowedTypes)

@@ -9,12 +9,12 @@ module Jennifer
         _foreign = foreign_field
         _primary = primary_field
         tree = T.c(_primary, @name) == Q.c(_foreign)
-        @join_query ? tree & @join_query.not_nil!.dup : tree
+        @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
       def condition_clause(id)
-        tree = T.c(primary_field) == id
-        @join_query ? tree & @join_query.not_nil!.dup : tree
+        _tree = T.c(primary_field) == id
+        @join_query ? _tree & @join_query.not_nil!.clone : _tree
       end
 
       def join_condition(query, type)

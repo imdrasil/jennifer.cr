@@ -3,7 +3,7 @@ class Contact < Jennifer::Model::Base
   mapping(
     id: {type: Int32, primary: true},
     name: String,
-    age: {type: Int16, default: 10_i16},
+    age: {type: Int32, default: 10},
     description: {type: String, null: true},
     created_at: {type: Time, null: true},
     updated_at: {type: Time, null: true}

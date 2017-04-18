@@ -2,25 +2,25 @@ module Jennifer
   module QueryBuilder
     abstract class LogicOperator
       def initialize
-        @parts = [] of LogicOperator | Criteria
+        @parts = [] of LogicOperator | Condition
       end
 
       protected def parts
         @parts
       end
 
-      def add(other : LogicOperator | Criteria)
+      def add(other : LogicOperator | Condition)
         @parts << other
       end
 
-      def &(other : Criteria | LogicOperator)
+      def &(other : Condition | LogicOperator)
         op = And.new
         op.add(self)
         op.add(other)
         op
       end
 
-      def |(other : Criteria | LogicOperator)
+      def |(other : Condition | LogicOperator)
         op = Or.new
         op.add(self)
         op.add(other)
@@ -61,7 +61,13 @@ module Jennifer
     class And < LogicOperator
       OPERATOR = "AND"
 
-      def &(other : LogicOperator | Criteria)
+      def_clone
+
+      protected def initialize_copy(other)
+        @parts = other.@parts.dup
+      end
+
+      def &(other : LogicOperator | Condition)
         add(other)
         self
       end
@@ -74,7 +80,13 @@ module Jennifer
     class Or < LogicOperator
       OPERATOR = "OR"
 
-      def |(other : Criteria | LogicOperator)
+      def_clone
+
+      protected def initialize_copy(other)
+        @parts = other.@parts.dup
+      end
+
+      def |(other : Condition | LogicOperator)
         add(other)
         self
       end
@@ -86,6 +98,12 @@ module Jennifer
 
     class Xor < LogicOperator
       OPERATOR = "XOR"
+
+      def_clone
+
+      protected def initialize_copy(other)
+        @parts = other.@parts.dup
+      end
 
       def operator
         OPERATOR

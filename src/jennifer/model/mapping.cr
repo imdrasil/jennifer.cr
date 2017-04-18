@@ -1,6 +1,14 @@
 module Jennifer
   module Model
     module Mapping
+      macro __bool_convert(value, type)
+        {% if type.stringify == "Bool" %}
+          ({{value.id}}.is_a?(Int8) ? {{value.id}} == 1i8 : {{value.id}}.as({{type}}))
+        {% else %}
+          {{value}}.as({{type}})
+        {% end %}
+      end
+
       macro __field_declaration(properties, primary_auto_incrementable)
         # generates getter and setters
         {% for key, value in properties %}
@@ -127,20 +135,11 @@ module Jennifer
             {% for key, value in properties %}
               when {{value[:column_name] || key.id.stringify}}
                 %found{key.id} = true
-                %var{key.id} =
-                  # if value[:type].is_a?(Path) || value[:type].is_a?(Generic)
-                  {% if value[:type] == JSON::Any %}
-                    begin
-                      %temp{key.id} = %pull.read
-                      JSON.parse(%temp{key.id}.to_s) if %temp{key.id}
-                    end
-                  {% else %}
-                    %pull.read({{value[:parsed_type].id}})
-                  {% end %}
+                %var{key.id} = %pull.read({{value[:parsed_type].id}})
+                # if value[:type].is_a?(Path) || value[:type].is_a?(Generic)
             {% end %}
             else
               {% if strict %}
-                puts column
                 raise ::Jennifer::BaseException.new("Undefined column #{column}")
               {% else %}
                 %pull.read
@@ -154,33 +153,7 @@ module Jennifer
         end
 
         def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-          {% for key, value in properties %}
-            %var{key.id} = nil
-            %found{key.id} = true
-          {% end %}
-
-          {% for key, value in properties %}
-            if !values[:{{key.id}}]?.nil?
-              %var{key.id} = values[:{{key.id}}]
-            else
-              %found{key.id} = false
-            end
-          {% end %}
-
-
-          {% for key, value in properties %}
-            {% if value[:null] %}
-              {% if value[:default] != nil %}
-                @{{key.id}} = %found{key.id} ? %var{key.id}.as({{value[:parsed_type].id}}) : {{value[:default]}}
-              {% else %}
-                @{{key.id}} = %var{key.id}.as({{value[:parsed_type].id}})
-              {% end %}
-            {% elsif value[:default] != nil %}
-              @{{key.id}} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : %var{key.id}.as({{value[:parsed_type].id}})
-            {% else %}
-              @{{key.id}} = (%var{key.id}).as({{value[:parsed_type].id}})
-            {% end %}
-          {% end %}
+          initialize(to_s_hash(values, Jennifer::DBAny))
         end
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))
@@ -201,14 +174,14 @@ module Jennifer
           {% for key, value in properties %}
             {% if value[:null] %}
               {% if value[:default] != nil %}
-                @{{key.id}} = %found{key.id} ? %var{key.id}.as({{value[:parsed_type].id}}) : {{value[:default]}}
+                @{{key.id}} = %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
               {% else %}
                 @{{key.id}} = %var{key.id}.as({{value[:parsed_type].id}})
               {% end %}
             {% elsif value[:default] != nil %}
-              @{{key.id}} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : %var{key.id}.as({{value[:parsed_type].id}})
+              @{{key.id}} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
             {% else %}
-              @{{key.id}} = (%var{key.id}).as({{value[:parsed_type].id}})
+              @{{key.id}} = __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
             {% end %}
           {% end %}
         end
@@ -508,35 +481,7 @@ module Jennifer
         end
 
         def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-          values[:type] = "{{@type.id}}" if values.is_a?(Hash)
-          super
-          {% for key, value in properties %}
-            %var{key.id} = nil
-            %found{key.id} = true
-          {% end %}
-
-          {% for key, value in properties %}
-            if !values[:{{key.id}}]?.nil?
-              %var{key.id} = values[:{{key.id}}]
-            else
-              %found{key.id} = false
-            end
-          {% end %}
-
-
-          {% for key, value in properties %}
-            {% if value[:null] %}
-              {% if value[:default] != nil %}
-                @{{key.id}} = %found{key.id} ? %var{key.id}.as({{value[:parsed_type].id}}) : {{value[:default]}}
-              {% else %}
-                @{{key.id}} = %var{key.id}.as({{value[:parsed_type].id}})
-              {% end %}
-            {% elsif value[:default] != nil %}
-              @{{key.id}} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : %var{key.id}.as({{value[:parsed_type].id}})
-            {% else %}
-              @{{key.id}} = (%var{key.id}).as({{value[:parsed_type].id}})
-            {% end %}
-          {% end %}
+          initialize(to_s_hash(values, Jennifer::DBAny))
         end
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))

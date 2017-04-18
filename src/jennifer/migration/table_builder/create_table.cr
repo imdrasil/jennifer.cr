@@ -23,8 +23,8 @@ module Jennifer
         end
 
         def timestamps(options = {} of Symbol => EAllowedTypes)
-          timestamp(:created_at)
-          timestamp(:updated_at)
+          timestamp(:created_at, {:null => true})
+          timestamp(:updated_at, {:null => true})
         end
 
         def index(name, field : String | Symbol, options = {} of Symbol => HAllowedTypes)

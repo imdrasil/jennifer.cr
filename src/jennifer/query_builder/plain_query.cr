@@ -149,6 +149,10 @@ module Jennifer
         result[0]
       end
 
+      def pluck(fields : Array)
+        ::Jennifer::Adapter.adapter.pluck(self, fields.map(&.to_s))
+      end
+
       def pluck(field)
         ::Jennifer::Adapter.adapter.pluck(self, field.to_s)
       end

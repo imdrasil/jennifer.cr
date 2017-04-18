@@ -153,6 +153,9 @@ module Jennifer
           col_name = rs.column_name(col)
           if buf.has_key?(col_name)
             buf[col_name] = rs.read.as(DBAny)
+            if buf[col_name].is_a?(Int8)
+              buf[col_name] = (buf[col_name] == 1i8).as(Bool)
+            end
             count -= 1
           else
             rs.read
@@ -340,7 +343,7 @@ module Jennifer
         size = options[:size]? || default_type_size(options[:type])
         io << name << " " << type
         io << "(#{size})" if size
-        if options.key?(:null)
+        if options.has_key?(:null)
           if options[:null]
             io << " NULL"
           else

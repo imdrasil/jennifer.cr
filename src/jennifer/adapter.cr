@@ -7,6 +7,7 @@ module Jennifer
   module Adapter
     @@adapter : Base?
     @@adapters = {} of String => Base.class
+    @@adapter_class : Base.class | Nil
 
     {% for method in [:exec, :scalar] %}
       def self.{{method.id}}(*opts)
@@ -23,7 +24,7 @@ module Jennifer
     end
 
     def self.adapter_class
-      adapters[Config.adapter]
+      @@adapter_class ||= adapters[Config.adapter]
     end
 
     def self.t(value)

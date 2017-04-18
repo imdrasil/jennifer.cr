@@ -1,23 +1,23 @@
+require "json"
+
 struct MySql::Type
-  def self.type_for(t : ::JSON::Any.class)
+  alias JsonType = ::JSON::Any | ::JSON::Type
+
+  def self.type_for(t : JsonType.class)
     MySql::Type::Json
   end
 
   decl_type Json, 0xF5u8, ::String do
-    def self.write(packet, v : ::String)
-      packet.write_lenenc_string v
-    end
-
-    def self.write(packet, v : ::JSON::Any)
+    def self.write(packet, v : JsonType)
       packet.write_lenenc_string v.to_json
     end
 
     def self.read(packet)
-      packet.read_lenenc_string
+      ::JSON.parse(packet.read_lenenc_string)
     end
 
     def self.parse(str : ::String)
-      str
+      ::JSON.parse(str)
     end
   end
 end

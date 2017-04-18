@@ -63,9 +63,9 @@ module Jennifer
       end
 
       def table_row_hash(rs)
-        h = {} of String => Hash(String, DB::Any | Int16 | Int8)
+        h = {} of String => Hash(String, DBAny)
         rs.columns.each do |col|
-          h[col.table] ||= {} of String => DB::Any | Int16 | Int8
+          h[col.table] ||= {} of String => DBAny
           h[col.table][col.name] = rs.read
           if h[col.table][col.name].is_a?(Int8)
             h[col.table][col.name] = h[col.table][col.name] == 1i8

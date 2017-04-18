@@ -187,7 +187,7 @@ module Jennifer
       private def column_definition(name, options, io)
         io << name
         column_type_definition(options, io)
-        if options.key?(:null)
+        if options.has_key?(:null)
           if options[:null]
             io << " NULL"
           else

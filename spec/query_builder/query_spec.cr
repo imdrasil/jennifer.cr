@@ -241,7 +241,9 @@ describe Jennifer::QueryBuilder::Query do
         res[0][0].should eq("a")
         res[1][1].should eq(14)
       end
+    end
 
+    context "given one argument" do
       it "correctly extracts json" do
         address_create(details: JSON.parse({:city => "Duplin"}.to_json))
         Address.all.pluck(:details)[0].should be_a(JSON::Any)
@@ -254,6 +256,17 @@ describe Jennifer::QueryBuilder::Query do
       end
 
       pending "properly works with #with" do
+      end
+    end
+
+    context "given array of attributes" do
+      it "returns array of arrays" do
+        contact_create(name: "a", age: 13)
+        contact_create(name: "b", age: 14)
+        res = Contact.all.pluck([:name, :age])
+        res.size.should eq(2)
+        res[0][0].should eq("a")
+        res[1][1].should eq(14)
       end
     end
   end

@@ -1,6 +1,6 @@
-struct Jennifer::QueryBuilder::Operator
-  def to_sql
-    case @type
+class Jennifer::QueryBuilder::Condition
+  def operator_to_sql
+    case @operator
     when :like
       "LIKE"
     when :not_like
@@ -16,7 +16,7 @@ struct Jennifer::QueryBuilder::Operator
     when :is_not
       "IS NOT"
     else
-      @type.to_s
+      @operator.to_s
     end
   end
 end

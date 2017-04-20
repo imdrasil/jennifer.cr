@@ -21,15 +21,16 @@ Sam.namespace "db" do
     puts Jennifer::Migration::Runner.create
   end
 
+  task "setup", ["create", "migrate"] do
+  end
+
   task "version" do
     puts Jennifer::Migration::Version.all.to_a[-1].version
   end
 end
 
-Sam.namespace "jennifer" do
-  namespace "migration" do
-    task "generate" do |t, args|
-      Jennifer::Migration::Runner.generate(args[0].as(String))
-    end
+Sam.namespace "generate" do
+  task "migration" do |t, args|
+    Jennifer::Migration::Runner.generate(args[0].as(String))
   end
 end

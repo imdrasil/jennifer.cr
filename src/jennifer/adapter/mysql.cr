@@ -17,7 +17,7 @@ module Jennifer
         :float      => "float",
         :double     => "double",
         :short      => "SMALLINT",
-        :time_stamp => "timestamp",
+        :timestamp  => "timestamp",
         :date_time  => "datetime",
         :blob       => "blob",
         :var_string => "varstring",
@@ -36,18 +36,6 @@ module Jennifer
 
       def default_type_size(name)
         DEFAULT_SIZES[name]?
-      end
-
-      def parse_query(query, args)
-        arr = [] of String
-        args.each do
-          arr << "?"
-        end
-        query % arr
-      end
-
-      def parse_query(query)
-        query
       end
 
       def table_exist?(table)
@@ -75,9 +63,9 @@ module Jennifer
       end
 
       def table_row_hash(rs)
-        h = {} of String => Hash(String, DB::Any | Int16 | Int8)
+        h = {} of String => Hash(String, DBAny)
         rs.columns.each do |col|
-          h[col.table] ||= {} of String => DB::Any | Int16 | Int8
+          h[col.table] ||= {} of String => DBAny
           h[col.table][col.name] = rs.read
           if h[col.table][col.name].is_a?(Int8)
             h[col.table][col.name] = h[col.table][col.name] == 1i8

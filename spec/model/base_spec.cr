@@ -1,69 +1,15 @@
 require "../spec_helper"
 
 describe Jennifer::Model::Base do
-  context "data types" do
-    describe "JSON" do
-      it "properly loads json field" do
-        c = address_create(street: "a", details: JSON.parse(%(["a", "b", 1])))
-        c = Address.find!(c.id)
-        c.details.should be_a(JSON::Any)
-        c.details![2].as_i.should eq(1)
-      end
-    end
-  end
-
-  describe "::field_count" do
-    it "returns correct number of model fields" do
-      Contact.field_count.should eq(4)
-    end
-  end
-
-  describe "attribute getter" do
-    it "provides getters" do
-      c = contact_build(name: "a")
-      c.name.should eq("a")
-    end
-  end
-
-  describe "attribute setter" do
-    it "provides setters" do
-      c = contact_build(name: "a")
-      c.name = "b"
-      c.name.should eq("b")
-    end
-  end
-
-  describe "criteria attribute class shortcut" do
-    it "adds criteria shortcut for class" do
-      c = Contact._name
-      c.table.should eq("contacts")
-      c.field.should eq("name")
-    end
-  end
-
-  describe "query criteria attribute shortcut" do
-    it "adds shortcut to query generator" do
-      c = Contact.where { name == "a" }.tree.as(Jennifer::QueryBuilder::Criteria)
-      c.table.should eq("contacts")
-      c.field.should eq("name")
-    end
-  end
-
-  describe "#primary" do
-    context "defaul primary field" do
-      it "returns id valud" do
-        c = contact_build
-        c.id = -1
-        c.primary.should eq(-1)
-      end
+  describe "#changed?" do
+    it "returns true if at list one field was changed" do
+      c = contact_build
+      c.name = "new name"
+      c.changed?.should be_true
     end
 
-    context "custom field" do
-      it "returns valud of custom primary field" do
-        p = passport_build
-        p.enn = "1qaz"
-        p.primary.should eq("1qaz")
-      end
+    it "returns false if no one field was changed" do
+      contact_build.changed?.should be_false
     end
   end
 
@@ -154,22 +100,31 @@ describe Jennifer::Model::Base do
     pending "saves new object to db" do
     end
 
-    pending "updates existing object in db" do
+    context "updates existing object in db" do
+      it "stores changed fields to db" do
+        c = contact_create
+        c.name = "new name"
+        c.save
+        Contact.find!(c.id).name.should eq("new name")
+      end
+
+      it "returns true if record was saved" do
+        c = contact_create
+        c.name = "new name"
+        c.save.should be_true
+      end
+
+      it "returns false if record wasn't saved" do
+        contact_create.save.should be_false
+      end
+
+      it "calls after_save_callback" do
+        c = contact_create
+        c.name = "new name"
+        c.save
+        c.name_changed?.should be_false
+      end
     end
-  end
-
-  describe "#attribute" do
-    it "returns attribute value by given name" do
-      c = contact_build(name: "Jessy")
-      c.attribute("name").should eq("Jessy")
-      c.attribute(:name).should eq("Jessy")
-    end
-  end
-
-  describe "#to_h" do
-  end
-
-  describe "#attribute_hash" do
   end
 
   describe "::table_name" do
@@ -178,51 +133,101 @@ describe Jennifer::Model::Base do
   describe "::c" do
   end
 
-  describe "#id" do
-  end
-
   describe "scope macro" do
-  end
+    it "executes in query context" do
+      String.build { |io| Contact.all.ordered.order_clause(io) }.should match(/ORDER BY name ASC/)
+    end
 
-  describe "has_many macros" do
-  end
+    context "without arguemnt" do
+      it "is accessible from query object" do
+        Contact.all.main.to_sql.should match(/contacts\.age >/)
+      end
+    end
 
-  describe "belongs_to macros" do
-  end
+    context "with argument" do
+      it "is accessible from query object" do
+        Contact.all.older(12).to_sql.should match(/contacts\.age >=/)
+      end
+    end
 
-  describe "has_one macros" do
+    context "same names" do
+      it "is accessible from query object" do
+        Address.all.main.to_sql.should match(/addresses\.main/)
+        Contact.all.main.to_sql.should match(/contacts\.age >/)
+      end
+    end
+
+    it "is chainable" do
+      c1 = contact_create(age: 15)
+      c2 = contact_create(age: 15)
+      c3 = contact_create(age: 13)
+      address_create(contact_id: c1.id, main: true)
+      address_create(contact_id: c2.id, main: false)
+      address_create(contact_id: c3.id, main: true)
+      Contact.all.with_main_address.older(14).count.should eq(1)
+    end
   end
 
   describe "#set_relation" do
+    pending "add" do
+    end
   end
 
   describe "::relations" do
+    pending "add" do
+    end
   end
 
   describe "#destroy" do
+    pending "add" do
+    end
   end
 
   describe "#delete" do
+    pending "add" do
+    end
   end
 
   describe "::where" do
+    it "returns query" do
+      res = Contact.where { _id == 1 }
+      res.should be_a(::Jennifer::QueryBuilder::Query(Contact))
+    end
   end
 
   describe "::all" do
+    it "returns empty query" do
+      Contact.all.empty?.should be_true
+    end
   end
 
   describe "::destroy" do
-  end
-
-  describe "::destroy_all" do
+    it "deletes from db by given ids" do
+      c = [] of Int32?
+      3.times { |i| c << contact_create.id }
+      Contact.destroy(c[0..1])
+      Contact.all.count.should eq(1)
+    end
   end
 
   describe "::delete" do
-  end
-
-  describe "::delete_all" do
+    it "deletes from db by given ids" do
+      c = [] of Int32?
+      3.times { |i| c << contact_create.id }
+      Contact.delete(c[0..1])
+      Contact.all.count.should eq(1)
+    end
   end
 
   describe "::search_by_sql" do
+    it "returns array" do
+      contact_create(name: "Ivan", age: 15)
+      contact_create(name: "Max", age: 19)
+      contact_create(name: "Ivan", age: 50)
+
+      res = Contact.search_by_sql("SELECT contacts.* from contacts where age > 16")
+
+      res.size.should eq(2)
+    end
   end
 end

@@ -3,52 +3,111 @@ require "db"
 module Jennifer
   module Adapter
     abstract class Base
-      @connection : DB::Database
+      @db : DB::Database
+      @transaction : DB::Transaction? = nil
+      @locks = {} of UInt64 => DB::Transaction
 
-      getter connection
+      getter db
 
       def initialize
-        @connection = DB.open(Base.connection_string(:db))
+        @db = DB.open(Base.connection_string(:db))
+      end
+
+      def with_connection(&block)
+        if @locks.has_key?(Fiber.current.object_id)
+          yield @locks[Fiber.current.object_id].connection
+        else
+          conn = @db.checkout
+          res = yield conn
+          conn.release
+          res
+        end
+      end
+
+      def with_manual_connection(&block)
+        conn = @db.checkout
+        res = yield conn
+        conn.release
+        res
+      end
+
+      def with_transactionable(&block)
+        if @locks.has_key?(Fiber.current.object_id)
+          yield @locks[Fiber.current.object_id]
+        else
+          conn = @db.checkout
+          res = yield conn
+          conn.release
+          res
+        end
+      end
+
+      def lock_connection(transaction : DB::Transaction)
+        @locks[Fiber.current.object_id] = transaction
+      end
+
+      def lock_connection(transaction : Nil)
+        @locks.delete(Fiber.current.object_id)
+      end
+
+      def current_transaction
+        @locks[Fiber.current.object_id]?
       end
 
       def exec(_query, args = [] of DB::Any)
         Config.logger.debug { regular_query_message(_query, args) }
-        @connection.exec(_query, args)
+        with_connection { |conn| conn.exec(_query, args) }
       rescue e : Exception
         raise BadQuery.new(e.message, regular_query_message(_query, args))
       end
 
       def query(_query, args = [] of DB::Any)
         Config.logger.debug { regular_query_message(_query, args) }
-        @connection.query(_query, args) { |rs| yield rs }
+        with_connection { |conn| conn.query(_query, args) { |rs| yield rs } }
       rescue e : Exception
         raise BadQuery.new(e.message, regular_query_message(_query, args))
       end
 
       def scalar(_query, args = [] of DB::Any)
         Config.logger.debug { regular_query_message(_query, args) }
-        @connection.scalar(_query, args)
+        with_connection { |conn| conn.scalar(_query, args) }
       rescue e : Exception
         raise BadQuery.new(e.message, regular_query_message(_query, args))
       end
 
-      def transaction
-        result = false
-        @connection.transaction do |tx|
-          begin
-            Config.logger.debug("TRANSACTION START")
-            result = yield(tx)
-            unless result
-              tx.rollback
+      def transaction(&block)
+        previous_transaction = current_transaction
+        with_transactionable do |conn|
+          conn.transaction do |tx|
+            lock_connection(tx)
+            begin
+              Config.logger.debug("TRANSACTION START")
+              yield(tx)
+              Config.logger.debug("TRANSACTION COMMIT")
+            rescue e
               Config.logger.debug("TRANSACTION ROLLBACK")
+              raise e
+            ensure
+              lock_connection(previous_transaction)
             end
-            Config.logger.debug("TRANSACTION COMMIT")
-          rescue
-            tx.rollback
-            Config.logger.debug("TRANSACTION ROLLBACK")
           end
         end
-        result
+      end
+
+      def begin_transaction
+        raise ::Jennifer::BaseException.new("Couldn't manually begin non top level transaction") if current_transaction
+        Config.logger.debug("TRANSACTION START")
+        lock_connection(@db.checkout.begin_transaction)
+      end
+
+      def rollback_transaction
+        t = current_transaction
+        raise ::Jennifer::BaseException.new("No transaction to rollback") unless t
+        t = t.not_nil!
+        t.rollback
+        Config.logger.debug("TRANSACTION ROLLBACK")
+        t.connection.release
+        lock_connection(nil)
       end
 
       def truncate(klass : Class)
@@ -59,7 +118,7 @@ module Jennifer
         exec "TRUNCATE #{table_name}"
       end
 
-      def delete(query : QueryBuilder::Query)
+      def delete(query : QueryBuilder::PlainQuery)
         body = String.build do |s|
           query.from_clause(s)
           s << query.body_section
@@ -97,11 +156,21 @@ module Jennifer
         raise e
       end
 
+      def self.join_table_name(table1, table2)
+        [table1.to_s, table2.to_s].sort.join("_")
+      end
+
       def self.connection_string(*options)
         auth_part = Config.user
         auth_part += ":#{Config.password}" if Config.password && !Config.password.empty?
         str = "#{Config.adapter}://#{auth_part}@#{Config.host}"
         str += "/" + Config.db if options.includes?(:db)
+        str += "?"
+        str += [
+          {% for arg in [:max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts, :checkout_timeout, :retry_delay] %}
+            "{{arg.id}}=#{Config.{{arg.id}}}"
+          {% end %},
+        ].join(",")
         str
       end
 
@@ -135,6 +204,9 @@ module Jennifer
           col_name = rs.column_name(col)
           if buf.has_key?(col_name)
             buf[col_name] = rs.read.as(DBAny)
+            if buf[col_name].is_a?(Int8)
+              buf[col_name] = (buf[col_name] == 1i8).as(Bool)
+            end
             count -= 1
           else
             rs.read
@@ -142,6 +214,44 @@ module Jennifer
           break if count == 0
         end
         buf.values
+      end
+
+      # converts single ResultSet to hash
+      def result_to_hash(rs)
+        h = {} of String => DBAny
+        rs.column_count.times do |col|
+          col_name = rs.column_name(col)
+          h[col_name] = rs.read.as(DBAny)
+          if h[col_name].is_a?(Int8)
+            h[col_name] = (h[col_name] == 1i8).as(Bool)
+          end
+        end
+        h
+      end
+
+      # converts single ResultSet which contains several tables
+      def table_row_hash(rs)
+        h = {} of String => Hash(String, DBAny)
+        rs.columns.each do |col|
+          h[col.table] ||= {} of String => DBAny
+          h[col.table][col.name] = rs.read
+          if h[col.table][col.name].is_a?(Int8)
+            h[col.table][col.name] = h[col.table][col.name] == 1i8
+          end
+        end
+        h
+      end
+
+      def parse_query(query, args)
+        arr = [] of String
+        args.each do
+          arr << "?"
+        end
+        query % arr
+      end
+
+      def parse_query(query)
+        query
       end
 
       def self.arg_replacement(arr)
@@ -196,7 +306,7 @@ module Jennifer
       end
 
       def rename_table(old_name, new_name)
-        exec "ALTER TABLE #{old_name.to_s} RENAME #{new_name}"
+        exec "ALTER TABLE #{old_name.to_s} RENAME #{new_name.to_s}"
       end
 
       def add_index(table, name, options)
@@ -278,20 +388,13 @@ module Jennifer
       abstract def column_exists?(table, name)
       abstract def translate_type(name)
       abstract def default_type_size(name)
-      abstract def parse_query(query : QueryBuilder, args)
-      abstract def parse_query(query)
-      # converts single ResultSet to hash
-      abstract def result_to_hash(rs)
-
-      # converts single ResultSet which contains several tables
-      abstract def table_row_hash(rs)
 
       private def column_definition(name, options, io)
         type = options[:serial]? ? "serial" : (options[:sql_type]? || translate_type(options[:type].as(Symbol)))
         size = options[:size]? || default_type_size(options[:type])
         io << name << " " << type
         io << "(#{size})" if size
-        if options.key?(:null)
+        if options.has_key?(:null)
           if options[:null]
             io << " NULL"
           else
@@ -308,7 +411,7 @@ module Jennifer
       end
 
       private def regular_query_message(query, arg = nil)
-        arg ? query : "#{query} | #{arg}"
+        arg ? "#{query} | #{arg}" : query
       end
     end
   end

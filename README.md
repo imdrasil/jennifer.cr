@@ -66,12 +66,24 @@ Jennifer::Config.configure do |conf|
 end
 ```
 
-Default values:
+All configs:
 
-| attribute | value |
+| config | default value |
 | --- | --- |
 | `migration_files_path` | `"./db/migrations"` |
 | `host`| `"localhost"` |
+| `logger` | `Logger.new(STDOUT)` |
+| `schema` | `"public"` |
+| `user` | - |
+| `password` | - |
+| `db` | - |
+| `adapter` | - |
+| `max_pool_size` | 5 |
+| `initial_pool_size` | 1 |
+| `max_idle_pool_size` | 1 |
+| `retry_attempts` | 1 |
+| `checkout_timeout` | 5.0 |
+| `retry_delay` | 1.0|
 
 #### Logging
 
@@ -80,12 +92,12 @@ Jennifer uses regular Crystal logging mechanism so you could specify your own lo
 ```crystal
 # Here is default logger configuration
 Jennifer::Config.configure do |conf|
-	conf.logger = Logger.new(STDOUT)
+  conf.logger = Logger.new(STDOUT)
 
-	conf.logger.formatter = Logger::Formatter.new do |severity, datetime, progname, message, io|
-	  io << datetime << ": " << message
-	end
-	conf.logger.level = Logger::DEBUG
+  conf.logger.formatter = Logger::Formatter.new do |severity, datetime, progname, message, io|
+    io << datetime << ": " << message
+  end
+  conf.logger.level = Logger::DEBUG
 end
 ```
 
@@ -116,6 +128,10 @@ $ crystal sam.cr -- db:drop
 ```shell
 $ crystal sam.cr -- db:migrate
 ```
+- create db and run all migrations (only new ones will be run)
+```shell
+$ crystal sam.cr -- db:setup
+```
 - rollback last migration
 ```shell
 $ crystal sam.cr -- db:rollback
@@ -130,10 +146,14 @@ $ crystal sam.cr -- db:rollback -v a
 ```
 - generate new migration file
 ```shell
-$ crystal sam.cr -- jennifer:migration:generate your_migration_name
+$ crystal sam.cr -- migration:generate your_migration_name
+```
+- get last migration version
+```shell
+$ crystal sam.cr -- db:version
 ```
 
-For `postgres` `create` and `drop` commands needs additional password manual authentication.
+For `postgres` `db:create` and `db:drop` commands needs additional password manual authentication.
 
 #### Migration DSL
 
@@ -149,7 +169,7 @@ end
 
 ```
 
-`up` method is needed for placing your db changes there, `down` - for reverting your changes back. For now reverting is not supported (no command yet but will be added in next version).
+`up` method is needed for placing your db changes there, `down` - for reverting your changes back.
 
 Regular example for creating table:
 
@@ -161,27 +181,27 @@ Regular example for creating table:
   end
 ```
 
-Allowed optional options for `bool`, `string` and `integer`:
-
-- `:type` - internal field type description
+There are next methods which represents corresponding types:
 
 | internal alias | PostgreSQL | MySql | Crystal type |
 | --- | --- | --- | --- |
-| `:integer` | `int` | `int` | `Int32` |
-| `:string` | `varchar(254)` | `varchar(254)` | `String` |
-| `:bool` | `boolean` | `bool` | `Bool` |
-| `:char` | `char` | - | `String` |
-| `:float` | `real` | `float` | `Float32` |
-| `:double` | `double precision` | `double` | `Float64` |
-| `:short` | `smallint` | `smallint` | `Int16` |
-| `:time_stamp` | `timestamp` | `timestamp` | `Time` |
-| `:date_time` | `datetime` | `datetime` | `Time` |
-| `:blob` | `blob` | `blob` | `Bytes` |
-| `:var_string` | `varchar(254)` | `varstring` | `String` |
-| `:json` | `json` | `json` | `JSON::Any` |
+| `#integer` | `int` | `int` | `Int32` |
+| `#string` | `varchar(254)` | `varchar(254)` | `String` |
+| `#bool` | `boolean` | `bool` | `Bool` |
+| `#char` | `char` | - | `String` |
+| `#float` | `real` | `float` | `Float32` |
+| `#double` | `double precision` | `double` | `Float64` |
+| `#short` | `smallint` | `smallint` | `Int16` |
+| `#timestamp` | `timestamp` | `timestamp` | `Time` |
+| `#date_time` | `datetime` | `datetime` | `Time` |
+| `#blob` | `blob` | `blob` | `Bytes` |
+| `#var_string` | `varchar(254)` | `varstring` | `String` |
+| `#json` | `json` | `json` | `JSON::Any` |
+
+All of them accepts additional options:
 
 - `:sql_type` - gets exact (except size) field type;
-- `:null` - represent nullable if field (by default is false for all types and field);
+- `:null` - represent nullable if field (by default is `false` for all types and field);
 - `:primary` - marks field as primary key field (could be several ones but this provides some bugs with query generation for such model - for now try to avoid this).
 - `:default` - default value for field
 - `:auto_increment` - marks field to use auto increment (properly works only with `Int32` fields, another crystal types have cut functionality for it);
@@ -243,17 +263,39 @@ To be sure that your db is up to date before run tests of your application, add 
 
 ### Model
 
-Several examples of models
+Several model examples
 ```crystal
 class Contact < Jennifer::Model::Base
+  with_timestamps
   mapping(
     id: {type: Int32, primary: true},
     name: String,
-    age: {type: Int32, default: 10}
+    age: {type: Int32, default: 10},
+    description: {type: String, null: true},
+    created_at: {type: Time, null: true},
+    updated_at: {type: Time, null: true}
   )
 
   has_many :addresses, Address
+  has_many :facebook_profiles, FacebookProfile
+  has_and_belongs_to_many :countries, Country
+  has_and_belongs_to_many :facebook_many_profiles, FacebookProfile, join_foreign: :profile_id
+  has_one :main_address, Address, {where { _main }}
   has_one :passport, Passport
+
+  validates_inclucion :age, 13..75
+  validates_length :name, minimum: 1, maximum: 15
+  validates_with_method :name_check
+
+  scope :main, {where { _age > 18 }}
+  scope :older, [age], {where { _age >= age }}
+  scope :ordered, {order(name: :asc)}
+
+  def name_check
+    if @description && @description.not_nil!.size > 10
+      errors.add(:description, "Too large description")
+    end
+  end
 end
 
 class Address < Jennifer::Model::Base
@@ -261,11 +303,14 @@ class Address < Jennifer::Model::Base
     id: {type: Int32, primary: true},
     main: Bool,
     street: String,
-    contact_id: {type: Int32, null: true}
+    contact_id: {type: Int32, null: true},
+    details: {type: JSON::Any, null: true}
   )
+  validates_format :street, /st\.|street/
 
-  table_name "addresses"
   belongs_to :contact, Contact
+
+  scope :main, {where { _main }}
 end
 
 class Passport < Jennifer::Model::Base
@@ -273,12 +318,50 @@ class Passport < Jennifer::Model::Base
     enn: {type: String, primary: true},
     contact_id: {type: Int32, null: true}
   )
+
+  validates_with [EnnValidator]
   belongs_to :contact, Contact
 end
 
+class Profile < Jennifer::Model::Base
+  mapping(
+    id: {type: Int32, primary: true},
+    login: String,
+    contact_id: Int32?,
+    type: String
+  )
+
+  belongs_to :contact, Contact
+end
+
+class FacebookProfile < Profile
+  sti_mapping(
+    uid: String
+  )
+
+  has_and_belongs_to_many :facebook_contacts, Contact, foreign: :profile_id
+end
+
+class TwitterProfile < Profile
+  sti_mapping(
+    email: String
+  )
+end
+
+class Country < Jennifer::Model::Base
+  mapping(
+    id: {type: Int32, primary: true},
+    name: String
+  )
+
+  validates_exclusion :name, ["asd", "qwe"]
+  validates_uniqueness :name
+
+  has_and_belongs_to_many :contacts, Contact
+end
 ```
 
-`mapping` macros stand for describing all model attributes. If field has no extra parameter, you can just specify name and type (type in case of crystal language): `field_name: :Type`. But you can use tuple and provide next parameters:
+`mapping` macros stands for describing all model attributes. If field has no extra parameter, you can just specify name and type (type in case of crystal language): `field_name: :Type`. But you can use tuple and provide next parameters:
 
 | argument | description |
 | --- | --- |
@@ -289,6 +372,8 @@ end
 | `:getter` | if getter should be created (default - `true`) |
 | `:setter` | if setter should be created (default - `true`) |
 
+> By default expected that all fields are defined in model. It that is not true you should to pass `false` as second argument and override `::field_count` method to represent correct field count.
+
 It defines next methods:
 
 | method | args | description |
@@ -297,78 +382,176 @@ It defines next methods:
 | `::field_count`| | number of fields |
 | `::field_names`| | all fields names |
 | `#{{field_name}}` | | getter |
-| `#{{field_name}}!` | | getter with `not_nil!` if `null: true` passed |
+| `#{{field_name}}_changed?` | | represents if field is changed |
+| `#{{field_name}}!` | | getter with `not_nil!` if `null: true` was passed |
 | `#{{field_name}}=`| | setter |
 | `::_{{field_name}}` | | helper method for building queries |
+| `#{{field_name}}_changed?` | | shows if field was changed |
+| `#changed?` | | shows if any field was changed | 
 | `#primary` | | value of primary key field |
 | `::primary` | | returns criteria for primary field (query dsl) |
 | `::primary_field_name` | | name of primary field |
 | `::primary_field_type` | | type of primary key |
 | `#new_record?` | | returns `true` if record has `nil` primary key (is not stored to db) |
-| `::create` | Hash(String \| Symbol, DB::Any), NamedTuple | creates object, stores it to db and returns it |
+| `::create` | `Hash(String | Symbol, DB::Any)`, `NamedTuple` | creates object, stores it to db and returns it |
+| `::create!` | `Hash(String | Symbol, DB::Any)`, `NamedTuple` | creates object, stores it to db and returns it; otherwise raise exception |
+| `::build` | Hash(String \| Symbol, DB::Any), NamedTuple | builds object |
+| `::create` | `Hash(String | Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with all callbacks |
+| `::create!` | `Hash(String | Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with callbacks or raise exception |
 | `#save` | | saves object to db; returns `true` if success and `false` elsewhere |
+| `#save!` | | saves object to db; returns `true` if success or rise exception otherwise |
 | `#to_h` | | returns hash with all attributes |
+| `#to_str_h` | | same as `#to_h` but with String keys |
 | `#attribute` | `String | Symbol` | returns attribute value by it's name |
 | `#attributes_hash` | | returns `to_h` with deleted `nil` entries |
+| `#changed?` | | check if any field was changed |
+| `#set_attribute` | `String | Symbol`, `DB::Any` | sets attribute by given name |
+| `#attribute` | `String | Symbol` | returns attribute value by it's name |
 
-Automatically model is associated with table with underscored class name and "s" at the end (not perfect solution - I know it). So models like `Address` or `Mouse` should specify name using `::table_name` method in own body before using any relation.
+Automatically model is associated with table with underscored pluralized class name, but special name can be defined using `::table_name` method in own body before using any relation (`::singular_table_name` - for singular variant).
 
-Another one restriction - even you use "id" as primary field - mark it as primary in mapping.
+#### STI
+
+Singl table inheritance could be used in next way:
+```crystal
+class Profile < Jennifer::Model::Base
+  mapping(
+    id: {type: Int32, primary: true},
+    login: String,
+    contact_id: Int32?,
+    type: String
+  )
+
+  belongs_to :contact, Contact
+end
+
+class FacebookProfile < Profile
+  sti_mapping(
+    uid: String
+  )
+
+  has_and_belongs_to_many :facebook_contacts, Contact, foreign: :profile_id
+end
+
+class TwitterProfile < Profile
+  sti_mapping(
+    email: String
+  )
+end
+```
+
+Subclass extends superclass definition with new fields and use string fild `type` to indentify itself.
+
+> Now `Profile.all` will return objects of `Profile` class not taking into account `type` field and will raise exception of even zomby process if superclass doesn't override `::field_count`.
 
 #### Prepared queries (scopes)
 
-Also you can specify prepared query statement. This feature is not tested and for now is not so flexible (far far from normal realization). You can do something like next:
+Also you can specify prepared query statement.
 ```crystal
-scope :query_name, { c("some_field") > 10 }
-scope :query_with_arguments, [a, b], { (c("f1") == a) && (c("f2").in(b) }
+scope :query_name, { where { c("some_field") > 10 } }
+scope :query_with_arguments, [a, b], { where { (c("f1") == a) && (c("f2").in(b) } }
 ```
 
 As you can see arguments are next:
 
 - scope (query) name
 - array with scope arguments (optional - can be avoided)
-- body (for where clause - you couldn't specify any `join` or any other stuff - given block will be used for `#where`)
+- query part - any query part could be passed: join, where, having, etc.
 
-Another one limit is that scope call can be only as root method in chain and can be only one - for now chaining scope is also impossible. So you could do only:
+Also they are chainable, so you could do:
 
 ```crystal
-ModelName.query_with_arguments("done", [1,2]).order(f1: :asc)
+ModelName.all.where { _some_field > 1 }.query_with_arguments("done", [1,2]).order(f1: :asc).no_argument_query
 ```
 
 #### Relations
 
-Relations is more ready for usage rather than scopes (I hope). There are three types of them: has_many, belongs_to and has_one. All of them have same semantic but generate slightly different methods.
+There are 4 types of relations: has_many, has_and_belongs_to_many, belongs_to and has_one. All of them have same semantic but generate slightly different methods.
 
 They takes next arguments:
 
 - relation name
 - target class
-- additional request (will be used inside of where clause) - optional
-- name of foreign key - optional; by default takes table name without last symbol (it is dummy idea I know - there are a lot of bad things) + "_id", so for "addresses" table by default you will get "addresse_id" - you've got an idea I think.
-- primary field name - optional;  by default it uses default primary field of class.
+- `request` - additional request (will be used inside of where clause) - optional
+- `foreign` - name of foreign key - optional; by default use singularized table name + "_id"
+- `primary` - primary field name - optional;  by default it uses default primary field of class.
+
+has_and_belongs_to_many also accepts next 2 arguments and use regular arguments silghtly in another way:
+- `join_table` - join table name; be default relation table names in alphabetic order joined by underscore is used
+- `join_foreign` - foreign key for current model (left foreign key of join table)
+- `foreign` - used as right foreign key
+- `primary` - used as primary field of current table; for now it properly works only if both models in this relation has primary field named `id`
 
 All relation macroses provide next methods:
 
-- `#relation_name` - cache relation object (or array of them) and returns it;
-- `#relation_name_reload` - reload relation and returns it;
-- `#relation_name_query` - returns query which is used to get objects of this object relation entities form db.
+- `#{{relation_name}}` - cache relation object (or array of them) and returns it;
+- `#{{relation_name}}_reload` - reload relation and returns it;
+- `#{{relation_name}}_query` - returns query which is used to get objects of this object relation entities form db.
+- `#remove_{{relation_name}}` - removes given object from relation
+- `#add_{{relation_name}}` - adds given object to relation or builds it from has and adds
 
-Also `belongs_to` and `has_one` add extra method `#relation_name!` which also adds assertion for `nil`.
+This allows dynamically adds objects to relations with automacially settting foreign id:
 
-#### Destroy object
+```crystal
+contact = Contact.all.find!
+contact.add_addresses({:main => true, :street => "some street", :details => nil})
 
-To destroy object use `#delete` or `#destroy` it behaves same way as for queries (will be described in next section). To destroy several objects by their ids use class method:
+address = contact.addresses.last
+contact.remove_addresses(address)
+```
+
+`belongs_to` and `has_one` add extra method `#relation_name!` which also adds assertion for `nil`.
+
+#### Validations
+
+For validation purposes is used [accord](https://github.com/neovintage/accord) shard. Also there are several general macrosses for declaring validations:
+- `validates_with_method(*names)` - accepts method name/names
+- `validates_inclusion(field, value)` - checks if `value` includes `@{{field}}`
+- `validates_exclusion(field, value)` - checks if `value` excludes `@{{field}}`
+- `validates_format(field, format)` - checks if `{{format}}` matches `@{{field}}`
+- `validates_length(field, **options)` - check `@{{field}}` size; allowed options are: `:in`, `:is`, `:maximum`, `:minimum`
+- `validates_uniqueness(field)` - check if `@{{field}}` is unique
+
+If record is not valid it will not be saved.
+
+#### Callbacks
+
+There are next macrosses for defining callbacks:
+- `before_save`
+- `after_save`
+- `before_create`
+- `after_create`
+- `after_initialize`
+- `before_destroy`
+
+They accept method names.
+
+#### Timestamps
+
+`with_timestamps` macros adds callbacks for `created_at` and `updated_at` fields update.
+
+#### Destroy
+
+To destroy object use `#delete` (is called withoud callback) or `#destroy`. To destroy several objects by their ids use class method:
 
 ```crystal
 ids = [1, 20, 18]
-Contact.destroy(*ids)
+Contact.destroy(ids)
 Address.delete(1)
+Country.delete(1,2,3)
 ```
-Also there is `::destroy_all` and `::delete_all` shortcut. They is useful when cleaning up db between test cases.
+
+#### Update
+
+There are several ways which allows to update object. Some of them were mentioned in mapping section. There are few extra methods to do this:
+- `#update_column(name, value)` - sets directly attribute and store it to db without any callback
+- `#update_columns(values)` - same for several ones
+- `#update_attributes(values)` - just set attributes
+- `#set_attribute(name, value)` - set attribute by given name
 
 ### Query DSL
 
-My favorite part. Jennifer allows you to build lazy evaluated queries with chaining syntax. But some of them could be only at the and of a chain or it's beginning. Here is a list of all dsl methods:
+My favorite part. Jennifer allows you to build lazy evaluated queries with chaining syntax. But some of them could be only at the and of a chain (such as `#fisrt` or `#pluck`). Here is a list of all dsl methods:
 
 #### Find
 
@@ -385,15 +568,14 @@ Contact.find!(1)
 Contact.all
 ```
 
-Specifying where clause is really flexible. Except several things: nested queries and several operators (honestly - a lot but them are less popular then added ones).
+Specifying where clause is really flexible. Method accepts block which represents where clause of request (or it's part - you can chain several `where` and they will be concatenated using `AND`).
 
-Method accepts block which represents where clause of request (or it's part - you can chain several `where` and they will be concatenated using `AND`).
-
-To specify field use `c` method which accepts string as field name. Also as I've mentioned after declaring model attributes you can use there names inside of block: `field_name` if it is for current table and `ModelName._field_name` if for another model. Several examples:
+To specify field use `c` method which accepts string as field name. As I've mentioned after declaring model attributes, you can use their names inside of block: `_field_name` if it is for current table and `ModelName._field_name` if for another model. Also there you can specify attribute of some model or table using underscores: `_some_model_or_table_name__field_name` - model/table name is separated from field name by "__". You can specify relation in space of which you want to declare condition using double _ at the beginning and block. Several examples:
 ```crystal
 Contact.where { c("id") == 1 }
-Contact.where { id == 1 }
-Contact.all.join(Address) { id == Address._contact_id }.where { Address._street.like("%Saint%") }
+Contact.where { _id == 1 }
+Contact.all.join(Address) { Contact._id == _contact_id }
+Contact.all.relation(:addresses).where { __addresses { _id > 1 } } 
 ```
 
 Also you can use `primary` to mention primary field:
@@ -412,7 +594,7 @@ Supported operators:
 | `<=` |`<=` |
 | `>` |`>` |
 | `>=` |`>=` |
-| `=~` | `REGEXP` |
+| `=~` | `REGEXP`, `~` |
 | `&` | `AND` |
 | `|` | `OR` |
 
@@ -420,7 +602,7 @@ And operator-like methods:
 
 | Method | SQL variant |
 | --- | --- |
-| `regexp` | `REGEXP` (accepts `String`) |
+| `regexp` | `REGEXP`, `~` (accepts `String`) |
 | `not_regexp` |`NOT REGEXP` |
 | `like` | `LIKE` |
 | `not_like` | `NOT LIKE` |
@@ -434,7 +616,7 @@ To specify exact sql query use `#sql` method:
 Contact.all.where { sql("age > ?",  [15]) & (name == "Stephan") } 
 ```
 
-Query will be inserted "as is".
+Query will be inserted "as is". Usage of `#sql` allows to use nested plain request.
 
 **Tips**
 
@@ -442,14 +624,14 @@ Query will be inserted "as is".
 - use parenthesis for binary operators (`&` and `|`)
 - `nil` given to `!=` and `==` will be transformed to `IS NOT NULL` and `IS NULL`
 - `is` and `not` operator accepts next values: `:nil`, `nil`, `:unknown`, `true`, `false`
-- as was said previously - no nested queries
+- as was said previously - no nested queries (except `#sql`).
 
 At the end - several examples:
 
 ```crystal
-Contact.where { (id > 40) & name.regexp("^[a-d]") }
+Contact.where { (_id > 40) & _name.regexp("^[a-d]") }
 
-Address.where { contact_id.is(nil) }
+Address.where { _contact_id.is(nil) }
 ```
 
 #### Select
@@ -461,10 +643,9 @@ Contact.all.select("COUNT(id) as count, contacts.name").group("name")
        .having { sql("COUNT(id)") > 1 }.pluck(:name)
 ```
 
-
 #### Delete and Destroy
 
-For now they both are the same - creates delete query with given conditions. After adding callbacks `destroy` will firstly loads objects and run callbacks.
+For now they both are the same - creates delete query with given conditions. `destroy` firstly loads objects and run callbacks and then calls delete on each.
 
 It can be only at the end of chain.
 
@@ -481,7 +662,7 @@ table = "passports"
 Contact.all.join(Address) { id == Address._contact_id }.join(table) { id == c(field, table) }
 ```
 
-Query built in block will passed to `ON` section of `JOIN`.
+Query, built inside of block, will passed to `ON` section of `JOIN`. Current context of block is joined table.
 
 Also there is two shortcuts for left and right joins:
 
@@ -490,14 +671,14 @@ Contact.all.left_join(Address) { id == Address._contact_id }
 Contact.all.right_join("addresses") { id == Address.c("contact_id") }
 ```
 
-> For now Jennifer not supports table aliasing so that's why tables couldn't be joined several times and self join is not allowed as well. 
+> For now Jennifer provide manual aliasing as second argument for `#join` and automatic when using `#includes` and `#with` methods. For details check out the code. 
 
 #### Relation
 
 To join model relation (has_many, belongs_to and has_one) pass it's name and join type:
 
 ```crystal
-Contact.all.relation("addresses").relation(:passport, :left)
+Contact.all.relation("addresses").relation(:passport, type: :left)
 ```
 
 #### Includes
@@ -508,7 +689,7 @@ To preload some relation use `includes` and pass relation name:
 Contact.all.includes("addresses")
 ```
 
-It is just alias for `relation(name).with(name)` methods call chain.
+If there are several includes with same table - Jennifer will auto alias tables.
 
 #### Group
 
@@ -579,6 +760,8 @@ You can provide hash or named tuple with new field values:
 Contact.all.update(age: 1, name: "Wonder")
 ```
 
+Will not trigers any callback.
+
 #### Eager load
 
 As was said Jennifer provide lazy query evaluation  so it will be performed only after trying to access to element from collection (any array method - it implements Enumerable). Also you can extract first entity via `first`. If you are sure that at least one entity in db satisfies you query you can call `#first!`.
@@ -599,7 +782,7 @@ Contact.all.select("COUNT(id) as count, contacts.name").group("name")
 To load relations using same query joins needed tables (yep you should specify join on condition by yourself again) and specifies all needed relations in `with` (relation name not table).
 
 ```crystal
-Contact.all.left_join(Address) { id == Address._contact_id }.with(:addresses)
+Contact.all.left_join(Address) { _contacts__id == _contact_id }.with(:addresses)
 ```
 
 #### Transaction
@@ -612,7 +795,9 @@ Jennifer::Adapter.adapter.transaction do |tx|
 end
 ```
 
-Very important this is return value of block - transaction will be committed when it returns truethy and rollback elsewhere. Also if any error was raised in block transaction will be rollbacked as well.
+If any error was raised in block transaction will be rollbacked. To rollback transaction raise `DB::Rollback` exception.
+
+Transaction lock connection for current fiber avoiding grepping new one from pool.
 
 #### Truncation
 
@@ -623,47 +808,62 @@ Jennifer::Adapter.adapter.truncate("contacts")
 Jennifer::Adapter.adapter.truncate(Contact)
 ```
 
-This functionality could be useful to clear db between test cases but for now `::delete_all` works faster.
+This functionality could be useful to clear db between test cases.
 
-#### Important restrictions
+### Important restrictions
 
-For now you can't alias table or even field so that's why you can't join same table (this relates to relation as well).
+- Nested query is allowed only using `#sql`
+- Block for relation now could accept only `#where` method
+- sqlite3 has a lot of limitations so it's support will be added not soon
+
+### Test
+
+The fastest way to rollback all changes in DB after test case - transaction. So add:
+```crystal
+Spec.before_each do
+  Jennifer::Adapter.adapter.begin_transaction
+end
+
+Spec.after_each do
+  Jennifer::Adapter.adapter.rollback_transaction
+end
+```
+
+to your `spec_helper.cr`. Also just regular deleting or truncation could be used but transaction provide 15x speed up (at least for postgres; mysql get less impact).
+
+> This functions can be safely used only under test environment.
 
 ## Development
 
-There are still a lot of work to do. Some parts (especially sql string generation) are in wrong places. Tasks for next versions:
+There are still a lot of work to do. Tasks for next versions:
 
-- [x] move query string generation to adapter
-- [ ] make access to adapter methods more clear
-- [x] add PostgreSQL support
 - [ ] add SQLite support
 - [ ] increase test coverage to acceptable level
-- [x] add more field type
-- [x] add internal error classes to support all exception cases
-- [ ] add more operators
-- [ ] add callbacks
-- [ ] add validation
-- [x] extend join functionality
-- [ ] lazy attributes update during object saving
-- [ ] make scopes more flexible
-- [x] add logger
-- [ ] adds possibility for `#group` accept any sql string
-- [ ] add STI
+- [ ] add json operators
+- [ ] add PG::Array support
+- [ ] add possibility for `#group` accept any sql string
 - [ ] add polymorphic associations
-- [ ] add through relations
-- [ ] add many-to-many relation
-- [ ] add table aliasing
-- [ ] add more thinks below...
+- [ ] add through to relations
+- [ ] add subquery support
+- [ ] add join table option for all relations
+- [ ] refactor many-to-many relation
+- [ ] add seeds
+- [ ] rewrite tests to use spec2
+- [ ] add aggregation methods
+- [ ] add self documentation
 
 ## Development
 
-Before development create user (information is in /spec/config.cr file), run
-```crystal
+Before development create db user (information is in /spec/config.cr file), run
+```shell
 $ crystal example/migrate.cr -- db:create
 $ crystal example/migrate.cr -- db:migrate
 ```
 
-For now travis use only postgres database but support both of them (mysql as well) are critical so before push run tests using both adapter. 
+Support both MySql and PostgreSQL are critical. By default postgres are turned on. To run tests with mysql use next:
+```shell
+$ DB=mysql crystal spec
+```
 
 ## Contributing
 
@@ -673,11 +873,11 @@ For now travis use only postgres database but support both of them (mysql as wel
 4. Push to the branch (git push origin my-new-feature)
 5. Create a new Pull Request
 
-Please ask me before start to work on some feature.
+Please ask me before starting work on smth.
 
-Also if you want to use it in your application (for now shard is not ready for use in production) - ping me please, my email you can find in my profile.
+Also if you want to use it in your application (for now shard is almost ready for use in production) - ping me please, my email you can find in my profile.
 
-To run test use regular `crystal spec`. All migrations is under `./examples/migrations` directory. They all runs automatically.
+To run test use regular `crystal spec`. All migrations is under `./examples/migrations` directory.
 
 ## Contributors
 

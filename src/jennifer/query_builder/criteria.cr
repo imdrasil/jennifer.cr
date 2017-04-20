@@ -3,21 +3,30 @@ module Jennifer
     class Criteria
       alias Rightable = Criteria | DBAny | Array(DBAny)
 
-      getter rhs : Rightable
-      getter operator, field, table
+      getter relation : String?, field, table
 
-      @rhs = ""
-      @operator = :bool
-      @negative = false
-
-      def initialize(@field : String, @table : String)
+      def initialize(@field : String, @table : String, @relation = nil)
       end
 
-      {% for op in [:<, :>, :<=, :>=] %}
+      def_clone
+
+      def set_relation(table, name)
+        @relation = name if @relation.nil? && @table == table
+      end
+
+      def alias_tables(aliases)
+        @table = aliases[@relation.as(String)] if @relation
+      end
+
+      def change_table(old_name, new_name)
+        return if @table != old_name
+        @table = new_name
+        @relation = nil
+      end
+
+      {% for op in [:<, :>, :<=, :>=, :+, :-, :*, :/, :regexp, :not_regexp, :like, :not_like] %}
         def {{op.id}}(value : Rightable)
-          @rhs = value
-          @operator = Operator.new({{op}})
-          self
+          Condition.new(self, {{op}}, value)
         end
       {% end %}
 
@@ -25,144 +34,66 @@ module Jennifer
         regexp(value)
       end
 
-      def regexp(value : String)
-        @rhs = value
-        @operator = Operator.new(:regexp)
-        self
-      end
-
-      def not_regexp(value : String)
-        @rhs = value
-        @operator = Operator.new(:not_regexp)
-        self
-      end
-
-      def like(value : String)
-        @rhs = value
-        @operator = Operator.new(:like)
-        self
-      end
-
-      def not_like(value : String)
-        @rhs = value
-        @operator = Operator.new(:not_like)
-        self
-      end
-
       # postgres only
       def similar(value : String)
-        @rhs = value
-        @operator = Operator.new(:similar)
-        self
+        Condition.new(self, :similar, value)
       end
 
       def ==(value : Rightable)
         if !value.nil?
-          @rhs = value
-          @operator = Operator.new(:==)
+          Condition.new(self, :==, value)
         else
           is(value)
         end
-        self
-      end
-
-      def eq(value : Rightable)
-        if !value.nil?
-          @rhs = value
-          @operator = Operator.new(:==)
-        else
-          is(value)
-        end
-        self
       end
 
       def !=(value : Rightable)
         if !value.nil?
-          @rhs = value
-          @operator = Operator.new(:!=)
+          Condition.new(self, :!=, value)
         else
           not(value)
         end
-        self
       end
 
       def is(value : Symbol | Bool | Nil)
-        @rhs = translate(value)
-        @operator = Operator.new(:is)
-        self
+        Condition.new(self, :is, translate(value))
       end
 
       def not(value : Symbol | Bool | Nil)
-        @rhs = translate(value)
-        @operator = Operator.new(:is_not)
-        self
+        Condition.new(self, :not, translate(value))
       end
 
       def not
-        @negative = !@negative
-        self
+        Condition.new(self).not
       end
 
       def in(arr : Array)
         raise ArgumentError.new("IN array can't be empty") if arr.empty?
-        @rhs = arr.map { |e| e.as(DBAny) }
-        @operator = :in
-        self
+        Condition.new(self, :in, arr.map { |e| e.as(DBAny) })
       end
 
-      def &(other : Criteria | LogicOperator)
-        op = And.new
-        op.add(self)
-        op.add(other)
-        op
+      def &(other : Criteria | Condition | LogicOperator)
+        Condition.new(self) & other
       end
 
-      def |(other : Criteria | LogicOperator)
-        op = Or.new
-        op.add(self)
-        op.add(other)
-        op
+      def |(other : Criteria | Condition | LogicOperator)
+        Condition.new(self) | other
       end
 
       def to_s
         to_sql
       end
 
-      def filter_out(arg)
-        if arg.is_a?(Criteria)
-          arg.to_sql
-        else
-          ::Jennifer::Adapter.escape_string(1)
-        end
-      end
-
       def to_sql
-        _field = "#{@table}.#{@field.to_s}"
-        str =
-          case @operator
-          when :bool
-            _field
-          when :in
-            "#{_field} IN(#{::Jennifer::Adapter.escape_string(@rhs.as(Array).size)})"
-          else
-            "#{_field} #{@operator.to_s} #{@operator.as(Operator).filterable_rhs? ? filter_out(@rhs) : @rhs}"
-          end
-        str = "NOT (#{str})" if @negative
-        str
+        "#{@table}.#{@field.to_s}"
       end
 
-      def sql_args : Array(DB::Any)
-        res = [] of DB::Any
-        if @operator != :bool
-          if @operator == :in
-            @rhs.as(Array).each do |e|
-              res << e.as(DB::Any) unless e.is_a?(Criteria)
-            end
-          elsif !@rhs.is_a?(Criteria)
-            res << @rhs.as(DB::Any)
-          end
-        end
-        res
+      def sql_args
+        [] of DBAny
+      end
+
+      def to_condition
+        Condition.new(self)
       end
 
       private def translate(value : Symbol | Bool | Nil)

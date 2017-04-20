@@ -11,7 +11,7 @@ module Jennifer
 
         pending = interpolation.keys - Version.all.pluck(:version).map(&.as(String))
         return if pending.empty?
-        brocken = Version.where { version.in(pending) }.pluck(:version).map(&.as(String))
+        brocken = Version.where { _version.in(pending) }.pluck(:version).map(&.as(String))
         unless brocken.empty?
           puts "Can't run migrations because some of them are older then relase version.\nThey are:"
           brocken.sort.each do |v|
@@ -62,7 +62,7 @@ module Jennifer
             Version.all.order(version: :desc).limit(options[:count].to_i).pluck(:version)
           elsif options[:to]?
             v = options[:to].to_s
-            Version.all.order(version: :desc).where { version > v }.pluck(:version)
+            Version.all.order(version: :desc).where { _version > v }.pluck(:version)
           else
             raise ArgumentError.new
           end
@@ -70,7 +70,7 @@ module Jennifer
         versions.each do |v|
           klass = interpolation[v]
           klass.new.down
-          Version.all.where { version.eq(v) }.limit(1).delete
+          Version.all.where { _version == v }.delete
           puts "Droped migration #{v}"
         end
       rescue e

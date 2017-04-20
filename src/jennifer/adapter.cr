@@ -7,13 +7,24 @@ module Jennifer
   module Adapter
     @@adapter : Base?
     @@adapters = {} of String => Base.class
+    @@adapter_class : Base.class | Nil
+
+    {% for method in [:exec, :scalar] %}
+      def self.{{method.id}}(*opts)
+        adapter.{{method.id}}(*opts)
+      end
+    {% end %}
+
+    def self.query(_query, args = [] of DB::Any)
+      adapter.query(_query, args) { |rs| yield rs }
+    end
 
     def self.adapter
       @@adapter ||= adapter_class.not_nil!.new
     end
 
     def self.adapter_class
-      adapters[Config.adapter]
+      @@adapter_class ||= adapters[Config.adapter]
     end
 
     def self.t(value)

@@ -24,7 +24,7 @@ module Jennifer
         :float      => "real",
         :double     => "double precision",
         :short      => "SMALLINT",
-        :time_stamp => "timestamp",
+        :timestamp  => "timestamp",
         :date_time  => "datetime",
         :blob       => "blob",
         :var_string => "varchar",
@@ -93,7 +93,31 @@ module Jennifer
         if options[:type]? && ![:uniq, :unique].includes?(options[:type])
           raise ArgumentError.new("Unknown index type: #{options[:type]}")
         end
-        super
+        query = String.build do |s|
+          s << "CREATE "
+          if options[:type]?
+            s <<
+              case options[:type]
+              when :unique, :uniq
+                "UNIQUE "
+              when :fulltext
+                "FULLTEXT "
+              when :spatial
+                "SPATIAL "
+              else
+                raise ArgumentError.new("Unknown index type: #{options[:type]}")
+              end
+          end
+          s << "INDEX " << name << " ON " << table << "("
+          fields = options.as(Hash)[:_fields].as(Array)
+          fields.each_with_index do |f, i|
+            s << "," if i != 0
+            s << f
+            s << " " << options[:order].as(Hash)[f].to_s.upcase if options[:order]? && options[:order].as(Hash)[f]?
+          end
+          s << ")"
+        end
+        exec query
       end
 
       def change_column(table, old_name, new_name, opts)
@@ -133,15 +157,21 @@ module Jennifer
       end
 
       def insert(obj : Model::Base)
-        opts = self.class.extract_arguments(obj.attributes_hash)
-        query = "INSERT INTO #{obj.class.table_name}(#{opts[:fields].join(", ")}) values (#{self.class.escape_string(opts[:fields].size)})"
-        id = -1i64
-        res = nil
-        transaction do
-          exec parse_query(query, opts[:args]), opts[:args]
-          id = scalar("SELECT currval(pg_get_serial_sequence('#{obj.class.table_name}', '#{obj.class.primary_field_name}'))").as(Int64)
+        opts = obj.arguments_to_insert
+        query = String.build do |s|
+          s << "INSERT INTO " << obj.class.table_name << "("
+          opts[:fields].join(", ", s)
+          s << ") values (" << self.class.escape_string(opts[:fields].size) << ")"
         end
-        ExecResult.new(id)
+        id = -1i64
+        affected = 0i64
+        transaction do
+          affected = exec(parse_query(query, opts[:args]), opts[:args]).rows_affected
+          if affected > 0 && obj.class.primary_auto_incrementable?
+            id = scalar("SELECT currval(pg_get_serial_sequence('#{obj.class.table_name}', '#{obj.class.primary_field_name}'))").as(Int64)
+          end
+        end
+        ExecResult.new(id, affected)
       end
 
       def exists?(query)
@@ -154,38 +184,10 @@ module Jennifer
         scalar(body, args)
       end
 
-      def update(q, options : Hash)
-        esc = self.class.escape_string(1)
-        str = "UPDATE #{q.table} SET #{options.map { |k, v| k.to_s + "= #{esc}" }.join(", ")}\n"
-        args = [] of DBAny
-        options.each do |k, v|
-          args << v
-        end
-        str += q.body_section
-        args += q.select_args
-        exec(parse_query(str, args), args)
-      end
-
-      def distinct(query : QueryBuilder::Query, column, table)
-        str = String.build do |s|
-          s << "SELECT DISTINCT " << table << "." << column << "\n"
-          query.from_clause(s)
-          s << query.body_section
-        end
-        args = query.select_args
-        result = [] of DBAny
-        query(parse_query(str, args), args) do |rs|
-          rs.each do
-            result << result_to_array(rs)[0]
-          end
-        end
-        result
-      end
-
       private def column_definition(name, options, io)
         io << name
         column_type_definition(options, io)
-        if options.key?(:null)
+        if options.has_key?(:null)
           if options[:null]
             io << " NULL"
           else
@@ -214,7 +216,7 @@ module Jennifer
   end
 
   macro after_load_hook
-    require "./jennifer/adapter/postgres/operator"
+    require "./jennifer/adapter/postgres/condition"
   end
 end
 

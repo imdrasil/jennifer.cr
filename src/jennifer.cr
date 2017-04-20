@@ -1,33 +1,37 @@
-require "./jennifer/exceptions"
 require "json"
-require "./jennifer/*"
+require "inflector"
+require "inflector/string"
+require "accord"
 
-# require "./jennifer/adapter/*"
+require "./jennifer/exceptions"
+require "./jennifer/adapter"
+require "./jennifer/config"
+require "./jennifer/support"
+require "./jennifer/version"
+
+require "./jennifer/query_builder/*"
 require "./jennifer/adapter/base"
 require "./jennifer/migration/table_builder/*"
 require "./jennifer/migration/*"
+require "./jennifer/relation/base"
+require "./jennifer/relation/*"
 require "./jennifer/model/*"
-require "./jennifer/query_builder/*"
 
 module Jennifer
-  class StubRelation < ::Jennifer::Model::IRelation
-    def table_name
+  class StubRelation < ::Jennifer::Relation::IRelation
+    def insert(a, b)
       raise "stubed relation"
     end
 
-    def model_class
+    def join_condition(a, b)
       raise "stubed relation"
     end
 
-    def type
+    def join_condition(a, b, &block)
       raise "stubed relation"
     end
 
-    def set_callback
-      raise "stubed relation"
-    end
-
-    def condition_clause
+    def query(a)
       raise "stubed relation"
     end
 
@@ -35,10 +39,20 @@ module Jennifer
       raise "stubed relation"
     end
 
-    def join_query
-      raise "not_implemented"
-    end
+    {% for method in [:table_name, :model_class, :type, :set_callback, :condition_clause, :join_query] %}
+      def {{method.id}}
+        raise "stubed relation"
+      end
+    {% end %}
   end
+end
+
+struct Time
+  def_clone
+end
+
+struct JSON::Any
+  def_clone
 end
 
 ::Jennifer.after_load_hook

@@ -1,69 +1,74 @@
 require "sqlite3"
+require "../adapter"
+require "./request_methods"
 
 module Jennifer
+  alias DBAny = DB::Any
+
   module Adapter
     class Sqlite3 < Base
-      include Support
+      include RequestMethods
 
       TYPE_TRANSLATIONS = {
-        :int    => "int",
-        :string => "varchar",
-        :bool   => "bool",
-        :text   => "text",
+        :integer   => "integer",
+        :bool      => "integer",
+        :short     => "integer",
+        :text      => "text",
+        :string    => "text",
+        :time      => "text",
+        :timestamp => "text",
+        :json      => "text",
+        :float     => "real",
       }
 
       def translate_type(name)
         TYPE_TRANSLATIONS[name]
+      rescue e : KeyError
+        raise BaseException.new("Unknown data alias #{name}")
       end
 
-      def parse_query(query, args)
-        arr = [] of String
-        args.each do
-          arr << "?"
-        end
-        query % arr
-      end
-
-      def parse_query(query)
-        query
-      end
+      def default_type_size(name); end
 
       # overrides ==========================
-
-      def transaction(&block)
-        raise "Not supported yet"
-      end
 
       def table_exist?(table)
         v = scalar "
           SELECT COUNT(*)
           FROM sqlite_master
-          WHERE type='table' AND name='#{table}"
+          WHERE type='table' AND name='#{table}'"
         v == 1
       end
 
-      def self.result_to_array(rs)
-        a = [] of DB::Any | Int16 | Int8
-        rs.column_count.times do
-          temp = rs.read
-          if temp.is_a?(Int8)
-            temp = (temp == 1i8).as(Bool)
-          end
-          a << temp
-        end
-        a
+      def column_exists?(table, name)
+        c = scalar "
+          SELECT COUNT(*)
+          FROM pragma_table_info('#{table}')
+          WHERE colymn_name = '#{name}'"
+        c == 1
       end
 
-      def self.result_to_hash(rs)
-        h = {} of String => DB::Any | Int16 | Int8
-        rs.column_count.times do |col|
-          col_name = rs.column_name(col)
-          h[col_name] = rs.read
-          if h[col_name].is_a?(Int8)
-            h[col_name] = (h[col_name] == 1i8).as(Bool)
-          end
-        end
-        h
+      def index_exists?(table, name)
+        c = scalar "
+          SELECT COUNT(*)
+          FROM sys.indexes
+          WHERE name='#{name}' AND object_id = OBJECT_ID('Schema.#{table}')"
+        c == 1
+      end
+
+      def rename_table(old_name, new_name)
+        exec "ALTER TABLE #{old_name.to_s} RENAME TO #{new_name.to_s}"
+      end
+
+      def drop_index(table, name)
+        exec "DROP INDEX #{name}"
+      end
+
+      def change_column(table, old_name, new_name, opts)
+        raise "ALTER COLUMN is not implemented yet. Take a look on this http://www.sqlite.org/faq.html#q11"
+      end
+
+      def drop_column(table, old_name, new_name, opts)
+        raise "DROP COLUMN is not implemented yet. Take a look on this http://www.sqlite.org/faq.html#q11"
       end
 
       def self.table_row_hash(rs)
@@ -71,16 +76,41 @@ module Jennifer
       end
 
       def self.drop_database
-        File.delete(Config.db) if File.exists?(Config.db)
+        File.delete(db_path) if File.exists?(db_path)
       end
 
       def self.create_database
-        File.new(Config.db) if File.exists?(Config.db)
+        File.new(db_path, "w") unless File.exists?(db_path)
+      end
+
+      #
+      # private
+      #
+
+      private def self.db_path
+        File.join(Config.host, Config.db)
+      end
+
+      private def column_definition(name, options, io)
+        type = options[:sql_type]? || translate_type(options[:type].as(Symbol))
+        size = options[:size]? || default_type_size(options[:type])
+        io << name << " " << type
+        io << "(#{size})" if size
+        if options.key?(:null)
+          if options[:null]
+            io << " NULL"
+          else
+            io << " NOT NULL"
+          end
+        end
+        io << " PRIMARY KEY" if options[:primary]?
+        io << " DEFAULT #{self.class.t(options[:default])}" if options[:default]?
+        io << " AUTOINCREMENT" if options[:auto_increment]?
       end
     end
   end
 
-  macro after_hook
+  macro after_load_hook
 
   end
 end

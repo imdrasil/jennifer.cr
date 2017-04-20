@@ -5,10 +5,13 @@ require "logger"
 module Jennifer
   class Config
     include Support
-    FIELDS = [:user, :password, :db, :host, :adapter, :migration_files_path, :schema]
+    STRING_FIELDS = {:user, :password, :db, :host, :adapter, :migration_files_path, :schema}
+    INT_FIELDS    = {:max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
+    FLOAT_FIELDS  = [:checkout_timeout, :retry_delay]
 
-    {% for field in FIELDS %}
-      @@{{field.id}} = ""
+    macro define_fields(const, default)
+      {% for field in @type.constant(const.stringify) %}
+      @@{{field.id}} = {{default}}
 
       def self.{{field.id}}=(value)
         @@{{field.id}} = value
@@ -18,6 +21,22 @@ module Jennifer
         @@{{field.id}}
       end
     {% end %}
+    end
+
+    define_fields(STRING_FIELDS, default: "")
+    @@host = "localhost"
+    @@migration_files_path = "./db/migrations"
+    @@schema = "public"
+
+    define_fields(INT_FIELDS, 0)
+    @@initial_pool_size = 1
+    @@max_pool_size = 5
+    @@max_idle_pool_size = 1
+    @@retry_attempts = 1
+
+    define_fields(FLOAT_FIELDS, 0.0)
+    @@checkout_timeout = 5.0
+    @@retry_delay = 1.0
 
     @@logger = Logger.new(STDOUT)
 
@@ -35,10 +54,6 @@ module Jennifer
       @@logger = value
     end
 
-    @@host = "localhost"
-    @@migration_files_path = "./db/migrations"
-    @@schema = "public"
-
     def self.configure(&block)
       yield self
     end
@@ -54,8 +69,14 @@ module Jennifer
     def self.read(path : String, env : String | Symbol = :development)
       _env = env.to_s
       source = YAML.parse(File.read(path))[_env]
-      {% for field in FIELDS %}
+      {% for field in STRING_FIELDS %}
         @@{{field.id}} = source["{{field.id}}"].as_s if source["{{field.id}}"]?
+      {% end %}
+      {% for field in INT_FIELDS %}
+        @@{{field.id}} = source["{{field.id}}"].as_s.to_i if source["{{field.id}}"]?
+      {% end %}
+      {% for field in FLOAT_FIELDS %}
+        @@{{field.id}} = source["{{field.id}}"].as_s.to_f if source["{{field.id}}"]?
       {% end %}
       self
     end

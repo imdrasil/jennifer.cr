@@ -87,6 +87,31 @@ describe Jennifer::Adapter::Base do
       end
       Contact.all.count.should eq(1)
     end
+
+    it "work with concurrent access" do
+      begin
+        ch = Channel(Nil).new
+        adapter.transaction do |t|
+          contact_create
+          raise DB::Rollback.new
+        end
+        spawn do
+          adapter.transaction do |t|
+            contact_create
+          end
+          ch.send(nil)
+        end
+        ch.receive
+
+        adapter.with_manual_connection do |con|
+          con.scalar("select count(*) from contacts").should eq(1)
+        end
+      ensure
+        adapter.with_manual_connection do |con|
+          con.exec "DELETE FROM contacts"
+        end
+      end
+    end
   end
 
   describe "#delete" do

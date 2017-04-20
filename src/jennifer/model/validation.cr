@@ -30,7 +30,7 @@ module Jennifer
         end
       end
 
-      macro validates_inclucions(field, value)
+      macro validates_inclucion(field, value)
         validates_with_method(%validate_method)
 
         def %validate_method

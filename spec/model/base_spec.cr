@@ -156,6 +156,16 @@ describe Jennifer::Model::Base do
         Contact.all.main.to_sql.should match(/contacts\.age >/)
       end
     end
+
+    it "is chainable" do
+      c1 = contact_create(age: 15)
+      c2 = contact_create(age: 15)
+      c3 = contact_create(age: 13)
+      address_create(contact_id: c1.id, main: true)
+      address_create(contact_id: c2.id, main: false)
+      address_create(contact_id: c3.id, main: true)
+      Contact.all.with_main_address.older(14).count.should eq(1)
+    end
   end
 
   describe "#set_relation" do

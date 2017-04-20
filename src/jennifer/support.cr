@@ -53,5 +53,3 @@ module Jennifer
     render_macrosses
   end
 end
-
-Jennifer::Support.render_macrosses

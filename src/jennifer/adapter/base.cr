@@ -4,65 +4,110 @@ module Jennifer
   module Adapter
     abstract class Base
       @db : DB::Database
-      @connection : DB::Connection
       @transaction : DB::Transaction? = nil
+      @locks = {} of UInt64 => DB::Transaction
 
-      getter connection
+      getter db
 
       def initialize
         @db = DB.open(Base.connection_string(:db))
-        @connection = @db.checkout
+      end
+
+      def with_connection(&block)
+        if @locks.has_key?(Fiber.current.object_id)
+          yield @locks[Fiber.current.object_id].connection
+        else
+          conn = @db.checkout
+          res = yield conn
+          conn.release
+          res
+        end
+      end
+
+      def with_manual_connection(&block)
+        conn = @db.checkout
+        res = yield conn
+        conn.release
+        res
+      end
+
+      def with_transactionable(&block)
+        if @locks.has_key?(Fiber.current.object_id)
+          yield @locks[Fiber.current.object_id]
+        else
+          conn = @db.checkout
+          res = yield conn
+          conn.release
+          res
+        end
+      end
+
+      def lock_connection(transaction : DB::Transaction)
+        @locks[Fiber.current.object_id] = transaction
+      end
+
+      def lock_connection(transaction : Nil)
+        @locks.delete(Fiber.current.object_id)
+      end
+
+      def current_transaction
+        @locks[Fiber.current.object_id]?
       end
 
       def exec(_query, args = [] of DB::Any)
         Config.logger.debug { regular_query_message(_query, args) }
-        @connection.exec(_query, args)
+        with_connection { |conn| conn.exec(_query, args) }
       rescue e : Exception
         raise BadQuery.new(e.message, regular_query_message(_query, args))
       end
 
       def query(_query, args = [] of DB::Any)
         Config.logger.debug { regular_query_message(_query, args) }
-        @connection.query(_query, args) { |rs| yield rs }
+        with_connection { |conn| conn.query(_query, args) { |rs| yield rs } }
       rescue e : Exception
         raise BadQuery.new(e.message, regular_query_message(_query, args))
       end
 
       def scalar(_query, args = [] of DB::Any)
         Config.logger.debug { regular_query_message(_query, args) }
-        @connection.scalar(_query, args)
+        with_connection { |conn| conn.scalar(_query, args) }
       rescue e : Exception
         raise BadQuery.new(e.message, regular_query_message(_query, args))
       end
 
       def transaction(&block)
-        previous_transaction = @transaction
-        (@transaction || @connection).transaction do |tx|
-          @transaction = tx
-          begin
-            Config.logger.debug("TRANSACTION START")
-            yield(tx)
-            Config.logger.debug("TRANSACTION COMMIT")
-          rescue e
-            Config.logger.debug("TRANSACTION ROLLBACK")
-            raise e
-          ensure
-            @transaction = previous_transaction
+        previous_transaction = current_transaction
+        with_transactionable do |conn|
+          conn.transaction do |tx|
+            lock_connection(tx)
+            begin
+              Config.logger.debug("TRANSACTION START")
+              yield(tx)
+              Config.logger.debug("TRANSACTION COMMIT")
+            rescue e
+              Config.logger.debug("TRANSACTION ROLLBACK")
+              raise e
+            ensure
+              lock_connection(previous_transaction)
+            end
           end
         end
       end
 
       def begin_transaction
-        raise "Couldn't use this if transaction is already started" if @transaction
+        raise ::Jennifer::BaseException.new("Couldn't manually begin non top level transaction") if current_transaction
         Config.logger.debug("TRANSACTION START")
-        @transaction = @connection.begin_transaction
+        lock_connection(@db.checkout.begin_transaction)
       end
 
       def rollback_transaction
-        t = @transaction.not_nil!
+        t = current_transaction
+        raise ::Jennifer::BaseException.new("No transaction to rollback") unless t
+        t = t.not_nil!
         t.rollback
-        @transaction = nil
         Config.logger.debug("TRANSACTION ROLLBACK")
+        t.connection.release
+        lock_connection(nil)
       end
 
       def truncate(klass : Class)
@@ -120,6 +165,12 @@ module Jennifer
         auth_part += ":#{Config.password}" if Config.password && !Config.password.empty?
         str = "#{Config.adapter}://#{auth_part}@#{Config.host}"
         str += "/" + Config.db if options.includes?(:db)
+        str += "?"
+        str += [
+          {% for arg in [:max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts, :checkout_timeout, :retry_delay] %}
+            "{{arg.id}}=#{Config.{{arg.id}}}"
+          {% end %},
+        ].join(",")
         str
       end
 

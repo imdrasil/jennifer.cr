@@ -146,7 +146,7 @@ $ crystal sam.cr -- db:rollback -v a
 ```
 - generate new migration file
 ```shell
-$ crystal sam.cr -- migration:generate your_migration_name
+$ crystal sam.cr -- generate:migration your_migration_name
 ```
 - get last migration version
 ```shell

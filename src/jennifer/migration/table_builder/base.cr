@@ -14,8 +14,9 @@ module Jennifer
 
         alias AllowedTypes = String | Int32 | Bool | Float32 | Nil
         alias EAllowedTypes = AllowedTypes | Symbol
+        alias AAllowedTypes = EAllowedTypes | Array(EAllowedTypes)
         alias HAllowedTypes = EAllowedTypes | Array(EAllowedTypes) | Hash(Symbol, EAllowedTypes | Array(EAllowedTypes)) | Hash(Symbol, EAllowedTypes)
-        alias DB_OPTIONS = Hash(Symbol, EAllowedTypes)
+        alias DB_OPTIONS = Hash(Symbol, EAllowedTypes | Array(EAllowedTypes))
 
         def initialize(@name : String | Symbol)
           @fields = {} of String => DB_OPTIONS

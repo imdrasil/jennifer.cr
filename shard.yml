@@ -1,10 +1,10 @@
 name: jennifer
-version: 0.3.0
+version: 0.3.1
 
 authors:
   - Roman Kalnytskyi <moranibaca@gmail.com>
 
-crystal: 0.21.0
+crystal: 0.22.0
 
 license: MIT
 
@@ -18,9 +18,13 @@ development_dependencies:
 dependencies:
   sam:
     github: imdrasil/sam.cr
+    version: "0.2.1"
   inflector:
     github: phoffer/inflector.cr
     version: "~> 0.1.8"
   accord:
     github: neovintage/accord
     version: "~> 1.1.0"
+  minitest:
+    github: ysbaddaden/minitest.cr    
+    version: "~> 0.3.5"

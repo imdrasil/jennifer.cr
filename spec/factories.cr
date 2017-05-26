@@ -15,11 +15,11 @@ def expression_builder(table = "tests")
 end
 
 def query_builder(table = "tests")
-  Jennifer::QueryBuilder::PlainQuery.new(table)
+  Jennifer::QueryBuilder::Query.new(table)
 end
 
-def contact_build(name = "Deepthi", age = 28, description = nil)
-  Contact.build({:name => name, :age => age, :description => description})
+def contact_build(name = "Deepthi", age = 28, description = nil, gender = "male")
+  Contact.build({:name => name, :age => age, :description => description, :gender => gender})
 end
 
 def address_build(main = false, street = "Ant st.", contact_id = nil, details = nil)

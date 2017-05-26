@@ -13,6 +13,15 @@ module Jennifer
         @db = DB.open(Base.connection_string(:db))
       end
 
+      def self.build
+        a = new
+        a.prepare
+        a
+      end
+
+      def prepare
+      end
+
       def with_connection(&block)
         if @locks.has_key?(Fiber.current.object_id)
           yield @locks[Fiber.current.object_id].connection
@@ -118,7 +127,7 @@ module Jennifer
         exec "TRUNCATE #{table_name}"
       end
 
-      def delete(query : QueryBuilder::PlainQuery)
+      def delete(query : QueryBuilder::Query)
         body = String.build do |s|
           query.from_clause(s)
           s << query.body_section
@@ -137,7 +146,6 @@ module Jennifer
         scalar(body, args) == 1
       end
 
-      # TODO: refactor this to use regular request
       def count(query)
         body = String.build do |s|
           query.from_clause(s)
@@ -283,6 +291,12 @@ module Jennifer
         end
       end
 
+      def self.generate_schema
+      end
+
+      def self.load_schema
+      end
+
       # filter out value; should be refactored
       def self.t(field)
         case field
@@ -298,7 +312,7 @@ module Jennifer
       # migration ========================
 
       def ready_to_migrate!
-        return if table_exist?(Migration::Base::TABLE_NAME)
+        return if table_exists?(Migration::Base::TABLE_NAME)
         tb = Migration::TableBuilder::CreateTable.new(Migration::Base::TABLE_NAME)
         tb.integer(:id, {:primary => true, :auto_increment => true})
           .string(:version, {:size => 17})
@@ -321,6 +335,8 @@ module Jennifer
                 "FULLTEXT "
               when :spatial
                 "SPATIAL "
+              when nil
+                " "
               else
                 raise ArgumentError.new("Unknown index type: #{options[:type]}")
               end
@@ -379,11 +395,23 @@ module Jennifer
         exec buffer + ")"
       end
 
+      def create_enum(name, options)
+        raise BaseException.new("Current adapter not support this method.")
+      end
+
+      def drop_enum(name, options)
+        raise BaseException.new("Current adapter not support this method.")
+      end
+
+      def change_enum(name, options)
+        raise BaseException.new("Current adapter not support this method.")
+      end
+
       abstract def update(obj)
       abstract def update(q, h)
       abstract def insert(obj)
       abstract def distinct(q, c, t)
-      abstract def table_exist?(table)
+      abstract def table_exists?(table)
       abstract def index_exists?(table, name)
       abstract def column_exists?(table, name)
       abstract def translate_type(name)
@@ -394,6 +422,14 @@ module Jennifer
         size = options[:size]? || default_type_size(options[:type])
         io << name << " " << type
         io << "(#{size})" if size
+        if options[:type] == :enum
+          io << " ("
+          options[:values].as(Array).each_with_index do |e, i|
+            io << ", " if i != 0
+            io << "'#{e.as(String | Symbol)}'"
+          end
+          io << ") "
+        end
         if options.has_key?(:null)
           if options[:null]
             io << " NULL"

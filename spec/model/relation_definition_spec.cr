@@ -280,7 +280,7 @@ describe Jennifer::Model::RelationDefinition do
         c.add_countries({:name => "k1"})
         c.countries.size.should eq(1)
         Country.all.count.should eq(1)
-        ::Jennifer::QueryBuilder::PlainQuery.new("contacts_countries").where do
+        ::Jennifer::Query.new("contacts_countries").where do
           (_contact_id == c.id) & (_country_id == c.countries[0].id)
         end.exists?.should be_true
         c.countries[0].name.should eq("k1")
@@ -294,7 +294,7 @@ describe Jennifer::Model::RelationDefinition do
         c.add_countries(country)
         c.remove_countries(country)
         c.countries.size.should eq(0)
-        ::Jennifer::QueryBuilder::PlainQuery.new("contacts_countries").where do
+        ::Jennifer::Query.new("contacts_countries").where do
           (_contact_id == c.id) & (_country_id == country.id)
         end.exists?.should be_false
       end
@@ -317,7 +317,7 @@ describe Jennifer::Model::RelationDefinition do
         c = contact_create
         country = country_create
         c.add_countries(country)
-        q = Jennifer::QueryBuilder::PlainQuery.new("contacts_countries").where do
+        q = Jennifer::Query.new("contacts_countries").where do
           (_contact_id == c.id) & (_country_id == country.id)
         end
         q.exists?.should be_true

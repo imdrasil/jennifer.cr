@@ -3,11 +3,12 @@ require "../support"
 module Jennifer
   module Migration
     module Runner
-      def self.migrate
+      def self.migrate(count)
+        performed = false
         Adapter.adapter.ready_to_migrate!
-        return if ::Jennifer::Migration::Base::REGISTERED_MIGRATIONS.empty?
-        interpolation = {} of String => typeof(Base::REGISTERED_MIGRATIONS[0])
-        Base::REGISTERED_MIGRATIONS.each { |m| interpolation[m.version] = m }
+        return if ::Jennifer::Migration::Base.migrations.empty?
+        interpolation = {} of String => typeof(Base.migrations[0])
+        Base.migrations.each { |m| interpolation[m.version] = m }
 
         pending = interpolation.keys - Version.all.pluck(:version).map(&.as(String))
         return if pending.empty?
@@ -20,24 +21,31 @@ module Jennifer
           return
         end
 
+        i = 0
         pending.sort.each do |p|
+          return if count > 0 && i >= count
+          performed = true
           klass = interpolation[p]
           puts "Migration #{klass}"
           instance = klass.new
           begin
             instance.up
           rescue e
-            puts e.message
-            puts e.backtrace.join("\n")
-            instance.down
             puts "rollbacked"
-            raise "described"
+            puts e.message
+            raise e
           end
           Version.create(version: p)
         end
       rescue e
         puts e.message
         puts e.backtrace.join("\n")
+      ensure
+        Adapter.adapter_class.generate_schema if performed
+      end
+
+      def self.migrate
+        migrate(-1)
       end
 
       def self.create
@@ -52,10 +60,11 @@ module Jennifer
       end
 
       def self.rollback(options : Hash(Symbol, DBAny))
+        processed = true
         Adapter.adapter.ready_to_migrate!
-        return if ::Jennifer::Migration::Base::REGISTERED_MIGRATIONS.empty? || !Version.all.exists?
-        interpolation = {} of String => typeof(Base::REGISTERED_MIGRATIONS[0])
-        Base::REGISTERED_MIGRATIONS.each { |m| interpolation[m.version] = m }
+        return if ::Jennifer::Migration::Base.migrations.empty? || !Version.all.exists?
+        interpolation = {} of String => typeof(Base.migrations[0])
+        Base.migrations.each { |m| interpolation[m.version] = m }
 
         versions =
           if options[:count]?
@@ -71,10 +80,17 @@ module Jennifer
           klass = interpolation[v]
           klass.new.down
           Version.all.where { _version == v }.delete
+          processed = true
           puts "Droped migration #{v}"
         end
       rescue e
         puts e.message
+      ensure
+        Adapter.adapter_class.generate_schema if processed
+      end
+
+      def self.load_schema
+        Adapter.adapter_class.load_schema
       end
 
       def self.generate(name)

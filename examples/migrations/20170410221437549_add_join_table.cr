@@ -1,6 +1,6 @@
 class AddJoinTable20170410221437549 < Jennifer::Migration::Base
   def up
-    create(:countries) do |t|
+    create_table(:countries) do |t|
       t.string(:name)
     end
     create_join_table(:contacts, :countries)
@@ -8,7 +8,7 @@ class AddJoinTable20170410221437549 < Jennifer::Migration::Base
   end
 
   def down
-    drop(:countries)
+    drop_table(:countries)
     drop_join_table(:contacts, :countries)
     drop_join_table(:contacts, :profiles)
   end

@@ -1,7 +1,7 @@
 module Jennifer
   module QueryBuilder
     class ExpressionBuilder
-      property query : PlainQuery?
+      property query : Query?
 
       def initialize(@table : String, @relation : String? = nil, @query = nil)
       end
@@ -48,7 +48,7 @@ module Jennifer
               {% end %}
             {% end %}
           end
-        {% else %}
+        {% elsif call.name.stringify =~ /^_[_\w]*/ %}
           {% raise "Cant parse method name #{method_name}" %}
         {% end %}
       end

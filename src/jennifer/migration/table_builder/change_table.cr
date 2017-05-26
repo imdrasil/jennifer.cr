@@ -17,23 +17,23 @@ module Jennifer
           self
         end
 
-        def change_column(old_name, type : Symbol? = nil, options = {} of Symbol => EAllowedTypes)
+        def change_column(old_name, type : Symbol? = nil, options = DB_OPTIONS.new)
           change_column(old_name, old_name, type, options)
         end
 
-        def change_column(old_name, new_name, type : Symbol? = nil, options = {} of Symbol => EAllowedTypes)
+        def change_column(old_name, new_name, type : Symbol? = nil, options = DB_OPTIONS.new)
           @changed_columns[old_name.to_s] =
-            as_sym_hash(options, EAllowedTypes).merge(sym_hash({
+            as_sym_hash(options, AAllowedTypes).merge(sym_hash({
               :new_name => new_name,
               :type     => type,
             }, EAllowedTypes))
           self
         end
 
-        def add_column(name, type : Symbol, options = {} of Symbol => EAllowedTypes)
-          @fields[name.to_s] = as_sym_hash(options, EAllowedTypes).merge(sym_hash({
+        def add_column(name, type : Symbol, options = DB_OPTIONS.new)
+          @fields[name.to_s] = as_sym_hash(options, AAllowedTypes).merge(sym_hash({
             :type => type,
-          }, EAllowedTypes))
+          }, AAllowedTypes))
           self
         end
 
@@ -46,7 +46,15 @@ module Jennifer
         # add_index("index_name", [:field1], { :length => { :field1 => 2, :field2 => 3 }, :order => { :field1 => :asc }})
         def add_index(name : String, fields : Array(Symbol), type : Symbol, length = {} of Symbol => Int32?, order = {} of Symbol => Symbol?)
           @indexes[name.to_s] =
-            sym_hash({:_fields => arr_cast(fields, EAllowedTypes), :type => type, :length => as_sym_hash(length, EAllowedTypes), :order => as_sym_hash(order, EAllowedTypes)}, HAllowedTypes)
+            sym_hash(
+              {
+                :_fields => arr_cast(fields, EAllowedTypes),
+                :type    => type,
+                :length  => as_sym_hash(length, EAllowedTypes),
+                :order   => as_sym_hash(order, EAllowedTypes),
+              },
+              HAllowedTypes
+            )
           self
         end
 

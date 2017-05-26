@@ -93,7 +93,14 @@ module Jennifer
           when :in
             "#{_lhs} IN(#{::Jennifer::Adapter.escape_string(@rhs.as(Array).size)})"
           else
-            "#{_lhs} #{operator_to_sql} #{filterable? ? filter_out(@rhs) : @rhs}"
+            "#{_lhs} #{operator_to_sql} " +
+              if filterable?
+                filter_out(@rhs)
+              elsif @rhs.is_a?(Criteria)
+                @rhs.as(Criteria).to_sql
+              else
+                @rhs.to_s
+              end
           end
         str = "NOT (#{str})" if @negative
         str
@@ -139,8 +146,11 @@ module Jennifer
       end
 
       private def filterable?
-        return false if @operator == :bool
-        !RAW_OPERATORS.includes?(@operator)
+        !(
+          @rhs.is_a?(Criteria) ||
+            @operator == :bool ||
+            RAW_OPERATORS.includes?(@operator)
+        )
       end
     end
   end

@@ -71,6 +71,7 @@ All configs:
 | config | default value |
 | --- | --- |
 | `migration_files_path` | `"./db/migrations"` |
+| `structure_folder` | parent folder of `migration_files_path` |
 | `host`| `"localhost"` |
 | `logger` | `Logger.new(STDOUT)` |
 | `schema` | `"public"` |
@@ -128,6 +129,13 @@ $ crystal sam.cr -- db:drop
 ```shell
 $ crystal sam.cr -- db:migrate
 ```
+
+- run several migrations
+```shell
+$ crystal sam.cr -- db:step
+$ crystal sam.cr -- db:step 2
+```
+
 - create db and run all migrations (only new ones will be run)
 ```shell
 $ crystal sam.cr -- db:setup
@@ -153,7 +161,10 @@ $ crystal sam.cr -- generate:migration your_migration_name
 $ crystal sam.cr -- db:version
 ```
 
-For `postgres` `db:create` and `db:drop` commands needs additional password manual authentication.
+- load schema
+```shell
+$ crystal sam.cr -- db:schema:load
+```
 
 #### Migration DSL
 
@@ -174,7 +185,7 @@ end
 Regular example for creating table:
 
 ```crystal
-  create(:addresses) do |t|
+  create_table(:addresses) do |t|
     t.reference :contact # creates field contact_id with Int type and allows null values
     t.string :street, {:size => 20, :sql_type => "char"} # creates string field with CHAR(20) db type
     t.bool :main, {:default => false} # sets false as default value
@@ -197,6 +208,7 @@ There are next methods which represents corresponding types:
 | `#blob` | `blob` | `blob` | `Bytes` |
 | `#var_string` | `varchar(254)` | `varstring` | `String` |
 | `#json` | `json` | `json` | `JSON::Any` |
+| `#enum` | `enum` | `enum` | `String` |
 
 All of them accepts additional options:
 
@@ -206,10 +218,12 @@ All of them accepts additional options:
 - `:default` - default value for field
 - `:auto_increment` - marks field to use auto increment (properly works only with `Int32` fields, another crystal types have cut functionality for it);
 
+Also there is `#field` method which allows to directly define sql type (very suitable for snums in postgres).
+
 
 To drop table just write
 ```crystal
-drop(:addresses) # drops if exists
+drop_table(:addresses) # drops if exists
 ```
 
 To alter existing table use next methods:
@@ -229,24 +243,24 @@ Here is quick example:
 
 ```crystal
 def up
-  change(:contacts) do |t|
+  change_table(:contacts) do |t|
     t.change_column(:age, :short, {default: 0})
     t.add_column(:description, :text)
     t.add_index("contacts_description_index", :description, type: :uniq, order: :asc)
   end
 
-  change(:addresses) do |t|
+  change_table(:addresses) do |t|
     t.add_column(:details, :json)
   end
 end
 
 def down
-  change(:contacts) do |t|
+  change_table(:contacts) do |t|
     t.change_column(:age, :integer, {default: 0})
     t.drop_column(:description)
   end
 
-  change(:addresses) do |t|
+  change_table(:addresses) do |t|
     t.drop_column(:details)
   end
 end
@@ -261,6 +275,31 @@ All changes are executed one by one so you also could add data changes here (in 
 
 To be sure that your db is up to date before run tests of your application, add `Jennifer::Migration::Runner.migrate`.
 
+#### Enum
+
+Now enums are supported as well but it has different implementation for adapters. For mysql is enought just write down all values:
+```crystal
+create_table(:contacts) do |t|
+    t.enum(:gender, values: ["male", "female"])
+end
+```
+
+Postgres provide much more flexible and complex behaviour. Using it you need to create it firstly:
+
+```crystal
+create_enum(:gender_enum, ["male", "female"])
+      create_table(:contacts) do |t|
+        t.string :name, {:size => 30}
+        t.integer :age
+        t.field :gender, :gender_enum
+        t.timestamps
+      end
+      change_enum(:gender_enum, {:add_values => ["unknown"]})
+      change_enum(:gender_enum, {:rename_values => ["unknown", "other"]})
+      change_enum(:gender_enum, {:remove_values => ["other"]})
+```
+For more details check source code and PostgreSQL docs.
+
 ### Model
 
 Several model examples
@@ -270,6 +309,7 @@ class Contact < Jennifer::Model::Base
   mapping(
     id: {type: Int32, primary: true},
     name: String,
+    gender: {type: String, default: "male", null: true},
     age: {type: Int32, default: 10},
     description: {type: String, null: true},
     created_at: {type: Time, null: true},
@@ -643,6 +683,15 @@ Contact.all.select("COUNT(id) as count, contacts.name").group("name")
        .having { sql("COUNT(id)") > 1 }.pluck(:name)
 ```
 
+#### From
+
+Also you can provide subquery to specify FROM clause (but be carefull with source fields during result retriving and mapping to objects)
+
+```crystal
+Contact.all.from("select * from contacts where id > 2")
+Contacts.all.from(Contact.where { _id > 2 })
+```
+
 #### Delete and Destroy
 
 For now they both are the same - creates delete query with given conditions. `destroy` firstly loads objects and run callbacks and then calls delete on each.
@@ -730,11 +779,67 @@ Contant.all.distinct("age") # returns array of ages (Array(DB::Any | Int16 | Int
 
 `#distinct` retrieves from db column values without repeats. Can accept column name and as optional second parameter - table name. Can be only as at he end of call chain - hit the db.
 
+#### Aggregation
+
+There are 2 types of aggregation functions: ones which are orking without GROUP clause and returns single values (e.g. `max`, `min`, `count`) and ones, working with GROUP clause and returning array of values.
+
+#### Max
+
+```crystal
+Contact.all.max(:name, String)
+```
+
+#### Min
+
+```crystal
+Contact.all.min(:age, Int32)
+```
+
+#### Avg
+
+```crystal
+Contact.all.avg(:age, Float64) # mysql specific
+Contact.all.avg(:age, PG::Numeric) # Postgres specific
+```
+
+#### Sum
+
+```crystal
+Contact.all.sum(:age, Float64) # mysql specific
+Contact.all.sum(:age, Int64) # postgre specific
+```
+
 #### Count
 
 ```crystal
 Contact.all.count
 ```
+
+#### Group Max
+
+```crystal
+Contact.all.group(:gender).group_max(:age, Int32)
+```
+
+#### Group Min
+
+```crystal
+Contact.all.group(:gender).group_min(:age, Int32)
+```
+
+#### Group Avg
+
+```crystal
+Contact.all.avg(:age, Float64) # mysql specific
+Contact.all.avg(:age, PG::Numeric) # Postgres specific
+```
+
+#### Group Sum
+
+```crystal
+Contact.all.group(:gender).group_sum(:age, Float64) # mysql specific
+Contact.all.group(:gender).group_sum(:age, Int64) # postgre specific
+``` 
 
 #### Pagination
 
@@ -812,8 +917,6 @@ This functionality could be useful to clear db between test cases.
 
 ### Important restrictions
 
-- Nested query is allowed only using `#sql`
-- Block for relation now could accept only `#where` method
 - sqlite3 has a lot of limitations so it's support will be added not soon
 
 ### Test
@@ -829,7 +932,7 @@ Spec.after_each do
 end
 ```
 
-to your `spec_helper.cr`. Also just regular deleting or truncation could be used but transaction provide 15x speed up (at least for postgres; mysql get less impact).
+to your `spec_helper.cr`. Also just regular deleting or truncation could be used but transaction provide 15x speed up (at least for postgres; mysql gets less impact).
 
 > This functions can be safely used only under test environment.
 
@@ -848,16 +951,15 @@ There are still a lot of work to do. Tasks for next versions:
 - [ ] add join table option for all relations
 - [ ] refactor many-to-many relation
 - [ ] add seeds
-- [ ] rewrite tests to use spec2
-- [ ] add aggregation methods
+- [ ] rewrite tests to use minitest
 - [ ] add self documentation
+- [ ] add views support (materialized as well)
 
 ## Development
 
 Before development create db user (information is in /spec/config.cr file), run
 ```shell
-$ crystal example/migrate.cr -- db:create
-$ crystal example/migrate.cr -- db:migrate
+$ crystal example/migrate.cr -- db:setup
 ```
 
 Support both MySql and PostgreSQL are critical. By default postgres are turned on. To run tests with mysql use next:
@@ -877,7 +979,7 @@ Please ask me before starting work on smth.
 
 Also if you want to use it in your application (for now shard is almost ready for use in production) - ping me please, my email you can find in my profile.
 
-To run test use regular `crystal spec`. All migrations is under `./examples/migrations` directory.
+To run tests use regular `crystal spec`. All migrations is under `./examples/migrations` directory.
 
 ## Contributors
 

@@ -42,7 +42,7 @@ module Jennifer
         exec(parse_query(query, args), args)
       end
 
-      def distinct(query : QueryBuilder::Query, column, table)
+      def distinct(query : QueryBuilder::ModelQuery, column, table)
         str = String.build do |s|
           s << "SELECT DISTINCT " << table << "." << column << "\n"
           query.from_clause(s)

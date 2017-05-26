@@ -1,6 +1,6 @@
 class CreateProfile20170407022844409 < Jennifer::Migration::Base
   def up
-    create(:profiles) do |t|
+    create_table(:profiles) do |t|
       t.integer :contact_id, {:null => true}
       t.string :type
       t.string :uid, {:null => true}
@@ -10,6 +10,6 @@ class CreateProfile20170407022844409 < Jennifer::Migration::Base
   end
 
   def down
-    drop(:profiles)
+    drop_table(:profiles)
   end
 end

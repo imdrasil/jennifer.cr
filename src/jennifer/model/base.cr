@@ -77,25 +77,25 @@ module Jennifer
       abstract def attribute(name)
       abstract def set_attribute(name, value)
 
-      macro scope(name, opts, block = nil)
+      macro scope(name, &block)
         class Jennifer::QueryBuilder::ModelQuery(T)
-          def {{name.id}}({% if block %} *args{% end %})
-            T.{{name.id}}(self{% if block %}, *args {% end %})
+          def {{name.id}}({{ block.args.join(", ").id }})
+            T.{{name.id}}(self, {{block.args.join(", ").id}})
           end
         end
 
-        def self.{{name.id}}({% if block %} {{ opts.map(&.stringify).map { |e| "__" + e }.join(", ").id }} {% end %})
-          {% if block %}
-            {{ opts.map(&.stringify).join(", ").id }} = {{opts.map(&.stringify).map { |e| "__" + e }.join(", ").id}}
+        def self.{{name.id}}({{ block.args.map(&.stringify).map { |e| "__" + e }.join(", ").id }})
+          {% if !block.args.empty? %}
+            {{ block.args.map(&.stringify).join(", ").id }} = {{block.args.map(&.stringify).map { |e| "__" + e }.join(", ").id}}
           {% end %}
-          all.exec {{block ? block : opts}}
+          all.exec { {{block.body}} }
         end
 
-        def self.{{name.id}}(_query : ::Jennifer::QueryBuilder::ModelQuery({{@type}}){% if block %}, {{ opts.map(&.stringify).map { |e| "__" + e }.join(", ").id }} {% end %})
-          {% if block %}
-            {{ opts.map(&.stringify).join(", ").id }} = {{opts.map(&.stringify).map { |e| "__" + e }.join(", ").id}}
+        def self.{{name.id}}(_query : ::Jennifer::QueryBuilder::ModelQuery({{@type}}){% if !block.args.empty? %}, {{ block.args.map(&.stringify).map { |e| "__" + e }.join(", ").id }} {% end %})
+          {% if !block.args.empty? %}
+            {{ block.args.map(&.stringify).join(", ").id }} = {{block.args.map(&.stringify).map { |e| "__" + e }.join(", ").id}}
           {% end %}
-          _query.exec {{block ? block : opts}}
+          _query.exec { {{block.body}} }
         end
       end
 

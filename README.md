@@ -434,20 +434,20 @@ It defines next methods:
 | `::primary_field_name` | | name of primary field |
 | `::primary_field_type` | | type of primary key |
 | `#new_record?` | | returns `true` if record has `nil` primary key (is not stored to db) |
-| `::create` | `Hash(String | Symbol, DB::Any)`, `NamedTuple` | creates object, stores it to db and returns it |
-| `::create!` | `Hash(String | Symbol, DB::Any)`, `NamedTuple` | creates object, stores it to db and returns it; otherwise raise exception |
-| `::build` | Hash(String \| Symbol, DB::Any), NamedTuple | builds object |
-| `::create` | `Hash(String | Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with all callbacks |
-| `::create!` | `Hash(String | Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with callbacks or raise exception |
+| `::create` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | creates object, stores it to db and returns it |
+| `::create!` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | creates object, stores it to db and returns it; otherwise raise exception |
+| `::build` | `Hash(String \| Symbol, DB::Any), NamedTuple` | builds object |
+| `::create` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with all callbacks |
+| `::create!` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with callbacks or raise exception |
 | `#save` | | saves object to db; returns `true` if success and `false` elsewhere |
 | `#save!` | | saves object to db; returns `true` if success or rise exception otherwise |
 | `#to_h` | | returns hash with all attributes |
 | `#to_str_h` | | same as `#to_h` but with String keys |
-| `#attribute` | `String | Symbol` | returns attribute value by it's name |
+| `#attribute` | `String \| Symbol` | returns attribute value by it's name |
 | `#attributes_hash` | | returns `to_h` with deleted `nil` entries |
 | `#changed?` | | check if any field was changed |
-| `#set_attribute` | `String | Symbol`, `DB::Any` | sets attribute by given name |
-| `#attribute` | `String | Symbol` | returns attribute value by it's name |
+| `#set_attribute` | `String \| Symbol`, `DB::Any` | sets attribute by given name |
+| `#attribute` | `String \| Symbol` | returns attribute value by it's name |
 
 Automatically model is associated with table with underscored pluralized class name, but special name can be defined using `::table_name` method in own body before using any relation (`::singular_table_name` - for singular variant).
 

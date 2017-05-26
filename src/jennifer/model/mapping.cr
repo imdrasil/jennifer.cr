@@ -83,6 +83,16 @@ module Jennifer
       end
 
       macro mapping(properties, strict = true)
+        macro def self.children_classes
+          {% begin %}
+            {% if @type.all_subclasses.size > 0 %}
+              [{{ @type.all_subclasses.join(", ").id }}]
+            {% else %}
+              [] of Model::Base
+            {% end %}
+          {% end %}
+        end
+
         FIELD_NAMES = [
           {% for key, v in properties %}
             "{{key.id}}",
@@ -664,7 +674,7 @@ module Jennifer
         end
 
         def self.all
-          ::Jennifer::QueryBuilder::Query({{@type}}).build(table_name).where { _type == {{@type.stringify}} }
+          ::Jennifer::QueryBuilder::ModelQuery({{@type}}).build(table_name).where { _type == {{@type.stringify}} }
         end
 
         private def __refresh_changes

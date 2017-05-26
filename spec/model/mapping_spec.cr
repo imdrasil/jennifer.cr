@@ -4,7 +4,7 @@ describe Jennifer::Model::Mapping do
   describe "mapping macro" do
     describe "::field_count" do
       it "returns correct number of model fields" do
-        Contact.field_count.should eq(6)
+        Contact.field_count.should eq(7)
       end
     end
 
@@ -15,6 +15,20 @@ describe Jennifer::Model::Mapping do
           c = Address.find!(c.id)
           c.details.should be_a(JSON::Any)
           c.details![2].as_i.should eq(1)
+        end
+      end
+
+      describe "ENUM" do
+        it "properly loads enum" do
+          c = contact_create(name: "sam", age: 18)
+          Contact.find!(c.id).gender.should eq("male")
+        end
+
+        it "properly search via enum" do
+          contact_create(name: "sam", age: 18, gender: "male")
+          contact_create(name: "Jennifer", age: 18, gender: "female")
+          Contact.all.count.should eq(2)
+          Contact.where { _gender == "male" }.count.should eq(1)
         end
       end
     end

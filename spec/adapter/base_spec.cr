@@ -140,6 +140,30 @@ describe Jennifer::Adapter::Base do
     end
   end
 
+  describe "#table_exists?" do
+    it "returns true if table exists" do
+      adapter.table_exists?("contacts").should be_true
+    end
+
+    it "returns false if table not exists" do
+      adapter.table_exists?("unknown_table").should be_false
+    end
+  end
+
+  describe "#column_exists?" do
+    it "returns true if table has given column" do
+      adapter.column_exists?("contacts", "id").should be_true
+    end
+
+    it "returns false if table has no such olumn" do
+      adapter.column_exists?("contacts", "some_field").should be_false
+    end
+
+    it "returns false if such table is not exists" do
+      adapter.column_exists?("unknown", "id").should be_false
+    end
+  end
+
   describe "::join_table_name" do
     it "returns join table name in alphabetic order" do
       adapter.class.join_table_name("b", "a").should eq("a_b")

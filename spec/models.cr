@@ -4,6 +4,7 @@ class Contact < Jennifer::Model::Base
     id: {type: Int32, primary: true},
     name: String,
     age: {type: Int32, default: 10},
+    gender: {type: String, default: "male", null: true},
     description: {type: String, null: true},
     created_at: {type: Time, null: true},
     updated_at: {type: Time, null: true}

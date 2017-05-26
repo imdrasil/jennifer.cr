@@ -11,7 +11,7 @@ module Jennifer
       def alias_tables(aliases); end
 
       def to_sql
-        @field
+        "(" + @field + ")"
       end
 
       def sql_args

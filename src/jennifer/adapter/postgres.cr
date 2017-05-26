@@ -12,6 +12,8 @@ module Jennifer
                 PG::Geo::Polygon | PG::Numeric | Slice(UInt8) | String | Time | UInt32 | Nil
 
   module Adapter
+    alias EnumType = Bytes
+
     class Postgres < Base
       include RequestMethods
 
@@ -35,6 +37,20 @@ module Jennifer
         :string     => 254,
         :var_string => 254,
       }
+
+      def prepare
+        _query = <<-SQL
+          SELECT e.enumtypid
+          FROM pg_type t, pg_enum e
+          WHERE t.oid = e.enumtypid
+        SQL
+
+        query(_query) do |rs|
+          rs.each do
+            PG::Decoders.register_decoder PG::Decoders::StringDecoder.new, rs.read(UInt32).to_i
+          end
+        end
+      end
 
       def translate_type(name)
         TYPE_TRANSLATIONS[name]
@@ -60,39 +76,79 @@ module Jennifer
         q
       end
 
-      def table_exist?(table)
-        scalar "
+      def table_exists?(table)
+        scalar <<-SQL
           SELECT EXISTS (
             SELECT 1
             FROM   information_schema.tables
             WHERE  table_name = '#{table}'
-          )"
+          )
+          SQL
       end
 
       def column_exists?(table, name)
-        scalar "SELECT EXISTS (
-          SELECT 1
-          FROM information_schema.columns
-          WHERE table_name='#{table}' and column_name='#{name}'
-        )"
+        scalar <<-SQL
+          SELECT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_name='#{table}' and column_name='#{name}'
+          )
+        SQL
       end
 
       def index_exists?(table, name)
-        scalar "SELECT EXISTS (
-          SELECT 1
-          FROM   pg_class c
-          JOIN   pg_namespace n ON n.oid = c.relnamespace
-          WHERE  c.relname = #{name}
-          AND    n.nspname = #{Config.schema}
-        )"
+        scalar <<-SQL
+          SELECT EXISTS (
+            SELECT 1
+            FROM   pg_class c
+            JOIN   pg_namespace n ON n.oid = c.relnamespace
+            WHERE  c.relname = '#{name}'
+            AND    n.nspname = '#{Config.schema}'
+          )
+        SQL
+      end
+
+      def data_type_exists?(name)
+        scalar <<-SQL
+          EXISTS ( 
+            SELECT 1
+            FROM pg_type
+            WHERE typname = '#{name}'
+          )
+        SQL
+      end
+
+      def enum_values(name)
+        query_string_array("SELECT unnest(enum_range(NULL::#{name})::varchar[])")
+      end
+
+      def define_enum(name, values)
+        exec <<-SQL
+          CREATE TYPE #{name} AS ENUM(#{values.as(Array).map { |e| "'#{e}'" }.join(", ")})
+        SQL
+      end
+
+      def drop_enum(name)
+        exec "DROP TYPE #{name}"
+      end
+
+      def query_string_array(_query, field_count = 1)
+        result = [] of Array(String)
+        query(_query) do |rs|
+          rs.each do
+            temp = [] of String
+            field_count.times do
+              temp << rs.read(String)
+            end
+            result << temp
+          end
+        end
+        result
       end
 
       # =========== overrides
 
       def add_index(table, name, options)
-        if options[:type]? && ![:uniq, :unique].includes?(options[:type])
-          raise ArgumentError.new("Unknown index type: #{options[:type]}")
-        end
         query = String.build do |s|
           s << "CREATE "
           if options[:type]?
@@ -100,15 +156,13 @@ module Jennifer
               case options[:type]
               when :unique, :uniq
                 "UNIQUE "
-              when :fulltext
-                "FULLTEXT "
-              when :spatial
-                "SPATIAL "
               else
                 raise ArgumentError.new("Unknown index type: #{options[:type]}")
               end
           end
-          s << "INDEX " << name << " ON " << table << "("
+          s << "INDEX " << name << " ON " << table
+          s << " USING " << options[:using] if options.has_key?(:using)
+          s << " ("
           fields = options.as(Hash)[:_fields].as(Array)
           fields.each_with_index do |f, i|
             s << "," if i != 0
@@ -116,6 +170,7 @@ module Jennifer
             s << " " << options[:order].as(Hash)[f].to_s.upcase if options[:order]? && options[:order].as(Hash)[f]?
           end
           s << ")"
+          s << " " << options[:partial] if options.has_key?(:partial)
         end
         exec query
       end
@@ -200,23 +255,42 @@ module Jennifer
 
       private def column_type_definition(options, io)
         type = options[:serial]? || options[:auto_increment]? ? "serial" : options[:sql_type]? || translate_type(options[:type].as(Symbol))
-        size = options[:size]? || default_type_size(options[:type])
+        size = options[:size]? || default_type_size(options[:type]?)
         io << " " << type
         io << "(#{size})" if size
       end
 
       def self.create_database
-        Process.run("createdb", [Config.db, "-O", Config.user, "-h", Config.host, "-U", Config.user, "-W"]).inspect
+        Process.run("PGPASSWORD=#{Config.password} createdb \"${@}\"", [Config.db, "-O", Config.user, "-h", Config.host, "-U", Config.user], shell: true).inspect
       end
 
       def self.drop_database
-        Process.run("dropdb", [Config.db, "-h", Config.host, "-U", Config.user, "-W"]).inspect
+        io = IO::Memory.new
+        s = Process.run("PGPASSWORD=#{Config.password} dropdb \"${@}\"", [Config.db, "-h", Config.host, "-U", Config.user], shell: true, output: io, error: io)
+        if s.exit_code != 0
+          raise io.to_s
+        end
+      end
+
+      def self.generate_schema
+        io = IO::Memory.new
+        s = Process.run("PGPASSWORD=#{Config.password} pg_dump \"${@}\"", ["-U", Config.user, "-d", Config.db, "-h", Config.host, "-s"], shell: true, output: io)
+        File.write(Config.structure_path, io.to_s)
+      end
+
+      def self.load_schema
+        io = IO::Memory.new
+        s = Process.run("PGPASSWORD=#{Config.password} psql \"${@}\"", ["-U", Config.user, "-d", Config.db, "-h", Config.host, "-a", "-f", Config.structure_path], shell: true, output: io)
+        raise "Cant load schema: exit code #{s.exit_code}" if s.exit_code != 0
       end
     end
   end
 
   macro after_load_hook
     require "./jennifer/adapter/postgres/condition"
+    require "./jennifer/adapter/postgres/numeric"
+    require "./jennifer/adapter/postgres/migration/base"
+    require "./jennifer/adapter/postgres/migration/table_builder/*"
   end
 end
 

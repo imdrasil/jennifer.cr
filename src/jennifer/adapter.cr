@@ -20,7 +20,7 @@ module Jennifer
     end
 
     def self.adapter
-      @@adapter ||= adapter_class.not_nil!.new
+      @@adapter ||= adapter_class.not_nil!.build
     end
 
     def self.adapter_class

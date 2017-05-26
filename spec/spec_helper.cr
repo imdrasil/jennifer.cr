@@ -1,5 +1,4 @@
 require "spec"
-# require "spec2"
 require "./config"
 require "./models.cr"
 require "./factories.cr"
@@ -12,5 +11,21 @@ Spec.after_each do
   Jennifer::Adapter.adapter.rollback_transaction
 end
 
-# Spec2.random_order
-# Spec2.doc
+def match_array(expect, target)
+  (expect - target).size.should eq(0)
+rescue e
+  puts "Actual array: #{expect}"
+  puts "Expected: #{target}"
+  raise e
+end
+
+def match_each(source, target)
+  source.size.should eq(target.size)
+  source.each do |e|
+    target.includes?(e).should be_true
+  end
+rescue e
+  puts "Actual array: #{source}"
+  puts "Expected: #{target}"
+  raise e
+end

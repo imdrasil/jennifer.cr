@@ -78,7 +78,7 @@ module Jennifer
       abstract def set_attribute(name, value)
 
       macro scope(name, opts, block = nil)
-        class Jennifer::QueryBuilder::Query(T)
+        class Jennifer::QueryBuilder::ModelQuery(T)
           def {{name.id}}({% if block %} *args{% end %})
             T.{{name.id}}(self{% if block %}, *args {% end %})
           end
@@ -91,12 +91,22 @@ module Jennifer
           all.exec {{block ? block : opts}}
         end
 
-        def self.{{name.id}}(_query : ::Jennifer::QueryBuilder::Query({{@type}}){% if block %}, {{ opts.map(&.stringify).map { |e| "__" + e }.join(", ").id }} {% end %})
+        def self.{{name.id}}(_query : ::Jennifer::QueryBuilder::ModelQuery({{@type}}){% if block %}, {{ opts.map(&.stringify).map { |e| "__" + e }.join(", ").id }} {% end %})
           {% if block %}
             {{ opts.map(&.stringify).join(", ").id }} = {{opts.map(&.stringify).map { |e| "__" + e }.join(", ").id}}
           {% end %}
           _query.exec {{block ? block : opts}}
         end
+      end
+
+      macro def self.models
+        {% begin %}
+          [
+            {% for model in @type.all_subclasses %}
+              {{model.id}},
+            {% end %}
+          ]
+        {% end %}
       end
 
       macro inherited
@@ -174,7 +184,7 @@ module Jennifer
       end
 
       def self.all
-        QueryBuilder::Query(self).build(table_name)
+        QueryBuilder::ModelQuery(self).build(table_name)
       end
 
       def self.destroy(*ids)

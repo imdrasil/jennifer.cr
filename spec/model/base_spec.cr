@@ -191,7 +191,7 @@ describe Jennifer::Model::Base do
   describe "::where" do
     it "returns query" do
       res = Contact.where { _id == 1 }
-      res.should be_a(::Jennifer::QueryBuilder::Query(Contact))
+      res.should be_a(::Jennifer::QueryBuilder::ModelQuery(Contact))
     end
   end
 
@@ -228,6 +228,12 @@ describe Jennifer::Model::Base do
       res = Contact.search_by_sql("SELECT contacts.* from contacts where age > 16")
 
       res.size.should eq(2)
+    end
+  end
+
+  describe "::models" do
+    it "returns all model classes" do
+      match_array(Jennifer::Model::Base.models, [Jennifer::Migration::Version, Contact, Address, Passport, Profile, FacebookProfile, TwitterProfile, Country])
     end
   end
 end

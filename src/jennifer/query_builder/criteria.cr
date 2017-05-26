@@ -39,6 +39,14 @@ module Jennifer
         Condition.new(self, :similar, value)
       end
 
+      def ==(value : Symbol)
+        self.==(value.to_s)
+      end
+
+      def !=(value : Symbol)
+        self.!=(value.to_s)
+      end
+
       def ==(value : Rightable)
         if !value.nil?
           Condition.new(self, :==, value)

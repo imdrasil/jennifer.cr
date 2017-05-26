@@ -6,6 +6,8 @@ module Jennifer
   alias DBAny = DB::Any
 
   module Adapter
+    alias EnumType = String
+
     class Sqlite3 < Base
       include RequestMethods
 
@@ -31,7 +33,7 @@ module Jennifer
 
       # overrides ==========================
 
-      def table_exist?(table)
+      def table_exists?(table)
         v = scalar "
           SELECT COUNT(*)
           FROM sqlite_master
@@ -81,6 +83,12 @@ module Jennifer
 
       def self.create_database
         File.new(db_path, "w") unless File.exists?(db_path)
+      end
+
+      def self.generate_schema
+      end
+
+      def self.load_schema
       end
 
       #

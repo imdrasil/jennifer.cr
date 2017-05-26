@@ -22,7 +22,7 @@ module Jennifer
         this = self
         _obj = obj.attribute(primary_field)
         _rel = rel.primary
-        QueryBuilder::PlainQuery.new(join_table!).where do
+        QueryBuilder::Query.new(join_table!).where do
           (c(this.foreign_field) == _obj) & (c(this.join_table_foreign_key) == _rel)
         end.delete
         rel

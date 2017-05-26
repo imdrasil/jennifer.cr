@@ -11,23 +11,34 @@ module Jennifer
         end
 
         {% for method in DEFAULT_TYPES %}
-          def {{method.id}}(name, options = Hash(Symbol, EAllowedTypes).new)
-            defaults = sym_hash({:type => {{method}}}, EAllowedTypes)
+          def {{method.id}}(name, options = DB_OPTIONS.new)
+            defaults = sym_hash({:type => {{method}}}, AAllowedTypes)
             @fields[name.to_s] = defaults.merge(options)
             self
           end
         {% end %}
 
+        def enum(name, values = [] of String, options = DB_OPTIONS.new)
+          hash = sym_hash({:type => :enum, :values => arr_cast(values, EAllowedTypes)}, AAllowedTypes).merge(options)
+          @fields[name.to_s] = hash
+          self
+        end
+
+        def field(name, data_type, options = DB_OPTIONS.new)
+          @fields[name.to_s] = sym_hash({:sql_type => data_type}, AAllowedTypes).merge(options)
+          self
+        end
+
         def reference(name)
           integer(name.to_s + "_id", {:type => :integer, :null => true})
         end
 
-        def timestamps(options = {} of Symbol => EAllowedTypes)
+        def timestamps(options = DB_OPTIONS.new)
           timestamp(:created_at, {:null => true})
           timestamp(:updated_at, {:null => true})
         end
 
-        def index(name, field : String | Symbol, options = {} of Symbol => HAllowedTypes)
+        def index(name, field : String | Symbol, options = DB_OPTIONS.new)
           index(name, [field], {:order => {field => options[:order]?}, :length => {field => options[:length]?}})
         end
 

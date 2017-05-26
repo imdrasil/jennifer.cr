@@ -69,7 +69,7 @@ module Jennifer
           def __\{{name.id}}_clean
             relation = self.class.\{{name.id}}_relation
             this = self
-            ::Jennifer::Adapter.adapter.delete(::Jennifer::QueryBuilder::PlainQuery.new(relation.join_table!).where do
+            ::Jennifer::Adapter.adapter.delete(::Jennifer::QueryBuilder::Query.new(relation.join_table!).where do
               c(relation.foreign_field) == this.attribute(relation.primary_field)
             end)
           end

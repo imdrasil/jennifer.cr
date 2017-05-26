@@ -5,7 +5,7 @@ require "logger"
 module Jennifer
   class Config
     include Support
-    STRING_FIELDS = {:user, :password, :db, :host, :adapter, :migration_files_path, :schema}
+    STRING_FIELDS = {:user, :password, :db, :host, :adapter, :migration_files_path, :schema, :structure_folder}
     INT_FIELDS    = {:max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
     FLOAT_FIELDS  = [:checkout_timeout, :retry_delay]
 
@@ -24,6 +24,19 @@ module Jennifer
     end
 
     define_fields(STRING_FIELDS, default: "")
+
+    def self.structure_folder
+      if @@structure_folder.empty?
+        File.dirname(@@migration_files_path)
+      else
+        @@structure_folder
+      end
+    end
+
+    def self.structure_path
+      File.join(Config.structure_folder, "structure.sql")
+    end
+
     @@host = "localhost"
     @@migration_files_path = "./db/migrations"
     @@schema = "public"

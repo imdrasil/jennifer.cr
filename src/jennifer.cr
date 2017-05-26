@@ -18,6 +18,8 @@ require "./jennifer/relation/*"
 require "./jennifer/model/*"
 
 module Jennifer
+  alias Query = QueryBuilder::Query
+
   class StubRelation < ::Jennifer::Relation::IRelation
     def insert(a, b)
       raise "stubed relation"

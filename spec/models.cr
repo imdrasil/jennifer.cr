@@ -21,10 +21,10 @@ class Contact < Jennifer::Model::Base
   validates_length :name, minimum: 1, maximum: 15
   validates_with_method :name_check
 
-  scope :main, {where { _age > 18 }}
-  scope :older, [age], {where { _age >= age }}
-  scope :ordered, {order(name: :asc)}
-  scope :with_main_address, {relation(:addresses).where { _addresses__main }}
+  scope :main { where { _age > 18 } }
+  scope :older { |age| where { _age >= age } }
+  scope :ordered { order(name: :asc) }
+  scope :with_main_address { relation(:addresses).where { _addresses__main } }
 
   def name_check
     if @description && @description.not_nil!.size > 10
@@ -45,7 +45,7 @@ class Address < Jennifer::Model::Base
 
   belongs_to :contact, Contact
 
-  scope :main, {where { _main }}
+  scope :main { where { _main } }
 end
 
 class Passport < Jennifer::Model::Base

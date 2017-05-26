@@ -236,8 +236,9 @@ To alter existing table use next methods:
 
 Also next support methods are available:
 - `#table_exists?(name)`
-- `index_exists?(table, name)`
-- `column_exists?(table, name)`
+- `#index_exists?(table, name)`
+- `#column_exists?(table, name)`
+- `#data_type_exists?(name)` for postgres ENUM
 
 Here is quick example:
 
@@ -280,7 +281,7 @@ To be sure that your db is up to date before run tests of your application, add 
 Now enums are supported as well but it has different implementation for adapters. For mysql is enought just write down all values:
 ```crystal
 create_table(:contacts) do |t|
-    t.enum(:gender, values: ["male", "female"])
+  t.enum(:gender, values: ["male", "female"])
 end
 ```
 
@@ -288,15 +289,15 @@ Postgres provide much more flexible and complex behaviour. Using it you need to 
 
 ```crystal
 create_enum(:gender_enum, ["male", "female"])
-      create_table(:contacts) do |t|
-        t.string :name, {:size => 30}
-        t.integer :age
-        t.field :gender, :gender_enum
-        t.timestamps
-      end
-      change_enum(:gender_enum, {:add_values => ["unknown"]})
-      change_enum(:gender_enum, {:rename_values => ["unknown", "other"]})
-      change_enum(:gender_enum, {:remove_values => ["other"]})
+create_table(:contacts) do |t|
+  t.string :name, {:size => 30}
+  t.integer :age
+  t.field :gender, :gender_enum
+  t.timestamps
+end
+change_enum(:gender_enum, {:add_values => ["unknown"]})
+change_enum(:gender_enum, {:rename_values => ["unknown", "other"]})
+change_enum(:gender_enum, {:remove_values => ["other"]})
 ```
 For more details check source code and PostgreSQL docs.
 
@@ -327,9 +328,9 @@ class Contact < Jennifer::Model::Base
   validates_length :name, minimum: 1, maximum: 15
   validates_with_method :name_check
 
-  scope :main, {where { _age > 18 }}
-  scope :older, [age], {where { _age >= age }}
-  scope :ordered, {order(name: :asc)}
+  scope :main { where { _age > 18 } }
+  scope :older { |age| where { _age >= age } }
+  scope :ordered { order(name: :asc) }
 
   def name_check
     if @description && @description.not_nil!.size > 10
@@ -350,7 +351,7 @@ class Address < Jennifer::Model::Base
 
   belongs_to :contact, Contact
 
-  scope :main, {where { _main }}
+  scope :main { where { _main } }
 end
 
 class Passport < Jennifer::Model::Base
@@ -487,21 +488,23 @@ Subclass extends superclass definition with new fields and use string fild `type
 #### Prepared queries (scopes)
 
 Also you can specify prepared query statement.
+
 ```crystal
-scope :query_name, { where { c("some_field") > 10 } }
-scope :query_with_arguments, [a, b], { where { (c("f1") == a) && (c("f2").in(b) } }
+scope :query_name { where { c("some_field") > 10 } }
+scope :query_with_arguments { |a, b| where { (c("f1") == a) && (c("f2").in(b) } }
 ```
 
 As you can see arguments are next:
 
 - scope (query) name
-- array with scope arguments (optional - can be avoided)
-- query part - any query part could be passed: join, where, having, etc.
+- block to be executed in query contex (any query part could be passed: join, where, having, etc.)
 
 Also they are chainable, so you could do:
 
 ```crystal
-ModelName.all.where { _some_field > 1 }.query_with_arguments("done", [1,2]).order(f1: :asc).no_argument_query
+ModelName.all.where { _some_field > 1 }
+         .query_with_arguments("done", [1,2])
+         .order(f1: :asc).no_argument_query
 ```
 
 #### Relations
@@ -653,7 +656,7 @@ And operator-like methods:
 To specify exact sql query use `#sql` method:
 ```crystal
 # it behaves like regular criteria
-Contact.all.where { sql("age > ?",  [15]) & (name == "Stephan") } 
+Contact.all.where { sql("age > ?",  [15]) & (_name == "Stephan") } 
 ```
 
 Query will be inserted "as is". Usage of `#sql` allows to use nested plain request.
@@ -664,7 +667,6 @@ Query will be inserted "as is". Usage of `#sql` allows to use nested plain reque
 - use parenthesis for binary operators (`&` and `|`)
 - `nil` given to `!=` and `==` will be transformed to `IS NOT NULL` and `IS NULL`
 - `is` and `not` operator accepts next values: `:nil`, `nil`, `:unknown`, `true`, `false`
-- as was said previously - no nested queries (except `#sql`).
 
 At the end - several examples:
 
@@ -699,7 +701,7 @@ For now they both are the same - creates delete query with given conditions. `de
 It can be only at the end of chain.
 
 ```crystal
-Address.where { main.not }.delete
+Address.where { _main.not }.delete
 ```
 
 #### Joins
@@ -708,7 +710,7 @@ To join another table you can use `join` method passing model class or table nam
 ```crystal
 field = "contact_id"
 table = "passports"
-Contact.all.join(Address) { id == Address._contact_id }.join(table) { id == c(field, table) }
+Contact.all.join(Address) { Contact._id == _contact_id }.join(table) { c(field) == _id }
 ```
 
 Query, built inside of block, will passed to `ON` section of `JOIN`. Current context of block is joined table.
@@ -716,8 +718,8 @@ Query, built inside of block, will passed to `ON` section of `JOIN`. Current con
 Also there is two shortcuts for left and right joins:
 
 ```crystal
-Contact.all.left_join(Address) { id == Address._contact_id }
-Contact.all.right_join("addresses") { id == Address.c("contact_id") }
+Contact.all.left_join(Address) { _contacts__id == _contact_id }
+Contact.all.right_join("addresses") { _contacts__id == c("contact_id") }
 ```
 
 > For now Jennifer provide manual aliasing as second argument for `#join` and automatic when using `#includes` and `#with` methods. For details check out the code. 
@@ -758,7 +760,7 @@ Contact.all.relation("addresses").group(addresses: ["street"], contacts: ["name"
 #### Having
 
 ```crystal
-Contact.all.group("name").having { age > 15 }
+Contact.all.group("name").having { _age > 15 }
 ```
 
 `#having` allows to add `HAVING` part of query. It accepts block same way as `#where` does.
@@ -766,7 +768,7 @@ Contact.all.group("name").having { age > 15 }
 #### Exists
 
 ```crystal
-Contact.where { age > 42 }.exists? # returns true or false
+Contact.where { _age > 42 }.exists? # returns true or false
 ```
 
 `#exists?` check is there is any record with provided conditions. Can be only at the end of query chain - it hit the db.

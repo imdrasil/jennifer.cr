@@ -2,11 +2,9 @@ require "pg"
 require "../adapter"
 require "./request_methods"
 
-alias PG_HASH = Hash(String, DB::Any | Int8 | Int16) # TODO: check if we need this
-
 module Jennifer
-  alias DBAny = Array(PG::BoolArray) | Array(PG::CharArray) | Array(PG::Float32Array) | Array(PG::Float64Array) |
-                Array(PG::Int16Array) | Array(PG::Int32Array) | Array(PG::Int64Array) | Array(PG::StringArray) |
+  alias DBAny = Array(Int32) | Array(Char) | Array(Float32) | Array(Float64) |
+                Array(Int16) | Array(Int32) | Array(Int64) | Array(String) |
                 Bool | Char | Float32 | Float64 | Int16 | Int32 | Int64 | JSON::Any | PG::Geo::Box |
                 PG::Geo::Circle | PG::Geo::Line | PG::Geo::LineSegment | PG::Geo::Path | PG::Geo::Point |
                 PG::Geo::Polygon | PG::Numeric | Slice(UInt8) | String | Time | UInt32 | Nil
@@ -258,6 +256,7 @@ module Jennifer
         size = options[:size]? || default_type_size(options[:type]?)
         io << " " << type
         io << "(#{size})" if size
+        io << " ARRAY" if options[:array]?
       end
 
       def self.create_database
@@ -288,6 +287,7 @@ module Jennifer
 
   macro after_load_hook
     require "./jennifer/adapter/postgres/condition"
+    require "./jennifer/adapter/postgres/criteria"
     require "./jennifer/adapter/postgres/numeric"
     require "./jennifer/adapter/postgres/migration/base"
     require "./jennifer/adapter/postgres/migration/table_builder/*"

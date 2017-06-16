@@ -195,7 +195,7 @@ module Jennifer
       def result_to_array(rs)
         a = [] of DBAny
         rs.columns.each do |col|
-          temp = rs.read
+          temp = rs.read(DBAny)
           if temp.is_a?(Int8)
             temp = (temp == 1i8).as(Bool)
           end

@@ -3,12 +3,44 @@ require "../spec_helper"
 describe Jennifer::QueryBuilder::Condition do
   describe "#to_sql" do
     {% for op in [:<, :>, :<=, :>=, :!=] %}
-        context "{{op.id}} operator" do
-          it "retruns string representation" do
-            criteria_builder.{{op.id}}("asd").to_sql.should eq("tests.f1 {{op.id}} %s")
-          end
+      context "{{op.id}} operator" do
+        it "retruns string representation" do
+          criteria_builder.{{op.id}}("asd").to_sql.should eq("tests.f1 {{op.id}} %s")
         end
-      {% end %}
+      end
+    {% end %}
+
+    postgres_only do
+      context "operator overlap" do
+        it "accepts plain args" do
+          criteria_builder.overlap([1, 2]).to_sql.should eq("tests.f1 && %s")
+        end
+
+        it "accepts criteria" do
+          criteria_builder.overlap(criteria_builder).to_sql.should eq("tests.f1 && tests.f1")
+        end
+      end
+
+      context "operator contain" do
+        it "accepts plain args" do
+          criteria_builder.contain([1, 2]).to_sql.should eq("tests.f1 @> %s")
+        end
+
+        it "accepts criteria" do
+          criteria_builder.contain(criteria_builder).to_sql.should eq("tests.f1 @> tests.f1")
+        end
+      end
+
+      context "operator contained" do
+        it "accepts plain args" do
+          criteria_builder.contained([1, 2]).to_sql.should eq("tests.f1 <@ %s")
+        end
+
+        it "accepts criteria" do
+          criteria_builder.contained(criteria_builder).to_sql.should eq("tests.f1 <@ tests.f1")
+        end
+      end
+    end
 
     context "operator ==" do
       it "returns short" do

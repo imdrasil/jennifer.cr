@@ -4,7 +4,12 @@ describe Jennifer::Model::Mapping do
   describe "mapping macro" do
     describe "::field_count" do
       it "returns correct number of model fields" do
-        Contact.field_count.should eq(7)
+        postgres_only do
+          Contact.field_count.should eq(8)
+        end
+        mysql_only do
+          Contact.field_count.should eq(7)
+        end
       end
     end
 
@@ -29,6 +34,16 @@ describe Jennifer::Model::Mapping do
           contact_create(name: "Jennifer", age: 18, gender: "female")
           Contact.all.count.should eq(2)
           Contact.where { _gender == "male" }.count.should eq(1)
+        end
+      end
+
+      postgres_only do
+        describe "Array" do
+          it "properly load array" do
+            c = Contact.create(name: "sam", age: 18, gender: "male", tags: [1, 2])
+            c.tags!.should eq([1, 2])
+            Contact.all.first!.tags!.should eq([1, 2])
+          end
         end
       end
     end

@@ -1,3 +1,15 @@
+macro postgres_only
+  {% if env("DB") == "postgres" || env("DB") == nil %}
+    {{yield}}
+  {% end %}
+end
+
+macro mysql_only
+  {% if env("DB") == "mysql" %}
+    {{yield}}
+  {% end %}
+end
+
 require "spec"
 require "./config"
 require "./models.cr"

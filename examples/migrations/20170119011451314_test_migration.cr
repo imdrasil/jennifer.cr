@@ -5,6 +5,7 @@ class TestMigration20170119011451314 < Jennifer::Migration::Base
       create_table(:contacts) do |t|
         t.string :name, {:size => 30}
         t.integer :age
+        t.integer :tags, {:array => true}
         t.field :gender, :gender_enum
         t.timestamps
       end

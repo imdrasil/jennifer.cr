@@ -36,7 +36,6 @@ Jennifer::Config.read("./spec/fixtures/database.yml", :development)
 Second argument represents environment and just use it as namespace key grapping values from yml.
 
 ```yaml
----
 defaults : &defaults
   host: localhost
   adapter: postgres
@@ -72,7 +71,7 @@ All configs:
 | --- | --- |
 | `migration_files_path` | `"./db/migrations"` |
 | `structure_folder` | parent folder of `migration_files_path` |
-| `host`| `"localhost"` |
+| `host` | `"localhost"` |
 | `logger` | `Logger.new(STDOUT)` |
 | `schema` | `"public"` |
 | `user` | - |
@@ -84,7 +83,7 @@ All configs:
 | `max_idle_pool_size` | 1 |
 | `retry_attempts` | 1 |
 | `checkout_timeout` | 5.0 |
-| `retry_delay` | 1.0|
+| `retry_delay` | 1.0 |
 
 #### Logging
 
@@ -210,6 +209,8 @@ There are next methods which represents corresponding types:
 | `#json` | `json` | `json` | `JSON::Any` |
 | `#enum` | `enum` | `enum` | `String` |
 
+Also if you use postgres array types are available as well: `Array(Int32)`, `Array(Char)`, `Array(Float32)`,  `Array(Float64)`, `Array(Int16)`, `Array(Int32)`, `Array(Int64)`, `Array(String)`.
+
 All of them accepts additional options:
 
 - `:sql_type` - gets exact (except size) field type;
@@ -217,6 +218,7 @@ All of them accepts additional options:
 - `:primary` - marks field as primary key field (could be several ones but this provides some bugs with query generation for such model - for now try to avoid this).
 - `:default` - default value for field
 - `:auto_increment` - marks field to use auto increment (properly works only with `Int32` fields, another crystal types have cut functionality for it);
+- `:array` - mark field to be array type (postgres only)
 
 Also there is `#field` method which allows to directly define sql type (very suitable for snums in postgres).
 
@@ -653,6 +655,14 @@ And operator-like methods:
 | `not` | `NOT` and provided value (or as unary operator if no one is given) |
 | `in` | `IN` |
 
+And postgres specific:
+
+| Method | SQL variant |
+| --- | --- |
+| `contain` | `@>` |
+| `contained` |`<@` |
+| `overlap` | `&&` |
+
 To specify exact sql query use `#sql` method:
 ```crystal
 # it behaves like regular criteria
@@ -945,7 +955,6 @@ There are still a lot of work to do. Tasks for next versions:
 - [ ] add SQLite support
 - [ ] increase test coverage to acceptable level
 - [ ] add json operators
-- [ ] add PG::Array support
 - [ ] add possibility for `#group` accept any sql string
 - [ ] add polymorphic associations
 - [ ] add through to relations
@@ -957,8 +966,6 @@ There are still a lot of work to do. Tasks for next versions:
 - [ ] add self documentation
 - [ ] add views support (materialized as well)
 
-## Development
-
 Before development create db user (information is in /spec/config.cr file), run
 ```shell
 $ crystal example/migrate.cr -- db:setup
@@ -968,6 +975,16 @@ Support both MySql and PostgreSQL are critical. By default postgres are turned o
 ```shell
 $ DB=mysql crystal spec
 ```
+
+## Documentation
+
+I try to keep current README with uptodate information. Self documentation is not fully support yet but you can compile docs using shell script:
+
+```shell
+$ ./generate-docs.sh
+```
+
+It also depends on choosed adapter (postgres is by default).
 
 ## Contributing
 

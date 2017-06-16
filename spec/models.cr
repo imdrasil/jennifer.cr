@@ -1,14 +1,27 @@
 class Contact < Jennifer::Model::Base
   with_timestamps
-  mapping(
-    id: {type: Int32, primary: true},
-    name: String,
-    age: {type: Int32, default: 10},
-    gender: {type: String, default: "male", null: true},
-    description: {type: String, null: true},
-    created_at: {type: Time, null: true},
-    updated_at: {type: Time, null: true}
-  )
+  {% if env("DB") == "postgres" || env("DB") == nil %}
+    mapping(
+      id:          {type: Int32, primary: true},
+      name:        String,
+      age:         {type: Int32, default: 10},
+      gender:      {type: String, default: "male", null: true},
+      description: {type: String, null: true},
+      created_at:  {type: Time, null: true},
+      updated_at:  {type: Time, null: true},
+      tags: {type: Array(Int32)? }
+    )
+  {% else %}
+    mapping(
+      id:          {type: Int32, primary: true},
+      name:        String,
+      age:         {type: Int32, default: 10},
+      gender:      {type: String, default: "male", null: true},
+      description: {type: String, null: true},
+      created_at:  {type: Time, null: true},
+      updated_at:  {type: Time, null: true},
+    )
+  {% end %}
 
   has_many :addresses, Address
   has_many :facebook_profiles, FacebookProfile

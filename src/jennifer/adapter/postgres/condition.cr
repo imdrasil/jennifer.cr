@@ -15,6 +15,12 @@ class Jennifer::QueryBuilder::Condition
       "IS"
     when :is_not
       "IS NOT"
+    when :contain
+      "@>"
+    when :contained
+      "<@"
+    when :overlap
+      "&&"
     else
       @operator.to_s
     end

@@ -109,7 +109,7 @@ For command management Jennifer now uses [Sam](https://github.com/imdrasil/sam.c
 require "./your_configuration_folder/*" # with requiring jennifer and her adapter
 require "./migrations/*"
 require "sam"
-load_dependencies "./", "jennifer"
+load_dependencies "jennifer"
 # your another tasks here
 Sam.help
 ```

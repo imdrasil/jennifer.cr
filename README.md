@@ -108,7 +108,8 @@ For command management Jennifer now uses [Sam](https://github.com/imdrasil/sam.c
 ```crystal
 require "./your_configuration_folder/*" # with requiring jennifer and her adapter
 require "./migrations/*"
-load_dependencies "./", "jennifer"
+require "sam"
+load_dependencies "jennifer"
 # your another tasks here
 Sam.help
 ```

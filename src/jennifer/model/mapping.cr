@@ -83,6 +83,7 @@ module Jennifer
       end
 
       macro mapping(properties, strict = true)
+        {% p "ma" %}
         macro def self.children_classes
           {% begin %}
             {% if @type.all_subclasses.size > 0 %}

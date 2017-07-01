@@ -1,7 +1,7 @@
 module Jennifer
   module Model
     module RelationDefinition
-      macro included
+      macro extended
         macro has_many(name, klass, request = nil, foreign = nil, primary = nil, join_table = nil, join_foreign = nil)
           @@relations["\{{name.id}}"] =
             ::Jennifer::Relation::HasMany(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}}, \{{join_table}}, \{{join_foreign}},

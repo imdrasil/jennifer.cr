@@ -7,9 +7,15 @@ module Jennifer
   module Model
     abstract class Base
       include Support
+      extend Support
+      extend Mapping
       include Mapping
       include Validation
+      extend Validation::Macrosses
+      include Validation::Macrosses
+      extend Callback
       include Callback
+      extend RelationDefinition
       include RelationDefinition
 
       alias Supportable = DBAny | Base
@@ -110,11 +116,13 @@ module Jennifer
       end
 
       macro inherited
-        ::Jennifer::Model::Validation.inherited_hook
+        ::Jennifer::Model::Validation::Macrosses.inherited_hook
         ::Jennifer::Model::Callback.inherited_hook
         ::Jennifer::Model::RelationDefinition.inherited_hook
 
 
+        {% name = @type.stringify.underscore %}
+        {% p name %}
         @@relations = {} of String => ::Jennifer::Relation::IRelation
 
         after_save :__refresh_changes
@@ -136,7 +144,7 @@ module Jennifer
         end
 
         macro finished
-          ::Jennifer::Model::Validation.finished_hook
+          ::Jennifer::Model::Validation::Macrosses.finished_hook
           ::Jennifer::Model::Callback.finished_hook
           ::Jennifer::Model::RelationDefinition.finished_hook
 

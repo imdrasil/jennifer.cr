@@ -23,7 +23,7 @@ module Jennifer
 
         def change_column(old_name, new_name, type : Symbol? = nil, options = DB_OPTIONS.new)
           @changed_columns[old_name.to_s] =
-            as_sym_hash(options, AAllowedTypes).merge(sym_hash({
+            sym_hash_cast(options, AAllowedTypes).merge(sym_hash({
               :new_name => new_name,
               :type     => type,
             }, EAllowedTypes))
@@ -31,7 +31,7 @@ module Jennifer
         end
 
         def add_column(name, type : Symbol, options = DB_OPTIONS.new)
-          @fields[name.to_s] = as_sym_hash(options, AAllowedTypes).merge(sym_hash({
+          @fields[name.to_s] = sym_hash_cast(options, AAllowedTypes).merge(sym_hash({
             :type => type,
           }, AAllowedTypes))
           self
@@ -48,10 +48,10 @@ module Jennifer
           @indexes[name.to_s] =
             sym_hash(
               {
-                :_fields => arr_cast(fields, EAllowedTypes),
+                :_fields => typed_array_cast(fields, EAllowedTypes),
                 :type    => type,
-                :length  => as_sym_hash(length, EAllowedTypes),
-                :order   => as_sym_hash(order, EAllowedTypes),
+                :length  => sym_hash_cast(length, EAllowedTypes),
+                :order   => sym_hash_cast(order, EAllowedTypes),
               },
               HAllowedTypes
             )

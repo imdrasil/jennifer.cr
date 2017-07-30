@@ -1,12 +1,11 @@
-require "json"
 require "inflector"
 require "inflector/string"
 require "accord"
+require "ifrit/converter"
 
 require "./jennifer/exceptions"
 require "./jennifer/adapter"
 require "./jennifer/config"
-require "./jennifer/support"
 require "./jennifer/version"
 
 require "./jennifer/query_builder/*"

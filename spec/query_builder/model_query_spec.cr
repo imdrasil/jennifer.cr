@@ -53,12 +53,28 @@ describe Jennifer::QueryBuilder::ModelQuery do
       c1 = contact_create(age: 15)
       c2 = contact_create(age: 15)
 
-      r = Contact.all.where { _age == 15 }.first!
-      r.id.should eq(c1.id)
+      r = Contact.all.first
+      r.not_nil!.id.should eq(c1.id)
     end
 
     it "returns nil if there is no such records" do
       Contact.all.first.should be_nil
+    end
+  end
+
+  describe "#first!" do
+    it "returns first record" do
+      c1 = contact_create(age: 15)
+      c2 = contact_create(age: 15)
+
+      r = Contact.all.first!
+      r.id.should eq(c1.id)
+    end
+
+    it "raises error if there is no such records" do
+      expect_raises(Jennifer::RecordNotFound) do
+        Contact.all.first!
+      end
     end
   end
 

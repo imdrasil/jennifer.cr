@@ -6,7 +6,7 @@ require "./relation_definition"
 module Jennifer
   module Model
     abstract class Base
-      include Support
+      extend Ifrit
       include Mapping
       include Validation
       include Callback
@@ -113,7 +113,6 @@ module Jennifer
         ::Jennifer::Model::Validation.inherited_hook
         ::Jennifer::Model::Callback.inherited_hook
         ::Jennifer::Model::RelationDefinition.inherited_hook
-
 
         @@relations = {} of String => ::Jennifer::Relation::IRelation
 

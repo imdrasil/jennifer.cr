@@ -163,7 +163,7 @@ module Jennifer
         end
 
         def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-          initialize(to_s_hash(values, Jennifer::DBAny))
+          initialize(stringify_hash(values, Jennifer::DBAny))
         end
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))
@@ -491,7 +491,7 @@ module Jennifer
         end
 
         def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-          initialize(to_s_hash(values, Jennifer::DBAny))
+          initialize(stringify_hash(values, Jennifer::DBAny))
         end
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))

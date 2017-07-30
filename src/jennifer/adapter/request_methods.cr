@@ -42,6 +42,22 @@ module Jennifer
         exec(parse_query(query, args), args)
       end
 
+      def modify(q, modifications : Hash)
+        esc = self.class.escape_string(1)
+        query = String.build do |s|
+          s << "UPDATE " << q.table << " SET "
+          modifications.map { |field, value| "#{field.to_s} = #{field.to_s} #{value[:operator]} #{esc}" }.join(", ", s)
+          s << "\n"
+          s << q.body_section
+        end
+        args = [] of DBAny
+        modifications.each do |k, v|
+          args << v[:value]
+        end
+        args.concat(q.select_args)
+        exec(parse_query(query, args), args)
+      end
+
       def distinct(query : QueryBuilder::ModelQuery, column, table)
         str = String.build do |s|
           s << "SELECT DISTINCT " << table << "." << column << "\n"

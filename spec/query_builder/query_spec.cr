@@ -2,6 +2,7 @@ require "../spec_helper"
 
 describe Jennifer::QueryBuilder::Query do
   described_class = Jennifer::QueryBuilder::Query
+
   describe "#to_sql" do
     context "if query tree is not epty" do
       it "retruns sql representation of condition" do
@@ -250,6 +251,34 @@ describe Jennifer::QueryBuilder::Query do
       {% else %}
         match_each([19, 20], described_class.new("contacts").group(:gender).group_avg(:age, PG::Numeric))
       {% end %}
+    end
+  end
+
+  describe "#increment" do
+    it "accepts hash" do
+      c = contact_create(name: "asd", gender: "male", age: 18)
+      Contact.where { _id == c.id }.increment({:age => 2})
+      Contact.find!(c.id).age.should eq(20)
+    end
+
+    it "accepts named tuple literal" do
+      c = contact_create(name: "asd", gender: "male", age: 18)
+      Contact.where { _id == c.id }.increment(age: 2)
+      Contact.find!(c.id).age.should eq(20)
+    end
+  end
+
+  describe "#decrement" do
+    it "accepts hash" do
+      c = contact_create(name: "asd", gender: "male", age: 20)
+      Contact.where { _id == c.id }.decrement({:age => 2})
+      Contact.find!(c.id).age.should eq(18)
+    end
+
+    it "accepts named tuple literal" do
+      c = contact_create(name: "asd", gender: "male", age: 20)
+      Contact.where { _id == c.id }.decrement(age: 2)
+      Contact.find!(c.id).age.should eq(18)
     end
   end
 

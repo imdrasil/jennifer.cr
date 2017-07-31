@@ -70,8 +70,8 @@ module Jennifer
       end
 
       macro with_timestamps
-        after_create :__update_created_at
-        after_save :__update_updated_at
+        before_create :__update_created_at
+        before_save :__update_updated_at
 
         def __update_created_at
           @created_at = Time.now

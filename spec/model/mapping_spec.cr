@@ -300,8 +300,8 @@ describe Jennifer::Model::Mapping do
 
   describe "with_timestamps macro" do
     it "adds callbacks" do
-      Contact::AFTER_CREATE_CALLBACKS.should contain("__update_created_at")
-      Contact::AFTER_SAVE_CALLBACKS.should contain("__update_updated_at")
+      Contact::BEFORE_CREATE_CALLBACKS.should contain("__update_created_at")
+      Contact::BEFORE_SAVE_CALLBACKS.should contain("__update_updated_at")
     end
   end
 

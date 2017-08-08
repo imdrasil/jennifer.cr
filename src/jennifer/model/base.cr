@@ -209,6 +209,24 @@ module Jennifer
         self.class.where { this.class.primary == this.primary }.delete
       end
 
+      def lock!(type : String | Bool = true)
+        this = self
+        self.class.all.where { this.class.primary == this.primary }.lock(type).to_a
+      end
+
+      def with_lock(type : String | Bool = true)
+        self.class.transaction do |t|
+          self.lock!(type)
+          yield(t)
+        end
+      end
+
+      def self.transaction
+        Adapter.adapter.transaction do |t|
+          yield(t)
+        end
+      end
+
       def self.where(&block)
         ac = all
         tree = with ac.expression_builder yield

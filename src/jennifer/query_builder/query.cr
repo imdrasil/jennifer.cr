@@ -5,7 +5,7 @@ module Jennifer
     class Query
       extend Ifrit
 
-      {% for method in %i(having table limit offset raw_select table_aliases from lock joins order relations group) %}
+      {% for method in %i(having table limit offset raw_select table_aliases from lock joins order relations group lock) %}
         def _{{method.id}}
           @{{method.id}}
         end

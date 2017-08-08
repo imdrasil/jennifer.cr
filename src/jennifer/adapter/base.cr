@@ -104,7 +104,7 @@ module Jennifer
       end
 
       def parse_query(q, args)
-        SqlGenerator.parse_query(q, args)
+        SqlGenerator.parse_query(q, args.size)
       end
 
       def parse_query(q)
@@ -137,17 +137,17 @@ module Jennifer
 
       def delete(query : QueryBuilder::Query)
         args = query.select_args
-        exec parse_query(SqlGenerator.delete(query), args), args
+        exec SqlGenerator.delete(query), args
       end
 
       def exists?(query)
         args = query.select_args
-        scalar(parse_query(SqlGenerator.exists(query), args), args) == 1
+        scalar(SqlGenerator.exists(query), args) == 1
       end
 
       def count(query)
         args = query.select_args
-        scalar(parse_query(SqlGenerator.count(query), args), args).as(Int64).to_i
+        scalar(SqlGenerator.count(query), args).as(Int64).to_i
       end
 
       def self.db_connection

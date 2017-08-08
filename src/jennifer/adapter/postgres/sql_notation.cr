@@ -40,12 +40,10 @@ module Jennifer
         end
       end
 
-      def parse_query(query, args)
+      def parse_query(query, arg_count)
         arr = [] of String
-        i = 0
-        args.each do
-          i += 1
-          arr << "$#{i}"
+        arg_count.times do |i|
+          arr << "$#{i + 1}"
         end
         query % arr
       end

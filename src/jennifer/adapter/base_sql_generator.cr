@@ -26,28 +26,37 @@ module Jennifer
       end
 
       def self.delete(query)
-        String.build do |s|
-          s << "DELETE "
-          from_clause(s, query)
-          body_section(s, query)
-        end
+        parse_query(
+          String.build do |s|
+            s << "DELETE "
+            from_clause(s, query)
+            body_section(s, query)
+          end,
+          query.select_args_count
+        )
       end
 
       def self.exists(query)
-        String.build do |s|
-          s << "SELECT EXISTS(SELECT 1 "
-          from_clause(s, query)
-          body_section(s, query)
-          s << ")"
-        end
+        parse_query(
+          String.build do |s|
+            s << "SELECT EXISTS(SELECT 1 "
+            from_clause(s, query)
+            body_section(s, query)
+            s << ")"
+          end,
+          query.select_args_count
+        )
       end
 
       def self.count(query)
-        String.build do |s|
-          s << "SELECT COUNT(*) "
-          from_clause(s, query)
-          body_section(s, query)
-        end
+        parse_query(
+          String.build do |s|
+            s << "SELECT COUNT(*) "
+            from_clause(s, query)
+            body_section(s, query)
+          end,
+          query.select_args_count
+        )
       end
 
       def self.update(obj : Model::Base)
@@ -88,6 +97,12 @@ module Jennifer
         limit_clause(io, query)
         group_clause(io, query)
         having_clause(io, query)
+        lock_clause(io, query)
+      end
+
+      def self.lock_clause(io, query)
+        return if query._lock.nil?
+        io << (query._lock.is_a?(Bool) ? " FOR UPDATE " : query._lock)
       end
 
       def self.select_clause(io, query : QueryBuilder::ModelQuery, exact_fields = [] of String)
@@ -217,9 +232,9 @@ module Jennifer
         end
       end
 
-      def self.parse_query(query, args)
+      def self.parse_query(query, arg_count)
         arr = [] of String
-        args.each do
+        arg_count.times do
           arr << "?"
         end
         query % arr

@@ -64,30 +64,6 @@ module Jennifer
         result
       end
 
-      def select_clause(exact_fields = [] of String)
-        String.build do |s|
-          s << "SELECT "
-          unless @raw_select
-            if exact_fields.size > 0
-              exact_fields.map { |f| "#{table}.#{f}" }.join(", ", s)
-            else
-              s << table << ".*"
-              unless @relations.empty?
-                s << ", "
-                @relations.each_with_index do |r, i|
-                  s << ", " if i != 0
-                  s << (@table_aliases[r]? || model_class.relations[r].table_name) << ".*"
-                end
-              end
-            end
-          else
-            s << @raw_select
-          end
-          s << "\n"
-          from_clause(s)
-        end
-      end
-
       # ========= private ==============
 
       private def reverse_order

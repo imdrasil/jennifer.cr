@@ -82,7 +82,7 @@ describe Jennifer::QueryBuilder::Query do
     it "addes inner join by default" do
       q1 = query_builder
       q1.join(Address) { _test__id == _contact_id }
-      q1.join_clause.should match(/JOIN addresses ON test\.id = addresses\.contact_id/)
+      q1._joins.map(&.type).should eq([:inner])
     end
   end
 
@@ -90,7 +90,7 @@ describe Jennifer::QueryBuilder::Query do
     it "addes left join" do
       q1 = query_builder
       q1.left_join(Address) { _test__id == _contact_id }
-      q1.join_clause.should match(/LEFT JOIN addresses ON test\.id = addresses\.contact_id/)
+      q1._joins.map(&.type).should eq([:left])
     end
   end
 
@@ -98,7 +98,7 @@ describe Jennifer::QueryBuilder::Query do
     it "addes right join" do
       q1 = query_builder
       q1.right_join(Address) { _test__id == _contact_id }
-      q1.join_clause.should match(/RIGHT JOIN addresses ON test\.id = addresses\.contact_id/)
+      q1._joins.map(&.type).should eq([:right])
     end
   end
 
@@ -156,13 +156,13 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#from" do
     it "accepts plain query" do
-      query_builder("contacts").from("select * from contacts where id > 2")
-                               .select_clause.should eq("SELECT contacts.*\nFROM ( select * from contacts where id > 2 ) ")
+      select_clause(query_builder("contacts").from("select * from contacts where id > 2"))
+        .should eq("SELECT contacts.*\nFROM ( select * from contacts where id > 2 ) ")
     end
 
     it "accepts query object" do
-      query_builder("contacts").from(Contact.where { _id > 2 })
-                               .select_clause.should eq("SELECT contacts.*\nFROM ( SELECT contacts.*\nFROM contacts\nWHERE contacts.id > %s\n ) ")
+      select_clause(query_builder("contacts").from(Contact.where { _id > 2 }))
+        .should eq("SELECT contacts.*\nFROM ( SELECT contacts.*\nFROM contacts\nWHERE contacts.id > %s\n ) ")
     end
   end
 

@@ -69,6 +69,52 @@ module Jennifer
         o
       end
 
+      def new_record?
+        @new_record
+      end
+
+      def self.create(values : Hash | NamedTuple)
+        o = new(values)
+        o.save
+        o
+      end
+
+      def self.create
+        a = {} of Symbol => Supportable
+        o = new(a)
+        o.save
+        o
+      end
+
+      def self.create(**values)
+        o = new(values.to_h)
+        o.save
+        o
+      end
+
+      def self.create!(values : Hash | NamedTuple)
+        o = new(values)
+        o.save!
+        o
+      end
+
+      def self.create!
+        o = new({} of Symbol => Supportable)
+        o.save!
+        o
+      end
+
+      def self.create!(**values)
+        o = new(values.to_h)
+        o.save!
+        o
+      end
+
+      def save!(skip_validation = false)
+        raise Jennifer::BaseException.new("Record was not save") unless save(skip_validation)
+        true
+      end
+
       def append_relation(name, hash)
         raise Jennifer::UnknownRelation.new(self.class, name)
       end

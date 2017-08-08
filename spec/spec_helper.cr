@@ -41,3 +41,11 @@ rescue e
   puts "Expected: #{target}"
   raise e
 end
+
+def select_clause(query)
+  String.build { |s| ::Jennifer::Adapter::SqlGenerator.select_clause(s, query) }
+end
+
+def select_query(query)
+  ::Jennifer::Adapter::SqlGenerator.select(query)
+end

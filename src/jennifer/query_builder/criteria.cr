@@ -100,6 +100,10 @@ module Jennifer
         [] of DBAny
       end
 
+      def sql_args_count
+        0
+      end
+
       def to_condition
         Condition.new(self)
       end

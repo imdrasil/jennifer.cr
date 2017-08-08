@@ -1,11 +1,15 @@
 require "./expression_builder"
-require "./sql_generation_methods"
 
 module Jennifer
   module QueryBuilder
     class Query
       extend Ifrit
-      include SQLGenerationMethods
+
+      {% for method in %i(having table limit offset raw_select table_aliases from lock joins order relations group) %}
+        def _{{method.id}}
+          @{{method.id}}
+        end
+      {% end %}
 
       @having : Condition | LogicOperator | Nil
       @table : String = ""
@@ -14,6 +18,7 @@ module Jennifer
       @raw_select : String?
       @table_aliases = {} of String => String
       @from : String | Query?
+      @lock : String | Bool?
 
       property tree : Condition | LogicOperator?
 
@@ -26,21 +31,57 @@ module Jennifer
         @relation_used = false
       end
 
+      def initialize(@table)
+        initialize
+      end
+
       def self.build(*opts)
         q = new(*opts)
         q.expression_builder.query = q
         q
       end
 
-      def initialize(@table)
-        initialize
+      def self.[](*opts)
+        build(*opts)
       end
 
-      {% for attr in [:having, :limit, :offset, :raw_select, :table_aliases, :joins, :order, :relations, :group] %}
-        protected def {{attr.id}}
-          @{{attr.id}}
+      def to_sql
+        @tree ? @tree.not_nil!.to_sql : ""
+      end
+
+      def sql_args
+        if @tree
+          @tree.not_nil!.sql_args
+        else
+          [] of DB::Any
         end
-      {% end %}
+      end
+
+      def sql_args_count
+        @tree ? @tree.not_nil!.sql_args_count : 0
+      end
+
+      def select_args
+        args = [] of DB::Any
+        args.concat(@from.as(Query).select_args) if @from.is_a?(Query)
+        @joins.each do |join|
+          args.concat(join.sql_args)
+        end
+        args.concat(@tree.not_nil!.sql_args) if @tree
+        args.concat(@having.not_nil!.sql_args) if @having
+        args
+      end
+
+      def select_args_count
+        count = 0
+        count += @from.as(Query).select_args_count if @from.is_a?(Query)
+        @joins.each do |join|
+          count += join.sql_args_count
+        end
+        count += @tree.not_nil!.sql_args_count if @tree
+        count += @having.not_nil!.sql_args_count if @having
+        count
+      end
 
       def with_relation!
         @relation_used = true
@@ -139,7 +180,7 @@ module Jennifer
         result = to_a
         reverse_order
         @limit = old_limit
-        raise RecordNotFound.new(self.select_query) if result.empty?
+        raise RecordNotFound.new(Adapter::SqlGenerator.select(self)) if result.empty?
         result[0]
       end
 
@@ -155,7 +196,7 @@ module Jennifer
         old_limit = @limit
         result = to_a
         @limit = old_limit
-        raise RecordNotFound.new(self.select_query) if result.empty?
+        raise RecordNotFound.new(Adapter::SqlGenerator.select(self)) if result.empty?
         result[0]
       end
 
@@ -347,6 +388,11 @@ module Jennifer
         typed_array_cast(result, T)
       end
 
+      def lock(type = true)
+        @lock = type
+        self
+      end
+
       def each
         to_a.each do |e|
           yield e
@@ -397,10 +443,8 @@ module Jennifer
 
       def to_a
         result = [] of Hash(String, DBAny)
-        Adapter.adapter.select(self) do |rs|
-          rs.each do
-            result << Adapter.adapter.result_to_hash(rs)
-          end
+        each_result_set do |rs|
+          result << Adapter.adapter.result_to_hash(rs)
         end
         result
       end

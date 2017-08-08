@@ -135,7 +135,7 @@ describe Jennifer::Model::Base do
 
   describe "scope macro" do
     it "executes in query context" do
-      String.build { |io| Contact.all.ordered.order_clause(io) }.should match(/ORDER BY name ASC/)
+      ::Jennifer::Adapter::SqlGenerator.select(Contact.all.ordered).should match(/ORDER BY name ASC/)
     end
 
     context "without arguemnt" do

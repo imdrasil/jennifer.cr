@@ -162,6 +162,36 @@ module Jennifer
           {% end %}
         end
 
+        def assign(pull : DB::ResultSet)
+          @new_record = false
+          {% for key, value in properties %}
+            %var{key.id} = nil
+            %found{key.id} = false
+          {% end %}
+
+          {{properties.size}}.times do |i|
+            column = %pull.column_name(%pull.column_index)
+            case column
+            {% for key, value in properties %}
+              when {{value[:column_name] || key.id.stringify}}
+                %found{key.id} = true
+                %var{key.id} = %pull.read({{value[:parsed_type].id}})
+                # if value[:type].is_a?(Path) || value[:type].is_a?(Generic)
+            {% end %}
+            else
+              {% if strict %}
+                raise ::Jennifer::BaseException.new("Undefined column #{column}")
+              {% else %}
+                %pull.read
+              {% end %}
+            end
+          end
+
+          {% for key, value in properties %}
+            @{{key.id}} = %var{key.id}.as({{value[:parsed_type].id}})
+          {% end %}
+        end
+
         def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
           initialize(stringify_hash(values, Jennifer::DBAny))
         end
@@ -220,52 +250,6 @@ module Jennifer
           initialize({} of Symbol => DBAny)
         end
 
-        def new_record?
-          @new_record
-        end
-
-        def self.create(values : Hash | NamedTuple)
-          o = new(values)
-          o.save
-          o
-        end
-
-        def self.create
-          a = {} of Symbol => Supportable
-          o = new(a)
-          o.save
-          o
-        end
-
-        def self.create(**values)
-          o = new(values.to_h)
-          o.save
-          o
-        end
-
-        def self.create!(values : Hash | NamedTuple)
-          o = new(values)
-          o.save!
-          o
-        end
-
-        def self.create!
-          o = new({} of Symbol => Supportable)
-          o.save!
-          o
-        end
-
-        def self.create!(**values)
-          o = new(values.to_h)
-          o.save!
-          o
-        end
-
-        def save!(skip_validation = false)
-          raise Jennifer::BaseException.new("Record was not save") unless save(skip_validation)
-          true
-        end
-
         def save(skip_validation = false)
           unless skip_validation
             validate!
@@ -289,6 +273,13 @@ module Jennifer
             end
           __after_save_callback
           response.rows_affected == 1
+        end
+
+        def reload
+          self.class.find(self.primary_field)
+        end
+
+        def reload!
         end
 
         def changed?

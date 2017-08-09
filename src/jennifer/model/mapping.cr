@@ -60,6 +60,7 @@ module Jennifer
             end
 
             {% if primary_auto_incrementable %}
+              # Inits primary field
               def init_primary_field(value : {{value[:type]}})
                 raise "Primary field is already initialized" if @{{key.id}}
                 @{{key.id}} = value
@@ -69,14 +70,17 @@ module Jennifer
         {% end %}
       end
 
+      # Adds callbacks for `created_at` and `updated_at` fields
       macro with_timestamps
         after_create :__update_created_at
         after_save :__update_updated_at
 
+        # Sets `created_at` tocurrent time
         def __update_created_at
           @created_at = Time.now
         end
 
+        # Sets `updated_at` to current time
         def __update_updated_at
           @updated_at = Time.now
         end
@@ -99,10 +103,12 @@ module Jennifer
           {% end %}
         ]
 
+        # Returns field count
         def self.field_count
           {{properties.size}}
         end
 
+        # Returns array of field names
         def self.field_names
           FIELD_NAMES
         end
@@ -125,6 +131,7 @@ module Jennifer
 
         __field_declaration({{properties}}, {{primary_auto_incrementable}})
 
+        # Returns if primary field is autoincrementable
         def self.primary_auto_incrementable?
           {{primary_auto_incrementable}}
         end
@@ -134,64 +141,48 @@ module Jennifer
         # creates object from db tuple
         def initialize(%pull : DB::ResultSet)
           @new_record = false
+          {% left_side = [] of String %}
+          {% for key in properties.keys %}
+            {% left_side << "@#{key.id}" %}
+          {% end %}
+          {{left_side.join(", ").id}} = _extract_attributes(%pull)
+        end
+
+        # Extracts arguments due to mapping from *pull* and returns tuple for
+        # fields assignment
+        # TODO: think to move it to class scope
+        def _extract_attributes(pull : DB::ResultSet)
           {% for key, value in properties %}
             %var{key.id} = nil
             %found{key.id} = false
           {% end %}
 
           {{properties.size}}.times do |i|
-            column = %pull.column_name(%pull.column_index)
+            column = pull.column_name(pull.column_index)
             case column
             {% for key, value in properties %}
               when {{value[:column_name] || key.id.stringify}}
                 %found{key.id} = true
-                %var{key.id} = %pull.read({{value[:parsed_type].id}})
+                %var{key.id} = pull.read({{value[:parsed_type].id}})
                 # if value[:type].is_a?(Path) || value[:type].is_a?(Generic)
             {% end %}
             else
               {% if strict %}
                 raise ::Jennifer::BaseException.new("Undefined column #{column}")
               {% else %}
-                %pull.read
+                pull.read
               {% end %}
             end
           end
-
+          {
           {% for key, value in properties %}
-            @{{key.id}} = %var{key.id}.as({{value[:parsed_type].id}})
+            %var{key.id}.as({{value[:parsed_type].id}}),
           {% end %}
+          }
         end
 
-        def assign(pull : DB::ResultSet)
-          @new_record = false
-          {% for key, value in properties %}
-            %var{key.id} = nil
-            %found{key.id} = false
-          {% end %}
-
-          {{properties.size}}.times do |i|
-            column = %pull.column_name(%pull.column_index)
-            case column
-            {% for key, value in properties %}
-              when {{value[:column_name] || key.id.stringify}}
-                %found{key.id} = true
-                %var{key.id} = %pull.read({{value[:parsed_type].id}})
-                # if value[:type].is_a?(Path) || value[:type].is_a?(Generic)
-            {% end %}
-            else
-              {% if strict %}
-                raise ::Jennifer::BaseException.new("Undefined column #{column}")
-              {% else %}
-                %pull.read
-              {% end %}
-            end
-          end
-
-          {% for key, value in properties %}
-            @{{key.id}} = %var{key.id}.as({{value[:parsed_type].id}})
-          {% end %}
-        end
-
+        # Accepts symbol hash or named tuple, stringify it and calls
+        # TODO: check how converting affects speed
         def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
           initialize(stringify_hash(values, Jennifer::DBAny))
         end
@@ -242,14 +233,19 @@ module Jennifer
         #  {% end %}
         #end
 
+        # Accepts named tuple.
+        # ```
+        # ModelName.new
         def initialize(**values)
           initialize(values)
         end
 
+        # Default constructor without any fields
         def initialize
           initialize({} of Symbol => DBAny)
         end
 
+        # Saves all changes to db; if validation not passed - returns `false`
         def save(skip_validation = false)
           unless skip_validation
             validate!
@@ -275,13 +271,21 @@ module Jennifer
           response.rows_affected == 1
         end
 
+        # Reloads all fields from db
         def reload
-          self.class.find(self.primary_field)
+          this = self
+          self.class.where { this.class.primary == this.primary }.each_result_set do |rs|
+            {% left_side = [] of String %}
+            {% for key in properties.keys %}
+              {% left_side << "@#{key.id}" %}
+            {% end %}
+            {{left_side.join(", ").id}} = _extract_attributes(rs)
+          end
+          self
         end
 
-        def reload!
-        end
-
+        # Returns if any field was changed. If field again got first value - `true` anyway
+        # will be returned
         def changed?
           {% for key, value in properties %}
             @{{key.id}}_changed ||
@@ -289,6 +293,7 @@ module Jennifer
           false
         end
 
+        # Returns hash with all attributes and symbol keys
         def to_h
           {
             {% for key, value in properties %}
@@ -297,6 +302,7 @@ module Jennifer
           }
         end
 
+        # Returns hash with all attributes and string keys
         def to_str_h
           {
             {% for key, value in properties %}
@@ -305,10 +311,14 @@ module Jennifer
           }
         end
 
+        # Sets *value* to field with name *name* and stores them directly to db without
+        # any validation or callback
         def update_column(name, value : Jennifer::DBAny)
           update_columns({name => value})
         end
 
+        # Sets given *values* to proper fields and stores them directly to db without
+        # any validation or callback
         def update_columns(values : Hash(String | Symbol, Jennifer::DBAny))
           values.each do |name, value|
             case name.to_s
@@ -331,6 +341,7 @@ module Jennifer
           ::Jennifer::Adapter.adapter.update(self.class.all.where { _primary == _primary_value }, values)
         end
 
+        # Sets *name* field with *value*
         def set_attribute(name, value : Jennifer::DBAny)
           case name.to_s
           {% for key, value in properties %}
@@ -348,6 +359,8 @@ module Jennifer
           end
         end
 
+        # Returns field by given name. If object has no such field - will raise `BaseException`.
+        # To avoid raising exception set `raise_exception` to `false`.
         def attribute(name : String | Symbol, raise_exception = true)
           case name.to_s
           {% for key, value in properties %}

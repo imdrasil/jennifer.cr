@@ -1,7 +1,8 @@
 module Jennifer
   module Adapter
     class BaseSqlGenerator
-      def insert(obj : Model::Base)
+      # Generates query for inserting new record to db
+      def self.insert(obj : Model::Base)
         opts = obj.arguments_to_insert
         String.build do |s|
           s << "INSERT INTO " << obj.class.table_name << "("
@@ -10,6 +11,7 @@ module Jennifer
         end
       end
 
+      # Generates common select sql request
       def self.select(query : QueryBuilder::Query, exact_fields = [] of String)
         String.build do |s|
           select_clause(s, query, exact_fields)
@@ -17,6 +19,7 @@ module Jennifer
         end
       end
 
+      # Generates select sql request with distinct
       def self.select_distinct(query : QueryBuilder::Query, column, table)
         String.build do |s|
           s << "SELECT DISTINCT " << table << "." << column << "\n"

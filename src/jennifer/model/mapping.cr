@@ -138,7 +138,7 @@ module Jennifer
 
         @new_record = true
 
-        # creates object from db tuple
+        # Creates object from `DB::ResultSet`
         def initialize(%pull : DB::ResultSet)
           @new_record = false
           {% left_side = [] of String %}
@@ -150,7 +150,7 @@ module Jennifer
 
         # Extracts arguments due to mapping from *pull* and returns tuple for
         # fields assignment
-        # TODO: think to move it to class scope
+        # TODO: think about moving it to class scope
         def _extract_attributes(pull : DB::ResultSet)
           {% for key, value in properties %}
             %var{key.id} = nil
@@ -182,7 +182,7 @@ module Jennifer
         end
 
         # Accepts symbol hash or named tuple, stringify it and calls
-        # TODO: check how converting affects speed
+        # TODO: check how converting affects performance
         def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
           initialize(stringify_hash(values, Jennifer::DBAny))
         end
@@ -233,9 +233,7 @@ module Jennifer
         #  {% end %}
         #end
 
-        # Accepts named tuple.
-        # ```
-        # ModelName.new
+        # Accepts splatted named tuple.
         def initialize(**values)
           initialize(values)
         end
@@ -248,7 +246,9 @@ module Jennifer
         # Saves all changes to db; if validation not passed - returns `false`
         def save(skip_validation = false)
           unless skip_validation
+            __before_validation_callback
             validate!
+            __after_validation_callback
             return false unless valid?
           end
           __before_save_callback

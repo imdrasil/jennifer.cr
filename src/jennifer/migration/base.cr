@@ -67,11 +67,15 @@ module Jennifer
 
       macro def self.migrations
         {% begin %}
-          [
-            {% for model in @type.all_subclasses %}
-              {{model.id}},
-            {% end %}
-          ]
+          {% if @type.all_subclasses.size > 0 %}
+            [
+              {% for model in @type.all_subclasses %}
+                {{model.id}},
+              {% end %}
+            ]
+          {% else %}
+            {% raise "No migration defined" %}
+          {% end %}
         {% end %}
       end
     end

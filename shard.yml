@@ -17,6 +17,8 @@ development_dependencies:
     github: crystal-lang/crystal-sqlite3
   minitest:
     github: ysbaddaden/minitest.cr
+  factory:
+    github: imdrasil/factory
 dependencies:
   sam:
     github: imdrasil/sam.cr

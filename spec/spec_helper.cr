@@ -11,6 +11,7 @@ macro mysql_only
 end
 
 require "spec"
+require "factory"
 require "./config"
 require "./models.cr"
 require "./factories.cr"

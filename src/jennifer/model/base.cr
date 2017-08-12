@@ -197,23 +197,28 @@ module Jennifer
         hash.each { |k, v| set_attribute(k, v) }
       end
 
+      # Deletes object from db and calls callbacks
       def destroy
         return if new_record?
         __before_destroy_callback
         delete
+        __after_destroy_callback
       end
 
+      # Deletes object from DB without calling callbacks
       def delete
         return if new_record?
         this = self
         self.class.where { this.class.primary == this.primary }.delete
       end
 
+      # Lock current object in DB
       def lock!(type : String | Bool = true)
         this = self
-        self.class.all.where { this.class.primary == this.primary }.lock(type).to_a
+        self.class.where { this.class.primary == this.primary }.lock(type).to_a
       end
 
+      # Starts transaction and locks current object
       def with_lock(type : String | Bool = true)
         self.class.transaction do |t|
           self.lock!(type)
@@ -221,6 +226,7 @@ module Jennifer
         end
       end
 
+      # Starts transaction
       def self.transaction
         Adapter.adapter.transaction do |t|
           yield(t)

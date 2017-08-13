@@ -12,7 +12,7 @@ module Jennifer
       end
 
       # Generates common select sql request
-      def self.select(query : QueryBuilder::Query, exact_fields = [] of String)
+      def self.select(query, exact_fields = [] of String)
         String.build do |s|
           select_clause(s, query, exact_fields)
           body_section(s, query)
@@ -20,7 +20,7 @@ module Jennifer
       end
 
       # Generates select sql request with distinct
-      def self.select_distinct(query : QueryBuilder::Query, column, table)
+      def self.select_distinct(query, column, table)
         String.build do |s|
           s << "SELECT DISTINCT " << table << "." << column << "\n"
           from_clause(s, query)
@@ -93,7 +93,7 @@ module Jennifer
 
       # ========== sql clauses ================
 
-      def self.body_section(io, query : QueryBuilder::Query)
+      def self.body_section(io, query)
         join_clause(io, query)
         where_clause(io, query)
         order_clause(io, query)
@@ -108,32 +108,33 @@ module Jennifer
         io << (query._lock.is_a?(Bool) ? " FOR UPDATE " : query._lock)
       end
 
-      def self.select_clause(io, query : QueryBuilder::ModelQuery, exact_fields = [] of String)
-        io << "SELECT "
+      def self.select_clause(s, query : QueryBuilder::ModelQuery, exact_fields = [] of String)
+        s << "SELECT "
         unless query._raw_select
           table = query._table
           if exact_fields.size > 0
-            exact_fields.map { |f| "#{table}.#{f}" }.join(", ", io)
+            exact_fields.map { |f| "#{table}.#{f}" }.join(", ", s)
           else
-            io << table << ".*"
+            s << table << ".*"
             unless query._relations.empty?
-              io << ", "
+              s << ", "
               query._relations.each_with_index do |r, i|
-                io << ", " if i != 0
+                s << ", " if i != 0
                 # TODO: cover with tests
-                io << (query._table_aliases[r]? || query.model_class.relations[r].table_name) << ".*"
+                s << (query._table_aliases[r]? || query.model_class.relations[r].table_name) << ".*"
               end
             end
           end
         else
-          io << query._raw_select
+          # NOTE: `not_nil!` is a fix for "BUG: no target defs"
+          s << query._raw_select.not_nil!
         end
-        io << "\n"
-        from_clause(io, query)
+        s << "\n"
+        from_clause(s, query)
       end
 
-      # renders SELECT and FROM parts
-      def self.select_clause(io, query : QueryBuilder::Query, exact_fields = [] of String)
+      # Renders SELECT and FROM parts
+      def self.select_clause(io, query, exact_fields = [] of String)
         io << "SELECT "
         unless query._raw_select
           table = query._table
@@ -150,14 +151,18 @@ module Jennifer
         from_clause(io, query)
       end
 
-      def self.from_clause(io, query : QueryBuilder::Query)
+      def self.from_clause(io, query)
         io << "FROM "
         return io << query._table << "\n" unless query._from
         io << "( " <<
           if query._from.is_a?(String)
             query._from
           else
-            SqlGenerator.select(query._from.as(QueryBuilder::Query))
+            if query.is_a?(QueryBuilder::ModelQuery)
+              SqlGenerator.select(query._from.as(QueryBuilder::ModelQuery))
+            else
+              SqlGenerator.select(query._from.as(QueryBuilder::Query))
+            end
           end
         io << " ) "
       end
@@ -185,8 +190,8 @@ module Jennifer
       end
 
       def self.limit_clause(io, query)
-        io << "LIMIT " << query._limit << "\n" if query._limit
-        io << "OFFSET " << query._offset << "\n" if query._offset
+        io.print "LIMIT ", query._limit, "\n" if query._limit
+        io.print "OFFSET ", query._offset, "\n" if query._offset
       end
 
       def self.order_clause(io, query)

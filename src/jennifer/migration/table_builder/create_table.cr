@@ -19,7 +19,7 @@ module Jennifer
         {% end %}
 
         def enum(name, values = [] of String, options = DB_OPTIONS.new)
-          hash = sym_hash({:type => :enum, :values => arr_cast(values, EAllowedTypes)}, AAllowedTypes).merge(options)
+          hash = sym_hash({:type => :enum, :values => typed_array_cast(values, EAllowedTypes)}, AAllowedTypes).merge(options)
           @fields[name.to_s] = hash
           self
         end

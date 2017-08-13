@@ -11,11 +11,12 @@ require "./jennifer/version"
 
 require "./jennifer/query_builder/*"
 require "./jennifer/adapter/base"
-require "./jennifer/migration/table_builder/*"
-require "./jennifer/migration/*"
 require "./jennifer/relation/base"
 require "./jennifer/relation/*"
 require "./jennifer/model/*"
+
+require "./jennifer/migration/table_builder/*"
+require "./jennifer/migration/*"
 
 module Jennifer
   alias Query = QueryBuilder::Query

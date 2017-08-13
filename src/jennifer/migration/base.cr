@@ -50,15 +50,15 @@ module Jennifer
       end
 
       def create_enum(name, options)
-        raise BaseException.new("Current adapter not support this method.")
+        raise BaseException.new("Current adapter doesn't support this method.")
       end
 
       def drop_enum(name)
-        raise BaseException.new("Current adapter not support this method.")
+        raise BaseException.new("Current adapter doesn't support this method.")
       end
 
       def change_enum(name, options)
-        raise BaseException.new("Current adapter not support this method.")
+        raise BaseException.new("Current adapter doesn't support this method.")
       end
 
       def self.versions

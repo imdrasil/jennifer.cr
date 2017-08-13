@@ -20,7 +20,7 @@ module Jennifer
         :float      => "float",
         :double     => "double",
         :short      => "SMALLINT",
-        :timestamp  => "timestamp",
+        :timestamp  => "datetime", # "timestamp",
         :date_time  => "datetime",
         :blob       => "blob",
         :var_string => "varstring",

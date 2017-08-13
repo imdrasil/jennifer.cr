@@ -1,6 +1,3 @@
-# require "./../model/relation"
-require "../model/base"
-
 module Jennifer
   module Migration
     class Version < Model::Base

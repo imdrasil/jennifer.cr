@@ -60,6 +60,17 @@ describe Jennifer::Model::Mapping do
         end
       end
 
+      describe "TIMESTAMP" do
+        it "properly saves and loads" do
+          c1 = contact_create(name: "Sam", age: 18)
+          time = Time.new(2001, 12, 23, 23, 58, 59)
+          c1.created_at = time
+          c1.save
+          c2 = Contact.find!(c1.id)
+          c2.created_at.should eq(time)
+        end
+      end
+
       postgres_only do
         describe "Array" do
           it "properly load array" do

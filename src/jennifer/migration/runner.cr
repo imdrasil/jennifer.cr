@@ -1,5 +1,3 @@
-require "../support"
-
 module Jennifer
   module Migration
     module Runner

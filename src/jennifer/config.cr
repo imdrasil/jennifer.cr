@@ -1,10 +1,8 @@
-require "./support"
 require "yaml"
 require "logger"
 
 module Jennifer
   class Config
-    include Support
     STRING_FIELDS = {:user, :password, :db, :host, :adapter, :migration_files_path, :schema, :structure_folder}
     INT_FIELDS    = {:max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
     FLOAT_FIELDS  = [:checkout_timeout, :retry_delay]

@@ -1,21 +1,22 @@
-require "json"
 require "inflector"
 require "inflector/string"
 require "accord"
+require "ifrit/converter"
 
 require "./jennifer/exceptions"
 require "./jennifer/adapter"
+require "./jennifer/adapter/sql_generator"
 require "./jennifer/config"
-require "./jennifer/support"
 require "./jennifer/version"
 
 require "./jennifer/query_builder/*"
 require "./jennifer/adapter/base"
-require "./jennifer/migration/table_builder/*"
-require "./jennifer/migration/*"
 require "./jennifer/relation/base"
 require "./jennifer/relation/*"
 require "./jennifer/model/*"
+
+require "./jennifer/migration/table_builder/*"
+require "./jennifer/migration/*"
 
 module Jennifer
   alias Query = QueryBuilder::Query

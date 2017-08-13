@@ -103,6 +103,14 @@ module Jennifer
         end
       end
 
+      def parse_query(q, args)
+        SqlGenerator.parse_query(q, args.size)
+      end
+
+      def parse_query(q)
+        SqlGenerator.parse_query(q)
+      end
+
       def begin_transaction
         raise ::Jennifer::BaseException.new("Couldn't manually begin non top level transaction") if current_transaction
         Config.logger.debug("TRANSACTION START")
@@ -128,31 +136,18 @@ module Jennifer
       end
 
       def delete(query : QueryBuilder::Query)
-        body = String.build do |s|
-          query.from_clause(s)
-          s << query.body_section
-        end
         args = query.select_args
-        exec "DELETE #{parse_query(body, args)}", args
+        exec SqlGenerator.delete(query), args
       end
 
       def exists?(query)
         args = query.select_args
-        body = String.build do |s|
-          s << "SELECT EXISTS(SELECT 1 "
-          query.from_clause(s)
-          s << parse_query(query.body_section, args) << ")"
-        end
-        scalar(body, args) == 1
+        scalar(SqlGenerator.exists(query), args) == 1
       end
 
       def count(query)
-        body = String.build do |s|
-          query.from_clause(s)
-          s << query.body_section
-        end
         args = query.select_args
-        scalar("SELECT COUNT(*) #{parse_query(body, args)}", args).as(Int64).to_i
+        scalar(SqlGenerator.count(query), args).as(Int64).to_i
       end
 
       def self.db_connection
@@ -171,15 +166,16 @@ module Jennifer
       def self.connection_string(*options)
         auth_part = Config.user
         auth_part += ":#{Config.password}" if Config.password && !Config.password.empty?
-        str = "#{Config.adapter}://#{auth_part}@#{Config.host}"
-        str += "/" + Config.db if options.includes?(:db)
-        str += "?"
-        str += [
-          {% for arg in [:max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts, :checkout_timeout, :retry_delay] %}
-            "{{arg.id}}=#{Config.{{arg.id}}}"
-          {% end %},
-        ].join(",")
-        str
+        String.build do |s|
+          s << Config.adapter << "://" << auth_part << "@" << Config.host
+          s << "/" << Config.db if options.includes?(:db)
+          s << "?"
+          [
+            {% for arg in [:max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts, :checkout_timeout, :retry_delay] %}
+              "{{arg.id}}=#{Config.{{arg.id}}}"
+            {% end %},
+          ].join(",", s)
+        end
       end
 
       def self.extract_arguments(hash)
@@ -250,33 +246,12 @@ module Jennifer
         h
       end
 
-      def parse_query(query, args)
-        arr = [] of String
-        args.each do
-          arr << "?"
-        end
-        query % arr
-      end
-
-      def parse_query(query)
-        query
-      end
-
       def self.arg_replacement(arr)
         escape_string(arr.size)
       end
 
       def self.escape_string(size = 1)
-        case size
-        when 1
-          "%s"
-        when 2
-          "%s, %s"
-        when 3
-          "%s, %s, %s"
-        else
-          size.times.map { "%s" }.join(", ")
-        end
+        SqlGenerator.escape_string(size)
       end
 
       def self.drop_database

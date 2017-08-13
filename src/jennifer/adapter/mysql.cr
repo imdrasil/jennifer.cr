@@ -1,6 +1,7 @@
 require "mysql"
 require "./base"
 require "./request_methods"
+require "./mysql/sql_notation"
 
 module Jennifer
   alias DBAny = DB::Any | Int16 | Int8 | JSON::Any
@@ -19,7 +20,7 @@ module Jennifer
         :float      => "float",
         :double     => "double",
         :short      => "SMALLINT",
-        :timestamp  => "timestamp",
+        :timestamp  => "datetime", # "timestamp",
         :date_time  => "datetime",
         :blob       => "blob",
         :var_string => "varstring",
@@ -42,35 +43,25 @@ module Jennifer
       end
 
       def table_exists?(table)
-        v = scalar <<-SQL
-          SELECT COUNT(*)
-          FROM information_schema.TABLES
-          WHERE TABLE_SCHEMA = '#{Config.db}' 
-          AND TABLE_NAME = '#{table}'
-        SQL
-        v == 1
+        Query["information_schema.TABLES"]
+          .where { (_table_schema == Config.db) & (_table_name == table) }
+          .exists?
       end
 
       def index_exists?(table, name)
-        v = scalar <<-SQL
-          SELECT COUNT(*)
-          from information_schema.statistics
-          WHERE  table_name = '#{table}' 
-          AND index_name = '#{name}'
-          AND TABLE_SCHEMA = '#{Config.db}'
-        SQL
-        v == 1
+        Query["information_schema.statistics"].where do
+          (_table_name == table) &
+            (_index_name == name) &
+            (_table_schema == Config.db)
+        end.exists?
       end
 
       def column_exists?(table, name)
-        v = scalar <<-SQL
-          SELECT COUNT(*)
-          FROM information_schema.COLUMNS
-          WHERE TABLE_NAME = '#{table}'
-          AND COLUMN_NAME = '#{name}'
-          AND TABLE_SCHEMA = '#{Config.db}'
-        SQL
-        v == 1
+        Query["information_schema.COLUMNS"].where do
+          (_table_name == table) &
+            (_column_name == name) &
+            (_table_schema == Config.db)
+        end.exists?
       end
 
       def table_row_hash(rs)

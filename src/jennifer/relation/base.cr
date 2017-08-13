@@ -1,7 +1,7 @@
 module Jennifer
   module Relation
     abstract class IRelation
-      include Support
+      extend Ifrit
 
       abstract def table_name
       abstract def model_class
@@ -66,7 +66,7 @@ module Jennifer
       end
 
       def insert(obj : Q, rel : Hash(Symbol, Jennifer::DBAny))
-        insert(obj, to_s_hash(rel, Jennifer::DBAny))
+        insert(obj, stringify_hash(rel, Jennifer::DBAny))
       end
 
       def insert(obj : Q, rel : T)

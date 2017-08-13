@@ -3,7 +3,14 @@ require "./expression_builder"
 module Jennifer
   module QueryBuilder
     class Query
-      include Support
+      extend Ifrit
+
+      {% for method in %i(having table limit offset raw_select table_aliases from lock joins order relations group lock) %}
+        def _{{method.id}}
+          @{{method.id}}
+        end
+      {% end %}
+
       @having : Condition | LogicOperator | Nil
       @table : String = ""
       @limit : Int32?
@@ -11,6 +18,7 @@ module Jennifer
       @raw_select : String?
       @table_aliases = {} of String => String
       @from : String | Query?
+      @lock : String | Bool?
 
       property tree : Condition | LogicOperator?
 
@@ -23,21 +31,57 @@ module Jennifer
         @relation_used = false
       end
 
+      def initialize(@table)
+        initialize
+      end
+
       def self.build(*opts)
         q = new(*opts)
         q.expression_builder.query = q
         q
       end
 
-      def initialize(@table)
-        initialize
+      def self.[](*opts)
+        build(*opts)
       end
 
-      {% for attr in [:having, :limit, :offset, :raw_select, :table_aliases, :joins, :order, :relations, :group] %}
-        protected def {{attr.id}}
-          @{{attr.id}}
+      def to_sql
+        @tree ? @tree.not_nil!.to_sql : ""
+      end
+
+      def sql_args
+        if @tree
+          @tree.not_nil!.sql_args
+        else
+          [] of DB::Any
         end
-      {% end %}
+      end
+
+      def sql_args_count
+        @tree ? @tree.not_nil!.sql_args_count : 0
+      end
+
+      def select_args
+        args = [] of DB::Any
+        args.concat(@from.as(Query).select_args) if @from.is_a?(Query)
+        @joins.each do |join|
+          args.concat(join.sql_args)
+        end
+        args.concat(@tree.not_nil!.sql_args) if @tree
+        args.concat(@having.not_nil!.sql_args) if @having
+        args
+      end
+
+      def select_args_count
+        count = 0
+        count += @from.as(Query).select_args_count if @from.is_a?(Query)
+        @joins.each do |join|
+          count += join.sql_args_count
+        end
+        count += @tree.not_nil!.sql_args_count if @tree
+        count += @having.not_nil!.sql_args_count if @having
+        count
+      end
 
       def with_relation!
         @relation_used = true
@@ -136,7 +180,7 @@ module Jennifer
         result = to_a
         reverse_order
         @limit = old_limit
-        raise RecordNotFound.new(self.select_query) if result.empty?
+        raise RecordNotFound.new(Adapter::SqlGenerator.select(self)) if result.empty?
         result[0]
       end
 
@@ -152,7 +196,7 @@ module Jennifer
         old_limit = @limit
         result = to_a
         @limit = old_limit
-        raise RecordNotFound.new(self.select_query) if result.empty?
+        raise RecordNotFound.new(Adapter::SqlGenerator.select(self)) if result.empty?
         result[0]
       end
 
@@ -240,6 +284,47 @@ module Jennifer
         update(options.to_h)
       end
 
+      # skips any callbacks and validations
+      def increment(fields : Hash)
+        hash = {} of Symbol | String => NamedTuple(value: DBAny, operator: Symbol)
+        fields.each do |k, v|
+          hash[k] = {value: v, operator: :+}
+        end
+        modify(hash)
+      end
+
+      # skips any callbacks and validations
+      def increment(**fields)
+        hash = {} of Symbol | String => NamedTuple(value: DBAny, operator: Symbol)
+        fields.each do |k, v|
+          hash[k] = {value: v, operator: :+}
+        end
+        modify(hash)
+      end
+
+      # skips any callbacks and validations
+      def decrement(fields : Hash)
+        hash = {} of Symbol | String => NamedTuple(value: DBAny, operator: Symbol)
+        fields.each do |k, v|
+          hash[k] = {value: v, operator: :-}
+        end
+        modify(hash)
+      end
+
+      # skips any callbacks and validations
+      def decrement(**fields)
+        hash = {} of Symbol | String => NamedTuple(value: DBAny, operator: Symbol)
+        fields.each do |k, v|
+          hash[k] = {value: v, operator: :-}
+        end
+        modify(hash)
+      end
+
+      # skips any callbacks and validations
+      def modify(options : Hash)
+        ::Jennifer::Adapter.adapter.modify(self, options)
+      end
+
       def order(**opts)
         order(opts.to_h)
       end
@@ -276,7 +361,7 @@ module Jennifer
         @raw_select = "MAX(#{field}) as m"
         result = to_a.map(&.["m"])
         @raw_select = _select
-        arr_cast(result, T)
+        typed_array_cast(result, T)
       end
 
       def group_min(field, klass : T.class) : Array(T) forall T
@@ -284,7 +369,7 @@ module Jennifer
         @raw_select = "MIN(#{field}) as m"
         result = to_a.map(&.["m"])
         @raw_select = _select
-        arr_cast(result, T)
+        typed_array_cast(result, T)
       end
 
       def group_sum(field, klass : T.class) : Array(T) forall T
@@ -292,7 +377,7 @@ module Jennifer
         @raw_select = "SUM(#{field}) as m"
         result = to_a.map(&.["m"])
         @raw_select = _select
-        arr_cast(result, T)
+        typed_array_cast(result, T)
       end
 
       def group_avg(field, klass : T.class) : Array(T) forall T
@@ -300,7 +385,20 @@ module Jennifer
         @raw_select = "AVG(#{field}) as m"
         result = to_a.map(&.["m"])
         @raw_select = _select
-        arr_cast(result, T)
+        typed_array_cast(result, T)
+      end
+
+      def group_count(field)
+        _select = @raw_select
+        @raw_select = "COUNT(#{field}) as m"
+        result = to_a.map(&.["m"])
+        @raw_select = _select
+        result
+      end
+
+      def lock(type = true)
+        @lock = type
+        self
       end
 
       def each
@@ -330,22 +428,6 @@ module Jennifer
         to_sql
       end
 
-      def to_sql
-        if @tree
-          @tree.not_nil!.to_sql
-        else
-          ""
-        end
-      end
-
-      def sql_args
-        if @tree
-          @tree.not_nil!.sql_args
-        else
-          [] of DB::Any
-        end
-      end
-
       def set_tree(other : LogicOperator | Condition)
         @tree = if !@tree.nil? && !other.nil?
                   @tree.as(Condition | LogicOperator) & other
@@ -367,103 +449,10 @@ module Jennifer
         raise ArgumentError.new("Condition tree couldn't be nil")
       end
 
-      def select_query(fields = [] of String)
-        select_clause(fields) + body_section
-      end
-
-      def group_clause
-        if @group.empty?
-          ""
-        else
-          fields = @group.map { |t, fields| fields.map { |f| "#{t}.#{f}" }.join(", ") }.join(", ") # TODO: make building better
-          "GROUP BY #{fields}\n"
-        end
-      end
-
-      def having_clause
-        return "" unless @having
-        "HAVING #{@having.not_nil!.to_sql}\n"
-      end
-
-      def select_clause(exact_fields = [] of String)
-        String.build do |s|
-          s << "SELECT "
-          unless @raw_select
-            if exact_fields.size > 0
-              exact_fields.map { |f| "#{table}.#{f}" }.join(", ", s)
-            else
-              s << table << ".*"
-            end
-          else
-            s << @raw_select
-          end
-          s << "\n"
-          from_clause(s)
-        end
-      end
-
-      def from_clause(io)
-        io << "FROM "
-        return io << table << "\n" unless @from
-        io << "( " <<
-          if @from.is_a?(String)
-            @from
-          else
-            @from.as(Query).select_query
-          end
-        io << " ) "
-      end
-
-      def body_section
-        String.build do |s|
-          s << join_clause << where_clause
-          order_clause(s)
-          s << limit_clause << group_clause << having_clause
-        end
-      end
-
-      def join_clause
-        @joins.map(&.to_sql).join(' ')
-      end
-
-      def where_clause
-        @tree ? "WHERE #{@tree.not_nil!.to_sql}\n" : ""
-      end
-
-      def limit_clause
-        str = ""
-        str += "LIMIT #{@limit}\n" if @limit
-        str += "OFFSET #{@offset}\n" if @offset
-        str
-      end
-
-      def order_clause(io)
-        return if @order.empty?
-        io << "ORDER BY "
-        @order.each_with_index do |(k, v), i|
-          io << ", " if i > 0
-          io << k << " " << v.upcase
-        end
-        io << "\n"
-      end
-
-      def select_args
-        args = [] of DB::Any
-        args.concat(@from.as(Query).select_args) if @from.is_a?(Query)
-        @joins.each do |join|
-          args += join.sql_args
-        end
-        args += @tree.not_nil!.sql_args if @tree
-        args += @having.not_nil!.sql_args if @having
-        args
-      end
-
       def to_a
         result = [] of Hash(String, DBAny)
-        Adapter.adapter.select(self) do |rs|
-          rs.each do
-            result << Adapter.adapter.result_to_hash(rs)
-          end
+        each_result_set do |rs|
+          result << Adapter.adapter.result_to_hash(rs)
         end
         result
       end
@@ -490,6 +479,9 @@ module Jennifer
 
       private def _groups(name)
         @group[name] ||= [] of String
+      end
+
+      private def find_with_nested
       end
     end
   end

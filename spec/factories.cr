@@ -1,5 +1,5 @@
 def criteria_builder(field = "f1", table = "tests")
-  Jennifer::QueryBuilder::Criteria.new(field, table)
+  Jennifer::QueryBuilder::Criteria.new(field: field, table: table)
 end
 
 def db_array(*element)

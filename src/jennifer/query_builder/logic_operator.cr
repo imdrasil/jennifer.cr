@@ -53,6 +53,10 @@ module Jennifer
         @parts.flat_map(&.sql_args)
       end
 
+      def sql_args_count
+        @parts.reduce(0) { |sum, e| sum += e.sql_args_count }
+      end
+
       def ==(other : LogicOperator)
         @parts == other.parts
       end

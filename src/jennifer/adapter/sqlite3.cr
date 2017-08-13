@@ -1,6 +1,7 @@
 require "sqlite3"
 require "../adapter"
 require "./request_methods"
+require "./sqlite3/sql_notation"
 
 module Jennifer
   alias DBAny = DB::Any

@@ -1,14 +1,10 @@
 name: jennifer
-version: 0.3.2
+version: 0.3.3
 
 authors:
   - Roman Kalnytskyi <moranibaca@gmail.com>
 
-crystal: 0.22.0
-version: 0.3.2
-
-authors:
-  - imdrasil <moranibaca@gmail.com>
+crystal: 0.23.1
 
 license: MIT
 
@@ -21,6 +17,8 @@ development_dependencies:
     github: crystal-lang/crystal-sqlite3
   minitest:
     github: ysbaddaden/minitest.cr
+  factory:
+    github: imdrasil/factory
 dependencies:
   sam:
     github: imdrasil/sam.cr
@@ -31,3 +29,5 @@ dependencies:
   accord:
     github: neovintage/accord
     version: "~> 1.1.0"
+  ifrit:
+    github: imdrasil/ifrit

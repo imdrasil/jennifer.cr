@@ -1,3 +1,4 @@
+# Will be used in nearest feature
 require "minitest/autorun"
 require "./config"
 require "./models.cr"

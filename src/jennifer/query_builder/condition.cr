@@ -91,9 +91,9 @@ module Jennifer
           when :bool
             _lhs
           when :in
-            "#{_lhs} IN(#{::Jennifer::Adapter.escape_string(@rhs.as(Array).size)})"
+            "#{_lhs} IN(#{::Jennifer::Adapter::SqlGenerator.escape_string(@rhs.as(Array).size)})"
           else
-            "#{_lhs} #{operator_to_sql} " +
+            "#{_lhs} #{::Jennifer::Adapter::SqlGenerator.operator_to_sql(@operator)} " +
               if filterable?
                 filter_out(@rhs)
               elsif @rhs.is_a?(Criteria)
@@ -124,24 +124,19 @@ module Jennifer
         res
       end
 
-      def operator_to_sql
-        case @operator
-        when :like
-          "LIKE"
-        when :not_like
-          "NOT LIKE"
-        when :regexp
-          "REGEXP"
-        when :not_regexp
-          "NOT REGEXP"
-        when :==
-          "="
-        when :is
-          "IS"
-        when :is_not
-          "IS NOT"
+      def sql_args_count
+        if filterable?
+          count = 0
+          if @operator == :in
+            @rhs.as(Array).each do |e|
+              count += e.is_a?(Criteria) ? e.sql_args_count : 1
+            end
+          elsif !@rhs.is_a?(Criteria)
+            count += 1
+          end
+          count
         else
-          @operator.to_s
+          0
         end
       end
 

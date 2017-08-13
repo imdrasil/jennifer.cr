@@ -6,7 +6,7 @@ require "./relation_definition"
 module Jennifer
   module Model
     abstract class Base
-      include Support
+      extend Ifrit
       include Mapping
       include Validation
       include Callback
@@ -69,6 +69,56 @@ module Jennifer
         o
       end
 
+      def new_record?
+        @new_record
+      end
+
+      def destroyed?
+        @destroyed
+      end
+
+      def self.create(values : Hash | NamedTuple)
+        o = new(values)
+        o.save
+        o
+      end
+
+      def self.create
+        a = {} of Symbol => Supportable
+        o = new(a)
+        o.save
+        o
+      end
+
+      def self.create(**values)
+        o = new(values.to_h)
+        o.save
+        o
+      end
+
+      def self.create!(values : Hash | NamedTuple)
+        o = new(values)
+        o.save!
+        o
+      end
+
+      def self.create!
+        o = new({} of Symbol => Supportable)
+        o.save!
+        o
+      end
+
+      def self.create!(**values)
+        o = new(values.to_h)
+        o.save!
+        o
+      end
+
+      def save!(skip_validation = false)
+        raise Jennifer::BaseException.new("Record was not save") unless save(skip_validation)
+        true
+      end
+
       def append_relation(name, hash)
         raise Jennifer::UnknownRelation.new(self.class, name)
       end
@@ -114,7 +164,6 @@ module Jennifer
         ::Jennifer::Model::Callback.inherited_hook
         ::Jennifer::Model::RelationDefinition.inherited_hook
 
-
         @@relations = {} of String => ::Jennifer::Relation::IRelation
 
         after_save :__refresh_changes
@@ -152,16 +201,40 @@ module Jennifer
         hash.each { |k, v| set_attribute(k, v) }
       end
 
+      # Deletes object from db and calls callbacks
       def destroy
-        return if new_record?
-        __before_destroy_callback
-        delete
+        return false if new_record? || !__before_destroy_callback
+        @destroyed = true if delete
+        __after_destroy_callback if @destroyed
+        @destroyed
       end
 
+      # Deletes object from DB without calling callbacks
       def delete
-        return if new_record?
+        return if new_record? || errors.any?
         this = self
         self.class.where { this.class.primary == this.primary }.delete
+      end
+
+      # Lock current object in DB
+      def lock!(type : String | Bool = true)
+        this = self
+        self.class.where { this.class.primary == this.primary }.lock(type).to_a
+      end
+
+      # Starts transaction and locks current object
+      def with_lock(type : String | Bool = true)
+        self.class.transaction do |t|
+          self.lock!(type)
+          yield(t)
+        end
+      end
+
+      # Starts transaction
+      def self.transaction
+        Adapter.adapter.transaction do |t|
+          yield(t)
+        end
       end
 
       def self.where(&block)

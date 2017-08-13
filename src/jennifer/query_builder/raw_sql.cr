@@ -17,6 +17,10 @@ module Jennifer
       def sql_args
         @params
       end
+
+      def sql_args_count
+        @params.size
+      end
     end
   end
 end

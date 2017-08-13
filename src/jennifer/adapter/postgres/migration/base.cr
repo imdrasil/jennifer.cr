@@ -1,7 +1,7 @@
 module Jennifer
   module Migration
     abstract class Base
-      include Support
+      extend Ifrit
 
       def create_enum(name, values)
         TableBuilder::CreateEnum.new(name, values).process

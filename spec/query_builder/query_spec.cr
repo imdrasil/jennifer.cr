@@ -2,6 +2,7 @@ require "../spec_helper"
 
 describe Jennifer::QueryBuilder::Query do
   described_class = Jennifer::QueryBuilder::Query
+
   describe "#to_sql" do
     context "if query tree is not epty" do
       it "retruns sql representation of condition" do
@@ -81,7 +82,7 @@ describe Jennifer::QueryBuilder::Query do
     it "addes inner join by default" do
       q1 = query_builder
       q1.join(Address) { _test__id == _contact_id }
-      q1.join_clause.should match(/JOIN addresses ON test\.id = addresses\.contact_id/)
+      q1._joins.map(&.type).should eq([:inner])
     end
   end
 
@@ -89,7 +90,7 @@ describe Jennifer::QueryBuilder::Query do
     it "addes left join" do
       q1 = query_builder
       q1.left_join(Address) { _test__id == _contact_id }
-      q1.join_clause.should match(/LEFT JOIN addresses ON test\.id = addresses\.contact_id/)
+      q1._joins.map(&.type).should eq([:left])
     end
   end
 
@@ -97,7 +98,7 @@ describe Jennifer::QueryBuilder::Query do
     it "addes right join" do
       q1 = query_builder
       q1.right_join(Address) { _test__id == _contact_id }
-      q1.join_clause.should match(/RIGHT JOIN addresses ON test\.id = addresses\.contact_id/)
+      q1._joins.map(&.type).should eq([:right])
     end
   end
 
@@ -155,13 +156,13 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#from" do
     it "accepts plain query" do
-      query_builder("contacts").from("select * from contacts where id > 2")
-                               .select_clause.should eq("SELECT contacts.*\nFROM ( select * from contacts where id > 2 ) ")
+      select_clause(query_builder("contacts").from("select * from contacts where id > 2"))
+        .should eq("SELECT contacts.*\nFROM ( select * from contacts where id > 2 ) ")
     end
 
     it "accepts query object" do
-      query_builder("contacts").from(Contact.where { _id > 2 })
-                               .select_clause.should eq("SELECT contacts.*\nFROM ( SELECT contacts.*\nFROM contacts\nWHERE contacts.id > %s\n ) ")
+      select_clause(query_builder("contacts").from(Contact.where { _id > 2 }))
+        .should eq("SELECT contacts.*\nFROM ( SELECT contacts.*\nFROM contacts\nWHERE contacts.id > %s\n ) ")
     end
   end
 
@@ -250,6 +251,43 @@ describe Jennifer::QueryBuilder::Query do
       {% else %}
         match_each([19, 20], described_class.new("contacts").group(:gender).group_avg(:age, PG::Numeric))
       {% end %}
+    end
+  end
+
+  describe "#group_count" do
+    it "returns count of each group elements" do
+      contact_create(name: "Asd", gender: "male", age: 18)
+      contact_create(name: "BBB", gender: "female", age: 18)
+      contact_create(name: "Asd", gender: "male", age: 20)
+      match_each([2, 1], described_class.new("contacts").group(:age).group_count(:age))
+    end
+  end
+
+  describe "#increment" do
+    it "accepts hash" do
+      c = contact_create(name: "asd", gender: "male", age: 18)
+      Contact.where { _id == c.id }.increment({:age => 2})
+      Contact.find!(c.id).age.should eq(20)
+    end
+
+    it "accepts named tuple literal" do
+      c = contact_create(name: "asd", gender: "male", age: 18)
+      Contact.where { _id == c.id }.increment(age: 2)
+      Contact.find!(c.id).age.should eq(20)
+    end
+  end
+
+  describe "#decrement" do
+    it "accepts hash" do
+      c = contact_create(name: "asd", gender: "male", age: 20)
+      Contact.where { _id == c.id }.decrement({:age => 2})
+      Contact.find!(c.id).age.should eq(18)
+    end
+
+    it "accepts named tuple literal" do
+      c = contact_create(name: "asd", gender: "male", age: 20)
+      Contact.where { _id == c.id }.decrement(age: 2)
+      Contact.find!(c.id).age.should eq(18)
     end
   end
 

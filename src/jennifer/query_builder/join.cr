@@ -2,7 +2,7 @@ module Jennifer
   module QueryBuilder
     class Join
       @type : Symbol
-      property table : String, :type, on : Condition | LogicOperator, aliass : String?, relation : String?
+      property table : String, type, on : Condition | LogicOperator, aliass : String?, relation : String?
 
       def initialize(@table, @on, @type, @aliass = nil, @relation = nil)
       end
@@ -36,6 +36,10 @@ module Jennifer
 
       def sql_args
         @on.sql_args
+      end
+
+      def sql_args_count
+        @on.sql_args_count
       end
     end
   end

@@ -1,7 +1,30 @@
 require "../spec_helper"
 
 describe Jennifer::Model::Mapping do
-  describe "mapping macro" do
+  describe "#reload" do
+    it "assign all values from db to existing object" do
+      c1 = contact_create
+      c2 = Contact.all.first!
+      c1.age = 55
+      c1.save!
+      c2.reload
+      c2.age.should eq(55)
+    end
+  end
+
+  describe "#_extract_attributes" do
+    # TODO: is wrong for now because of mess with timestamps, will be fixed in separate PR
+    pending "returns tuple with values" do
+      c1 = contact_create
+      Contact.all.where { _id == c1.id }.each_result_set do |rs|
+        res = c1._extract_attributes(rs)
+
+        res.should eq({c1.id, "Deepthi", 28, "male", nil, nil, nil, nil})
+      end
+    end
+  end
+
+  describe "%mapping" do
     describe "::field_count" do
       it "returns correct number of model fields" do
         postgres_only do
@@ -34,6 +57,17 @@ describe Jennifer::Model::Mapping do
           contact_create(name: "Jennifer", age: 18, gender: "female")
           Contact.all.count.should eq(2)
           Contact.where { _gender == "male" }.count.should eq(1)
+        end
+      end
+
+      describe "TIMESTAMP" do
+        it "properly saves and loads" do
+          c1 = contact_create(name: "Sam", age: 18)
+          time = Time.new(2001, 12, 23, 23, 58, 59)
+          c1.created_at = time
+          c1.save
+          c2 = Contact.find!(c1.id)
+          c2.created_at.should eq(time)
         end
       end
 
@@ -210,7 +244,7 @@ describe Jennifer::Model::Mapping do
     end
   end
 
-  describe "sti_mapping macro" do
+  describe "%sti_mapping" do
     describe "#initialize" do
       context "ResultSet" do
         it "properly loads from db" do
@@ -298,7 +332,7 @@ describe Jennifer::Model::Mapping do
     end
   end
 
-  describe "with_timestamps macro" do
+  describe "%with_timestamps" do
     it "adds callbacks" do
       Contact::AFTER_CREATE_CALLBACKS.should contain("__update_created_at")
       Contact::AFTER_SAVE_CALLBACKS.should contain("__update_updated_at")

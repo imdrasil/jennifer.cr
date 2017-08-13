@@ -107,7 +107,7 @@ class Country < Jennifer::Model::Base
 
   has_and_belongs_to_many :contacts, Contact
 
-  {% for callback in [:before_save, :after_save, :after_create, :before_create, :after_initialize, :before_destroy] %}
+  {% for callback in [:before_save, :after_save, :after_create, :before_create, :after_initialize, :before_destroy, :after_destroy] %}
     getter {{callback.id}}_attr = false
 
     {{callback.id}} {{callback}}_check
@@ -116,6 +116,21 @@ class Country < Jennifer::Model::Base
       @{{callback.id}}_attr = true
     end
   {% end %}
+
+  before_create :test_skip
+
+  def test_skip
+    if name == "not create"
+      raise ::Jennifer::Skip.new
+    end
+  end
+
+  def before_destroy_check
+    if name == "not kill"
+      errors.add(:name, "Cant destroy")
+    end
+    @before_destroy_attr = true
+  end
 end
 
 class EnnValidator < Accord::Validator

@@ -36,6 +36,11 @@ describe Jennifer::Model::Callback do
       c.save
       c.before_create_attr.should be_false
     end
+
+    it "not stops creating if before callback raises Skip exceptions" do
+      c = country_create(name: "not create")
+      c.new_record?.should be_true
+    end
   end
 
   describe "after_create" do
@@ -80,6 +85,22 @@ describe Jennifer::Model::Callback do
       c = country_create
       c.delete
       c.before_destroy_attr.should be_false
+    end
+  end
+
+  describe "after_destroy" do
+    it "is called after destroy" do
+      c = country_create
+      c.destroy
+      c.after_destroy_attr.should be_true
+    end
+
+    it "is not called if before destroy callback adds error" do
+      c = country_create(name: "not kill")
+      c.destroy
+      c.destroyed?.should be_false
+      c.after_destroy_attr.should be_false
+      Country.all.count.should eq(1)
     end
   end
 end

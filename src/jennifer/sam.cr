@@ -47,7 +47,12 @@ Sam.namespace "db" do
 
   desc "Prints version of last runned migration"
   task "version" do
-    puts Jennifer::Migration::Version.all.to_a[-1].version
+    version = Jennifer::Migration::Version.all.last
+    if version
+      puts version.not_nil!.version
+    else
+      puts "DB has no ran migration yet."
+    end
   end
 end
 

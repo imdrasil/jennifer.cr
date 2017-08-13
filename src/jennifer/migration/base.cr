@@ -50,15 +50,15 @@ module Jennifer
       end
 
       def create_enum(name, options)
-        raise BaseException.new("Current adapter not support this method.")
+        raise BaseException.new("Current adapter doesn't support this method.")
       end
 
       def drop_enum(name)
-        raise BaseException.new("Current adapter not support this method.")
+        raise BaseException.new("Current adapter doesn't support this method.")
       end
 
       def change_enum(name, options)
-        raise BaseException.new("Current adapter not support this method.")
+        raise BaseException.new("Current adapter doesn't support this method.")
       end
 
       def self.versions
@@ -67,11 +67,15 @@ module Jennifer
 
       macro def self.migrations
         {% begin %}
-          [
-            {% for model in @type.all_subclasses %}
-              {{model.id}},
-            {% end %}
-          ]
+          {% if @type.all_subclasses.size > 0 %}
+            [
+              {% for model in @type.all_subclasses %}
+                {{model.id}},
+              {% end %}
+            ]
+          {% else %}
+            {% raise "No migration defined" %}
+          {% end %}
         {% end %}
       end
     end

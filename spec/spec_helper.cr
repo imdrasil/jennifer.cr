@@ -11,6 +11,7 @@ macro mysql_only
 end
 
 require "spec"
+require "factory"
 require "./config"
 require "./models.cr"
 require "./factories.cr"
@@ -40,4 +41,12 @@ rescue e
   puts "Actual array: #{source}"
   puts "Expected: #{target}"
   raise e
+end
+
+def select_clause(query)
+  String.build { |s| ::Jennifer::Adapter::SqlGenerator.select_clause(s, query) }
+end
+
+def select_query(query)
+  ::Jennifer::Adapter::SqlGenerator.select(query)
 end

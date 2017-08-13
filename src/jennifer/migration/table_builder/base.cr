@@ -2,7 +2,7 @@ module Jennifer
   module Migration
     module TableBuilder
       abstract class Base
-        include Support
+        extend Ifrit
 
         delegate table_exists?, index_exists?, column_exists?, to: Adapter.adapter
 

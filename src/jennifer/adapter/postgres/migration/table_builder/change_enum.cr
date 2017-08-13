@@ -46,7 +46,7 @@ module Jennifer
         end
 
         def add_values
-          arr_cast(@options[:add_values].as(Array), String).each do |field|
+          typed_array_cast(@options[:add_values].as(Array), String).each do |field|
             @adapter.exec "ALTER TYPE #{@name} ADD VALUE '#{field}'"
           end
         end

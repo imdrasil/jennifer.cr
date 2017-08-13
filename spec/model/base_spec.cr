@@ -135,7 +135,7 @@ describe Jennifer::Model::Base do
 
   describe "scope macro" do
     it "executes in query context" do
-      String.build { |io| Contact.all.ordered.order_clause(io) }.should match(/ORDER BY name ASC/)
+      ::Jennifer::Adapter::SqlGenerator.select(Contact.all.ordered).should match(/ORDER BY name ASC/)
     end
 
     context "without arguemnt" do
@@ -185,6 +185,41 @@ describe Jennifer::Model::Base do
 
   describe "#delete" do
     pending "add" do
+    end
+  end
+
+  describe "#lock!" do
+    it "lock current record" do
+      contact_create.lock!
+    end
+
+    # TODO: find how to test this - now everything is a transaction in test env
+    pending "raises exception if transaction is not started" do
+    end
+  end
+
+  describe "#with_lock" do
+    # TODO: find how to properly test this one
+    it "starts transaction" do
+      expect_raises(DivisionByZero) do
+        contact_create.with_lock do
+          contact_create
+          1 / 0
+        end
+      end
+      Contact.all.count.should eq(1)
+    end
+  end
+
+  describe "::transaction" do
+    it "allow to start transaction" do
+      expect_raises(DivisionByZero) do
+        Contact.transaction do
+          contact_create
+          1 / 0
+        end
+      end
+      Contact.all.count.should eq(0)
     end
   end
 

@@ -7,20 +7,20 @@ describe Jennifer::QueryBuilder::ModelQuery do
     it "addes to select clause given relation" do
       q1 = Contact.all.relation(:addresses)
       q1.with(:addresses)
-      q1.select_clause.should match(/SELECT contacts\.\*, addresses\.\*/)
+      select_clause(q1).should match(/SELECT contacts\.\*, addresses\.\*/)
     end
 
     it "raises error if given relation is not exists" do
       q1 = Contact.all
       expect_raises(Jennifer::UnknownRelation, "Unknown relation for Contact: relation") do
         q1.with(:relation)
-        q1.select_clause
+        select_clause(q1)
       end
     end
 
     it "raises error if given relation is not joined" do
       expect_raises(Jennifer::BaseException, /with should be called after correspond join: no such table/) do
-        Contact.all.with(:addresses).select_clause
+        select_clause(Contact.all.with(:addresses))
       end
     end
   end
@@ -38,8 +38,9 @@ describe Jennifer::QueryBuilder::ModelQuery do
   end
 
   describe "#relation" do
+    # TODO: refactor this bad test - this should be tested under sql generating process
     it "makes join using relation scope" do
-      Contact.all.relation(:addresses).join_clause.should match(/JOIN addresses ON addresses.contact_id = contacts.id/)
+      ::Jennifer::Adapter::SqlGenerator.select(Contact.all.relation(:addresses)).should match(/JOIN addresses ON addresses.contact_id = contacts.id/)
     end
   end
 
@@ -53,12 +54,28 @@ describe Jennifer::QueryBuilder::ModelQuery do
       c1 = contact_create(age: 15)
       c2 = contact_create(age: 15)
 
-      r = Contact.all.where { _age == 15 }.first!
-      r.id.should eq(c1.id)
+      r = Contact.all.first
+      r.not_nil!.id.should eq(c1.id)
     end
 
     it "returns nil if there is no such records" do
       Contact.all.first.should be_nil
+    end
+  end
+
+  describe "#first!" do
+    it "returns first record" do
+      c1 = contact_create(age: 15)
+      c2 = contact_create(age: 15)
+
+      r = Contact.all.first!
+      r.id.should eq(c1.id)
+    end
+
+    it "raises error if there is no such records" do
+      expect_raises(Jennifer::RecordNotFound) do
+        Contact.all.first!
+      end
     end
   end
 
@@ -200,108 +217,6 @@ describe Jennifer::QueryBuilder::ModelQuery do
 
       Contact.where { _age < 15 }.update({:age => 20, :name => "b"})
       Contact.where { (_age == 20) & (_name == "b") }.count.should eq(2)
-    end
-  end
-
-  describe "#select_query" do
-    s = Contact.where { _age == 1 }.join(Contact) { _age == Contact._age }.order(age: :desc).limit(1)
-
-    it "includes select clause" do
-      s.select_query.should match(/#{Regex.escape(s.select_clause)}/)
-    end
-
-    it "includes body section" do
-      s.select_query.should match(/#{Regex.escape(s.body_section)}/)
-    end
-  end
-
-  describe "#select_clause" do
-    s = Contact.all.join(Address) { _id == Contact._id }.with(:addresses)
-
-    it "includes from clause" do
-      s.select_clause.should match(/#{Regex.escape(String.build { |io| s.from_clause(io) })}/)
-    end
-  end
-
-  describe "#from_clause" do
-    it "build correct from clause" do
-      String.build { |io| Contact.all.from_clause(io) }.should eq("FROM contacts\n")
-    end
-  end
-
-  describe "#body_section" do
-    s = Contact.where { _age == 1 }.join(Contact) { _age == Contact._age }.order(age: :desc).limit(1)
-
-    it "includes join clause" do
-      s.select_query.should match(/#{Regex.escape(s.join_clause)}/)
-    end
-
-    it "includes where clause" do
-      s.select_query.should match(/#{Regex.escape(s.where_clause)}/)
-    end
-
-    it "includes order clause" do
-      body = String.build { |q| s.order_clause(q) }
-      s.select_query.should match(/#{Regex.escape(body)}/)
-    end
-
-    it "includes limit clause" do
-      s.select_query.should match(/#{Regex.escape(s.limit_clause)}/)
-    end
-
-    pending "includes group_clause" do
-    end
-  end
-
-  describe "#group_clause" do
-    pending "correctly generates sql" do
-    end
-  end
-
-  describe "#join_clause" do
-    it "calls #to_sql on all parts" do
-      res = Contact.all.join(Address) { _id == Address._contact_id }
-                       .join(Passport) { _id == Passport._contact_id }
-                       .join_clause
-      res.split("JOIN").size.should eq(3)
-    end
-  end
-
-  describe "#where_clause" do
-    context "condition exists" do
-      it "includes its sql" do
-        Contact.where { _id == 1 }.where_clause.should eq("WHERE contacts.id = %s\n")
-      end
-    end
-
-    context "conditions are empty" do
-      it "returns empty string" do
-        Contact.all.where_clause.should eq("")
-      end
-    end
-  end
-
-  describe "#limit_clause" do
-    it "includes limit if is set" do
-      Contact.all.limit(2).limit_clause.should match(/LIMIT 2/)
-    end
-
-    it "includes offset if it is set" do
-      Contact.all.offset(4).limit_clause.should match(/OFFSET 4/)
-    end
-  end
-
-  describe "#order_clause" do
-    it "returns empty string if there is no orders" do
-      String.build do |s|
-        Contact.all.order_clause(s)
-      end.should eq("")
-    end
-
-    it "returns all orders" do
-      String.build do |s|
-        Contact.all.order(age: :desc, name: :asc).order_clause(s)
-      end.should match(/ORDER BY age DESC, name ASC/)
     end
   end
 

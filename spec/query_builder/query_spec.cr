@@ -254,6 +254,15 @@ describe Jennifer::QueryBuilder::Query do
     end
   end
 
+  describe "#group_count" do
+    it "returns count of each group elements" do
+      contact_create(name: "Asd", gender: "male", age: 18)
+      contact_create(name: "BBB", gender: "female", age: 18)
+      contact_create(name: "Asd", gender: "male", age: 20)
+      match_each([2, 1], described_class.new("contacts").group(:age).group_count(:age))
+    end
+  end
+
   describe "#increment" do
     it "accepts hash" do
       c = contact_create(name: "asd", gender: "male", age: 18)

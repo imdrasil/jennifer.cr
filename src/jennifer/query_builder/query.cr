@@ -388,6 +388,14 @@ module Jennifer
         typed_array_cast(result, T)
       end
 
+      def group_count(field)
+        _select = @raw_select
+        @raw_select = "COUNT(#{field}) as m"
+        result = to_a.map(&.["m"])
+        @raw_select = _select
+        result
+      end
+
       def lock(type = true)
         @lock = type
         self

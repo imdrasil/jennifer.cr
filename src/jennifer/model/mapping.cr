@@ -137,6 +137,7 @@ module Jennifer
         end
 
         @new_record = true
+        @destroyed = false
 
         # Creates object from `DB::ResultSet`
         def initialize(%pull : DB::ResultSet)
@@ -246,15 +247,15 @@ module Jennifer
         # Saves all changes to db; if validation not passed - returns `false`
         def save(skip_validation = false)
           unless skip_validation
-            __before_validation_callback
+            return false unless __before_validation_callback
             validate!
             __after_validation_callback
             return false unless valid?
           end
-          __before_save_callback
+          return false unless __before_save_callback
           response =
             if new_record?
-              __before_create_callback
+              return false unless __before_create_callback
               res = ::Jennifer::Adapter.adapter.insert(self)
               {% if primary && primary_auto_incrementable %}
                 if primary.nil? && res.last_insert_id > -1
@@ -273,6 +274,7 @@ module Jennifer
 
         # Reloads all fields from db
         def reload
+          raise ::Jennifer::RecordNotFound.new("It is not persisted yet") if new_record?
           this = self
           self.class.where { this.class.primary == this.primary }.each_result_set do |rs|
             {% left_side = [] of String %}

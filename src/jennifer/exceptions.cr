@@ -33,4 +33,16 @@ module Jennifer
       @message = "Unknown relation for #{owner}: #{relation}"
     end
   end
+
+  class RecordInvalid < BaseException
+    def initialize(obj)
+      @message = "Object is invalid: #{obj.to_s}"
+    end
+  end
+
+  class Skip < BaseException
+    def initialize
+      @message = ""
+    end
+  end
 end

@@ -73,6 +73,10 @@ module Jennifer
         @new_record
       end
 
+      def destroyed?
+        @destroyed
+      end
+
       def self.create(values : Hash | NamedTuple)
         o = new(values)
         o.save
@@ -199,15 +203,15 @@ module Jennifer
 
       # Deletes object from db and calls callbacks
       def destroy
-        return if new_record?
-        __before_destroy_callback
-        delete
-        __after_destroy_callback
+        return false if new_record? || !__before_destroy_callback
+        @destroyed = true if delete
+        __after_destroy_callback if @destroyed
+        @destroyed
       end
 
       # Deletes object from DB without calling callbacks
       def delete
-        return if new_record?
+        return if new_record? || errors.any?
         this = self
         self.class.where { this.class.primary == this.primary }.delete
       end

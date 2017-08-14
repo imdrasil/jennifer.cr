@@ -72,8 +72,8 @@ module Jennifer
 
       # Adds callbacks for `created_at` and `updated_at` fields
       macro with_timestamps
-        after_create :__update_created_at
-        after_save :__update_updated_at
+        before_create :__update_created_at
+        before_save :__update_updated_at
 
         # Sets `created_at` tocurrent time
         def __update_created_at

@@ -2,7 +2,7 @@
 
 Another one ActiveRecord pattern realization for Crystal with grate query DSL and migration mechanism.
 
-Please visit extended [wiki](wiki) to find extended information and instrcutions.
+Please visit extended [[wiki|Home]] to find extended information and instrcutions.
 
 ## Installation
 
@@ -18,7 +18,7 @@ dependencies:
 
 ## Usage
 
-Jennifer allows you to maintain everything for your models - from db migrations and field mapping to callbacks and building queries. All configuration instructions could be found on wiki [page](/wiki/Configuration).
+Jennifer allows you to maintain everything for your models - from db migrations and field mapping to callbacks and building queries. All configuration instructions could be found on wiki [[page|Configuration]].
 
 #### Migration
 
@@ -148,7 +148,7 @@ Contact.all.includes(:countries).where { __countries { _name.like("%tan%") } }
 Contact.all.group(:gender).group_avg(:age, PG::Numeric)
 ```
 
-Much more about query dsl could be found on wiki [page](wiki/Query-DSL)
+Much more about query dsl could be found on wiki [[page|Query-DSL]]
 
 ### Important restrictions
 

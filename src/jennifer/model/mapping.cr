@@ -241,7 +241,7 @@ module Jennifer
 
         # Default constructor without any fields
         def initialize
-          initialize({} of Symbol => DBAny)
+          initialize({} of Symbol => ::Jennifer::DBAny)
         end
 
         # Saves all changes to db; if validation not passed - returns `false`

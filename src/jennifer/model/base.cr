@@ -115,7 +115,7 @@ module Jennifer
       end
 
       def save!(skip_validation = false)
-        raise Jennifer::BaseException.new("Record was not save") unless save(skip_validation)
+        raise Jennifer::BaseException.new("Record was not save. Error list: #{errors.inspect}") unless save(skip_validation)
         true
       end
 

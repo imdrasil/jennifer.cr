@@ -1,55 +1,104 @@
-def criteria_builder(field = "f1", table = "tests")
-  Jennifer::QueryBuilder::Criteria.new(field: field, table: table)
+alias Criteria = Jennifer::QueryBuilder::Criteria
+alias Condition = Jennifer::QueryBuilder::Condition
+alias Join = Jennifer::QueryBuilder::Join
+
+class CriteriaFactory < Factory::Base
+  describe_class Criteria
+  skip_all_constructors
+
+  attr :field, "f1"
+  attr :table, "tests"
+
+  initialize_with do |hash, traits|
+    obj = described_class.new(field: hash["field"], table: hash["table"])
+    make_assigns(obj, traits)
+    obj
+  end
 end
 
-def db_array(*element)
-  element.to_a.map { |e| e.as(Jennifer::DBAny) }
+class JoinFactory < Factory::Base
+  describe_class Join
+  skip_all_constructors
+  argument_type String | Symbol | Criteria | Condition
+
+  attr :table, "tests"
+  attr :on, ->{ Factory.build_criteria == 1 }
+  attr :type, :inner
+
+  initialize_with do |hash, traits|
+    obj = described_class.new(hash["table"].as(String), hash["on"].as(Condition | Criteria), hash["type"].as(Symbol))
+    make_assigns(obj, traits)
+    obj
+  end
 end
 
-def join_builder(table = "tests", on = (criteria_builder == 1), type = :inner)
-  Jennifer::QueryBuilder::Join.new(table, on, type)
+class ExpressionFactory < Factory::Base
+  describe_class Jennifer::QueryBuilder::ExpressionBuilder
+  skip_all_constructors
+
+  attr :table, "tests"
+
+  initialize_with do |hash, traits|
+    described_class.new(hash["table"])
+  end
 end
 
-def expression_builder(table = "tests")
-  Jennifer::QueryBuilder::ExpressionBuilder.new(table)
+class QueryFactory < Factory::Base
+  describe_class Jennifer::QueryBuilder::Query
+  skip_all_constructors
+
+  attr :table, "tests"
+
+  initialize_with do |hash, traits|
+    described_class.new(hash["table"])
+  end
 end
 
-def query_builder(table = "tests")
-  Jennifer::QueryBuilder::Query.new(table)
+class ContactFactory < Factory::Jennifer::Base
+  attr :name, "Deepthi"
+  attr :age, 28
+  attr :description, nil
+  attr :gender, "male"
 end
 
-def contact_build(name = "Deepthi", age = 28, description = nil, gender = "male")
-  Contact.build({:name => name, :age => age, :description => description, :gender => gender})
+class AddressFactory < Factory::Jennifer::Base
+  attr :main, false
+  attr :street, "Ant st."
+  attr :contact_id, nil, Int32?
+  attr :details, nil, JSON::Any?
 end
 
-def address_build(main = false, street = "Ant st.", contact_id = nil, details = nil)
-  Address.build({:main => main, :street => street, :contact_id => contact_id, :details => details})
+class PassportFactory < Factory::Jennifer::Base
+  attr :enn, "dsa"
+  attr :contact_id, nil, Int32?
 end
 
-def passport_build(enn = "dsa", contact_id = nil)
-  Passport.build({:enn => enn, :contact_id => contact_id})
+class CountryFactory < Factory::Jennifer::Base
+  attr :name, "Amber"
 end
 
-def profile_build(login = "some_login", type = FacebookProfile.to_s)
-  Profile.build({:login => login, :type => type})
+class ProfileFactory < Factory::Jennifer::Base
+  attr :login, "some_login"
+  attr :type, FacebookProfile.to_s
+  attr :contact_id, nil, Int32?
 end
 
-def country_build(name = "Amber")
-  Country.build({:name => name})
+class FacebookProfileFactory < ProfileFactory
+  describe_class FacebookProfile
+  attr :uid, "123"
+  attr :type, FacebookProfile.to_s
 end
 
-def facebook_profile_build(uid = "123", login = "some_login", contact_id = nil)
-  FacebookProfile.build({:login => login, :type => FacebookProfile.to_s, :uid => uid, :contact_id => contact_id})
+class TwitterProfileFactory < ProfileFactory
+  describe_class TwitterProfile
+  attr :email, "some_email@example.com"
+  attr :type, TwitterProfile.to_s
 end
 
-def twitter_profile_build(email = "some_eamil@example.com", login = "some_login", contact_id = nil)
-  TwitterProfile.build({:login => login, :type => TwitterProfile.to_s, :email => email, :contact_id => contact_id})
-end
-
-{% for method in [:facebook_profile, :twitter_profile, :contact, :address, :passport, :country] %}
+{% for method in %i(contact address passport country facebook_profile twitter_profile) %}
   def {{method.id}}_create(**params)
-    c = {{method.id}}_build(**params)
-    c.save
-    c
+    o = Factory.build_{{method.id}}(**params)
+    o.save
+    o
   end
 {% end %}

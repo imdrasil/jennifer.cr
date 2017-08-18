@@ -84,14 +84,14 @@ describe Jennifer::Model::Mapping do
 
     describe "attribute getter" do
       it "provides getters" do
-        c = contact_build(name: "a")
+        c = Factory.build_contact(name: "a")
         c.name.should eq("a")
       end
     end
 
     describe "attribute setter" do
       it "provides setters" do
-        c = contact_build(name: "a")
+        c = Factory.build_contact(name: "a")
         c.name = "b"
         c.name.should eq("b")
       end
@@ -108,7 +108,7 @@ describe Jennifer::Model::Mapping do
     describe "#primary" do
       context "defaul primary field" do
         it "returns id valud" do
-          c = contact_build
+          c = Factory.build_contact
           c.id = -1
           c.primary.should eq(-1)
         end
@@ -116,7 +116,7 @@ describe Jennifer::Model::Mapping do
 
       context "custom field" do
         it "returns valud of custom primary field" do
-          p = passport_build
+          p = Factory.build_passport
           p.enn = "1qaz"
           p.primary.should eq("1qaz")
         end
@@ -143,7 +143,7 @@ describe Jennifer::Model::Mapping do
 
       context "no such setter" do
         it "raises exception" do
-          c = contact_build
+          c = Factory.build_contact
           expect_raises(::Jennifer::BaseException) do
             c.update_columns({:asd => 123})
           end
@@ -171,7 +171,7 @@ describe Jennifer::Model::Mapping do
 
       context "no such setter" do
         it "raises exception" do
-          c = contact_build
+          c = Factory.build_contact
           expect_raises(::Jennifer::BaseException) do
             c.update_column(:asd, 123)
           end
@@ -182,13 +182,13 @@ describe Jennifer::Model::Mapping do
     describe "#set_attribute" do
       context "attribute exists" do
         it "sets attribute if value has proper type" do
-          c = contact_build
+          c = Factory.build_contact
           c.set_attribute(:name, "123")
           c.name.should eq("123")
         end
 
         it "raises exeption if value has wrong type" do
-          c = contact_build
+          c = Factory.build_contact
           expect_raises(::Jennifer::BaseException) do
             c.set_attribute(:name, 123)
           end
@@ -197,7 +197,7 @@ describe Jennifer::Model::Mapping do
 
       context "no such setter" do
         it "raises exception" do
-          c = contact_build
+          c = Factory.build_contact
           expect_raises(::Jennifer::BaseException) do
             c.set_attribute(:asd, 123)
           end
@@ -207,7 +207,7 @@ describe Jennifer::Model::Mapping do
 
     describe "#attribute" do
       it "returns attribute value by given name" do
-        c = contact_build(name: "Jessy")
+        c = Factory.build_contact(name: "Jessy")
         c.attribute("name").should eq("Jessy")
         c.attribute(:name).should eq("Jessy")
       end
@@ -215,7 +215,7 @@ describe Jennifer::Model::Mapping do
 
     describe "#arguments_to_save" do
       it "returns named tuple with correct keys" do
-        c = contact_build
+        c = Factory.build_contact
         c.name = "some another name"
         r = c.arguments_to_save
         r.is_a?(NamedTuple).should be_true
@@ -223,13 +223,13 @@ describe Jennifer::Model::Mapping do
       end
 
       it "returns tuple with empty arguments if no field was changed" do
-        r = contact_build.arguments_to_save
+        r = Factory.build_contact.arguments_to_save
         r[:args].empty?.should be_true
         r[:fields].empty?.should be_true
       end
 
       it "returns tuple with changed arguments" do
-        c = contact_build
+        c = Factory.build_contact
         c.name = "some new name"
         r = c.arguments_to_save
         r[:args].should eq(db_array("some new name"))
@@ -297,7 +297,7 @@ describe Jennifer::Model::Mapping do
 
     describe "#to_str_h" do
       it "sets all fields" do
-        r = facebook_profile_build(uid: "111", login: "my_login").to_str_h
+        r = Factory.build_facebook_profile(uid: "111", login: "my_login").to_str_h
         r["login"].should eq("my_login")
         r["type"].should eq("FacebookProfile")
         r["uid"].should eq("111")
@@ -306,12 +306,12 @@ describe Jennifer::Model::Mapping do
 
     describe "#attribute" do
       it "returns attribute" do
-        f = facebook_profile_build(uid: "111", login: "my_login")
+        f = Factory.build_facebook_profile(uid: "111", login: "my_login")
         f.attribute("uid").should eq("111")
       end
 
       it "returns parent attribute" do
-        f = facebook_profile_build(uid: "111", login: "my_login")
+        f = Factory.build_facebook_profile(uid: "111", login: "my_login")
         f.attribute("login").should eq("my_login")
       end
     end
@@ -341,7 +341,7 @@ describe Jennifer::Model::Mapping do
 
   describe "#__update_created_at" do
     it "updates created_at field" do
-      c = contact_build
+      c = Factory.build_contact
       c.created_at.should be_nil
       c.__update_created_at
       c.created_at!.should_not be_nil
@@ -351,7 +351,7 @@ describe Jennifer::Model::Mapping do
 
   describe "#__update_updated_at" do
     it "updates updated_at field" do
-      c = contact_build
+      c = Factory.build_contact
       c.updated_at.should be_nil
       c.__update_updated_at
       c.updated_at!.should_not be_nil

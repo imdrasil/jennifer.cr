@@ -3,12 +3,7 @@ module Jennifer
     class BaseSqlGenerator
       # Generates query for inserting new record to db
       def self.insert(obj : Model::Base)
-        opts = obj.arguments_to_insert
-        String.build do |s|
-          s << "INSERT INTO " << obj.class.table_name << "("
-          opts[:fields].join(", ", s)
-          s << ") values (" << Adapter.adapter_class.escape_string(opts[:fields].size) << ")"
-        end
+        raise "Not implemented"
       end
 
       # Generates common select sql request

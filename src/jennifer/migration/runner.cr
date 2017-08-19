@@ -1,6 +1,8 @@
 module Jennifer
   module Migration
     module Runner
+      MIGRATION_DATE_FORMAT = "%Y%m%d%H%M%S%L"
+
       def self.migrate(count)
         performed = false
         Adapter.adapter.ready_to_migrate!
@@ -33,7 +35,7 @@ module Jennifer
             puts e.message
             raise e
           end
-          Version.create(version: p)
+          Version.create({version: p})
         end
       rescue e
         puts e.message
@@ -92,7 +94,7 @@ module Jennifer
       end
 
       def self.generate(name)
-        time = Time.now.to_s("%Y%m%d%H%M%S%L")
+        time = Time.now.to_s(MIGRATION_DATE_FORMAT)
         migration_name = name.camelcase + time
         str = "class #{migration_name} < Jennifer::Migration::Base\n  def up\n  end\n\n  def down\n  end\nend\n"
         File.write(File.join(Config.migration_files_path.to_s, "#{time}_#{name.underscore}.cr"), str)

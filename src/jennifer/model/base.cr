@@ -84,14 +84,8 @@ module Jennifer
       end
 
       def self.create
-        a = {} of Symbol => Supportable
+        a = {} of String => DBAny
         o = new(a)
-        o.save
-        o
-      end
-
-      def self.create(**values)
-        o = new(values.to_h)
         o.save
         o
       end
@@ -104,12 +98,6 @@ module Jennifer
 
       def self.create!
         o = new({} of Symbol => Supportable)
-        o.save!
-        o
-      end
-
-      def self.create!(**values)
-        o = new(values.to_h)
         o.save!
         o
       end

@@ -113,6 +113,8 @@ module Jennifer
           FIELD_NAMES
         end
 
+        {% add_default_constructor = true %}
+
         # generates hash with options
         {% for key, value in properties %}
           {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
@@ -127,6 +129,7 @@ module Jennifer
           {% end %}
           {% t_string = properties[key][:type].stringify %}
           {% properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? t_string + "?" : t_string %}
+          {% add_default_constructor = add_default_constructor && (properties[key][:primary] || properties[key][:null] || properties[key].keys.includes?(:default)) %}
         {% end %}
 
         __field_declaration({{properties}}, {{primary_auto_incrementable}})
@@ -175,11 +178,16 @@ module Jennifer
               {% end %}
             end
           end
-          {
-          {% for key, value in properties %}
-            %var{key.id}.as({{value[:parsed_type].id}}),
+          {% if properties.size > 1 %}
+            {
+            {% for key, value in properties %}
+              %var{key.id}.as({{value[:parsed_type].id}}),
+            {% end %}
+            }
+          {% else %}
+            {% key = properties.keys[0] %}
+            %var{key}.as({{properties[key][:parsed_type].id}})
           {% end %}
-          }
         end
 
         # Accepts symbol hash or named tuple, stringify it and calls
@@ -233,16 +241,25 @@ module Jennifer
         #    end
         #  {% end %}
         #end
-
-        # Accepts splatted named tuple.
-        def initialize(**values)
-          initialize(values)
-        end
-
-        # Default constructor without any fields
-        def initialize
-          initialize({} of Symbol => ::Jennifer::DBAny)
-        end
+        {% if add_default_constructor %}
+          # Default constructor without any fields
+          def initialize
+            {% for key, value in properties %}
+              @{{key.id}} =
+                {% if value[:null] %}
+                  {% if value[:default] != nil %}
+                    {{value[:default]}}
+                  {% else %}
+                    nil
+                  {% end %}
+                {% elsif value[:default] != nil %}
+                  {{value[:default]}}
+                {% else %}
+                  nil
+                {% end %}
+            {% end %}
+          end
+        {% end %}
 
         # Saves all changes to db; if validation not passed - returns `false`
         def save(skip_validation = false)
@@ -403,26 +420,19 @@ module Jennifer
         end
 
         def arguments_to_insert
-          {
-            args: [
-              {% for key, value in properties %}
-                {% unless value[:primary] && primary_auto_incrementable %}
-                  {% if value[:type].stringify == "JSON::Any" %}
-                     (@{{key.id}} ? @{{key.id}}.to_json : nil),
-                  {% else %}
-                    @{{key.id}},
-                  {% end %}
-                {% end %}
-              {% end %}
-            ],
-            fields: [
-              {% for key, value in properties %}
-                {% unless value[:primary] && primary_auto_incrementable %}
-                  "{{key.id}}",
-                {% end %}
-              {% end %}
-            ]
-          }
+          args = [] of ::Jennifer::DBAny
+          fields = [] of String
+          {% for key, value in properties %}
+            {% unless value[:primary] && primary_auto_incrementable %}
+              args << {% if value[:type].stringify == "JSON::Any" %}
+                        (@{{key.id}} ? @{{key.id}}.to_json : nil)
+                      {% else %}
+                        @{{key.id}}
+                      {% end %}
+              fields << "{{key.id}}"
+            {% end %}
+          {% end %}
+          {args: args, fields: fields}
         end
 
         private def __refresh_changes
@@ -536,12 +546,8 @@ module Jennifer
           initialize(values)
         end
 
-        def initialize(**values)
-          initialize(values)
-        end
-
         def initialize
-          initialize({} of Symbol => DB::Any)
+          initialize({} of String => ::Jennifer::DBAny)
         end
 
         def changed?

@@ -55,6 +55,10 @@ class QueryFactory < Factory::Base
 end
 
 class ContactFactory < Factory::Jennifer::Base
+  postgres_only do
+    argument_type (Array(Int32) | Int32 | String?)
+  end
+
   attr :name, "Deepthi"
   attr :age, 28
   attr :description, nil
@@ -96,6 +100,12 @@ class TwitterProfileFactory < ProfileFactory
 end
 
 {% for method in %i(contact address passport country facebook_profile twitter_profile) %}
+  def {{method.id}}_create(hash : Hash)
+    o = Factory.build_{{method.id}}(hash)
+    o.save
+    o
+  end
+
   def {{method.id}}_create(**params)
     o = Factory.build_{{method.id}}(**params)
     o.save

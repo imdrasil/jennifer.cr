@@ -13,18 +13,60 @@ describe Jennifer::Model::Mapping do
   end
 
   describe "#_extract_attributes" do
-    # TODO: is wrong for now because of mess with timestamps, will be fixed in separate PR
-    pending "returns tuple with values" do
+    it "returns tuple with values" do
       c1 = contact_create
       Contact.all.where { _id == c1.id }.each_result_set do |rs|
         res = c1._extract_attributes(rs)
-
-        res.should eq({c1.id, "Deepthi", 28, "male", nil, nil, nil, nil})
+        res.is_a?(Tuple).should be_true
+        res[0].should eq(c1.id)
+        res[1].should eq("Deepthi")
+        res[2].should eq(28)
+        res[3].should eq("male")
+        res[5].is_a?(Time).should be_true
+        res[6].is_a?(Time).should be_true
       end
+    end
+
+    it "allows one field models" do
+      model = OneFieldModel.create
+      is_executed = false
+      OneFieldModel.where { _id == model.id }.each_result_set do |rs|
+        res = model._extract_attributes(rs)
+        res.should eq(model.id)
+        is_executed = true
+      end
+      is_executed.should be_true
     end
   end
 
   describe "%mapping" do
+    describe "#initialize" do
+      context "from result set" do
+        pending "properly creates object" do
+        end
+      end
+
+      context "from hash" do
+        it "properly creates object" do
+          Contact.build({"name" => "Deepthi", "age" => 18, "gender" => "female"})
+          Contact.build({:name => "Deepthi", :age => 18, :gender => "female"})
+        end
+      end
+
+      context "from named tuple" do
+        it "properly creates object" do
+          Contact.build({name: "Deepthi", age: 18, gender: "female"})
+        end
+      end
+
+      context "model has only id field" do
+        it "creates succesfully without arguments" do
+          id = OneFieldModel.create.id
+          OneFieldModel.find!(id).id.should eq(id)
+        end
+      end
+    end
+
     describe "::field_count" do
       it "returns correct number of model fields" do
         postgres_only do
@@ -74,7 +116,7 @@ describe Jennifer::Model::Mapping do
       postgres_only do
         describe "Array" do
           it "properly load array" do
-            c = Contact.create(name: "sam", age: 18, gender: "male", tags: [1, 2])
+            c = contact_create({:name => "sam", :age => 18, :gender => "male", :tags => [1, 2]})
             c.tags!.should eq([1, 2])
             Contact.all.first!.tags!.should eq([1, 2])
           end
@@ -238,9 +280,13 @@ describe Jennifer::Model::Mapping do
     end
 
     describe "#to_h" do
+      pending "creates hash with symbol keys" do
+      end
     end
 
     describe "#attribute_hash" do
+      pending "creates hash with attributes" do
+      end
     end
   end
 

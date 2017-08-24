@@ -32,14 +32,14 @@ describe Jennifer::Adapter::Base do
   describe "#update" do
     context "given object" do
       it "updates fields if they were changed" do
-        c = contact_create
+        c = Factory.create_contact
         c.name = "new name"
         r = adapter.update(c)
         r.rows_affected.should eq(1)
       end
 
       it "just returns exec result if nothing was changed" do
-        c = contact_create
+        c = Factory.create_contact
         r = adapter.update(c)
         r.rows_affected.should eq(0)
       end
@@ -74,7 +74,7 @@ describe Jennifer::Adapter::Base do
     it "rollbacks if exception was raised" do
       expect_raises(DivisionByZero) do
         adapter.transaction do
-          contact_create
+          Factory.create_contact
           1 / 0
         end
       end
@@ -83,7 +83,7 @@ describe Jennifer::Adapter::Base do
 
     it "commit transaction otherwice" do
       adapter.transaction do
-        contact_create
+        Factory.create_contact
       end
       Contact.all.count.should eq(1)
     end
@@ -92,12 +92,12 @@ describe Jennifer::Adapter::Base do
       begin
         ch = Channel(Nil).new
         adapter.transaction do |t|
-          contact_create
+          Factory.create_contact
           raise DB::Rollback.new
         end
         spawn do
           adapter.transaction do |t|
-            contact_create
+            Factory.create_contact
           end
           ch.send(nil)
         end
@@ -116,7 +116,7 @@ describe Jennifer::Adapter::Base do
 
   describe "#delete" do
     it "removes record from db" do
-      contact_create
+      Factory.create_contact
       adapter.delete(Factory.build_query(table: "contacts"))
       Contact.all.count.should eq(0)
     end
@@ -124,7 +124,7 @@ describe Jennifer::Adapter::Base do
 
   describe "#exists?" do
     it "returns true if record exists" do
-      contact_create
+      Factory.create_contact
       adapter.exists?(Factory.build_query(table: "contacts")).should be_true
     end
 
@@ -135,7 +135,7 @@ describe Jennifer::Adapter::Base do
 
   describe "#count" do
     it "returns count of objects" do
-      contact_create
+      Factory.create_contact
       adapter.count(Factory.build_query(table: "contacts")).should eq(1)
     end
   end

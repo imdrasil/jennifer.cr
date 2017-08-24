@@ -98,17 +98,3 @@ class TwitterProfileFactory < ProfileFactory
   attr :email, "some_email@example.com"
   attr :type, TwitterProfile.to_s
 end
-
-{% for method in %i(contact address passport country facebook_profile twitter_profile) %}
-  def {{method.id}}_create(hash : Hash)
-    o = Factory.build_{{method.id}}(hash)
-    o.save
-    o
-  end
-
-  def {{method.id}}_create(**params)
-    o = Factory.build_{{method.id}}(**params)
-    o.save
-    o
-  end
-{% end %}

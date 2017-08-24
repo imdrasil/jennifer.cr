@@ -11,21 +11,15 @@ module Jennifer
       abstract def join_condition(a, b)
       abstract def query(a)
       abstract def insert(a, b)
-
-      def join_table!
-        @join_table.not_nil!
-      end
     end
 
     class Base(T, Q) < IRelation
       getter join_query : QueryBuilder::Condition | QueryBuilder::LogicOperator?
-      getter foreign : String?
-      getter primary : String?, join_table : String?, join_foreign : String?
+      getter foreign : String?, primary : String?, through : Symbol?
 
       @name : String
 
-      def initialize(@name, foreign : String | Symbol?, primary : String | Symbol?, @join_table, _join_foreign, query)
-        @join_foreign = _join_foreign.to_s if _join_foreign
+      def initialize(@name, foreign : String | Symbol?, primary : String | Symbol?, query, @through = nil)
         @foreign = foreign.to_s if foreign
         @primary = primary.to_s if primary
         @join_query = query.tree
@@ -82,10 +76,6 @@ module Jennifer
 
       def table_name
         T.table_name
-      end
-
-      def join_table_foreign_key
-        @join_foreign || T.to_s.foreign_key
       end
 
       def foreign_field

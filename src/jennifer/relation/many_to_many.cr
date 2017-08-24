@@ -1,9 +1,19 @@
 module Jennifer
   module Relation
     class ManyToMany(T, Q) < Base(T, Q)
-      def initialize(*opts)
-        super
+      getter join_table : String?, join_foreign : String?
+
+      def initialize(@name, foreign : String | Symbol?, primary : String | Symbol?, query, @join_table = nil, _join_foreign = nil)
+        @join_foreign = _join_foreign.to_s if _join_foreign
+        @foreign = foreign.to_s if foreign
+        @primary = primary.to_s if primary
+        @join_query = query.tree
+        @join_query.not_nil!.set_relation(T.table_name, @name) if @join_query
         @join_table = ::Jennifer::Adapter.adapter_class.join_table_name(Q.table_name, T.table_name) unless @join_table
+      end
+
+      def join_table!
+        @join_table.not_nil!
       end
 
       def insert(obj : Q, rel : Hash)
@@ -57,16 +67,18 @@ module Jennifer
         end
       end
 
-      private def add_join_table_record(obj, rel)
-        keys = [foreign_field, join_table_foreign_key]
-        values = [obj.attribute(primary_field), rel.primary]
-        query = String.build do |s|
-          s << "INSERT INTO " << join_table! << "("
-          keys.join(", ", s)
-          s << ") values (" << Adapter.adapter_class.escape_string(2) << ")"
-        end
+      def join_table_foreign_key
+        @join_foreign || T.to_s.foreign_key
+      end
 
-        Adapter.adapter.exec(Adapter.adapter.parse_query(query, keys), values)
+      private def add_join_table_record(obj, rel)
+        Adapter.adapter.insert(
+          join_table!,
+          {
+            foreign_field          => obj.attribute(primary_field),
+            join_table_foreign_key => rel.primary,
+          }
+        )
       end
     end
   end

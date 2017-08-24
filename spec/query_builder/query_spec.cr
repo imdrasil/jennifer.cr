@@ -104,9 +104,9 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#having" do
     it "returns correct entities" do
-      contact_create(name: "Ivan", age: 15)
-      contact_create(name: "Max", age: 19)
-      contact_create(name: "Ivan", age: 50)
+      Factory.create_contact(name: "Ivan", age: 15)
+      Factory.create_contact(name: "Max", age: 19)
+      Factory.create_contact(name: "Ivan", age: 50)
 
       res = Contact.all.select("COUNT(id) as count, contacts.name").group("name").having { sql("COUNT(id)") > 1 }.pluck(:name)
       res.size.should eq(1)
@@ -117,7 +117,7 @@ describe Jennifer::QueryBuilder::Query do
   describe "#delete" do
     it "deletes from db using existing conditions" do
       count = Contact.all.count
-      c = contact_create(name: "Extra content")
+      c = Factory.create_contact(name: "Extra content")
       Contact.all.count.should eq(count + 1)
       described_class.new("contacts").where { _name == "Extra content" }.delete
       Contact.all.count.should eq(count)
@@ -126,12 +126,12 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#exists?" do
     it "returns true if there is such object with given condition" do
-      contact_create(name: "Anton")
+      Factory.create_contact(name: "Anton")
       described_class.new("contacts").where { _name == "Anton" }.exists?.should be_true
     end
 
     it "returns false if there is no such object with given condition" do
-      contact_create(name: "Anton")
+      Factory.create_contact(name: "Anton")
       described_class.new("contacts").where { _name == "Jhon" }.exists?.should be_false
     end
   end
@@ -148,8 +148,8 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#count" do
     it "returns count of rows for given query" do
-      contact_create(name: "Asd")
-      contact_create(name: "BBB")
+      Factory.create_contact(name: "Asd")
+      Factory.create_contact(name: "BBB")
       described_class.new("contacts").where { _name.like("%A%") }.count.should eq(1)
     end
   end
@@ -168,24 +168,24 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#max" do
     it "returns maximum value" do
-      contact_create(name: "Asd")
-      contact_create(name: "BBB")
+      Factory.create_contact(name: "Asd")
+      Factory.create_contact(name: "BBB")
       described_class.new("contacts").max(:name, String).should eq("BBB")
     end
   end
 
   describe "#min" do
     it "returns minimum value" do
-      contact_create(name: "Asd", age: 19)
-      contact_create(name: "BBB", age: 20)
+      Factory.create_contact(name: "Asd", age: 19)
+      Factory.create_contact(name: "BBB", age: 20)
       described_class.new("contacts").min(:age, Int32).should eq(19)
     end
   end
 
   describe "#sum" do
     it "returns sum value" do
-      contact_create(name: "Asd", age: 20)
-      contact_create(name: "BBB", age: 19)
+      Factory.create_contact(name: "Asd", age: 20)
+      Factory.create_contact(name: "BBB", age: 19)
       {% if env("DB") == "mysql" %}
         described_class.new("contacts").sum(:age, Float64).should eq(39)
       {% else %}
@@ -196,8 +196,8 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#avg" do
     it "returns average value" do
-      contact_create(name: "Asd", age: 20)
-      contact_create(name: "BBB", age: 35)
+      Factory.create_contact(name: "Asd", age: 20)
+      Factory.create_contact(name: "BBB", age: 35)
       {% if env("DB") == "mysql" %}
         described_class.new("contacts").avg(:age, Float64).should eq(27.5)
       {% else %}
@@ -208,30 +208,30 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#group_max" do
     it "returns array of maximum values" do
-      contact_create(name: "Asd", gender: "male", age: 18)
-      contact_create(name: "BBB", gender: "female", age: 19)
-      contact_create(name: "Asd", gender: "male", age: 20)
-      contact_create(name: "BBB", gender: "female", age: 21)
+      Factory.create_contact(name: "Asd", gender: "male", age: 18)
+      Factory.create_contact(name: "BBB", gender: "female", age: 19)
+      Factory.create_contact(name: "Asd", gender: "male", age: 20)
+      Factory.create_contact(name: "BBB", gender: "female", age: 21)
       match_array(described_class.new("contacts").group(:gender).group_max(:age, Int32), [20, 21])
     end
   end
 
   describe "#group_min" do
     it "returns minimum value" do
-      contact_create(name: "Asd", gender: "male", age: 18)
-      contact_create(name: "BBB", gender: "female", age: 19)
-      contact_create(name: "Asd", gender: "male", age: 20)
-      contact_create(name: "BBB", gender: "female", age: 21)
+      Factory.create_contact(name: "Asd", gender: "male", age: 18)
+      Factory.create_contact(name: "BBB", gender: "female", age: 19)
+      Factory.create_contact(name: "Asd", gender: "male", age: 20)
+      Factory.create_contact(name: "BBB", gender: "female", age: 21)
       match_array(described_class.new("contacts").group(:gender).group_min(:age, Int32), [18, 19])
     end
   end
 
   describe "#group_sum" do
     it "returns sum value" do
-      contact_create(name: "Asd", gender: "male", age: 18)
-      contact_create(name: "BBB", gender: "female", age: 19)
-      contact_create(name: "Asd", gender: "male", age: 20)
-      contact_create(name: "BBB", gender: "female", age: 21)
+      Factory.create_contact(name: "Asd", gender: "male", age: 18)
+      Factory.create_contact(name: "BBB", gender: "female", age: 19)
+      Factory.create_contact(name: "Asd", gender: "male", age: 20)
+      Factory.create_contact(name: "BBB", gender: "female", age: 21)
       {% if env("DB") == "mysql" %}
         match_array(described_class.new("contacts").group(:gender).group_sum(:age, Float64), [38.0, 40.0])
       {% else %}
@@ -242,10 +242,10 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#group_avg" do
     it "returns average value" do
-      contact_create(name: "Asd", gender: "male", age: 18)
-      contact_create(name: "BBB", gender: "female", age: 19)
-      contact_create(name: "Asd", gender: "male", age: 20)
-      contact_create(name: "BBB", gender: "female", age: 21)
+      Factory.create_contact(name: "Asd", gender: "male", age: 18)
+      Factory.create_contact(name: "BBB", gender: "female", age: 19)
+      Factory.create_contact(name: "Asd", gender: "male", age: 20)
+      Factory.create_contact(name: "BBB", gender: "female", age: 21)
       {% if env("DB") == "mysql" %}
         match_each([19, 20], described_class.new("contacts").group(:gender).group_avg(:age, Float64))
       {% else %}
@@ -256,22 +256,22 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#group_count" do
     it "returns count of each group elements" do
-      contact_create(name: "Asd", gender: "male", age: 18)
-      contact_create(name: "BBB", gender: "female", age: 18)
-      contact_create(name: "Asd", gender: "male", age: 20)
+      Factory.create_contact(name: "Asd", gender: "male", age: 18)
+      Factory.create_contact(name: "BBB", gender: "female", age: 18)
+      Factory.create_contact(name: "Asd", gender: "male", age: 20)
       match_each([2, 1], described_class.new("contacts").group(:age).group_count(:age))
     end
   end
 
   describe "#increment" do
     it "accepts hash" do
-      c = contact_create(name: "asd", gender: "male", age: 18)
+      c = Factory.create_contact(name: "asd", gender: "male", age: 18)
       Contact.where { _id == c.id }.increment({:age => 2})
       Contact.find!(c.id).age.should eq(20)
     end
 
     it "accepts named tuple literal" do
-      c = contact_create(name: "asd", gender: "male", age: 18)
+      c = Factory.create_contact(name: "asd", gender: "male", age: 18)
       Contact.where { _id == c.id }.increment(age: 2)
       Contact.find!(c.id).age.should eq(20)
     end
@@ -279,13 +279,13 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#decrement" do
     it "accepts hash" do
-      c = contact_create(name: "asd", gender: "male", age: 20)
+      c = Factory.create_contact(name: "asd", gender: "male", age: 20)
       Contact.where { _id == c.id }.decrement({:age => 2})
       Contact.find!(c.id).age.should eq(18)
     end
 
     it "accepts named tuple literal" do
-      c = contact_create(name: "asd", gender: "male", age: 20)
+      c = Factory.create_contact({:name => "asd", :gender => "male", :age => 20})
       Contact.where { _id == c.id }.decrement(age: 2)
       Contact.find!(c.id).age.should eq(18)
     end

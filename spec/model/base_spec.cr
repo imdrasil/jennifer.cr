@@ -63,7 +63,7 @@ describe Jennifer::Model::Base do
     end
 
     it "returns false if primary field is not nil" do
-      contact_create.new_record?.should be_false
+      Factory.create_contact.new_record?.should be_false
     end
   end
 
@@ -85,24 +85,24 @@ describe Jennifer::Model::Base do
 
     context "updates existing object in db" do
       it "stores changed fields to db" do
-        c = contact_create
+        c = Factory.create_contact
         c.name = "new name"
         c.save
         Contact.find!(c.id).name.should eq("new name")
       end
 
       it "returns true if record was saved" do
-        c = contact_create
+        c = Factory.create_contact
         c.name = "new name"
         c.save.should be_true
       end
 
       it "returns false if record wasn't saved" do
-        contact_create.save.should be_false
+        Factory.create_contact.save.should be_false
       end
 
       it "calls after_save_callback" do
-        c = contact_create
+        c = Factory.create_contact
         c.name = "new name"
         c.save
         c.name_changed?.should be_false
@@ -141,12 +141,12 @@ describe Jennifer::Model::Base do
     end
 
     it "is chainable" do
-      c1 = contact_create(age: 15)
-      c2 = contact_create(age: 15)
-      c3 = contact_create(age: 13)
-      address_create(contact_id: c1.id, main: true)
-      address_create(contact_id: c2.id, main: false)
-      address_create(contact_id: c3.id, main: true)
+      c1 = Factory.create_contact(age: 15)
+      c2 = Factory.create_contact(age: 15)
+      c3 = Factory.create_contact(age: 13)
+      Factory.create_address(contact_id: c1.id, main: true)
+      Factory.create_address(contact_id: c2.id, main: false)
+      Factory.create_address(contact_id: c3.id, main: true)
       Contact.all.with_main_address.older(14).count.should eq(1)
     end
   end
@@ -173,7 +173,7 @@ describe Jennifer::Model::Base do
 
   describe "#lock!" do
     it "lock current record" do
-      contact_create.lock!
+      Factory.create_contact.lock!
     end
 
     # TODO: find how to test this - now everything is a transaction in test env
@@ -185,8 +185,8 @@ describe Jennifer::Model::Base do
     # TODO: find how to properly test this one
     it "starts transaction" do
       expect_raises(DivisionByZero) do
-        contact_create.with_lock do
-          contact_create
+        Factory.create_contact.with_lock do
+          Factory.create_contact
           1 / 0
         end
       end
@@ -198,7 +198,7 @@ describe Jennifer::Model::Base do
     it "allow to start transaction" do
       expect_raises(DivisionByZero) do
         Contact.transaction do
-          contact_create
+          Factory.create_contact
           1 / 0
         end
       end
@@ -222,7 +222,7 @@ describe Jennifer::Model::Base do
   describe "::destroy" do
     it "deletes from db by given ids" do
       c = [] of Int32?
-      3.times { |i| c << contact_create.id }
+      3.times { |i| c << Factory.create_contact.id }
       Contact.destroy(c[0..1])
       Contact.all.count.should eq(1)
     end
@@ -231,7 +231,7 @@ describe Jennifer::Model::Base do
   describe "::delete" do
     it "deletes from db by given ids" do
       c = [] of Int32?
-      3.times { |i| c << contact_create.id }
+      3.times { |i| c << Factory.create_contact.id }
       Contact.delete(c[0..1])
       Contact.all.count.should eq(1)
     end
@@ -239,9 +239,9 @@ describe Jennifer::Model::Base do
 
   describe "::search_by_sql" do
     it "returns array" do
-      contact_create(name: "Ivan", age: 15)
-      contact_create(name: "Max", age: 19)
-      contact_create(name: "Ivan", age: 50)
+      Factory.create_contact(name: "Ivan", age: 15)
+      Factory.create_contact(name: "Max", age: 19)
+      Factory.create_contact(name: "Ivan", age: 50)
 
       res = Contact.search_by_sql("SELECT contacts.* from contacts where age > 16")
 

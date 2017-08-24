@@ -21,7 +21,7 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#/relation_name/_query" do
       it "returns query object" do
-        c = contact_create
+        c = Factory.create_contact
         q = c.addresses_query
         q.to_sql.should match(/addresses.contact_id = %s/)
         q.sql_args.should eq(db_array(c.id))
@@ -39,8 +39,8 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#/relation_name/" do
       it "loads relation objects from db" do
-        c = contact_create
-        address_create(contact_id: c.id)
+        c = Factory.create_contact
+        Factory.create_address(contact_id: c.id)
         c.addresses.should be_a(Array(Address))
         c.addresses.size.should eq(1)
       end
@@ -48,7 +48,7 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#add_/relation_name/" do
       it "creates new objects depending on given hash" do
-        c = contact_create
+        c = Factory.create_contact
         c.add_addresses({:main => true, :street => "some street", :details => nil})
         c.addresses.size.should eq(1)
         c.addresses[0].street.should eq("some street")
@@ -57,7 +57,7 @@ describe Jennifer::Model::RelationDefinition do
       end
 
       it "creates new objects depending on given object" do
-        c = contact_create
+        c = Factory.create_contact
         a = Factory.build_address(street: "some street")
         c.add_addresses(a)
         c.addresses.size.should eq(1)
@@ -69,7 +69,7 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#remove_/relation_name/" do
       it "removes foreign key and removes it from array" do
-        c = contact_create
+        c = Factory.create_contact
         a = Factory.build_address(street: "some street")
         c.add_addresses(a)
         c.addresses[0].new_record?.should be_false
@@ -82,8 +82,8 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#/relation_name/_reload" do
       it "reloads objects" do
-        c = contact_create
-        a = address_create(contact_id: c.id)
+        c = Factory.create_contact
+        a = Factory.create_address(contact_id: c.id)
         c.addresses
         a.street = "some strange street"
         a.save
@@ -113,7 +113,7 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#/relation_name/_query" do
       it "returns query object" do
-        a = address_create(contact_id: 1)
+        a = Factory.create_address(contact_id: 1)
         q = a.contact_query
         q.to_sql.should match(/contacts.id = %s/)
         q.sql_args.should eq(db_array(a.contact_id))
@@ -122,8 +122,8 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#/relation_name/" do
       it "loads relation objects from db" do
-        c = contact_create
-        a = address_create(contact_id: c.id)
+        c = Factory.create_contact
+        a = Factory.create_address(contact_id: c.id)
         a.contact.should be_a(Contact?)
         a.contact.nil?.should be_false
       end
@@ -131,7 +131,7 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#add_/relation_name/" do
       it "builds new objects depending on given hash" do
-        a = address_create
+        a = Factory.create_address
         a.add_contact({:name => "some name", :age => 16})
         a.contact!.name.should eq("some name")
       end
@@ -139,8 +139,8 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#/relation_name/_reload" do
       it "reloads objects" do
-        c = contact_create
-        a = address_create(contact_id: c.id)
+        c = Factory.create_contact
+        a = Factory.create_address(contact_id: c.id)
         a.contact
         c.name = "some new name"
         c.save
@@ -151,8 +151,8 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#remove_/relation_name/" do
       it "removes foreign key and removes it from array" do
-        c = contact_create
-        a = address_create(contact_id: c.id)
+        c = Factory.create_contact
+        a = Factory.create_address(contact_id: c.id)
         a.contact
         a.remove_contact
         a.contact.should be_nil
@@ -180,7 +180,7 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#/relation_name/_query" do
       it "returns query object" do
-        c = contact_create
+        c = Factory.create_contact
         q = c.main_address_query
         q.to_sql.should match(/addresses.contact_id = %s AND addresses.main/)
         q.sql_args.should eq(db_array(c.id))
@@ -189,8 +189,8 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#/relation_name/" do
       it "loads relation objects from db" do
-        c = contact_create
-        address_create(contact_id: c.id, main: true)
+        c = Factory.create_contact
+        Factory.create_address(contact_id: c.id, main: true)
         c.main_address.nil?.should be_false
       end
     end
@@ -205,8 +205,8 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#/relation_name/_reload" do
       it "reloads objects" do
-        c = contact_create
-        a = address_create(contact_id: c.id, main: true)
+        c = Factory.create_contact
+        a = Factory.create_address(contact_id: c.id, main: true)
         c.main_address
         a.street = "some strange street"
         a.save
@@ -217,8 +217,8 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#remove_/relation_name/" do
       it "removes foreign key and removes it from array" do
-        c = contact_create
-        p = passport_create(contact_id: c.id)
+        c = Factory.create_contact
+        p = Factory.create_passport(contact_id: c.id)
         c.passport
         c.remove_passport
         c.passport.should be_nil
@@ -236,7 +236,7 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#/relation_name/_query" do
       it "returns query object" do
-        c = contact_create
+        c = Factory.create_contact
         q = c.countries_query
         select_query(q)
           .should match(/JOIN contacts_countries ON \(contacts_countries\.country_id = countries\.id AND contacts_countries\.contact_id = %s\)/)
@@ -245,7 +245,7 @@ describe Jennifer::Model::RelationDefinition do
 
       context "relation is a sti subclass" do
         it "returns proper objects" do
-          c = contact_create
+          c = Factory.create_contact
           q = c.facebook_many_profiles_query
           select_query(q)
             .should match(/JOIN contacts_profiles ON \(contacts_profiles\.profile_id = profiles\.id AND contacts_profiles\.contact_id = %s\)/)
@@ -255,7 +255,7 @@ describe Jennifer::Model::RelationDefinition do
         end
 
         it "works as well in inverse direction" do
-          c = facebook_profile_create
+          c = Factory.create_facebook_profile
           q = c.facebook_contacts_query
           select_query(q)
             .should match(/JOIN contacts_profiles ON \(contacts_profiles\.contact_id = contacts\.id AND contacts_profiles\.profile_id = %s\)/)
@@ -266,7 +266,7 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#/relation_name/" do
       it "loads relation objects from db" do
-        c = contact_create
+        c = Factory.create_contact
 
         c.add_countries({:name => "k1"})
         c.countries.size.should eq(1)
@@ -276,7 +276,7 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#add_/relation_name/" do
       it "builds new objects depending on given hash" do
-        c = contact_create
+        c = Factory.create_contact
         c.add_countries({:name => "k1"})
         c.countries.size.should eq(1)
         Country.all.count.should eq(1)
@@ -289,8 +289,8 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#remove_/relation_name/" do
       it "removes join table record and removes it from array" do
-        c = contact_create
-        country = country_create
+        c = Factory.create_contact
+        country = Factory.create_country
         c.add_countries(country)
         c.remove_countries(country)
         c.countries.size.should eq(0)
@@ -302,7 +302,7 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#/relation_name/_reload" do
       it "reloads objects" do
-        c = contact_create
+        c = Factory.create_contact
         c.add_countries({:name => "k1"})
         country = Country.all.first!
         country.name = "k2"
@@ -314,8 +314,8 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#__/relation_name/_clean" do
       it "removes join table record" do
-        c = contact_create
-        country = country_create
+        c = Factory.create_contact
+        country = Factory.create_country
         c.add_countries(country)
         q = Jennifer::Query.new("contacts_countries").where do
           (_contact_id == c.id) & (_country_id == country.id)

@@ -4,7 +4,7 @@ describe Jennifer::Model::STIMapping do
   describe "#initialize" do
     context "ResultSet" do
       it "properly loads from db" do
-        f = facebook_profile_create(uid: "111", login: "my_login")
+        f = c = Factory.create_facebook_profile(uid: "111", login: "my_login")
         res = FacebookProfile.find!(f.id)
         res.uid.should eq("111")
         res.login.should eq("my_login")
@@ -13,7 +13,7 @@ describe Jennifer::Model::STIMapping do
 
     context "hash" do
       it "properly loads from hash" do
-        f = FacebookProfile.new({:login => "asd", :uid => "uid"})
+        f = FacebookProfile.build({:login => "asd", :uid => "uid"})
         f.type.should eq("FacebookProfile")
         f.login.should eq("asd")
         f.uid.should eq("uid")
@@ -43,7 +43,7 @@ describe Jennifer::Model::STIMapping do
 
   describe "#to_h" do
     it "sets all fields" do
-      r = facebook_profile_create(uid: "111", login: "my_login").to_h
+      r = c = Factory.create_facebook_profile(uid: "111", login: "my_login").to_h
       r.has_key?(:id).should be_true
       r[:login].should eq("my_login")
       r[:type].should eq("FacebookProfile")

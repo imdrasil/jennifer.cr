@@ -61,8 +61,8 @@ describe Jennifer::QueryBuilder::Condition do
 
     context "operator LIKE" do
       it "finds correct results" do
-        contact_create(name: "Abraham")
-        contact_create(name: "Johny")
+        Factory.create_contact(name: "Abraham")
+        Factory.create_contact(name: "Johny")
         Contact.where { _name.like("%oh%") }.count.should eq(1)
       end
     end

@@ -3,6 +3,11 @@ module Jennifer
     module RequestMethods
       # query ===========================
 
+      def insert(table, opts : Hash)
+        values = opts.values
+        exec parse_query(SqlGenerator.insert(table, opts), values), values
+      end
+
       def insert(obj : Model::Base)
         opts = obj.arguments_to_insert
         exec parse_query(SqlGenerator.insert(obj), opts[:args]), opts[:args]

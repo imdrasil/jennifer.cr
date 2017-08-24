@@ -4,37 +4,37 @@ module Jennifer
       macro included
         macro has_many(name, klass, request = nil, foreign = nil, primary = nil, join_table = nil, join_foreign = nil)
           @@relations["\{{name.id}}"] =
-            ::Jennifer::Relation::HasMany(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}}, \{{join_table}}, \{{join_foreign}},
+            ::Jennifer::Relation::HasMany(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}},
               \{{klass}}.all\{% if request %}.exec \{{request}} \{% end %})
 
           \{% RELATION_NAMES << "#{name.id}" %}
 
           @\{{name.id}} = [] of \{{klass}}
 
+          # returns relation metaobject
           def self.\{{name.id}}_relation
-            @@\{{name.id}}_relation ||= ::Jennifer::Relation::HasMany(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}}, \{{join_table}}, \{{join_foreign}},
+            @@\{{name.id}}_relation ||= ::Jennifer::Relation::HasMany(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}},
               \{{klass}}.all\{% if request %}.exec \{{request}} \{% end %})
           end
 
+          # returns relation query for the object
           def \{{name.id}}_query
-            primary_field =
-              \{% if primary %}
-                \{{primary.id}}
-              \{% else %}
-                primary
-              \{% end %}
-            \{{@type}}.relation(\{{name.id.stringify}}).query(primary_field)
+            primary_value = \{{ primary ? primary.id : "primary".id }}
+            \{{@type}}.relation(\{{name.id.stringify}}).query(primary_value)
           end
 
+          # returns array of related objects
           def \{{name.id}}
             @\{{name.id}} = \{{name.id}}_query.to_a.as(Array(\{{klass}})) if @\{{name.id}}.empty?
             @\{{name.id}}
           end
 
+          # builds related object from hash
           def append_\{{name.id}}(rel : Hash)
             @\{{name.id}} << \{{klass}}.build(rel, false)
           end
 
+          # removes given object from relation array
           def remove_\{{name.id}}(rel : \{{klass}})
             index = @\{{name.id}}.index { |e| e.primary == rel.primary }
             if index
@@ -59,8 +59,8 @@ module Jennifer
 
         macro has_and_belongs_to_many(name, klass, request = nil, foreign = nil, primary = nil, join_table = nil, join_foreign = nil)
           @@relations["\{{name.id}}"] =
-            ::Jennifer::Relation::ManyToMany(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}}, \{{join_table}}, \{{join_foreign}},
-              \{{klass}}.all\{% if request %}.exec \{{request}} \{% end %})
+            ::Jennifer::Relation::ManyToMany(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}},
+              \{{klass}}.all\{{ (request ? ".exec #{request} ," : "").id }}, \{{join_table}}, \{{join_foreign}})
 
           \{% RELATION_NAMES << "#{name.id}" %}
 
@@ -77,8 +77,8 @@ module Jennifer
           @\{{name.id}} = [] of \{{klass}}
 
           def self.\{{name.id}}_relation
-            @@\{{name.id}}_relation ||= ::Jennifer::Relation::ManyToMany(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}}, \{{join_table}}, \{{join_foreign}},
-              \{{klass}}.all\{% if request %}.exec \{{request}} \{% end %})
+            @@\{{name.id}}_relation ||= ::Jennifer::Relation::ManyToMany(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}},
+              \{{klass}}.all\{{ (request ? ".exec #{request} ," : "").id }}, \{{join_table}}, \{{join_foreign}})
           end
 
           def \{{name.id}}_query
@@ -124,7 +124,7 @@ module Jennifer
 
         macro belongs_to(name, klass, request = nil, foreign = nil, primary = nil, join_table = nil, join_foreign = nil)
           @@relations["\{{name.id}}"] =
-            ::Jennifer::Relation::BelongsTo(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}}, \{{join_table}}, \{{join_foreign}},
+            ::Jennifer::Relation::BelongsTo(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}},
               \{{klass}}.all\{% if request %}.exec \{{request}} \{% end %})
 
           \{% RELATION_NAMES << "#{name.id}" %}
@@ -132,7 +132,7 @@ module Jennifer
           @\{{name.id}} : \{{klass}}?
 
           def self.\{{name.id}}_relation
-            @@\{{name.id}}_relation ||= ::Jennifer::Relation::BelongsTo(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}}, \{{join_table}}, \{{join_foreign}},
+            @@\{{name.id}}_relation ||= ::Jennifer::Relation::BelongsTo(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}},
               \{{klass}}.all\{% if request %}.exec \{{request}} \{% end %})
           end
 
@@ -182,7 +182,7 @@ module Jennifer
 
         macro has_one(name, klass, request = nil, foreign = nil, primary = nil, join_table = nil, join_foreign = nil)
           @@relations["\{{name.id}}"] =
-            ::Jennifer::Relation::HasOne(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}}, \{{join_table}}, \{{join_foreign}},
+            ::Jennifer::Relation::HasOne(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}},
               \{{klass}}.all\{% if request %}.exec \{{request}} \{% end %})
 
           \{% RELATION_NAMES << "#{name.id}" %}
@@ -190,7 +190,7 @@ module Jennifer
           @\{{name.id}} : \{{klass}}?
 
           def self.\{{name.id}}_relation
-            @@\{{name.id}}_relation ||= ::Jennifer::Relation::HasOne(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}}, \{{join_table}}, \{{join_foreign}},
+            @@\{{name.id}}_relation ||= ::Jennifer::Relation::HasOne(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}},
               \{{klass}}.all\{% if request %}.exec \{{request}} \{% end %})
           end
 

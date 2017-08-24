@@ -1,6 +1,15 @@
 module Jennifer
   module Adapter
     class BaseSqlGenerator
+      # Generates insert query
+      def self.insert(table, hash)
+        String.build do |s|
+          s << "INSERT INTO " << table << "("
+          hash.keys.join(", ", s)
+          s << ") VALUES (" << Adapter.adapter_class.escape_string(hash.size) << ")"
+        end
+      end
+
       # Generates query for inserting new record to db
       def self.insert(obj : Model::Base)
         raise "Not implemented"

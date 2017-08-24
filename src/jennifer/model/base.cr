@@ -1,4 +1,5 @@
 require "./mapping"
+require "./sti_mapping"
 require "./validation"
 require "./callback"
 require "./relation_definition"
@@ -8,6 +9,7 @@ module Jennifer
     abstract class Base
       extend Ifrit
       include Mapping
+      include STIMapping
       include Validation
       include Callback
       include RelationDefinition

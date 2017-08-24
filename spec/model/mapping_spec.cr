@@ -37,6 +37,14 @@ describe Jennifer::Model::Mapping do
       end
       is_executed.should be_true
     end
+
+    it "allows one field models" do
+      model = OneFieldModel.create
+      OneFieldModel.where { _id == model.id }.each_result_set do |rs|
+        res = model._extract_attributes(rs)
+        res.should eq(model.id)
+      end
+    end
   end
 
   describe "%mapping" do

@@ -5,7 +5,7 @@ describe Jennifer::QueryBuilder::Criteria do
   {% for op in [:==, :<, :>, :<=, :>=, :!=] %}
     describe "#{{{op.stringify}}}" do
       it "retruns condition" do
-        c = criteria_builder
+        c = Factory.build_criteria
         cond = (c {{op.id}} "a")
         cond.should be_a Jennifer::QueryBuilder::Condition
         cond.operator.should eq({{op}})
@@ -15,7 +15,7 @@ describe Jennifer::QueryBuilder::Criteria do
 
   describe "#=~" do
     it "retruns condition" do
-      c = criteria_builder
+      c = Factory.build_criteria
       cond = (c =~ "a")
       cond.should be_a Jennifer::QueryBuilder::Condition
       cond.operator.should eq(:regexp)
@@ -27,7 +27,7 @@ describe Jennifer::QueryBuilder::Criteria do
     end
 
     it "works via == as well" do
-      c = criteria_builder(field: "f1") == nil
+      c = Factory.build_criteria(field: "f1") == nil
       c.to_sql.should eq("tests.f1 IS NULL")
       c.sql_args.empty?.should be_true
     end
@@ -43,32 +43,32 @@ describe Jennifer::QueryBuilder::Criteria do
 
   describe "#in" do
     it "raises error if giben array is empty" do
-      c = criteria_builder
+      c = Factory.build_criteria
       expect_raises(Exception, "IN array can't be empty") do
         c.in([] of DB::Any)
       end
     end
 
     it "accepts all DB::Any types at the same time" do
-      c = criteria_builder.in([1, "asd"])
+      c = Factory.build_criteria.in([1, "asd"])
       c.rhs.should eq(db_array(1, "asd"))
     end
 
     it "sets operator as :in" do
-      c = criteria_builder
+      c = Factory.build_criteria
       c.in([1]).operator.should eq(:in)
     end
   end
 
   describe "#&" do
     it "retruns AND operator" do
-      (criteria_builder & criteria_builder).should be_a(Jennifer::QueryBuilder::And)
+      (Factory.build_criteria & Factory.build_criteria).should be_a(Jennifer::QueryBuilder::And)
     end
   end
 
   describe "#|" do
     it "retruns OR operator" do
-      (criteria_builder | criteria_builder).should be_a(Jennifer::QueryBuilder::Or)
+      (Factory.build_criteria | Factory.build_criteria).should be_a(Jennifer::QueryBuilder::Or)
     end
   end
 
@@ -79,7 +79,7 @@ describe Jennifer::QueryBuilder::Criteria do
 
   describe "#sql_args" do
     it "returns empty array" do
-      criteria_builder.sql_args.empty?.should be_true
+      Factory.build_criteria.sql_args.empty?.should be_true
     end
   end
 end

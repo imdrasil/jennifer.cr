@@ -3,13 +3,13 @@ require "../spec_helper"
 describe Jennifer::Model::Base do
   describe "#changed?" do
     it "returns true if at list one field was changed" do
-      c = contact_build
+      c = Factory.build_contact
       c.name = "new name"
       c.changed?.should be_true
     end
 
     it "returns false if no one field was changed" do
-      contact_build.changed?.should be_false
+      Factory.build_contact.changed?.should be_false
     end
   end
 
@@ -43,13 +43,13 @@ describe Jennifer::Model::Base do
 
   describe "#init_primary_field" do
     it "sets primary field" do
-      c = contact_build
+      c = Factory.build_contact
       c.init_primary_field(1)
       c.primary.should eq(1)
     end
 
     it "raises error if it is set" do
-      c = contact_build
+      c = Factory.build_contact
       c.init_primary_field(1)
       expect_raises(Exception, "Primary field is already initialized") do
         c.init_primary_field(1)
@@ -57,26 +57,9 @@ describe Jennifer::Model::Base do
     end
   end
 
-  describe "#initialize" do
-    context "from result set" do
-      pending "properly creates object" do
-      end
-    end
-
-    context "from hash" do
-      pending "properly creates object" do
-      end
-    end
-
-    context "from tuple" do
-      pending "properly creates object" do
-      end
-    end
-  end
-
   describe "#new_record?" do
     it "returns true if mrimary field nil" do
-      contact_build.new_record?.should be_true
+      Factory.build_contact.new_record?.should be_true
     end
 
     it "returns false if primary field is not nil" do
@@ -268,7 +251,10 @@ describe Jennifer::Model::Base do
 
   describe "::models" do
     it "returns all model classes" do
-      match_array(Jennifer::Model::Base.models, [Jennifer::Migration::Version, Contact, Address, Passport, Profile, FacebookProfile, TwitterProfile, Country])
+      match_array(
+        Jennifer::Model::Base.models,
+        [Jennifer::Migration::Version, Contact, Address, Passport, Profile, FacebookProfile, TwitterProfile, Country, OneFieldModel]
+      )
     end
   end
 end

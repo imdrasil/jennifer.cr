@@ -4,9 +4,14 @@ module Jennifer
       def insert(obj : Model::Base, with_primary_field = true)
         opts = obj.arguments_to_insert
         String.build do |s|
-          s << "INSERT INTO " << obj.class.table_name << "("
-          opts[:fields].join(", ", s)
-          s << ") VALUES (" << Adapter.adapter_class.escape_string(opts[:fields].size) << ") "
+          s << "INSERT INTO " << obj.class.table_name
+          unless opts[:fields].empty?
+            s << "("
+            opts[:fields].join(", ", s)
+            s << ") VALUES (" << Adapter.adapter_class.escape_string(opts[:fields].size) << ") "
+          else
+            s << " DEFAULT VALUES"
+          end
           if with_primary_field
             s << " RETURNING " << obj.class.primary_field_name
           end
@@ -46,10 +51,6 @@ module Jennifer
           arr << "$#{i + 1}"
         end
         query % arr
-      end
-
-      def parse_query(q)
-        q
       end
     end
   end

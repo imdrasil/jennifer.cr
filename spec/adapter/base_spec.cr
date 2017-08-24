@@ -117,7 +117,7 @@ describe Jennifer::Adapter::Base do
   describe "#delete" do
     it "removes record from db" do
       contact_create
-      adapter.delete(query_builder("contacts"))
+      adapter.delete(Factory.build_query(table: "contacts"))
       Contact.all.count.should eq(0)
     end
   end
@@ -125,18 +125,18 @@ describe Jennifer::Adapter::Base do
   describe "#exists?" do
     it "returns true if record exists" do
       contact_create
-      adapter.exists?(query_builder("contacts")).should be_true
+      adapter.exists?(Factory.build_query(table: "contacts")).should be_true
     end
 
     it "returns false if record doesn't exist" do
-      adapter.exists?(query_builder("contacts")).should be_false
+      adapter.exists?(Factory.build_query(table: "contacts")).should be_false
     end
   end
 
   describe "#count" do
     it "returns count of objects" do
       contact_create
-      adapter.count(query_builder("contacts")).should eq(1)
+      adapter.count(Factory.build_query(table: "contacts")).should eq(1)
     end
   end
 

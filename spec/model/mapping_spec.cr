@@ -13,18 +13,60 @@ describe Jennifer::Model::Mapping do
   end
 
   describe "#_extract_attributes" do
-    # TODO: is wrong for now because of mess with timestamps, will be fixed in separate PR
-    pending "returns tuple with values" do
+    it "returns tuple with values" do
       c1 = contact_create
       Contact.all.where { _id == c1.id }.each_result_set do |rs|
         res = c1._extract_attributes(rs)
-
-        res.should eq({c1.id, "Deepthi", 28, "male", nil, nil, nil, nil})
+        res.is_a?(Tuple).should be_true
+        res[0].should eq(c1.id)
+        res[1].should eq("Deepthi")
+        res[2].should eq(28)
+        res[3].should eq("male")
+        res[5].is_a?(Time).should be_true
+        res[6].is_a?(Time).should be_true
       end
+    end
+
+    it "allows one field models" do
+      model = OneFieldModel.create
+      is_executed = false
+      OneFieldModel.where { _id == model.id }.each_result_set do |rs|
+        res = model._extract_attributes(rs)
+        res.should eq(model.id)
+        is_executed = true
+      end
+      is_executed.should be_true
     end
   end
 
   describe "%mapping" do
+    describe "#initialize" do
+      context "from result set" do
+        pending "properly creates object" do
+        end
+      end
+
+      context "from hash" do
+        it "properly creates object" do
+          Contact.build({"name" => "Deepthi", "age" => 18, "gender" => "female"})
+          Contact.build({:name => "Deepthi", :age => 18, :gender => "female"})
+        end
+      end
+
+      context "from named tuple" do
+        it "properly creates object" do
+          Contact.build({name: "Deepthi", age: 18, gender: "female"})
+        end
+      end
+
+      context "model has only id field" do
+        it "creates succesfully without arguments" do
+          id = OneFieldModel.create.id
+          OneFieldModel.find!(id).id.should eq(id)
+        end
+      end
+    end
+
     describe "::field_count" do
       it "returns correct number of model fields" do
         postgres_only do
@@ -74,7 +116,7 @@ describe Jennifer::Model::Mapping do
       postgres_only do
         describe "Array" do
           it "properly load array" do
-            c = Contact.create(name: "sam", age: 18, gender: "male", tags: [1, 2])
+            c = contact_create({:name => "sam", :age => 18, :gender => "male", :tags => [1, 2]})
             c.tags!.should eq([1, 2])
             Contact.all.first!.tags!.should eq([1, 2])
           end
@@ -84,14 +126,14 @@ describe Jennifer::Model::Mapping do
 
     describe "attribute getter" do
       it "provides getters" do
-        c = contact_build(name: "a")
+        c = Factory.build_contact(name: "a")
         c.name.should eq("a")
       end
     end
 
     describe "attribute setter" do
       it "provides setters" do
-        c = contact_build(name: "a")
+        c = Factory.build_contact(name: "a")
         c.name = "b"
         c.name.should eq("b")
       end
@@ -108,7 +150,7 @@ describe Jennifer::Model::Mapping do
     describe "#primary" do
       context "defaul primary field" do
         it "returns id valud" do
-          c = contact_build
+          c = Factory.build_contact
           c.id = -1
           c.primary.should eq(-1)
         end
@@ -116,7 +158,7 @@ describe Jennifer::Model::Mapping do
 
       context "custom field" do
         it "returns valud of custom primary field" do
-          p = passport_build
+          p = Factory.build_passport
           p.enn = "1qaz"
           p.primary.should eq("1qaz")
         end
@@ -143,7 +185,7 @@ describe Jennifer::Model::Mapping do
 
       context "no such setter" do
         it "raises exception" do
-          c = contact_build
+          c = Factory.build_contact
           expect_raises(::Jennifer::BaseException) do
             c.update_columns({:asd => 123})
           end
@@ -171,7 +213,7 @@ describe Jennifer::Model::Mapping do
 
       context "no such setter" do
         it "raises exception" do
-          c = contact_build
+          c = Factory.build_contact
           expect_raises(::Jennifer::BaseException) do
             c.update_column(:asd, 123)
           end
@@ -182,13 +224,13 @@ describe Jennifer::Model::Mapping do
     describe "#set_attribute" do
       context "attribute exists" do
         it "sets attribute if value has proper type" do
-          c = contact_build
+          c = Factory.build_contact
           c.set_attribute(:name, "123")
           c.name.should eq("123")
         end
 
         it "raises exeption if value has wrong type" do
-          c = contact_build
+          c = Factory.build_contact
           expect_raises(::Jennifer::BaseException) do
             c.set_attribute(:name, 123)
           end
@@ -197,7 +239,7 @@ describe Jennifer::Model::Mapping do
 
       context "no such setter" do
         it "raises exception" do
-          c = contact_build
+          c = Factory.build_contact
           expect_raises(::Jennifer::BaseException) do
             c.set_attribute(:asd, 123)
           end
@@ -207,7 +249,7 @@ describe Jennifer::Model::Mapping do
 
     describe "#attribute" do
       it "returns attribute value by given name" do
-        c = contact_build(name: "Jessy")
+        c = Factory.build_contact(name: "Jessy")
         c.attribute("name").should eq("Jessy")
         c.attribute(:name).should eq("Jessy")
       end
@@ -215,7 +257,7 @@ describe Jennifer::Model::Mapping do
 
     describe "#arguments_to_save" do
       it "returns named tuple with correct keys" do
-        c = contact_build
+        c = Factory.build_contact
         c.name = "some another name"
         r = c.arguments_to_save
         r.is_a?(NamedTuple).should be_true
@@ -223,13 +265,13 @@ describe Jennifer::Model::Mapping do
       end
 
       it "returns tuple with empty arguments if no field was changed" do
-        r = contact_build.arguments_to_save
+        r = Factory.build_contact.arguments_to_save
         r[:args].empty?.should be_true
         r[:fields].empty?.should be_true
       end
 
       it "returns tuple with changed arguments" do
-        c = contact_build
+        c = Factory.build_contact
         c.name = "some new name"
         r = c.arguments_to_save
         r[:args].should eq(db_array("some new name"))
@@ -238,9 +280,13 @@ describe Jennifer::Model::Mapping do
     end
 
     describe "#to_h" do
+      pending "creates hash with symbol keys" do
+      end
     end
 
     describe "#attribute_hash" do
+      pending "creates hash with attributes" do
+      end
     end
   end
 
@@ -297,7 +343,7 @@ describe Jennifer::Model::Mapping do
 
     describe "#to_str_h" do
       it "sets all fields" do
-        r = facebook_profile_build(uid: "111", login: "my_login").to_str_h
+        r = Factory.build_facebook_profile(uid: "111", login: "my_login").to_str_h
         r["login"].should eq("my_login")
         r["type"].should eq("FacebookProfile")
         r["uid"].should eq("111")
@@ -306,12 +352,12 @@ describe Jennifer::Model::Mapping do
 
     describe "#attribute" do
       it "returns attribute" do
-        f = facebook_profile_build(uid: "111", login: "my_login")
+        f = Factory.build_facebook_profile(uid: "111", login: "my_login")
         f.attribute("uid").should eq("111")
       end
 
       it "returns parent attribute" do
-        f = facebook_profile_build(uid: "111", login: "my_login")
+        f = Factory.build_facebook_profile(uid: "111", login: "my_login")
         f.attribute("login").should eq("my_login")
       end
     end
@@ -341,7 +387,7 @@ describe Jennifer::Model::Mapping do
 
   describe "#__update_created_at" do
     it "updates created_at field" do
-      c = contact_build
+      c = Factory.build_contact
       c.created_at.should be_nil
       c.__update_created_at
       c.created_at!.should_not be_nil
@@ -351,7 +397,7 @@ describe Jennifer::Model::Mapping do
 
   describe "#__update_updated_at" do
     it "updates updated_at field" do
-      c = contact_build
+      c = Factory.build_contact
       c.updated_at.should be_nil
       c.__update_updated_at
       c.updated_at!.should_not be_nil

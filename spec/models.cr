@@ -144,3 +144,9 @@ class EnnValidator < Accord::Validator
     end
   end
 end
+
+class OneFieldModel < Jennifer::Model::Base
+  mapping(
+    id: {type: Int32, primary: true}
+  )
+end

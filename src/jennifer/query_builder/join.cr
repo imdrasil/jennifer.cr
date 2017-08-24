@@ -4,11 +4,11 @@ module Jennifer
       @type : Symbol
       property table : String, type, on : Condition | LogicOperator, aliass : String?, relation : String?
 
-      def initialize(@table, @on, @type, @aliass = nil, @relation = nil)
+      def initialize(@table, on : Criteria, @type, @aliass = nil, @relation = nil)
+        @on = on.to_condition
       end
 
-      def initialize(@table, on : Criteria, @type, @aliass = nil, @relation = nil)
-        @on = Condition.new(on)
+      def initialize(@table, @on : Condition | LogicOperator, @type, @aliass = nil, @relation = nil)
       end
 
       def to_sql

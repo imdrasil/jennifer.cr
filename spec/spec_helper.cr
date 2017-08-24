@@ -50,3 +50,7 @@ end
 def select_query(query)
   ::Jennifer::Adapter::SqlGenerator.select(query)
 end
+
+def db_array(*element)
+  element.to_a.map { |e| e.as(Jennifer::DBAny) }
+end

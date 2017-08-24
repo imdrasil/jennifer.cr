@@ -29,7 +29,7 @@ describe Jennifer::Model::RelationDefinition do
 
       context "relation is a sti subclass" do
         it "returns proper objects" do
-          c = contact_build
+          c = Factory.build_contact
           q = c.facebook_profiles_query
           q.to_sql.should match(/profiles\.type = %s/)
           q.sql_args.includes?("FacebookProfile").should be_true
@@ -58,7 +58,7 @@ describe Jennifer::Model::RelationDefinition do
 
       it "creates new objects depending on given object" do
         c = contact_create
-        a = address_build(street: "some street")
+        a = Factory.build_address(street: "some street")
         c.add_addresses(a)
         c.addresses.size.should eq(1)
         c.addresses[0].street.should eq("some street")
@@ -70,7 +70,7 @@ describe Jennifer::Model::RelationDefinition do
     describe "#remove_/relation_name/" do
       it "removes foreign key and removes it from array" do
         c = contact_create
-        a = address_build(street: "some street")
+        a = Factory.build_address(street: "some street")
         c.add_addresses(a)
         c.addresses[0].new_record?.should be_false
         c.remove_addresses(a)
@@ -197,7 +197,7 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#add_/relation_name/" do
       it "builds new objects depending on given hash" do
-        c = contact_build
+        c = Factory.build_contact
         c.add_main_address({:main => true, :street => "some street", :contact_id => 1, :details => nil})
         c.main_address.nil?.should be_false
       end

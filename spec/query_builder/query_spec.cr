@@ -6,15 +6,15 @@ describe Jennifer::QueryBuilder::Query do
   describe "#to_sql" do
     context "if query tree is not epty" do
       it "retruns sql representation of condition" do
-        q = query_builder
-        c = criteria_builder
+        q = Factory.build_query
+        c = Factory.build_criteria
         q.set_tree(c).to_sql.should eq(c.to_sql)
       end
     end
 
     context "if query tree is empty" do
       it "returns empty string" do
-        query_builder.to_sql.should eq("")
+        Factory.build_query.to_sql.should eq("")
       end
     end
   end
@@ -22,15 +22,15 @@ describe Jennifer::QueryBuilder::Query do
   describe "#sql_args" do
     context "if query tree is not epty" do
       it "retruns sql args of condition" do
-        q = query_builder
-        c = criteria_builder
+        q = Factory.build_query
+        c = Factory.build_criteria
         q.set_tree(c).sql_args.should eq(c.sql_args)
       end
     end
 
     context "if query tree is empty" do
       it "returns empty array" do
-        query_builder.sql_args.should eq([] of DB::Any)
+        Factory.build_query.sql_args.should eq([] of DB::Any)
       end
     end
   end
@@ -38,9 +38,9 @@ describe Jennifer::QueryBuilder::Query do
   describe "#set_tree" do
     context "argument is another query" do
       it "gets it's tree" do
-        q1 = query_builder
-        q2 = query_builder
-        q1.set_tree(expression_builder.c("f1"))
+        q1 = Factory.build_query
+        q2 = Factory.build_query
+        q1.set_tree(Factory.build_expression.c("f1"))
         q2.set_tree(q1)
         q1.tree.should be(q2.tree)
       end
@@ -48,9 +48,9 @@ describe Jennifer::QueryBuilder::Query do
 
     context "has own tree" do
       it "makes AND with new criteria" do
-        q1 = query_builder
-        c1 = criteria_builder
-        c2 = criteria_builder(field: "f2")
+        q1 = Factory.build_query
+        c1 = Factory.build_criteria
+        c2 = Factory.build_criteria(field: "f2")
 
         q1.set_tree(c1)
         q1.set_tree(c2)
@@ -60,8 +60,8 @@ describe Jennifer::QueryBuilder::Query do
 
     context "is empty" do
       it "makes given criteria as own" do
-        q1 = query_builder
-        c1 = criteria_builder
+        q1 = Factory.build_query
+        c1 = Factory.build_criteria
 
         q1.set_tree(c1)
         q1.tree.as(Jennifer::QueryBuilder::Condition).lhs.should eq(c1)
@@ -71,8 +71,8 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#where" do
     it "allows to pass criteria and sets it via AND" do
-      q1 = query_builder
-      c = criteria_builder(field: "f1") & criteria_builder(field: "f2")
+      q1 = Factory.build_query
+      c = Factory.build_criteria(field: "f1") & Factory.build_criteria(field: "f2")
       q1.where { c("f1") & c("f2") }
       q1.tree.to_s.should match(/tests\.f1 AND tests\.f2/)
     end
@@ -80,7 +80,7 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#join" do
     it "addes inner join by default" do
-      q1 = query_builder
+      q1 = Factory.build_query
       q1.join(Address) { _test__id == _contact_id }
       q1._joins.map(&.type).should eq([:inner])
     end
@@ -88,7 +88,7 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#left_join" do
     it "addes left join" do
-      q1 = query_builder
+      q1 = Factory.build_query
       q1.left_join(Address) { _test__id == _contact_id }
       q1._joins.map(&.type).should eq([:left])
     end
@@ -96,7 +96,7 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#right_join" do
     it "addes right join" do
-      q1 = query_builder
+      q1 = Factory.build_query
       q1.right_join(Address) { _test__id == _contact_id }
       q1._joins.map(&.type).should eq([:right])
     end
@@ -156,12 +156,12 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#from" do
     it "accepts plain query" do
-      select_clause(query_builder("contacts").from("select * from contacts where id > 2"))
+      select_clause(Factory.build_query(table: "contacts").from("select * from contacts where id > 2"))
         .should eq("SELECT contacts.*\nFROM ( select * from contacts where id > 2 ) ")
     end
 
     it "accepts query object" do
-      select_clause(query_builder("contacts").from(Contact.where { _id > 2 }))
+      select_clause(Factory.build_query(table: "contacts").from(Contact.where { _id > 2 }))
         .should eq("SELECT contacts.*\nFROM ( SELECT contacts.*\nFROM contacts\nWHERE contacts.id > %s\n ) ")
     end
   end

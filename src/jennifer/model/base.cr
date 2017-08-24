@@ -84,14 +84,8 @@ module Jennifer
       end
 
       def self.create
-        a = {} of Symbol => Supportable
+        a = {} of String => DBAny
         o = new(a)
-        o.save
-        o
-      end
-
-      def self.create(**values)
-        o = new(values.to_h)
         o.save
         o
       end
@@ -108,14 +102,8 @@ module Jennifer
         o
       end
 
-      def self.create!(**values)
-        o = new(values.to_h)
-        o.save!
-        o
-      end
-
       def save!(skip_validation = false)
-        raise Jennifer::BaseException.new("Record was not save") unless save(skip_validation)
+        raise Jennifer::BaseException.new("Record was not save. Error list: #{errors.inspect}") unless save(skip_validation)
         true
       end
 

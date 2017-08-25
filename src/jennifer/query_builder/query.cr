@@ -450,6 +450,10 @@ module Jennifer
       end
 
       def to_a
+        db_results
+      end
+
+      def db_results
         result = [] of Hash(String, DBAny)
         each_result_set do |rs|
           result << Adapter.adapter.result_to_hash(rs)

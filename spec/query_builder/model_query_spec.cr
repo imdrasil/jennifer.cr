@@ -40,7 +40,9 @@ describe Jennifer::QueryBuilder::ModelQuery do
   describe "#relation" do
     # TODO: refactor this bad test - this should be tested under sql generating process
     it "makes join using relation scope" do
-      ::Jennifer::Adapter::SqlGenerator.select(Contact.all.relation(:addresses)).should match(/JOIN addresses ON addresses.contact_id = contacts.id/)
+      ::Jennifer::Adapter::SqlGenerator
+        .select(Contact.all.relation(:addresses))
+        .should match(/LEFT JOIN addresses ON addresses.contact_id = contacts.id/)
     end
   end
 
@@ -307,11 +309,34 @@ describe Jennifer::QueryBuilder::ModelQuery do
 
           q = Contact.all.includes(:addresses, :main_address)
           r = q.to_a
-          r.size.should eq(1)
+          r.size.should eq(2)
           r[0].addresses.size.should eq(3)
           r[0].main_address.nil?.should be_false
         end
       end
+    end
+
+    context "with preload" do
+      it "loads all preloaded relations" do
+        contacts = Factory.create_contact(3)
+        a1 = Factory.create_address(contact_id: contacts[0].id)
+        a2 = Factory.create_address(contact_id: contacts[1].id)
+        f = Factory.create_facebook_profile(contact_id: contacts[1].id)
+        res = Contact.all.preload(:addresses, :facebook_profiles).where { _id.in(contacts[0..1].map(&.id)) }.to_a
+
+        res.size.should eq(2)
+        match_array(res[0].addresses.map(&.id), [a1.id])
+        match_array(res[1].addresses.map(&.id), [a2.id])
+        match_array(res[1].facebook_profiles.map(&.id), [f.id])
+
+        res[0].facebook_profiles.empty?.should be_true
+      end
+    end
+  end
+
+  describe "#preload" do
+    it "doesn't add JOIN condition" do
+      Contact.all.preload(:address)._joins.empty?.should be_true
     end
   end
 end

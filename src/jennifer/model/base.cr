@@ -16,6 +16,8 @@ module Jennifer
 
       alias Supportable = DBAny | Base
 
+      MODELS = [] of String
+
       @@table_name : String?
       @@singular_table_name : String?
 

@@ -34,6 +34,10 @@ module Jennifer
             @\{{name.id}} << \{{klass}}.build(rel, false)
           end
 
+          def append_\{{name.id}}(rel : \{{klass}})
+            @\{{name.id}} << rel
+          end
+
           # removes given object from relation array
           def remove_\{{name.id}}(rel : \{{klass}})
             index = @\{{name.id}}.index { |e| e.primary == rel.primary }
@@ -98,6 +102,10 @@ module Jennifer
 
           def append_\{{name.id}}(rel : Hash)
             @\{{name.id}} << \{{klass}}.build(rel, false)
+          end
+
+          def append_\{{name.id}}(rel : \{{klass}})
+            @\{{name.id}} << rel
           end
 
           def remove_\{{name.id}}(rel : \{{klass}})
@@ -166,6 +174,10 @@ module Jennifer
             @\{{name.id}} = \{{klass}}.build(rel, false)
           end
 
+          def append_\{{name.id}}(rel : \{{klass}})
+            @\{{name.id}} = rel
+          end
+
           def remove_\{{name.id}}
             \{{@type}}.\{{name.id}}_relation.remove(self)
             @\{{name.id}} = nil
@@ -223,6 +235,10 @@ module Jennifer
 
           def append_\{{name.id}}(rel : Hash)
             @\{{name.id}} = \{{klass}}.build(rel, false)
+          end
+
+          def append_\{{name.id}}(rel : \{{klass}})
+            @\{{name.id}} = rel
           end
 
           def remove_\{{name.id}}

@@ -13,6 +13,8 @@ module Jennifer
       abstract def insert(a, b)
     end
 
+    # T - related model
+    # Q - parent model
     class Base(T, Q) < IRelation
       getter join_query : QueryBuilder::Condition | QueryBuilder::LogicOperator?
       getter foreign : String?, primary : String?, through : Symbol?
@@ -37,6 +39,11 @@ module Jennifer
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
+      def condition_clause(ids : Array)
+        tree = T.c(foreign_field).in(ids)
+        @join_query ? tree & @join_query.not_nil!.clone : tree
+      end
+
       def condition_clause(id)
         tree = T.c(foreign_field) == id
         @join_query ? tree & @join_query.not_nil!.clone : tree
@@ -49,6 +56,7 @@ module Jennifer
         end
       end
 
+      # Returns query for given primary field values
       def query(primary_value)
         condition = condition_clause(primary_value)
         T.where { condition }

@@ -3,6 +3,12 @@ require "./*"
 module Jennifer
   module QueryBuilder
     class ModelQuery(T) < Query
+      @preload_relations = [] of String
+
+      def initialize(*opts)
+        super
+      end
+
       def model_class
         T
       end
@@ -12,7 +18,11 @@ module Jennifer
       end
 
       def with(*arr)
-        arr.map(&.to_s).to_a.each do |name|
+        self.with(arr.to_a.map(&.to_s))
+      end
+
+      def with(arr : Array)
+        arr.each do |name|
           table_name = T.relation(name).table_name
           temp_joins = @joins.select { |j| j.table == table_name }
           join = temp_joins.find(&.relation.nil?)
@@ -26,7 +36,22 @@ module Jennifer
         self
       end
 
-      def relation(name, type = :inner)
+      def preload(relation : Symbol | String)
+        @preload_relations << relation.to_s
+        self
+      end
+
+      def preload(relations : Array)
+        relations.each { |rel| @preload_relations << rel.to_s }
+        self
+      end
+
+      def preload(*relations)
+        relations.each { |rel| @preload_relations << rel.to_s }
+        self
+      end
+
+      def relation(name, type = :left)
         T.relation(name.to_s).join_condition(self, type)
       end
 
@@ -61,7 +86,7 @@ module Jennifer
             result << T.build(rs)
           end
         end
-        result
+        add_preloaded(result)
       end
 
       # ========= private ==============
@@ -72,6 +97,36 @@ module Jennifer
         else
           super
         end
+      end
+
+      # Loads relations added by `preload` method; makes one separate request per each relation
+      private def add_preloaded(collection)
+        return collection if collection.empty?
+        primary_fields = [] of DBAny
+        last_primary_field_name = ""
+
+        @preload_relations.each do |name|
+          rel = T.relation(name)
+          _primary = rel.primary_field
+          _foreign = rel.foreign_field
+
+          if last_primary_field_name != _primary
+            last_primary_field_name = _primary
+            primary_fields.clear
+            collection.each { |e| primary_fields << e.attribute(_primary) }
+          end
+
+          new_collection = rel.query(primary_fields).db_results
+
+          unless new_collection.empty?
+            collection.each_with_index do |mod, i|
+              pv = primary_fields[i]
+              # TODO: check if deleting elements from array will increase performance
+              new_collection.each { |hash| mod.append_relation(name, hash) if hash[_foreign] == pv }
+            end
+          end
+        end
+        collection
       end
 
       private def to_a_with_relations
@@ -103,7 +158,7 @@ module Jennifer
             end
           end
         end
-        h_result.values
+        add_preloaded(h_result.values)
       end
 
       private def add_aliases

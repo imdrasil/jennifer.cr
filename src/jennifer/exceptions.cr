@@ -45,4 +45,10 @@ module Jennifer
       @message = ""
     end
   end
+
+  class RecordExists < BaseException
+    def initialize(record, relation)
+      @message = "#{record.class}##{record.primary} has associated records in #{relation} relation"
+    end
+  end
 end

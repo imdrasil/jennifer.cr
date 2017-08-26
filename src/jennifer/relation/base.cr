@@ -86,6 +86,7 @@ module Jennifer
         T.table_name
       end
 
+      # Foreign key on ~T~ model side
       def foreign_field
         @foreign ||= Q.singular_table_name + "_id"
       end

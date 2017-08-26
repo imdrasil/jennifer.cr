@@ -47,7 +47,7 @@ describe Jennifer::Adapter::SqlGenerator do
     # TODO: rewrite to metch with hardcoded text instead of methods calls
     body_section = sb { |io| described_class.body_section(io, s) }
     join_clause = sb { |io| described_class.join_clause(io, s) }
-    where_clause = sb { |io| described_class.where_clause(io, s) }
+    where_clause = sb { |io| described_class.where_clause(io, s.tree) }
     order_clause = sb { |io| described_class.order_clause(io, s) }
     limit_clause = sb { |io| described_class.limit_clause(io, s) }
     group_clause = sb { |io| described_class.group_clause(io, s) }

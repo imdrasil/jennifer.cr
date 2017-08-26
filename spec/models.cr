@@ -26,7 +26,7 @@ class Contact < Jennifer::Model::Base
   has_many :addresses, Address
   has_many :facebook_profiles, FacebookProfile
   has_and_belongs_to_many :countries, Country
-  has_and_belongs_to_many :facebook_many_profiles, FacebookProfile, join_foreign: :profile_id
+  has_and_belongs_to_many :facebook_many_profiles, FacebookProfile, association_foreign: :profile_id
   has_one :main_address, Address, {where { _main }}
   has_one :passport, Passport
 
@@ -59,6 +59,18 @@ class Address < Jennifer::Model::Base
   belongs_to :contact, Contact
 
   scope :main { where { _main } }
+
+  after_destroy :increment_destroy_counter
+
+  @@destroy_counter = 0
+
+  def self.destroy_counter
+    @@destroy_counter
+  end
+
+  def increment_destroy_counter
+    @@destroy_counter += 1
+  end
 end
 
 class Passport < Jennifer::Model::Base
@@ -69,6 +81,18 @@ class Passport < Jennifer::Model::Base
 
   validates_with [EnnValidator]
   belongs_to :contact, Contact
+
+  after_destroy :increment_destroy_counter
+
+  @@destroy_counter = 0
+
+  def self.destroy_counter
+    @@destroy_counter
+  end
+
+  def increment_destroy_counter
+    @@destroy_counter += 1
+  end
 end
 
 class Profile < Jennifer::Model::Base
@@ -167,4 +191,21 @@ class ContactWithNotStrictMapping < Jennifer::Model::Base
     id:   {type: Int32, primary: true},
     name: {type: String, null: true},
   }, false)
+end
+
+class ContactWithDependencies < Jennifer::Model::Base
+  table_name "contacts"
+
+  mapping({
+    id:   {type: Int32, primary: true},
+    name: String,
+  }, false)
+
+  has_many :addresses, Address, dependent: :delete, foreign: :contact_id
+  has_many :facebook_profiles, FacebookProfile, dependent: :nullify, foreign: :contact_id
+  has_many :passports, Passport, dependent: :destroy, foreign: :contact_id
+  has_many :twitter_profiles, TwitterProfile, dependent: :restrict_with_exception, foreign: :contact_id
+end
+
+class ContactWithDestroyDependency
 end

@@ -99,7 +99,7 @@ module Jennifer
 
       def self.body_section(io, query)
         join_clause(io, query)
-        where_clause(io, query)
+        where_clause(io, query.tree)
         order_clause(io, query)
         limit_clause(io, query)
         group_clause(io, query)
@@ -155,9 +155,9 @@ module Jennifer
         from_clause(io, query)
       end
 
-      def self.from_clause(io, query)
+      def self.from_clause(io, query, from = nil)
         io << "FROM "
-        return io << query._table << "\n" unless query._from
+        return io << (from || query._table) << "\n" unless query._from
         io << "( " <<
           if query._from.is_a?(String)
             query._from
@@ -188,9 +188,13 @@ module Jennifer
         query._joins.map(&.to_sql).join(' ', io)
       end
 
-      def self.where_clause(io, query)
-        return unless query.tree
-        io << "WHERE " << query.tree.not_nil!.to_sql << "\n"
+      def self.where_clause(io, query : QueryBuilder::Query | QueryBuilder::ModelQuery)
+        where_clause(io, query.tree)
+      end
+
+      def self.where_clause(io, tree)
+        return unless tree
+        io << "WHERE " << tree.not_nil!.to_sql << "\n"
       end
 
       def self.limit_clause(io, query)

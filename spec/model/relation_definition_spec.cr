@@ -1,7 +1,74 @@
 require "../spec_helper"
 
 describe Jennifer::Model::RelationDefinition do
-  describe "has_many macros" do
+  describe "%nullify_dependecy" do
+    it "adds before_desctroy callback" do
+      ContactWithDependencies::BEFORE_DESTROY_CALLBACKS.includes?("__nullify_callback_facebook_profiles").should be_true
+    end
+
+    it "doen't invoke callbacks on associated model" do
+      c = Factory.create_contact
+      Factory.create_facebook_profile(contact_id: c.id)
+      c = ContactWithDependencies.all.last!
+      c.facebook_profiles.size.should eq(1)
+      c.destroy
+      f = FacebookProfile.all.last!
+      f.contact_id.nil?.should be_true
+    end
+  end
+
+  describe "%delete_dependency" do
+    it "adds before_desctroy callback" do
+      ContactWithDependencies::BEFORE_DESTROY_CALLBACKS.includes?("__delete_callback_addresses").should be_true
+    end
+
+    it "doen't invoke callbacks on associated model" do
+      c = Factory.create_contact
+      Factory.create_address(contact_id: c.id)
+      count = Address.destroy_counter
+      c = ContactWithDependencies.all.last!
+      c.addresses.size.should eq(1)
+      c.destroy
+      Address.all.exists?.should be_false
+      Address.destroy_counter.should eq(count)
+    end
+  end
+
+  describe "%destroy_dependency" do
+    it "adds before_desctroy callback" do
+      ContactWithDependencies::BEFORE_DESTROY_CALLBACKS.includes?("__destroy_callback_passports").should be_true
+    end
+
+    it "invokes callbacks on associated model" do
+      c = Factory.create_contact
+      Factory.create_passport(contact_id: c.id)
+      count = Passport.destroy_counter
+      c = ContactWithDependencies.all.last!
+      c.passports.size.should eq(1)
+      c.destroy
+      Passport.all.exists?.should be_false
+      Passport.destroy_counter.should eq(count + 1)
+    end
+  end
+
+  describe "%restrict_with_exception_dependency" do
+    it "adds before_desctroy callback" do
+      ContactWithDependencies::BEFORE_DESTROY_CALLBACKS.includes?("__restrict_with_exception_callback_twitter_profiles").should be_true
+    end
+
+    it "raises exception if any associated record exists" do
+      c = Factory.create_contact
+      Factory.create_twitter_profile(contact_id: c.id)
+      c = ContactWithDependencies.all.last!
+      c.twitter_profiles.size.should eq(1)
+      expect_raises(::Jennifer::RecordExists) do
+        c.destroy
+      end
+      TwitterProfile.all.count.should eq(1)
+    end
+  end
+
+  describe "%has_many" do
     it "adds relation name to RELATION_NAMES constant" do
       Contact::RELATION_NAMES.size.should eq(6)
       Contact::RELATION_NAMES[0].should eq("addresses")
@@ -93,7 +160,7 @@ describe Jennifer::Model::RelationDefinition do
     end
   end
 
-  describe "belongs_to macros" do
+  describe "%belongs_to" do
     it "adds relation name to RELATION_NAMES constant" do
       Address::RELATION_NAMES.size.should eq(1)
       Address::RELATION_NAMES[0].should eq("contact")
@@ -161,7 +228,7 @@ describe Jennifer::Model::RelationDefinition do
     end
   end
 
-  describe "has_one macros" do
+  describe "%has_one" do
     it "adds relation name to RELATION_NAMES constant" do
       Contact::RELATION_NAMES[0].should eq("addresses")
     end
@@ -227,7 +294,7 @@ describe Jennifer::Model::RelationDefinition do
     end
   end
 
-  describe "has_and_belongs_many macros" do
+  describe "%has_and_belongs_many" do
     context "query" do
       pending "sets correct query part" do
         Contact.relation("countries").condition_clause.to_sql.should eq("addresses.contact_id = contacts.id")
@@ -288,10 +355,11 @@ describe Jennifer::Model::RelationDefinition do
     end
 
     describe "#remove_/relation_name/" do
-      it "removes join table record and removes it from array" do
+      it "removes join table record from db and array" do
         c = Factory.create_contact
         country = Factory.create_country
         c.add_countries(country)
+        c.countries.size.should eq(1)
         c.remove_countries(country)
         c.countries.size.should eq(0)
         ::Jennifer::Query.new("contacts_countries").where do

@@ -92,7 +92,7 @@ module Jennifer
             {% if @type.all_subclasses.size > 0 %}
               [{{ @type.all_subclasses.join(", ").id }}]
             {% else %}
-              [] of Model::Base
+              [] of Model::Base.class
             {% end %}
           {% end %}
         end

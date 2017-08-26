@@ -67,6 +67,8 @@ module Jennifer
         o
       end
 
+      # TODO: not always constructor without arguments could be generated
+      # this should be moved to mapping.cr
       def self.build
         o = new
         o.__after_initialize_callback
@@ -82,26 +84,26 @@ module Jennifer
       end
 
       def self.create(values : Hash | NamedTuple)
-        o = new(values)
+        o = build(values)
         o.save
         o
       end
 
       def self.create
         a = {} of String => DBAny
-        o = new(a)
+        o = build(a)
         o.save
         o
       end
 
       def self.create!(values : Hash | NamedTuple)
-        o = new(values)
+        o = build(values)
         o.save!
         o
       end
 
       def self.create!
-        o = new({} of Symbol => Supportable)
+        o = build({} of Symbol => Supportable)
         o.save!
         o
       end

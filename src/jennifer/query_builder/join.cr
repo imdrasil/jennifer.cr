@@ -21,12 +21,11 @@ module Jennifer
           else
             "JOIN "
           end
-        sql_string +
-          if @aliass
-            "#{@table} #{@aliass} ON #{@on.to_sql}\n"
-          else
-            "#{@table} ON #{@on.to_sql}\n"
-          end
+        sql_string + "#{table_name} ON #{@on.to_sql}\n"
+      end
+
+      def table_name
+        @aliass ? "#{@table} #{@aliass}" : @table
       end
 
       def alias_tables(aliases)

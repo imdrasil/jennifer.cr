@@ -253,7 +253,8 @@ describe Jennifer::Model::Base do
     it "returns all model classes" do
       match_array(
         Jennifer::Model::Base.models,
-        [Jennifer::Migration::Version, Contact, Address, Passport, Profile, FacebookProfile, TwitterProfile, Country, OneFieldModel]
+        [Jennifer::Migration::Version, Contact, Address, Passport, Profile, FacebookProfile,
+         TwitterProfile, Country, OneFieldModel, ContactWithNotAllFields, ContactWithNotStrictMapping]
       )
     end
   end

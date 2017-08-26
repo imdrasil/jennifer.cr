@@ -161,7 +161,7 @@ module Jennifer
             %found{key.id} = false
           {% end %}
 
-          {{properties.size}}.times do |i|
+          pull.column_count.times do |i|
             column = pull.column_name(pull.column_index)
             case column
             {% for key, value in properties %}

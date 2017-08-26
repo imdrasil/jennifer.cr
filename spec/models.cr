@@ -150,3 +150,21 @@ class OneFieldModel < Jennifer::Model::Base
     id: {type: Int32, primary: true}
   )
 end
+
+class ContactWithNotAllFields < Jennifer::Model::Base
+  table_name "contacts"
+
+  mapping(
+    id: {type: Int32, primary: true},
+    name: {type: String, null: true},
+  )
+end
+
+class ContactWithNotStrictMapping < Jennifer::Model::Base
+  table_name "contacts"
+
+  mapping({
+    id:   {type: Int32, primary: true},
+    name: {type: String, null: true},
+  }, false)
+end

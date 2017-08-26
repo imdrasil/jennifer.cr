@@ -76,14 +76,20 @@ module Jennifer
         to_a.each(&.destroy)
       end
 
-      # TODO: debug case when exception was rised under #each
       def to_a
         add_aliases if @relation_used
-        return to_a_with_relations if @relations.size > 0
+        return to_a_with_relations unless @relations.empty?
         result = [] of T
         ::Jennifer::Adapter.adapter.select(self) do |rs|
           rs.each do
-            result << T.build(rs)
+            begin
+              result << T.build(rs)
+            rescue e : Exception
+              while rs.column_index < rs.column_count
+                rs.read
+              end
+              raise e
+            end
           end
         end
         add_preloaded(result)

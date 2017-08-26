@@ -38,11 +38,20 @@ describe Jennifer::Model::Mapping do
       is_executed.should be_true
     end
 
-    it "allows one field models" do
-      model = OneFieldModel.create
-      OneFieldModel.where { _id == model.id }.each_result_set do |rs|
-        res = model._extract_attributes(rs)
-        res.should eq(model.id)
+    context "strict mapping" do
+      it "raises exception if not all fields are described" do
+        model = ContactWithNotAllFields.create
+        expect_raises(::Jennifer::BaseException) do
+          ContactWithNotAllFields.all.first
+        end
+      end
+    end
+
+    context "non strict mapping" do
+      it "ignores all extra fields" do
+        ContactWithNotStrictMapping.create({name: "some name"})
+        model = ContactWithNotStrictMapping.all.last!
+        model.name.should eq("some name")
       end
     end
   end

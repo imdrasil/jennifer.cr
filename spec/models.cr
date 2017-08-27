@@ -207,5 +207,25 @@ class ContactWithDependencies < Jennifer::Model::Base
   has_many :twitter_profiles, TwitterProfile, dependent: :restrict_with_exception, foreign: :contact_id
 end
 
-class ContactWithDestroyDependency
+class BarValue
+  getter value
+
+  def initialize(@value : String)
+  end
+end
+
+class ContactWithCustomField < Jennifer::Model::Base
+  table_name "contacts"
+  mapping({
+    id:   {type: Int32, primary: true},
+    name: String,
+  }, false)
+end
+
+class ContactWithNillableName < Jennifer::Model::Base
+  table_name "contacts"
+  mapping({
+    id:   {type: Int32, primary: true},
+    name: {type: String, null: true},
+  }, false)
 end

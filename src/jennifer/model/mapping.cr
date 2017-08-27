@@ -161,13 +161,17 @@ module Jennifer
             %found{key.id} = false
           {% end %}
 
-          pull.column_count.times do |i|
-            column = pull.column_name(pull.column_index)
+          pull.each_column do |column|
             case column
             {% for key, value in properties %}
               when {{value[:column_name] || key.id.stringify}}
                 %found{key.id} = true
-                %var{key.id} = pull.read({{value[:parsed_type].id}})
+                begin
+                  %var{key.id} = pull.read({{value[:parsed_type].id}})
+                rescue e : Exception
+                  raise ::Jennifer::DataTypeMismatch.new(column, e) if ::Jennifer::DataTypeMismatch.match?(e)
+                  raise e
+                end
                 # if value[:type].is_a?(Path) || value[:type].is_a?(Generic)
             {% end %}
             else

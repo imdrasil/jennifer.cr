@@ -66,6 +66,8 @@ module Jennifer
       def exec(_query, args = [] of DB::Any)
         Config.logger.debug { regular_query_message(_query, args) }
         with_connection { |conn| conn.exec(_query, args) }
+      rescue e : BaseException
+        raise e
       rescue e : Exception
         raise BadQuery.new(e.message, regular_query_message(_query, args))
       end
@@ -73,6 +75,8 @@ module Jennifer
       def query(_query, args = [] of DB::Any)
         Config.logger.debug { regular_query_message(_query, args) }
         with_connection { |conn| conn.query(_query, args) { |rs| yield rs } }
+      rescue e : BaseException
+        raise e
       rescue e : Exception
         raise BadQuery.new(e.message, regular_query_message(_query, args))
       end
@@ -80,6 +84,8 @@ module Jennifer
       def scalar(_query, args = [] of DB::Any)
         Config.logger.debug { regular_query_message(_query, args) }
         with_connection { |conn| conn.scalar(_query, args) }
+      rescue e : BaseException
+        raise e
       rescue e : Exception
         raise BadQuery.new(e.message, regular_query_message(_query, args))
       end

@@ -130,6 +130,15 @@ describe Jennifer::Model::Mapping do
         end
       end
 
+      context "mismatching data type" do
+        it "raises DataTypeMismatch exception" do
+          ContactWithNillableName.create({name: nil})
+          expect_raises(::Jennifer::DataTypeMismatch, "Column name is expected to be a String but got Nil.") do
+            ContactWithCustomField.all.last!
+          end
+        end
+      end
+
       postgres_only do
         describe "Array" do
           it "properly load array" do

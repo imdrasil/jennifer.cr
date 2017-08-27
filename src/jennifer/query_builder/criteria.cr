@@ -34,11 +34,6 @@ module Jennifer
         regexp(value)
       end
 
-      # postgres only
-      def similar(value : String)
-        Condition.new(self, :similar, value)
-      end
-
       def ==(value : Symbol)
         self.==(value.to_s)
       end

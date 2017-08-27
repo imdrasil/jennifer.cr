@@ -229,3 +229,9 @@ class ContactWithNillableName < Jennifer::Model::Base
     name: {type: String, null: true},
   }, false)
 end
+
+# class ContactWithoutId < Jennifer::Model::Base
+#   mapping({
+#     name: String,
+#   })
+# end

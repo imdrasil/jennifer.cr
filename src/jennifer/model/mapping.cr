@@ -114,6 +114,8 @@ module Jennifer
         end
 
         {% add_default_constructor = true %}
+        {% primary_auto_incrementable = false %}
+        {% primary = nil %}
 
         # generates hash with options
         {% for key, value in properties %}
@@ -130,6 +132,11 @@ module Jennifer
           {% t_string = properties[key][:type].stringify %}
           {% properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? t_string + "?" : t_string %}
           {% add_default_constructor = add_default_constructor && (properties[key][:primary] || properties[key][:null] || properties[key].keys.includes?(:default)) %}
+        {% end %}
+
+        # TODO: find way to allow model definition without any primary field
+        {% if primary == nil %}
+          {% raise "Model #{@type} has no defined primary field. For now model without primary field is not allowed" %}
         {% end %}
 
         __field_declaration({{properties}}, {{primary_auto_incrementable}})

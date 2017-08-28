@@ -1,4 +1,5 @@
 require "db"
+require "./shared/*"
 
 module Jennifer
   module Adapter
@@ -15,11 +16,13 @@ module Jennifer
 
       def self.build
         a = new
-        a.prepare
         a
       end
 
       def prepare
+        ::Jennifer::Model::Base.models.each do |model|
+          model.actual_table_field_count
+        end
       end
 
       def with_connection(&block)
@@ -196,11 +199,9 @@ module Jennifer
 
       def result_to_array(rs)
         a = [] of DBAny
-        rs.columns.each do |col|
+        rs.each_column do
           temp = rs.read(DBAny)
-          if temp.is_a?(Int8)
-            temp = (temp == 1i8).as(Bool)
-          end
+          temp = (temp == 1i8).as(Bool) if temp.is_a?(Int8)
           a << temp
         end
         a
@@ -210,12 +211,11 @@ module Jennifer
         buf = {} of String => DBAny
         names.each { |n| buf[n] = nil }
         count = names.size
-        rs.column_count.times do |col|
-          col_name = rs.column_name(col)
-          if buf.has_key?(col_name)
-            buf[col_name] = rs.read.as(DBAny)
-            if buf[col_name].is_a?(Int8)
-              buf[col_name] = (buf[col_name] == 1i8).as(Bool)
+        rs.each_column do |column|
+          if buf.has_key?(column)
+            buf[column] = rs.read.as(DBAny)
+            if buf[column].is_a?(Int8)
+              buf[column] = (buf[column] == 1i8).as(Bool)
             end
             count -= 1
           else
@@ -229,11 +229,10 @@ module Jennifer
       # converts single ResultSet to hash
       def result_to_hash(rs)
         h = {} of String => DBAny
-        rs.column_count.times do |col|
-          col_name = rs.column_name(col)
-          h[col_name] = rs.read.as(DBAny)
-          if h[col_name].is_a?(Int8)
-            h[col_name] = (h[col_name] == 1i8).as(Bool)
+        rs.each_column do |column|
+          h[column] = rs.read.as(DBAny)
+          if h[column].is_a?(Int8)
+            h[column] = (h[column] == 1i8).as(Bool)
           end
         end
         h
@@ -397,6 +396,9 @@ module Jennifer
       abstract def column_exists?(table, name)
       abstract def translate_type(name)
       abstract def default_type_size(name)
+      abstract def table_column_count(table)
+
+      # private ===========================
 
       private def column_definition(name, options, io)
         type = options[:serial]? ? "serial" : (options[:sql_type]? || translate_type(options[:type].as(Symbol)))

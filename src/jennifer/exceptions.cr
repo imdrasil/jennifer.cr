@@ -61,7 +61,7 @@ module Jennifer
       @message = "Column #{column} is expected to be a #{match[2]} but got #{match[1]}."
     end
 
-    # TODO: think about monkeypatching DB::ResultSet#read for raising custome execption raather than `Exception`
+    # TODO: think about monkey patching DB::ResultSet#read for raising custome execption raather than `Exception`
     def self.match?(exception)
       exception.message =~ MATCH_REG
     end

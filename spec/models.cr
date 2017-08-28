@@ -207,13 +207,6 @@ class ContactWithDependencies < Jennifer::Model::Base
   has_many :twitter_profiles, TwitterProfile, dependent: :restrict_with_exception, foreign: :contact_id
 end
 
-class BarValue
-  getter value
-
-  def initialize(@value : String)
-  end
-end
-
 class ContactWithCustomField < Jennifer::Model::Base
   table_name "contacts"
   mapping({

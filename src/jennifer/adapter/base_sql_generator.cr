@@ -116,7 +116,7 @@ module Jennifer
         s << "SELECT "
         unless query._raw_select
           table = query._table
-          if exact_fields.size > 0
+          if !exact_fields.empty?
             exact_fields.map { |f| "#{table}.#{f}" }.join(", ", s)
           else
             s << table << ".*"
@@ -142,7 +142,7 @@ module Jennifer
         io << "SELECT "
         unless query._raw_select
           table = query._table
-          if exact_fields.size > 0
+          if !exact_fields.empty?
             # TODO: avoid creating extra arrays
             exact_fields.map { |f| "#{table}.#{f}" }.join(", ", io)
           else
@@ -152,6 +152,7 @@ module Jennifer
           io << query._raw_select
         end
         io << "\n"
+
         from_clause(io, query)
       end
 

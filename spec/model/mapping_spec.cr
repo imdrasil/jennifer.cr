@@ -40,9 +40,15 @@ describe Jennifer::Model::Mapping do
 
     context "strict mapping" do
       it "raises exception if not all fields are described" do
-        model = ContactWithNotAllFields.create
+        Factory.create_contact
         expect_raises(::Jennifer::BaseException) do
-          ContactWithNotAllFields.all.first
+          Contact.all.each_result_set do |rs|
+            begin
+              ContactWithNotAllFields.build(rs)
+            ensure
+              rs.read_to_end
+            end
+          end
         end
       end
     end

@@ -20,6 +20,11 @@ module Jennifer
 
       @@table_name : String?
       @@singular_table_name : String?
+      @@actual_table_field_count : Int32?
+
+      def self.actual_table_field_count
+        @@actual_table_field_count ||= ::Jennifer::Adapter.adapter.table_column_count(table_name)
+      end
 
       def self.table_name(value : String | Symbol)
         @@table_name = value.to_s

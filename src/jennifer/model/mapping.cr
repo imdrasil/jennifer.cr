@@ -103,6 +103,12 @@ module Jennifer
           {% end %}
         ]
 
+        @@strict_mapping : Bool?
+
+        def self.strict_mapping?
+          @@strict_mapping ||= ::Jennifer::Adapter.adapter.table_column_count(table_name) == field_count
+        end
+
         # Returns field count
         def self.field_count
           {{properties.size}}
@@ -160,15 +166,17 @@ module Jennifer
         end
 
         # Extracts arguments due to mapping from *pull* and returns tuple for
-        # fields assignment
+        # fields assignment. It stands on that fact result set has all defined fields in a raw
         # TODO: think about moving it to class scope
+        # NOTE: don't use it manually - there is some dependencies on caller such as reading tesult set to the end
+        # if eception was raised
         def _extract_attributes(pull : DB::ResultSet)
           {% for key, value in properties %}
             %var{key.id} = nil
             %found{key.id} = false
           {% end %}
-
-          pull.each_column do |column|
+          self.class.actual_table_field_count.times do
+            column = pull.column_name(pull.column_index)
             case column
             {% for key, value in properties %}
               when {{value[:column_name] || key.id.stringify}}
@@ -183,7 +191,7 @@ module Jennifer
             {% end %}
             else
               {% if strict %}
-                raise ::Jennifer::BaseException.new("Undefined column #{column}")
+                raise ::Jennifer::BaseException.new("Undefined column #{column} for model {{@type}}.")
               {% else %}
                 pull.read
               {% end %}

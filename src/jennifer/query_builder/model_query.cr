@@ -84,11 +84,8 @@ module Jennifer
           rs.each do
             begin
               result << T.build(rs)
-            rescue e : Exception
-              while rs.column_index < rs.column_count
-                rs.read
-              end
-              raise e
+            ensure
+              rs.read_to_end
             end
           end
         end
@@ -142,25 +139,29 @@ module Jennifer
         existence = @relations.map { |_| {} of String => Bool }
         ::Jennifer::Adapter.adapter.select(self) do |rs|
           rs.each do
-            h = build_hash(rs, T.field_count)
-            main_field = T.primary_field_name
-            if h[main_field]?
-              obj = (h_result[h[main_field].to_s] ||= T.build(h, false))
-              models.each_with_index do |model, i|
-                h = build_hash(rs, model.field_count)
-                pfn = model.primary_field_name
-                if h[pfn].nil? || existence[i][h[pfn].to_s]?
-                  (rs.column_count - rs.column_index).times do |i|
-                    rs.read
+            begin
+              h = build_hash(rs, T.actual_table_field_count)
+              main_field = T.primary_field_name
+              if h[main_field]?
+                obj = (h_result[h[main_field].to_s] ||= T.build(h, false))
+                models.each_with_index do |model, i|
+                  h = build_hash(rs, model.actual_table_field_count)
+                  pfn = model.primary_field_name
+                  if h[pfn].nil? || existence[i][h[pfn].to_s]?
+                    (rs.column_count - rs.column_index).times do |i|
+                      rs.read
+                    end
+                    break
+                  else
+                    existence[i][h[pfn].to_s] = true
+                    obj.append_relation(@relations[i], h)
                   end
-                  break
-                else
-                  existence[i][h[pfn].to_s] = true
-                  obj.append_relation(@relations[i], h)
                 end
+              else
+                (rs.column_count - T.actual_table_field_count).times { |_| rs.read }
               end
-            else
-              (rs.column_count - T.field_count).times { |_| rs.read }
+            ensure
+              rs.read_to_end
             end
           end
         end

@@ -33,6 +33,18 @@ describe Jennifer::QueryBuilder::ModelQuery do
       res.addresses[0].street.should eq("asd st.")
     end
 
+    context "target class defines not all fields and has non strict mapping" do
+      it "loads both target class fields and included ones" do
+        contacts = Factory.create_contact(3)
+        ids = contacts.map(&.id)
+        Factory.create_address(contact_id: contacts[0].id)
+        res = ContactWithDependencies.all.includes(:addresses).where { _id.in(ids) }.order("contacts.id": :asc).to_a
+        res.size.should eq(3)
+        res[0].addresses.size.should eq(1)
+        res[0].name.nil?.should be_false
+      end
+    end
+
     pending "with aliases" do
     end
   end

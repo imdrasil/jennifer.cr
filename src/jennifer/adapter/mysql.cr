@@ -42,6 +42,12 @@ module Jennifer
         DEFAULT_SIZES[name]?
       end
 
+      def table_column_count(table)
+        Query["information_schema.COLUMNS"].where do
+          (_table_name == table) & (_table_schema == Config.db)
+        end.count
+      end
+
       def table_exists?(table)
         Query["information_schema.TABLES"]
           .where { (_table_schema == Config.db) & (_table_name == table) }

@@ -49,6 +49,7 @@ module Jennifer
             PG::Decoders.register_decoder PG::Decoders::StringDecoder.new, rs.read(UInt32).to_i
           end
         end
+        super
       end
 
       def translate_type(name)
@@ -59,6 +60,22 @@ module Jennifer
 
       def default_type_size(name)
         DEFAULT_SIZES[name]?
+      end
+
+      def table_column_count(table)
+        if table_exists?(table)
+          Query["information_schema.columns"].where { _table_name == table }.count
+        else
+          # materialized view
+          Query["pg_attribute"]
+            .join("pg_class") { _attrelid == _pg_attribute__attrelid }
+            .join("pg_namespace") { _oid == _pg_class__relnamespace }
+            .where do
+            (_pg_namespace__nspname == Config.schema) &
+              (_pg_class__relname == table) &
+              _attisdropped.not
+          end.count
+        end
       end
 
       def table_exists?(table)
@@ -194,7 +211,7 @@ module Jennifer
 
       def exists?(query)
         args = query.select_args
-        body = parse_query(SqlGenerator.exists(query), args)
+        body = SqlGenerator.exists(query)
         scalar(body, args)
       end
 

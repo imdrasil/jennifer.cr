@@ -3,7 +3,7 @@ module Jennifer
     module STIMapping
       macro sti_mapping(properties)
         def self.sti_condition
-          c("type") == "{{@type.id}}"
+          c("type") == {{@type.id.stringify}}
         end
 
         def self.table_name

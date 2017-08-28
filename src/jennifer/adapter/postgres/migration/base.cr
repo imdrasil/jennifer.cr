@@ -1,8 +1,6 @@
 module Jennifer
   module Migration
     abstract class Base
-      extend Ifrit
-
       def create_enum(name, values)
         TableBuilder::CreateEnum.new(name, values).process
       end
@@ -17,6 +15,10 @@ module Jennifer
 
       def data_type_exists?(name)
         Adapter.adapter.as(Postgres).data_type_exists?(name)
+      end
+
+      def create_materialized_view(name, _as, options)
+        TableBuilder::CreateMaterializedView.new(name, _as, options)
       end
     end
   end

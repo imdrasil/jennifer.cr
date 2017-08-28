@@ -23,10 +23,10 @@ module Jennifer
           new_values -= @options[:remove_values]
           data_name = @name.dup
           effected_tables =
-            Query.new("information_schema.columns")
-                 .select("table_name, column_name")
-                 .where { (c("udt_name") == data_name) & (c("table_catalog") == Config.db) }
-                 .pluck(:table_name, :column_name)
+            Query["information_schema.columns"]
+              .select("table_name, column_name")
+              .where { (c("udt_name") == data_name) & (c("table_catalog") == Config.db) }
+              .pluck(:table_name, :column_name)
           if effected_tables.empty?
             @adapter.drop_enum(@name)
             @adapter.define_enum(@name, new_values)
@@ -60,7 +60,7 @@ module Jennifer
             i += 1
             new_name = @options[:rename_values][i]
             i += 1
-            Query.new("pg_enum").where do
+            Query["pg_enum"].where do
               (c("enumlabel") == old_name) & (c("enumtypid") == sql("SELECT OID FROM pg_type WHERE typname = '#{name}'"))
             end.update({:enumlabel => new_name})
           end

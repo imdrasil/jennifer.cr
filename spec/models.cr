@@ -223,6 +223,13 @@ class ContactWithNillableName < Jennifer::Model::Base
   }, false)
 end
 
+class FemaleContact < Jennifer::Model::Base
+  mapping({
+    id:   {type: Int32, primary: true},
+    name: {type: String, null: true},
+  }, false)
+end
+
 # class ContactWithoutId < Jennifer::Model::Base
 #   mapping({
 #     name: String,

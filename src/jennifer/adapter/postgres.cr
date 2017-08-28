@@ -62,20 +62,37 @@ module Jennifer
         DEFAULT_SIZES[name]?
       end
 
+      def refresh_materialized_view(name)
+        exec <<-SQL
+          REFRESH MATERIALIZED VIEW #{name}
+        SQL
+      end
+
       def table_column_count(table)
         if table_exists?(table)
           Query["information_schema.columns"].where { _table_name == table }.count
-        else
+        elsif material_view_exists?(table)
           # materialized view
           Query["pg_attribute"]
-            .join("pg_class") { _attrelid == _pg_attribute__attrelid }
+            .join("pg_class") { _pg_attribute__attrelid == _oid }
             .join("pg_namespace") { _oid == _pg_class__relnamespace }
             .where do
-            (_pg_namespace__nspname == Config.schema) &
+            (_attnum > 0) &
+              (_pg_namespace__nspname == Config.schema) &
               (_pg_class__relname == table) &
               _attisdropped.not
           end.count
+        else
+          -1
         end
+      end
+
+      def material_view_exists?(name)
+        Query["pg_class"].join("pg_namespace") { _oid == _pg_class__relnamespace }.where do
+          (_relkind == "m") &
+            (_pg_namespace__nspname == Config.schema) &
+            (_relname == name)
+        end.exists?
       end
 
       def table_exists?(table)

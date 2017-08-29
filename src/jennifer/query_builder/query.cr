@@ -212,22 +212,6 @@ module Jennifer
         ::Jennifer::Adapter.adapter.pluck(self, fields.to_a.map(&.to_s))
       end
 
-      # def pluck(**fields)
-      #  hash = fields.to_h
-      #  result = [] of Hash(String, DB::Any | Int16 | Int8)
-      #  ::Jennifer::Adapter.adapter.query(select_query, select_args) do |rs|
-      #    rs.each do
-      #      h = {} of String => DB::Any | Int8 | Int16
-      #      res_hash = ::Jennifer::Adapter.adapter_class.result_to_hash(rs)
-      #      fields.each do |k, v|
-      #        h[k.to_s] = res_hash[k.to_s]
-      #      end
-      #      result << h
-      #    end
-      #  end
-      #  result
-      # end
-
       def delete
         ::Jennifer::Adapter.adapter.delete(self)
       end
@@ -450,7 +434,7 @@ module Jennifer
       end
 
       def to_a
-        db_results
+        results
       end
 
       def db_results
@@ -458,6 +442,12 @@ module Jennifer
         each_result_set do |rs|
           result << Adapter.adapter.result_to_hash(rs)
         end
+        result
+      end
+
+      def results
+        result = [] of Record
+        each_result_set { |rs| result << Record.new(rs) }
         result
       end
 

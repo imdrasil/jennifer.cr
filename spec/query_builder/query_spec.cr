@@ -291,5 +291,11 @@ describe Jennifer::QueryBuilder::Query do
     end
   end
 
+  describe "#results" do
+    it "returns array of records" do
+      r = Contact.all.results.should eq([] of Jennifer::Record)
+    end
+  end
+
   # TODO: move other plain query methods here
 end

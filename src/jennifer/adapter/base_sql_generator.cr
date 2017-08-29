@@ -32,6 +32,7 @@ module Jennifer
         end
       end
 
+      # TODO: unify method generting - #parse_query should be called here or by caller
       def self.delete(query)
         parse_query(
           String.build do |s|
@@ -105,6 +106,14 @@ module Jennifer
         group_clause(io, query)
         having_clause(io, query)
         lock_clause(io, query)
+        union_clause(io, query)
+      end
+
+      def self.union_clause(io, query)
+        return if query._unions.empty?
+        query._unions.each do |u|
+          io << " UNION " << self.select(u)
+        end
       end
 
       def self.lock_clause(io, query)

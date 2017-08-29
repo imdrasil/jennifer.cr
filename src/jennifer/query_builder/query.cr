@@ -5,7 +5,7 @@ module Jennifer
     class Query
       extend Ifrit
 
-      {% for method in %i(having table limit offset raw_select table_aliases from lock joins order relations group lock raw_order) %}
+      {% for method in %i(having table limit offset raw_select table_aliases from lock joins order relations group lock unions) %}
         def _{{method.id}}
           @{{method.id}}
         end
@@ -29,6 +29,7 @@ module Jennifer
         @group = {} of String => Array(String)
         @relation_used = false
         @table_aliases = {} of String => String
+        @unions = [] of Query
       end
 
       def initialize(@table)
@@ -160,6 +161,11 @@ module Jennifer
       def having
         other = with @expression yield
         @having = other
+        self
+      end
+
+      def union(query)
+        @unions << query
         self
       end
 

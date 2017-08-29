@@ -162,4 +162,15 @@ describe Jennifer::Adapter::SqlGenerator do
       {% end %}
     end
   end
+
+  describe "::union_clause" do
+    it "add keyword" do
+      sb { |s| described_class.union_clause(s, Jennifer::Query["users"].union(Jennifer::Query["contacts"])) }.should match(/UNION/)
+    end
+
+    it "adds next query to current one" do
+      query = Jennifer::Query["contacts"].union(Jennifer::Query["users"])
+      sb { |s| described_class.union_clause(s, query) }.should match(Regex.new(Jennifer::Adapter::SqlGenerator.select(Jennifer::Query["users"])))
+    end
+  end
 end

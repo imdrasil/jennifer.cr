@@ -297,5 +297,13 @@ describe Jennifer::QueryBuilder::Query do
     end
   end
 
+  describe "#union" do
+    it "adds query to own array of unions" do
+      q = Jennifer::Query["table"]
+      q.union(Jennifer::Query["table2"]).should eq(q)
+      q._unions.empty?.should be_false
+    end
+  end
+
   # TODO: move other plain query methods here
 end

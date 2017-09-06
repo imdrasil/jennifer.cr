@@ -9,7 +9,7 @@ class Contact < Jennifer::Model::Base
       description: {type: String, null: true},
       created_at:  {type: Time, null: true},
       updated_at:  {type: Time, null: true},
-      tags: {type: Array(Int32)? }
+      tags: {type: Array(Int32)? },
     )
   {% else %}
     mapping(

@@ -108,8 +108,16 @@ describe Jennifer::Model::RelationDefinition do
       it "loads relation objects from db" do
         c = Factory.create_contact
         Factory.create_address(contact_id: c.id)
-        c.addresses.should be_a(Array(Address))
         c.addresses.size.should eq(1)
+      end
+
+      it "will not hit db again if previous call returns empty array" do
+        c = Factory.create_contact
+        count = query_count
+        c.addresses.empty?.should be_true
+        query_count.should eq(count + 1)
+        c.addresses
+        query_count.should eq(count + 1)
       end
     end
 
@@ -131,6 +139,16 @@ describe Jennifer::Model::RelationDefinition do
         c.addresses[0].street.should eq("some street")
         c.addresses[0].contact_id.should eq(c.id)
         c.addresses[0].new_record?.should be_false
+      end
+
+      it "stop loading relation from db" do
+        c = Factory.create_contact
+        a = Factory.build_address(street: "some street")
+        Factory.create_address(contact_id: c.id)
+        c.add_addresses(a)
+        count = query_count
+        c.addresses.size.should eq(1)
+        query_count.should eq(count)
       end
     end
 
@@ -191,8 +209,16 @@ describe Jennifer::Model::RelationDefinition do
       it "loads relation objects from db" do
         c = Factory.create_contact
         a = Factory.create_address(contact_id: c.id)
-        a.contact.should be_a(Contact?)
-        a.contact.nil?.should be_false
+        a.contact.should be_a(Contact)
+      end
+
+      it "will not hit db again if previous call returns empty array" do
+        a = Factory.create_address
+        count = query_count
+        a.contact.nil?.should be_true
+        query_count.should eq(count + 1)
+        a.contact
+        query_count.should eq(count + 1)
       end
     end
 
@@ -259,6 +285,15 @@ describe Jennifer::Model::RelationDefinition do
         c = Factory.create_contact
         Factory.create_address(contact_id: c.id, main: true)
         c.main_address.nil?.should be_false
+      end
+
+      it "will not hit db again if previous call returns empty array" do
+        c = Factory.create_contact
+        count = query_count
+        c.main_address.nil?.should be_true
+        query_count.should eq(count + 1)
+        c.main_address
+        query_count.should eq(count + 1)
       end
     end
 
@@ -338,6 +373,15 @@ describe Jennifer::Model::RelationDefinition do
         c.add_countries({:name => "k1"})
         c.countries.size.should eq(1)
         Country.all.first!.name.should eq("k1")
+      end
+
+      it "will not hit db again if previous call returns empty array" do
+        c = Factory.create_contact
+        count = query_count
+        c.countries.empty?.should be_true
+        query_count.should eq(count + 1)
+        c.countries
+        query_count.should eq(count + 1)
       end
     end
 

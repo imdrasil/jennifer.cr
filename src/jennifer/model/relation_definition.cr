@@ -67,6 +67,7 @@ module Jennifer
           \{% RELATION_NAMES << "#{name.id}" %}
 
           @\{{name.id}} = [] of \{{klass}}
+          @__\{{name.id}}_retrived = false
 
           # returns relation metaobject
           def self.\{{name.id}}_relation
@@ -82,16 +83,21 @@ module Jennifer
 
           # returns array of related objects
           def \{{name.id}}
-            @\{{name.id}} = \{{name.id}}_query.to_a.as(Array(\{{klass}})) if @\{{name.id}}.empty?
+            if !@__\{{name.id}}_retrived && @\{{name.id}}.empty?
+              @__\{{name.id}}_retrived = true
+              @\{{name.id}} = \{{name.id}}_query.to_a.as(Array(\{{klass}}))
+            end
             @\{{name.id}}
           end
 
           # builds related object from hash
           def append_\{{name.id}}(rel : Hash)
+            @__\{{name.id}}_retrived = true
             @\{{name.id}} << \{{klass}}.build(rel, false)
           end
 
           def append_\{{name.id}}(rel : \{{klass}})
+            @__\{{name.id}}_retrived = true
             @\{{name.id}} << rel
           end
 
@@ -137,6 +143,7 @@ module Jennifer
           end
 
           @\{{name.id}} = [] of \{{klass}}
+          @__\{{name.id}}_retrived = false
 
           def self.\{{name.id}}_relation
             @@\{{name.id}}_relation ||= ::Jennifer::Relation::ManyToMany(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}},
@@ -154,15 +161,20 @@ module Jennifer
           end
 
           def \{{name.id}}
-            @\{{name.id}} = \{{name.id}}_query.to_a.as(Array(\{{klass}})) if @\{{name.id}}.empty?
+            if !@__\{{name.id}}_retrived && @\{{name.id}}.empty?
+              @__\{{name.id}}_retrived = true
+              @\{{name.id}} = \{{name.id}}_query.to_a.as(Array(\{{klass}}))
+            end
             @\{{name.id}}
           end
 
           def append_\{{name.id}}(rel : Hash)
+            @__\{{name.id}}_retrived = true
             @\{{name.id}} << \{{klass}}.build(rel, false)
           end
 
           def append_\{{name.id}}(rel : \{{klass}})
+            @__\{{name.id}}_retrived = true
             @\{{name.id}} << rel
           end
 
@@ -198,6 +210,7 @@ module Jennifer
           \{% RELATION_NAMES << "#{name.id}" %}
 
           @\{{name.id}} : \{{klass}}?
+          @__\{{name.id}}_retrived = false
 
           def self.\{{name.id}}_relation
             @@\{{name.id}}_relation ||= ::Jennifer::Relation::BelongsTo(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}},
@@ -205,11 +218,11 @@ module Jennifer
           end
 
           def \{{name.id}}
-            if @\{{name.id}}
-              @\{{name.id}}
-            else
-              \{{name.id}}_reload
+            if !@__\{{name.id}}_retrived && @\{{name.id}}.nil?
+              @__\{{name.id}}_retrived = true
+              @\{{name.id}} = \{{name.id}}_reload
             end
+            @\{{name.id}}
           end
 
           def \{{name.id}}!
@@ -226,10 +239,12 @@ module Jennifer
           end
 
           def append_\{{name.id}}(rel : Hash)
+            @__\{{name.id}}_retrived = true
             @\{{name.id}} = \{{klass}}.build(rel, false)
           end
 
           def append_\{{name.id}}(rel : \{{klass}})
+            @__\{{name.id}}_retrived = true
             @\{{name.id}} = rel
           end
 
@@ -257,6 +272,7 @@ module Jennifer
           \{% RELATION_NAMES << "#{name.id}" %}
 
           @\{{name.id}} : \{{klass}}?
+          @__\{{name.id}}_retrived = false
 
           def self.\{{name.id}}_relation
             @@\{{name.id}}_relation ||= ::Jennifer::Relation::HasOne(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}},
@@ -264,11 +280,11 @@ module Jennifer
           end
 
           def \{{name.id}}
-            if @\{{name.id}}
-              @\{{name.id}}
-            else
-              \{{name.id}}_reload
+            if !@__\{{name.id}}_retrived && @\{{name.id}}.nil?
+              @__\{{name.id}}_retrived = true
+              @\{{name.id}} = \{{name.id}}_reload
             end
+            @\{{name.id}}
           end
 
           def \{{name.id}}!
@@ -285,10 +301,12 @@ module Jennifer
           end
 
           def append_\{{name.id}}(rel : Hash)
+            @__\{{name.id}}_retrived = true
             @\{{name.id}} = \{{klass}}.build(rel, false)
           end
 
           def append_\{{name.id}}(rel : \{{klass}})
+            @__\{{name.id}}_retrived = true
             @\{{name.id}} = rel
           end
 
@@ -324,6 +342,12 @@ module Jennifer
 
       macro finished_hook
         update_relation_methods
+
+        def __refresh_relation_retrieves
+          \{% for rel in RELATION_NAMES %}
+            @__\{{rel.id}}_retrived = false
+          \{% end %}
+        end
       end
 
       macro inherited_hook

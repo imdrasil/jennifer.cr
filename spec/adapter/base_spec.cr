@@ -1,15 +1,8 @@
 require "../spec_helper"
 
-def read_to_end(rs)
-  rs.each do
-    rs.columns.size.times do
-      rs.read
-    end
-  end
-end
-
 describe Jennifer::Adapter::Base do
   adapter = Jennifer::Adapter.adapter
+
   describe Jennifer::BadQuery do
     describe "query" do
       it "raises BadRequest if there was problem during method execution" do

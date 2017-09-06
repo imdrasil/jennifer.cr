@@ -45,6 +45,15 @@ describe Jennifer::QueryBuilder::ModelQuery do
       end
     end
 
+    context "related model has own request" do
+      # TODO: move it to SqlGenerator
+      it "it generates proper request" do
+        contact = Factory.create_contact
+        query = Contact.all.includes(:main_address)
+        Jennifer::Adapter::SqlGenerator.select(query).should match(/addresses\.main/)
+      end
+    end
+
     pending "with aliases" do
     end
   end

@@ -2,7 +2,7 @@
 
 Another one ActiveRecord pattern realization for Crystal with grate query DSL and migration mechanism.
 
-Please visit extended [[wiki|Home]] to find extended information and instrcutions.
+Please visit *[wiki](https://github.com/imdrasil/jennifer.cr/wiki)* to find extended information and instrcutions.
 
 ## Installation
 

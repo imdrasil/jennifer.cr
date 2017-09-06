@@ -320,6 +320,8 @@ module Jennifer
             {% end %}
             {{left_side.join(", ").id}} = _extract_attributes(rs)
           end
+          __refresh_changes
+          __refresh_relation_retrieves
           self
         end
 

@@ -16,11 +16,65 @@ require "./config"
 require "./models.cr"
 require "./factories.cr"
 
+# This was added to track exact count of hitting DB
+abstract class Jennifer::Adapter::Base
+  @@execution_counter = 0
+  @@queries = [] of String
+
+  def self.exec_count
+    @@execution_counter
+  end
+
+  def self.log_query(query)
+    @@execution_counter += 1
+    @@queries << query
+  end
+
+  def self.query_log
+    @@queries
+  end
+
+  def self.remove_queries
+    @@queries.clear
+  end
+
+  def exec(_query, args = [] of DB::Any)
+    self.class.log_query(_query)
+    Config.logger.debug { regular_query_message(_query, args) }
+    with_connection { |conn| conn.exec(_query, args) }
+  rescue e : BaseException
+    raise e
+  rescue e : Exception
+    raise BadQuery.new(e.message, regular_query_message(_query, args))
+  end
+
+  def query(_query, args = [] of DB::Any)
+    self.class.log_query(_query)
+    Config.logger.debug { regular_query_message(_query, args) }
+    with_connection { |conn| conn.query(_query, args) { |rs| yield rs } }
+  rescue e : BaseException
+    raise e
+  rescue e : Exception
+    raise BadQuery.new(e.message, regular_query_message(_query, args))
+  end
+
+  def scalar(_query, args = [] of DB::Any)
+    self.class.log_query(_query)
+    Config.logger.debug { regular_query_message(_query, args) }
+    with_connection { |conn| conn.scalar(_query, args) }
+  rescue e : BaseException
+    raise e
+  rescue e : Exception
+    raise BadQuery.new(e.message, regular_query_message(_query, args))
+  end
+end
+
 Spec.before_each do
   Jennifer::Adapter.adapter.begin_transaction
 end
 
 Spec.after_each do
+  Jennifer::Adapter.adapter.class.remove_queries
   Jennifer::Adapter.adapter.rollback_transaction
 end
 
@@ -53,4 +107,20 @@ end
 
 def db_array(*element)
   element.to_a.map { |e| e.as(Jennifer::DBAny) }
+end
+
+def query_count
+  Jennifer::Adapter.adapter_class.exec_count
+end
+
+def query_log
+  Jennifer::Adapter.adapter_class.query_log
+end
+
+def read_to_end(rs)
+  rs.each do
+    rs.columns.size.times do
+      rs.read
+    end
+  end
 end

@@ -30,6 +30,7 @@ module Jennifer
         :blob       => "blob",
         :var_string => "varchar",
         :json       => "json",
+        :hstore     => "hstore",
       }
 
       DEFAULT_SIZES = {

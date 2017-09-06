@@ -91,7 +91,6 @@ module Jennifer
       end
 
       def scalar(_query, args = [] of DB::Any)
-        self.class.log_query(_query)
         time = Time.now.ticks
         res = with_connection { |conn| conn.scalar(_query, args) }
         time = Time.now.ticks - time

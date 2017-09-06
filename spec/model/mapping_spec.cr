@@ -139,8 +139,18 @@ describe Jennifer::Model::Mapping do
       context "mismatching data type" do
         it "raises DataTypeMismatch exception" do
           ContactWithNillableName.create({name: nil})
-          expect_raises(::Jennifer::DataTypeMismatch, "Column name is expected to be a String but got Nil.") do
+          expect_raises(::Jennifer::DataTypeMismatch, "Column ContactWithCustomField.name is expected to be a String but got Nil.") do
             ContactWithCustomField.all.last!
+          end
+        end
+      end
+
+      context "mismatching data type during loading from hash" do
+        it "raises DataTypeCasting exception" do
+          c = ContactWithNillableName.create({name: nil})
+          Factory.create_address({:contact_id => c.id})
+          expect_raises(::Jennifer::DataTypeCasting, "Column Contact.name can't be casted from Nil to it's type - String") do
+            Address.all.includes(:contact).last!
           end
         end
       end

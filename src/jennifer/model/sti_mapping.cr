@@ -56,18 +56,7 @@ module Jennifer
 
         @new_record = true
 
-        # creates object from db tuple
-        def initialize(%pull : DB::ResultSet)
-          initialize(::Jennifer::Adapter.adapter.result_to_hash(%pull), false)
-        end
-
-        def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-          initialize(stringify_hash(values, Jennifer::DBAny))
-        end
-
-        def initialize(values : Hash(String, ::Jennifer::DBAny))
-          values["type"] = "{{@type.id}}" if values.is_a?(Hash)
-          super
+        def _sti_extract_attributes(values : Hash(String, ::Jennifer::DBAny))
           {% for key, value in properties %}
             %var{key.id} = nil
             %found{key.id} = true
@@ -81,20 +70,55 @@ module Jennifer
             end
           {% end %}
 
-
           {% for key, value in properties %}
-            {% if value[:null] %}
-              {% if value[:default] != nil %}
-                @{{key.id}} = %found{key.id} ? %var{key.id}.as({{value[:parsed_type].id}}) : {{value[:default]}}
+            begin
+              {% if value[:null] %}
+                {% if value[:default] != nil %}
+                  %var{key.id} = %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
+                {% else %}
+                  %var{key.id} = %var{key.id}.as({{value[:parsed_type].id}})
+                {% end %}
+              {% elsif value[:default] != nil %}
+                %var{key.id} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
               {% else %}
-                @{{key.id}} = %var{key.id}.as({{value[:parsed_type].id}})
+                %var{key.id} = __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
               {% end %}
-            {% elsif value[:default] != nil %}
-              @{{key.id}} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : %var{key.id}.as({{value[:parsed_type].id}})
-            {% else %}
-              @{{key.id}} = (%var{key.id}).as({{value[:parsed_type].id}})
-            {% end %}
+            rescue e : Exception
+              raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
+              raise e
+            end
           {% end %}
+
+          {% if properties.size > 1 %}
+            {
+            {% for key, value in properties %}
+              %var{key.id}.as({{value[:parsed_type].id}}),
+            {% end %}
+            }
+          {% else %}
+            {% key = properties.keys[0] %}
+            %var{key}.as({{properties[key][:parsed_type].id}})
+          {% end %}
+        end
+
+        # creates object from db tuple
+        def initialize(%pull : DB::ResultSet)
+          initialize(::Jennifer::Adapter.adapter.result_to_hash(%pull), false)
+        end
+
+        def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
+          initialize(stringify_hash(values, Jennifer::DBAny))
+        end
+
+        def initialize(values : Hash(String, ::Jennifer::DBAny))
+          # TODO: check why we are doing this
+          values["type"] = "{{@type.id}}"
+          super
+          {% left_side = [] of String %}
+          {% for key in properties.keys %}
+            {% left_side << "@#{key.id}" %}
+          {% end %}
+          {{left_side.join(", ").id}} = _sti_extract_attributes(values)
         end
 
         def initialize(values : Hash | NamedTuple, @new_record)

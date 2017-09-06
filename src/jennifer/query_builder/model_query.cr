@@ -96,7 +96,8 @@ module Jennifer
 
       private def reverse_order
         if @order.empty?
-          @order[T.primary_field_name] = "DESC"
+          # TODO: make smth like T.primary_field.to_s
+          @order["#{T.table_name}.#{T.primary_field_name}"] = "DESC"
         else
           super
         end

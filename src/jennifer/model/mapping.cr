@@ -184,7 +184,7 @@ module Jennifer
                 begin
                   %var{key.id} = pull.read({{value[:parsed_type].id}})
                 rescue e : Exception
-                  raise ::Jennifer::DataTypeMismatch.new(column, e) if ::Jennifer::DataTypeMismatch.match?(e)
+                  raise ::Jennifer::DataTypeMismatch.new(column, {{@type}}, e) if ::Jennifer::DataTypeMismatch.match?(e)
                   raise e
                 end
                 # if value[:type].is_a?(Path) || value[:type].is_a?(Generic)
@@ -209,13 +209,7 @@ module Jennifer
           {% end %}
         end
 
-        # Accepts symbol hash or named tuple, stringify it and calls
-        # TODO: check how converting affects performance
-        def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-          initialize(stringify_hash(values, Jennifer::DBAny))
-        end
-
-        def initialize(values : Hash(String, ::Jennifer::DBAny))
+        def _extract_attributes(values : Hash(String, ::Jennifer::DBAny))
           {% for key, value in properties %}
             %var{key.id} = nil
             %found{key.id} = true
@@ -229,20 +223,49 @@ module Jennifer
             end
           {% end %}
 
-
           {% for key, value in properties %}
-            {% if value[:null] %}
-              {% if value[:default] != nil %}
-                @{{key.id}} = %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
+            begin
+              {% if value[:null] %}
+                {% if value[:default] != nil %}
+                  %var{key.id} = %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
+                {% else %}
+                  %var{key.id} = %var{key.id}.as({{value[:parsed_type].id}})
+                {% end %}
+              {% elsif value[:default] != nil %}
+                %var{key.id} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
               {% else %}
-                @{{key.id}} = %var{key.id}.as({{value[:parsed_type].id}})
+                %var{key.id} = __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
               {% end %}
-            {% elsif value[:default] != nil %}
-              @{{key.id}} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
-            {% else %}
-              @{{key.id}} = __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
-            {% end %}
+            rescue e : Exception
+              raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
+              raise e
+            end
           {% end %}
+
+          {% if properties.size > 1 %}
+            {
+            {% for key, value in properties %}
+              %var{key.id}.as({{value[:parsed_type].id}}),
+            {% end %}
+            }
+          {% else %}
+            {% key = properties.keys[0] %}
+            %var{key}.as({{properties[key][:parsed_type].id}})
+          {% end %}
+        end
+
+        # Accepts symbol hash or named tuple, stringify it and calls
+        # TODO: check how converting affects performance
+        def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
+          initialize(stringify_hash(values, Jennifer::DBAny))
+        end
+
+        def initialize(values : Hash(String, ::Jennifer::DBAny))
+          {% left_side = [] of String %}
+          {% for key in properties.keys %}
+            {% left_side << "@#{key.id}" %}
+          {% end %}
+          {{left_side.join(", ").id}} = _extract_attributes(values)
         end
 
         def initialize(values : Hash | NamedTuple, @new_record)
@@ -443,6 +466,7 @@ module Jennifer
 
         def arguments_to_insert
           args = [] of ::Jennifer::DBAny
+          # TODO: think about moving this array to constant
           fields = [] of String
           {% for key, value in properties %}
             {% unless value[:primary] && primary_auto_incrementable %}

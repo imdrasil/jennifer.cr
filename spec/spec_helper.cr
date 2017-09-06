@@ -16,6 +16,24 @@ require "./config"
 require "./models.cr"
 require "./factories.cr"
 
+abstract class DB::Connection
+  def scalar(query, *args)
+    Jennifer::Adapter.adapter_class.log_query(query)
+    build(query).scalar(*args)
+  end
+
+  def query(query, *args)
+    Jennifer::Adapter.adapter_class.log_query(query)
+    rs = query(query, *args)
+    yield rs ensure rs.close
+  end
+
+  def exec(query, *args)
+    Jennifer::Adapter.adapter_class.log_query(query)
+    build(query).exec(*args)
+  end
+end
+
 # This was added to track exact count of hitting DB
 abstract class Jennifer::Adapter::Base
   @@execution_counter = 0
@@ -36,36 +54,6 @@ abstract class Jennifer::Adapter::Base
 
   def self.remove_queries
     @@queries.clear
-  end
-
-  def exec(_query, args = [] of DB::Any)
-    self.class.log_query(_query)
-    Config.logger.debug { regular_query_message(_query, args) }
-    with_connection { |conn| conn.exec(_query, args) }
-  rescue e : BaseException
-    raise e
-  rescue e : Exception
-    raise BadQuery.new(e.message, regular_query_message(_query, args))
-  end
-
-  def query(_query, args = [] of DB::Any)
-    self.class.log_query(_query)
-    Config.logger.debug { regular_query_message(_query, args) }
-    with_connection { |conn| conn.query(_query, args) { |rs| yield rs } }
-  rescue e : BaseException
-    raise e
-  rescue e : Exception
-    raise BadQuery.new(e.message, regular_query_message(_query, args))
-  end
-
-  def scalar(_query, args = [] of DB::Any)
-    self.class.log_query(_query)
-    Config.logger.debug { regular_query_message(_query, args) }
-    with_connection { |conn| conn.scalar(_query, args) }
-  rescue e : BaseException
-    raise e
-  rescue e : Exception
-    raise BadQuery.new(e.message, regular_query_message(_query, args))
   end
 end
 

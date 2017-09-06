@@ -12,6 +12,7 @@ adapter = ""
 require "../src/jennifer"
 
 Jennifer::Config.configure do |conf|
+  # conf.logger.level = Logger::DEBUG
   conf.logger.level = Logger::ERROR
   conf.host = "localhost"
   conf.adapter = adapter

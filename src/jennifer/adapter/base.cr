@@ -4,6 +4,7 @@ require "./shared/*"
 module Jennifer
   module Adapter
     abstract class Base
+      TICKS_PER_MICROSECOND = 10
       @db : DB::Database
       @transaction : DB::Transaction? = nil
       @locks = {} of UInt64 => DB::Transaction
@@ -67,8 +68,11 @@ module Jennifer
       end
 
       def exec(_query, args = [] of DB::Any)
-        Config.logger.debug { regular_query_message(_query, args) }
-        with_connection { |conn| conn.exec(_query, args) }
+        time = Time.now.ticks
+        res = with_connection { |conn| conn.exec(_query, args) }
+        time = Time.now.ticks - time
+        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
+        res
       rescue e : BaseException
         raise e
       rescue e : Exception
@@ -76,8 +80,10 @@ module Jennifer
       end
 
       def query(_query, args = [] of DB::Any)
-        Config.logger.debug { regular_query_message(_query, args) }
-        with_connection { |conn| conn.query(_query, args) { |rs| yield rs } }
+        time = Time.now.ticks
+        res = with_connection { |conn| conn.query(_query, args) { |rs| time = Time.now.ticks - time; yield rs } }
+        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
+        res
       rescue e : BaseException
         raise e
       rescue e : Exception
@@ -85,8 +91,12 @@ module Jennifer
       end
 
       def scalar(_query, args = [] of DB::Any)
-        Config.logger.debug { regular_query_message(_query, args) }
-        with_connection { |conn| conn.scalar(_query, args) }
+        self.class.log_query(_query)
+        time = Time.now.ticks
+        res = with_connection { |conn| conn.scalar(_query, args) }
+        time = Time.now.ticks - time
+        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
+        res
       rescue e : BaseException
         raise e
       rescue e : Exception
@@ -425,11 +435,19 @@ module Jennifer
         io << " AUTO_INCREMENT" if options[:auto_increment]?
       end
 
-      private def regular_query_message(query, args : Array)
+      private def regular_query_message(ms, query : String, args : Array)
+        args.empty? ? "#{ms} µs #{query}" : "#{ms} µs #{query} | #{args.inspect}"
+      end
+
+      private def regular_query_message(query : String, args : Array)
         args.empty? ? query : "#{query} | #{args.inspect}"
       end
 
-      private def regular_query_message(query, arg = nil)
+      private def regular_query_message(ms, query : String, arg = nil)
+        arg ? "#{ms} µs #{query} | #{arg}" : "#{ms} µs #{query}"
+      end
+
+      private def regular_query_message(query : String, arg = nil)
         arg ? "#{query} | #{arg}" : query
       end
     end

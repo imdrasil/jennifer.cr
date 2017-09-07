@@ -76,12 +76,12 @@ describe Jennifer::Model::RelationDefinition do
 
     context "query" do
       it "sets correct query part" do
-        Contact.relation("addresses").condition_clause.to_sql.should eq("addresses.contact_id = contacts.id")
+        Contact.relation("addresses").condition_clause.as_sql.should eq("addresses.contact_id = contacts.id")
       end
 
       context "when declaration has additional block" do
         it "sets correct query part" do
-          Contact.relation("main_address").condition_clause.to_sql.should match(/addresses\.contact_id = contacts\.id AND addresses\.main/)
+          Contact.relation("main_address").condition_clause.as_sql.should match(/addresses\.contact_id = contacts\.id AND addresses\.main/)
         end
       end
     end
@@ -90,7 +90,7 @@ describe Jennifer::Model::RelationDefinition do
       it "returns query object" do
         c = Factory.create_contact
         q = c.addresses_query
-        q.to_sql.should match(/addresses.contact_id = %s/)
+        q.as_sql.should match(/addresses.contact_id = %s/)
         q.sql_args.should eq(db_array(c.id))
       end
 
@@ -98,7 +98,7 @@ describe Jennifer::Model::RelationDefinition do
         it "returns proper objects" do
           c = Factory.build_contact
           q = c.facebook_profiles_query
-          q.to_sql.should match(/profiles\.type = %s/)
+          q.as_sql.should match(/profiles\.type = %s/)
           q.sql_args.includes?("FacebookProfile").should be_true
         end
       end
@@ -186,12 +186,12 @@ describe Jennifer::Model::RelationDefinition do
 
     context "query" do
       it "sets correct query part" do
-        Address.relation("contact").condition_clause.to_sql.should eq("contacts.id = addresses.contact_id")
+        Address.relation("contact").condition_clause.as_sql.should eq("contacts.id = addresses.contact_id")
       end
 
       pending "when desclaration has additional block" do
         it "sets correct query part" do
-          Address.relation("main_address").condition_clause.to_sql.should match(/addresses\.contact_id = contacts\.id AND addresses\.main/)
+          Address.relation("main_address").condition_clause.as_sql.should match(/addresses\.contact_id = contacts\.id AND addresses\.main/)
         end
       end
     end
@@ -200,7 +200,7 @@ describe Jennifer::Model::RelationDefinition do
       it "returns query object" do
         a = Factory.create_address(contact_id: 1)
         q = a.contact_query
-        q.to_sql.should match(/contacts.id = %s/)
+        q.as_sql.should match(/contacts.id = %s/)
         q.sql_args.should eq(db_array(a.contact_id))
       end
     end
@@ -261,12 +261,13 @@ describe Jennifer::Model::RelationDefinition do
 
     context "query" do
       it "sets correct query part" do
-        Contact.relation("passport").condition_clause.to_sql.should eq("passports.contact_id = contacts.id")
+        Contact.relation("passport").condition_clause.as_sql.should eq("passports.contact_id = contacts.id")
       end
 
       context "when desclaration has additional block" do
         it "sets correct query part" do
-          Contact.relation("main_address").condition_clause.to_sql.should match(/addresses\.contact_id = contacts\.id AND addresses\.main/)
+          sql_reg = /addresses\.contact_id = contacts\.id AND addresses\.main/
+          Contact.relation("main_address").condition_clause.as_sql.should match(sql_reg)
         end
       end
     end
@@ -275,7 +276,7 @@ describe Jennifer::Model::RelationDefinition do
       it "returns query object" do
         c = Factory.create_contact
         q = c.main_address_query
-        q.to_sql.should match(/addresses.contact_id = %s AND addresses.main/)
+        q.as_sql.should match(/addresses.contact_id = %s AND addresses.main/)
         q.sql_args.should eq(db_array(c.id))
       end
     end
@@ -332,7 +333,7 @@ describe Jennifer::Model::RelationDefinition do
   describe "%has_and_belongs_many" do
     context "query" do
       pending "sets correct query part" do
-        Contact.relation("countries").condition_clause.to_sql.should eq("addresses.contact_id = contacts.id")
+        Contact.relation("countries").condition_clause.as_sql.should eq("addresses.contact_id = contacts.id")
       end
     end
 

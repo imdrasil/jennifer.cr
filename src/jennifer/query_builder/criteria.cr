@@ -84,10 +84,10 @@ module Jennifer
       end
 
       def to_s
-        to_sql
+        as_sql
       end
 
-      def to_sql
+      def as_sql
         "#{@table}.#{@field.to_s}"
       end
 

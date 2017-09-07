@@ -8,13 +8,13 @@ describe Jennifer::QueryBuilder::Query do
       it "retruns sql representation of condition" do
         q = Factory.build_query
         c = Factory.build_criteria
-        q.set_tree(c).to_sql.should eq(c.to_sql)
+        q.set_tree(c).as_sql.should eq(c.as_sql)
       end
     end
 
     context "if query tree is empty" do
       it "returns empty string" do
-        Factory.build_query.to_sql.should eq("")
+        Factory.build_query.as_sql.should eq("")
       end
     end
   end

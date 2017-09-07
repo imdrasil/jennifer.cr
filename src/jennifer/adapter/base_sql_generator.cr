@@ -191,11 +191,11 @@ module Jennifer
 
       def self.having_clause(io, query)
         return unless query._having
-        io << "HAVING " << query._having.not_nil!.to_sql << "\n"
+        io << "HAVING " << query._having.not_nil!.as_sql << "\n"
       end
 
       def self.join_clause(io, query)
-        query._joins.map(&.to_sql).join(' ', io)
+        query._joins.map(&.as_sql).join(' ', io)
       end
 
       def self.where_clause(io, query : QueryBuilder::Query | QueryBuilder::ModelQuery)
@@ -204,7 +204,7 @@ module Jennifer
 
       def self.where_clause(io, tree)
         return unless tree
-        io << "WHERE " << tree.not_nil!.to_sql << "\n"
+        io << "WHERE " << tree.not_nil!.as_sql << "\n"
       end
 
       def self.limit_clause(io, query)

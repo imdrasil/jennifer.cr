@@ -28,7 +28,7 @@ describe Jennifer::QueryBuilder::Criteria do
 
     it "works via == as well" do
       c = Factory.build_criteria(field: "f1") == nil
-      c.to_sql.should eq("tests.f1 IS NULL")
+      c.as_sql.should eq("tests.f1 IS NULL")
       c.sql_args.empty?.should be_true
     end
   end

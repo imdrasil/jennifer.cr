@@ -33,14 +33,14 @@ and fill created migration file with next content:
 ```crystal
 class CreateContact20170119011451314 < Jennifer::Migration::Base
   def up
-      create_enum(:gender_enum, ["male", "female"]) # postgres specific command
-      create_table(:contacts) do |t|
-        t.string :name, {:size => 30}
-        t.integer :age
-        t.integer :tags, {:array => true}
-        t.field :gender, :gender_enum
-        t.timestamps
-      end
+    create_enum(:gender_enum, ["male", "female"]) # postgres specific command
+    create_table(:contacts) do |t|
+      t.string :name, {:size => 30}
+      t.integer :age
+      t.integer :tags, {:array => true}
+      t.field :gender, :gender_enum
+      t.timestamps
+    end
   end
 
   def down

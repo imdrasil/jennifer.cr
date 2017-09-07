@@ -73,19 +73,19 @@ module Jennifer
       end
 
       def to_s
-        to_sql
+        as_sql
       end
 
       def filter_out(arg)
         if arg.is_a?(Criteria)
-          arg.to_sql
+          arg.as_sql
         else
           ::Jennifer::Adapter.escape_string(1)
         end
       end
 
-      def to_sql
-        _lhs = @lhs.to_sql
+      def as_sql
+        _lhs = @lhs.as_sql
         str =
           case @operator
           when :bool
@@ -97,7 +97,7 @@ module Jennifer
               if filterable?
                 filter_out(@rhs)
               elsif @rhs.is_a?(Criteria)
-                @rhs.as(Criteria).to_sql
+                @rhs.as(Criteria).as_sql
               else
                 @rhs.to_s
               end

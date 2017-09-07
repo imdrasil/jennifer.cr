@@ -123,20 +123,20 @@ describe Jennifer::Model::Base do
 
     context "without arguemnt" do
       it "is accessible from query object" do
-        Contact.all.main.to_sql.should match(/contacts\.age >/)
+        Contact.all.main.as_sql.should match(/contacts\.age >/)
       end
     end
 
     context "with argument" do
       it "is accessible from query object" do
-        Contact.all.older(12).to_sql.should match(/contacts\.age >=/)
+        Contact.all.older(12).as_sql.should match(/contacts\.age >=/)
       end
     end
 
     context "same names" do
       it "is accessible from query object" do
-        Address.all.main.to_sql.should match(/addresses\.main/)
-        Contact.all.main.to_sql.should match(/contacts\.age >/)
+        Address.all.main.as_sql.should match(/addresses\.main/)
+        Contact.all.main.as_sql.should match(/contacts\.age >/)
       end
     end
 

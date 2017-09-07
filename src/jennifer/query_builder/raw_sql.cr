@@ -10,7 +10,7 @@ module Jennifer
 
       def alias_tables(aliases); end
 
-      def to_sql
+      def as_sql
         "(" + @field + ")"
       end
 

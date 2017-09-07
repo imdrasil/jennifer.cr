@@ -48,7 +48,11 @@ module Jennifer
       end
 
       def to_sql
-        @tree ? @tree.not_nil!.to_sql : ""
+        Adapter::SqlGenerator.select(self)
+      end
+
+      def as_sql
+        @tree ? @tree.not_nil!.as_sql : ""
       end
 
       def sql_args

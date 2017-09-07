@@ -9,37 +9,47 @@ module Jennifer
   module Adapter
     alias EnumType = String
 
+    TYPE_TRANSLATIONS = {
+      :bool => "bool",
+      :enum => "enum",
+
+      :bigint  => "bigint",   # Int64
+      :integer => "int",      # Int32
+      :short   => "SMALLINT", # Int16
+      :tinyint => "TINYINT",  # Int8
+
+      :float  => "float",  # Float32
+      :double => "double", # Float64
+
+      :decimal => "decimal", # Float64
+
+      :string     => "varchar",
+      :text       => "text",
+      :var_string => "varstring",
+
+      :timestamp => "datetime", # "timestamp",
+      :date_time => "datetime",
+
+      :blob => "blob",
+      :json => "json",
+
+    }
+
+    DEFAULT_SIZES = {
+      :string => 254,
+    }
+
     class Mysql < Base
       include RequestMethods
 
-      TYPE_TRANSLATIONS = {
-        :integer    => "int",
-        :string     => "varchar",
-        :bool       => "bool",
-        :text       => "text",
-        :float      => "float",
-        :double     => "double",
-        :short      => "SMALLINT",
-        :timestamp  => "datetime", # "timestamp",
-        :date_time  => "datetime",
-        :blob       => "blob",
-        :var_string => "varstring",
-        :json       => "json",
-        :enum       => "enum",
-      }
-
-      DEFAULT_SIZES = {
-        :string => 254,
-      }
-
       def translate_type(name : Symbol)
-        TYPE_TRANSLATIONS[name]
+        Adapter::TYPE_TRANSLATIONS[name]
       rescue e : KeyError
         raise BaseException.new("Unknown data alias #{name}")
       end
 
       def default_type_size(name)
-        DEFAULT_SIZES[name]?
+        Adapter::DEFAULT_SIZES[name]?
       end
 
       def table_column_count(table)

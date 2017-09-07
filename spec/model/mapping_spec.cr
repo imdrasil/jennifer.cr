@@ -14,16 +14,23 @@ describe Jennifer::Model::Mapping do
 
   describe "#_extract_attributes" do
     it "returns tuple with values" do
-      c1 = Factory.create_contact
+      ballance = postgres_only do
+        PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
+      end
+      mysql_only do
+        10f64
+      end
+      c1 = Factory.create_contact(ballance: ballance)
       Contact.all.where { _id == c1.id }.each_result_set do |rs|
         res = c1._extract_attributes(rs)
         res.is_a?(Tuple).should be_true
         res[0].should eq(c1.id)
         res[1].should eq("Deepthi")
-        res[2].should eq(28)
-        res[3].should eq("male")
-        res[5].is_a?(Time).should be_true
+        res[2].should eq(ballance)
+        res[3].should eq(28)
+        res[4].should eq("male")
         res[6].is_a?(Time).should be_true
+        res[7].is_a?(Time).should be_true
       end
     end
 
@@ -93,10 +100,10 @@ describe Jennifer::Model::Mapping do
     describe "::field_count" do
       it "returns correct number of model fields" do
         postgres_only do
-          Contact.field_count.should eq(8)
+          Contact.field_count.should eq(9)
         end
         mysql_only do
-          Contact.field_count.should eq(7)
+          Contact.field_count.should eq(8)
         end
       end
     end

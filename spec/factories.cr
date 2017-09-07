@@ -56,7 +56,7 @@ end
 
 class ContactFactory < Factory::Jennifer::Base
   postgres_only do
-    argument_type (Array(Int32) | Int32 | String?)
+    argument_type (Array(Int32) | Int32 | PG::Numeric | String?)
   end
 
   attr :name, "Deepthi"

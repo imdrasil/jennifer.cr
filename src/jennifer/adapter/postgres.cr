@@ -13,30 +13,55 @@ module Jennifer
   module Adapter
     alias EnumType = Bytes
 
+    TYPE_TRANSLATIONS = {
+      :integer => "int",      # Int32
+      :short   => "SMALLINT", # Int16
+      :bigint  => "BIGINT",   # Int64
+      :oid     => "oid",      # UInt32
+
+      :float  => "real",             # Float32
+      :double => "double precision", # Float64
+
+      :numeric => "numeric", # PG::Numeric
+      :decimal => "decimal", # PG::Numeric - is alias for numeric
+
+      :string     => "varchar",
+      :char       => "char",
+      :bool       => "boolean",
+      :text       => "text",
+      :var_string => "varchar",
+      :varchar    => "varchar",
+      :blchar     => "blchar", # String
+
+      :uuid => "uuid", # String
+
+      :timestamp   => "timestamp",
+      :timestamptz => "timestamptz", # Time
+      :date_time   => "datetime",
+
+      :blob  => "blob",
+      :bytea => "bytea",
+
+      :json  => "json",  # JSON
+      :jsonb => "jsonb", # JSON
+      :xml   => "xml",   # String
+
+      :point   => "point",
+      :lseg    => "lseg",
+      :path    => "path",
+      :box     => "box",
+      :polygon => "polygon",
+      :line    => "line",
+      :circle  => "circle",
+    }
+
+    DEFAULT_SIZES = {
+      :string     => 254,
+      :var_string => 254,
+    }
+
     class Postgres < Base
       include RequestMethods
-
-      TYPE_TRANSLATIONS = {
-        :integer    => "int",
-        :string     => "varchar",
-        :char       => "char",
-        :bool       => "boolean",
-        :text       => "text",
-        :float      => "real",
-        :double     => "double precision",
-        :short      => "SMALLINT",
-        :timestamp  => "timestamp",
-        :date_time  => "datetime",
-        :blob       => "blob",
-        :var_string => "varchar",
-        :json       => "json",
-        :hstore     => "hstore",
-      }
-
-      DEFAULT_SIZES = {
-        :string     => 254,
-        :var_string => 254,
-      }
 
       def prepare
         _query = <<-SQL
@@ -54,13 +79,13 @@ module Jennifer
       end
 
       def translate_type(name)
-        TYPE_TRANSLATIONS[name]
+        Adapter::TYPE_TRANSLATIONS[name]
       rescue e : KeyError
         raise BaseException.new("Unknown data alias #{name}")
       end
 
       def default_type_size(name)
-        DEFAULT_SIZES[name]?
+        Adapter::DEFAULT_SIZES[name]?
       end
 
       def refresh_materialized_view(name)

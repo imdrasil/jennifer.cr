@@ -4,6 +4,7 @@ class Contact < Jennifer::Model::Base
     mapping(
       id:          {type: Int32, primary: true},
       name:        String,
+      ballance:    {type: PG::Numeric, null: true},
       age:         {type: Int32, default: 10},
       gender:      {type: String, default: "male", null: true},
       description: {type: String, null: true},
@@ -15,6 +16,7 @@ class Contact < Jennifer::Model::Base
     mapping(
       id:          {type: Int32, primary: true},
       name:        String,
+      ballance:    {type: Float64, null: true},
       age:         {type: Int32, default: 10},
       gender:      {type: String, default: "male", null: true},
       description: {type: String, null: true},

@@ -6,6 +6,7 @@ class TestMigration20170119011451314 < Jennifer::Migration::Base
         t.string :name, {:size => 30}
         t.integer :age
         t.integer :tags, {:array => true}
+        t.decimal :ballance
         t.field :gender, :gender_enum
         t.timestamps
       end
@@ -16,6 +17,7 @@ class TestMigration20170119011451314 < Jennifer::Migration::Base
       create_table(:contacts) do |t|
         t.string :name, {:size => 30}
         t.integer :age
+        t.decimal :ballance
         t.enum :gender, ["male", "female"], {:default => "male"}
         t.timestamps
       end

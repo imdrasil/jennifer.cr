@@ -78,8 +78,9 @@ module Jennifer
 
       def to_a
         add_aliases if @relation_used
-        return to_a_with_relations unless @relations.empty?
         result = [] of T
+        return result if @do_nothing
+        return to_a_with_relations unless @relations.empty?
         ::Jennifer::Adapter.adapter.select(self) do |rs|
           rs.each do
             begin

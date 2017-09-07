@@ -22,6 +22,7 @@ module Jennifer
       property tree : Condition | LogicOperator?
 
       def initialize
+        @do_nothing = false
         @expression = ExpressionBuilder.new(@table)
         @joins = [] of Join
         @order = {} of String => String
@@ -155,6 +156,11 @@ module Jennifer
 
       def from(_from)
         @from = _from
+        self
+      end
+
+      def none
+        @do_nothing = true
         self
       end
 
@@ -445,6 +451,7 @@ module Jennifer
 
       def db_results
         result = [] of Hash(String, DBAny)
+        return result if @do_nothing
         each_result_set do |rs|
           result << Adapter.adapter.result_to_hash(rs)
         end
@@ -453,6 +460,7 @@ module Jennifer
 
       def results
         result = [] of Record
+        return result if @do_nothing
         each_result_set { |rs| result << Record.new(rs) }
         result
       end

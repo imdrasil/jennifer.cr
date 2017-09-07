@@ -305,5 +305,16 @@ describe Jennifer::QueryBuilder::Query do
     end
   end
 
+  describe "#to_a" do
+    context "none was called" do
+      it "doesn't hit db and return empty array" do
+        count = query_count
+        result = Jennifer::Query["contacts"].none.to_a
+        query_count.should eq(count)
+        result.empty?.should be_true
+      end
+    end
+  end
+
   # TODO: move other plain query methods here
 end

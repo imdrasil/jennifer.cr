@@ -296,6 +296,15 @@ describe Jennifer::QueryBuilder::ModelQuery do
         res.contact!.name.should eq("b")
       end
 
+      context "none was called" do
+        it "doesn't hit db and return empty array" do
+          count = query_count
+          result = Contact.all.includes(:addresses).none.to_a
+          query_count.should eq(count)
+          result.empty?.should be_true
+        end
+      end
+
       context "when some records have no nested objects" do
         it "correctly build nested objects" do
           c1 = Factory.create_contact(name: "a")
@@ -351,6 +360,15 @@ describe Jennifer::QueryBuilder::ModelQuery do
         match_array(res[1].facebook_profiles.map(&.id), [f.id])
 
         res[0].facebook_profiles.empty?.should be_true
+      end
+    end
+
+    context "none was called" do
+      it "doesn't hit db and return empty array" do
+        count = query_count
+        result = Jennifer::Query["contacts"].none.to_a
+        query_count.should eq(count)
+        result.empty?.should be_true
       end
     end
   end

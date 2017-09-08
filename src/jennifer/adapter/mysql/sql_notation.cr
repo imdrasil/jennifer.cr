@@ -34,6 +34,20 @@ module Jennifer
           where_clause(s, query.tree)
         end
       end
+
+      def json_path(path : QueryBuilder::JSONSelector)
+        value =
+          if path.path.is_a?(Number)
+            quote("$[#{path.path.to_s}]")
+          else
+            quote(path.path)
+          end
+        "#{path.identifier}->#{value}"
+      end
+
+      def quote(value : String)
+        "\"#{value.gsub(/\\/, "\&\&").gsub(/"/, "\"\"")}\""
+      end
     end
   end
 end

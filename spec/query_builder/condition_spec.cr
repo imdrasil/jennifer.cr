@@ -1,7 +1,7 @@
 require "../spec_helper"
 
 describe Jennifer::QueryBuilder::Condition do
-  describe "#to_sql" do
+  describe "#as_sql" do
     {% for op in [:<, :>, :<=, :>=, :!=] %}
       context "{{op.id}} operator" do
         it "retruns string representation" do
@@ -56,6 +56,12 @@ describe Jennifer::QueryBuilder::Condition do
         else
           cond.as_sql.should match(/REGEXP/)
         end
+      end
+    end
+
+    context "operator between" do
+      it "generates proper sql" do
+        Jennifer::Query["contacts"].where { _age.between(20, 30) }.to_sql.should match(/age BETWEEN %s AND %s/)
       end
     end
 

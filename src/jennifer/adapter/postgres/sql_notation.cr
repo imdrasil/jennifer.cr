@@ -37,6 +37,8 @@ module Jennifer
         end
       end
 
+      # =================== utils
+
       def operator_to_sql(operator)
         case operator
         when :like
@@ -62,6 +64,46 @@ module Jennifer
         else
           operator.to_s
         end
+      end
+
+      def json_path(path : QueryBuilder::JSONSelector)
+        operator =
+          case path.type
+          when :path
+            "#>"
+          when :take
+            "->"
+          else
+            raise "Wrong json path type"
+          end
+        "#{path.identifier}#{operator}#{quote(path.path)}"
+      end
+
+      # for postgres column name
+      def escape(value : String)
+        case value
+        when "NULL", "TRUE", "FALSE"
+          value
+        else
+          value = value.gsub(/\\/, ARRAY_ESCAPE).gsub(/"/, "\\\"")
+          "\"#{value}\""
+        end
+      end
+
+      def escape(value : Nil)
+        quote(value)
+      end
+
+      def escape(value : Bool)
+        quote(value)
+      end
+
+      def escape(value : Int32 | Int16 | Float64 | Float32)
+        quote(value)
+      end
+
+      def quote(value : String)
+        "'#{value.gsub(/\\/, "\&\&").gsub(/'/, "''")}'"
       end
 
       def parse_query(query, arg_count)

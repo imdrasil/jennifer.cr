@@ -1,6 +1,8 @@
 module Jennifer
   module Adapter
     class BaseSqlGenerator
+      ARRAY_ESCAPE = "\\\\\\\\"
+
       # Generates insert query
       def self.insert(table, hash)
         String.build do |s|
@@ -243,6 +245,22 @@ module Jennifer
         else
           operator.to_s
         end
+      end
+
+      def self.json_path(path : QueryBuilder::JSONSelector)
+        raise "Not Implemented"
+      end
+
+      def self.quote(value : Nil)
+        "NULL"
+      end
+
+      def self.quote(value : Bool)
+        value ? "TRUE" : "FALSE"
+      end
+
+      def self.quote(value : Int32 | Int16 | Float64 | Float32)
+        value.to_s
       end
 
       def self.escape_string(size = 1)

@@ -72,6 +72,30 @@ describe Jennifer::QueryBuilder::Criteria do
     end
   end
 
+  describe "#take" do
+    it "creates json selector with proper type" do
+      c = Factory.build_criteria
+      s = c.take(1)
+      s.is_a?(Jennifer::QueryBuilder::JSONSelector)
+      s.table.should eq(c.table)
+      s.field.should eq(c.field)
+      s.type.should eq(:take)
+      s.path.should eq(1)
+    end
+  end
+
+  describe "#path" do
+    it "creates json selector with proper type" do
+      c = Factory.build_criteria
+      s = c.path("w")
+      s.is_a?(Jennifer::QueryBuilder::JSONSelector)
+      s.table.should eq(c.table)
+      s.field.should eq(c.field)
+      s.type.should eq(:path)
+      s.path.should eq("w")
+    end
+  end
+
   describe "#to_sql" do
     pending "add" do
     end

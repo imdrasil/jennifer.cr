@@ -1,7 +1,9 @@
+require "./json_selector"
+
 module Jennifer
   module QueryBuilder
     class Criteria
-      alias Rightable = Criteria | DBAny | Array(DBAny)
+      alias Rightable = JSONSelector | Criteria | DBAny | Array(DBAny)
 
       getter relation : String?, field, table
 
@@ -24,6 +26,18 @@ module Jennifer
         @relation = nil
       end
 
+      def path(elements : String)
+        JSONSelector.new(self, elements, :path)
+      end
+
+      def take(key : String | Number)
+        JSONSelector.new(self, key, :take)
+      end
+
+      def [](key)
+        take(key)
+      end
+
       {% for op in [:<, :>, :<=, :>=, :+, :-, :*, :/, :regexp, :not_regexp, :like, :not_like] %}
         def {{op.id}}(value : Rightable)
           Condition.new(self, {{op}}, value)
@@ -38,10 +52,6 @@ module Jennifer
         self.==(value.to_s)
       end
 
-      def !=(value : Symbol)
-        self.!=(value.to_s)
-      end
-
       def ==(value : Rightable)
         if !value.nil?
           Condition.new(self, :==, value)
@@ -50,12 +60,20 @@ module Jennifer
         end
       end
 
+      def !=(value : Symbol)
+        self.!=(value.to_s)
+      end
+
       def !=(value : Rightable)
         if !value.nil?
           Condition.new(self, :!=, value)
         else
           not(value)
         end
+      end
+
+      def between(left : Rightable, right : Rightable)
+        Condition.new(self, :between, Ifrit.typed_array([left, right], DBAny))
       end
 
       def is(value : Symbol | Bool | Nil)
@@ -88,6 +106,10 @@ module Jennifer
       end
 
       def as_sql
+        identifier
+      end
+
+      def identifier
         "#{@table}.#{@field.to_s}"
       end
 
@@ -105,14 +127,12 @@ module Jennifer
 
       private def translate(value : Symbol | Bool | Nil)
         case value
-        when :nil, nil
-          "NULL"
+        when nil, true, false
+          Adapter::SqlGenerator.quote(value)
         when :unknown
           "UNKNOWN"
-        when true
-          "TRUE"
-        when false
-          "FALSE"
+        when :nil
+          Adapter::SqlGenerator.quote(nil)
         end
       end
     end

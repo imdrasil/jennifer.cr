@@ -203,6 +203,16 @@ module Jennifer
 
       # Deletes object from db and calls callbacks
       def destroy
+        unless ::Jennifer::Adapter.adapter.under_transaction?
+          {{@type}}.transaction do
+            destroy_without_transaction
+          end
+        else
+          destroy_without_transaction
+        end
+      end
+
+      def destroy_without_transaction
         return false if new_record? || !__before_destroy_callback
         @destroyed = true if delete
         __after_destroy_callback if @destroyed

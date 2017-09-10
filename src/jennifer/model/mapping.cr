@@ -320,8 +320,18 @@ module Jennifer
           end
         {% end %}
 
-        # Saves all changes to db without invoking transaction; if validation not passed - returns `false`
         def save(skip_validation = false)
+          unless ::Jennifer::Adapter.adapter.under_transaction?
+            {{@type}}.transaction do
+              save_without_transaction(skip_validation)
+            end
+          else
+            save_without_transaction(skip_validation)
+          end
+        end
+
+        # Saves all changes to db without invoking transaction; if validation not passed - returns `false`
+        def save_without_transaction(skip_validation = false)
           unless skip_validation
             return false unless __before_validation_callback
             validate!

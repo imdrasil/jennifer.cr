@@ -78,9 +78,9 @@ module Jennifer
 
       def to_a
         add_aliases if @relation_used
-        result = [] of T
-        return result if @do_nothing
+        return [] of T if @do_nothing
         return to_a_with_relations unless @relations.empty?
+        result = [] of T
         ::Jennifer::Adapter.adapter.select(self) do |rs|
           rs.each do
             begin
@@ -134,6 +134,7 @@ module Jennifer
         collection
       end
 
+      # TODO: brake this method to smaller ones
       private def to_a_with_relations
         h_result = {} of String => T
 

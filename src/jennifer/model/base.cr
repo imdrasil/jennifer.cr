@@ -22,6 +22,7 @@ module Jennifer
       @@singular_table_name : String?
       @@actual_table_field_count : Int32?
 
+      # Represent actual amount of model's table column amount (is greped from db).
       def self.actual_table_field_count
         @@actual_table_field_count ||= ::Jennifer::Adapter.adapter.table_column_count(table_name)
       end

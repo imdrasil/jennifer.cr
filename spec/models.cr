@@ -177,6 +177,15 @@ class OneFieldModel < Jennifer::Model::Base
   )
 end
 
+class OneFieldModelWithExtraArgument < Jennifer::Model::Base
+  table_name "one_field_models"
+
+  mapping(
+    id: {type: Int32, primary: true},
+    missing_field: String
+  )
+end
+
 class ContactWithNotAllFields < Jennifer::Model::Base
   table_name "contacts"
 

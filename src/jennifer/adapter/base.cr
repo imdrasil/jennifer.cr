@@ -21,9 +21,7 @@ module Jennifer
       end
 
       def prepare
-        ::Jennifer::Model::Base.models.each do |model|
-          model.actual_table_field_count
-        end
+        ::Jennifer::Model::Base.models.each(&.actual_table_field_count)
       end
 
       def with_connection(&block)
@@ -65,6 +63,10 @@ module Jennifer
 
       def current_transaction
         @locks[Fiber.current.object_id]?
+      end
+
+      def under_transaction?
+        @locks.has_key?(Fiber.current.object_id)
       end
 
       def exec(_query, args = [] of DB::Any)

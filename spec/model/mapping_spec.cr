@@ -58,6 +58,14 @@ describe Jennifer::Model::Mapping do
           end
         end
       end
+
+      it "result set has no some field" do
+        o = OneFieldModel.create({} of String => Jennifer::DBAny)
+        error_message = "Column OneFieldModelWithExtraArgument#missing_field hasn't been found in the result set."
+        expect_raises(Jennifer::BaseException, error_message) do
+          OneFieldModelWithExtraArgument.all.to_a
+        end
+      end
     end
 
     context "non strict mapping" do
@@ -65,6 +73,17 @@ describe Jennifer::Model::Mapping do
         ContactWithNotStrictMapping.create({name: "some name"})
         model = ContactWithNotStrictMapping.all.last!
         model.name.should eq("some name")
+      end
+    end
+
+    context "with hash" do
+      context "strict mapping" do
+        it "raises exception if some field can't be casted" do
+          error_message = "Column OneFieldModelWithExtraArgument.missing_field can't be casted from Nil to it's type - String"
+          expect_raises(Jennifer::BaseException, error_message) do
+            OneFieldModelWithExtraArgument.build({} of String => Jennifer::DBAny)
+          end
+        end
       end
     end
   end

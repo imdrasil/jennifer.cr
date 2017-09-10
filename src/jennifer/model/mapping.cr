@@ -9,8 +9,8 @@ module Jennifer
         {% end %}
       end
 
+      # Generates getter and setters
       macro __field_declaration(properties, primary_auto_incrementable)
-        # generates getter and setters
         {% for key, value in properties %}
           @{{key.id}} : {{value[:parsed_type].id}}
           @{{key.id}}_changed = false
@@ -187,7 +187,6 @@ module Jennifer
                   raise ::Jennifer::DataTypeMismatch.new(column, {{@type}}, e) if ::Jennifer::DataTypeMismatch.match?(e)
                   raise e
                 end
-                # if value[:type].is_a?(Path) || value[:type].is_a?(Generic)
             {% end %}
             else
               {% if strict %}
@@ -197,15 +196,32 @@ module Jennifer
               {% end %}
             end
           end
+          {% if strict %}
+            {% for key, value in properties %}
+              unless %found{key.id}
+                raise ::Jennifer::BaseException.new("Column #{{{@type}}}##{{{key.id.stringify}}} hasn't been found in the result set.")
+              end
+            {% end %}
+          {% end %}
           {% if properties.size > 1 %}
             {
             {% for key, value in properties %}
-              %var{key.id}.as({{value[:parsed_type].id}}),
+              begin
+                %var{key.id}.as({{value[:parsed_type].id}})
+              rescue e : Exception
+                raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
+                raise e
+              end,
             {% end %}
             }
           {% else %}
             {% key = properties.keys[0] %}
-            %var{key}.as({{properties[key][:parsed_type].id}})
+            begin
+              %var{key}.as({{properties[key][:parsed_type].id}})
+            rescue e : Exception
+              raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
+              raise e
+            end
           {% end %}
         end
 
@@ -227,14 +243,14 @@ module Jennifer
             begin
               {% if value[:null] %}
                 {% if value[:default] != nil %}
-                  %var{key.id} = %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
+                  %casted_var{key.id} = %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
                 {% else %}
-                  %var{key.id} = %var{key.id}.as({{value[:parsed_type].id}})
+                  %casted_var{key.id} = %var{key.id}.as({{value[:parsed_type].id}})
                 {% end %}
               {% elsif value[:default] != nil %}
-                %var{key.id} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
+                %casted_var{key.id} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
               {% else %}
-                %var{key.id} = __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
+                %casted_var{key.id} = __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
               {% end %}
             rescue e : Exception
               raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
@@ -245,12 +261,12 @@ module Jennifer
           {% if properties.size > 1 %}
             {
             {% for key, value in properties %}
-              %var{key.id}.as({{value[:parsed_type].id}}),
+              %casted_var{key.id},
             {% end %}
             }
           {% else %}
             {% key = properties.keys[0] %}
-            %var{key}.as({{properties[key][:parsed_type].id}})
+            %casted_var{key}
           {% end %}
         end
 
@@ -304,7 +320,7 @@ module Jennifer
           end
         {% end %}
 
-        # Saves all changes to db; if validation not passed - returns `false`
+        # Saves all changes to db without invoking transaction; if validation not passed - returns `false`
         def save(skip_validation = false)
           unless skip_validation
             return false unless __before_validation_callback

@@ -4,17 +4,19 @@ class Contact < Jennifer::Model::Base
     mapping(
       id:          {type: Int32, primary: true},
       name:        String,
+      ballance:    {type: PG::Numeric, null: true},
       age:         {type: Int32, default: 10},
       gender:      {type: String, default: "male", null: true},
       description: {type: String, null: true},
       created_at:  {type: Time, null: true},
       updated_at:  {type: Time, null: true},
-      tags: {type: Array(Int32)? }
+      tags: {type: Array(Int32)? },
     )
   {% else %}
     mapping(
       id:          {type: Int32, primary: true},
       name:        String,
+      ballance:    {type: Float64, null: true},
       age:         {type: Int32, default: 10},
       gender:      {type: String, default: "male", null: true},
       description: {type: String, null: true},
@@ -26,7 +28,7 @@ class Contact < Jennifer::Model::Base
   has_many :addresses, Address
   has_many :facebook_profiles, FacebookProfile
   has_and_belongs_to_many :countries, Country
-  has_and_belongs_to_many :facebook_many_profiles, FacebookProfile, join_foreign: :profile_id
+  has_and_belongs_to_many :facebook_many_profiles, FacebookProfile, association_foreign: :profile_id
   has_one :main_address, Address, {where { _main }}
   has_one :passport, Passport
 
@@ -59,6 +61,18 @@ class Address < Jennifer::Model::Base
   belongs_to :contact, Contact
 
   scope :main { where { _main } }
+
+  after_destroy :increment_destroy_counter
+
+  @@destroy_counter = 0
+
+  def self.destroy_counter
+    @@destroy_counter
+  end
+
+  def increment_destroy_counter
+    @@destroy_counter += 1
+  end
 end
 
 class Passport < Jennifer::Model::Base
@@ -69,6 +83,18 @@ class Passport < Jennifer::Model::Base
 
   validates_with [EnnValidator]
   belongs_to :contact, Contact
+
+  after_destroy :increment_destroy_counter
+
+  @@destroy_counter = 0
+
+  def self.destroy_counter
+    @@destroy_counter
+  end
+
+  def increment_destroy_counter
+    @@destroy_counter += 1
+  end
 end
 
 class Profile < Jennifer::Model::Base
@@ -150,3 +176,73 @@ class OneFieldModel < Jennifer::Model::Base
     id: {type: Int32, primary: true}
   )
 end
+
+class OneFieldModelWithExtraArgument < Jennifer::Model::Base
+  table_name "one_field_models"
+
+  mapping(
+    id: {type: Int32, primary: true},
+    missing_field: String
+  )
+end
+
+class ContactWithNotAllFields < Jennifer::Model::Base
+  table_name "contacts"
+
+  mapping(
+    id: {type: Int32, primary: true},
+    name: {type: String, null: true},
+  )
+end
+
+class ContactWithNotStrictMapping < Jennifer::Model::Base
+  table_name "contacts"
+
+  mapping({
+    id:   {type: Int32, primary: true},
+    name: {type: String, null: true},
+  }, false)
+end
+
+class ContactWithDependencies < Jennifer::Model::Base
+  table_name "contacts"
+
+  mapping({
+    id:   {type: Int32, primary: true},
+    name: String,
+  }, false)
+
+  has_many :addresses, Address, dependent: :delete, foreign: :contact_id
+  has_many :facebook_profiles, FacebookProfile, dependent: :nullify, foreign: :contact_id
+  has_many :passports, Passport, dependent: :destroy, foreign: :contact_id
+  has_many :twitter_profiles, TwitterProfile, dependent: :restrict_with_exception, foreign: :contact_id
+end
+
+class ContactWithCustomField < Jennifer::Model::Base
+  table_name "contacts"
+  mapping({
+    id:   {type: Int32, primary: true},
+    name: String,
+  }, false)
+end
+
+class ContactWithNillableName < Jennifer::Model::Base
+  table_name "contacts"
+  mapping({
+    id:   {type: Int32, primary: true},
+    name: {type: String, null: true},
+  }, false)
+end
+
+class FemaleContact < Jennifer::Model::Base
+  mapping({
+    id:   {type: Int32, primary: true},
+    name: {type: String, null: true},
+  }, false)
+end
+
+# class ContactWithoutId < Jennifer::Model::Base
+#   mapping({
+#     name: String,
+#   })
+# end

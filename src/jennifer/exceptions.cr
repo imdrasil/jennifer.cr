@@ -45,4 +45,38 @@ module Jennifer
       @message = ""
     end
   end
+
+  class RecordExists < BaseException
+    def initialize(record, relation)
+      @message = "#{record.class}##{record.primary} has associated records in #{relation} relation"
+    end
+  end
+
+  class DataTypeMismatch < BaseException
+    MATCH_REG         = /#read returned a/
+    EXTRACT_WORDS_REG = /returned a (.+)\. A (.+) was/
+
+    def initialize(column, klass, exception)
+      match = EXTRACT_WORDS_REG.match(exception.message.to_s).not_nil!
+      @message = "Column #{klass}.#{column} is expected to be a #{match[2]} but got #{match[1]}."
+    end
+
+    # TODO: think about monkey patching DB::ResultSet#read for raising custome execption raather than `Exception`
+    def self.match?(exception)
+      exception.message =~ MATCH_REG
+    end
+  end
+
+  class DataTypeCasting < BaseException
+    EXTRACT_WORDS_REG = /cast from (.+) to (.+) failed/
+
+    def initialize(column, klass, exception)
+      match = EXTRACT_WORDS_REG.match(exception.message.to_s).not_nil!
+      @message = "Column #{klass}.#{column} can't be casted from #{match[1]} to it's type - #{match[2]}"
+    end
+
+    def self.match?(exception)
+      exception.message =~ EXTRACT_WORDS_REG
+    end
+  end
 end

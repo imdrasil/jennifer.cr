@@ -2,15 +2,12 @@ module Jennifer
   module Migration
     module TableBuilder
       class CreateTable < Base
-        DEFAULT_TYPES = [:string, :integer, :bool, :float, :double, :short, :timestamp,
-                         :date_time, :blob, :var_string, :text, :json]
-
         def process
           Adapter.adapter.create_table(self)
           @indexes.each { |n, options| Adapter.adapter.add_index(@name, n, options) }
         end
 
-        {% for method in DEFAULT_TYPES %}
+        {% for method in Jennifer::Adapter::TYPE_TRANSLATIONS.keys %}
           def {{method.id}}(name, options = DB_OPTIONS.new)
             defaults = sym_hash({:type => {{method}}}, AAllowedTypes)
             @fields[name.to_s] = defaults.merge(options)

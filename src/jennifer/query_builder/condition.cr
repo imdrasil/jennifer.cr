@@ -73,34 +73,31 @@ module Jennifer
       end
 
       def to_s
-        to_sql
+        as_sql
       end
 
-      def filter_out(arg)
-        if arg.is_a?(Criteria)
-          arg.to_sql
+      def parsed_rhs
+        if filterable?
+          filter_out(@rhs)
+        elsif @rhs.is_a?(Criteria)
+          @rhs.as(Criteria).as_sql
         else
-          ::Jennifer::Adapter.escape_string(1)
+          @rhs.to_s
         end
       end
 
-      def to_sql
-        _lhs = @lhs.to_sql
+      def as_sql
+        _lhs = @lhs.as_sql
         str =
           case @operator
           when :bool
             _lhs
           when :in
-            "#{_lhs} IN(#{::Jennifer::Adapter::SqlGenerator.escape_string(@rhs.as(Array).size)})"
+            "#{_lhs} IN(#{Adapter::SqlGenerator.escape_string(@rhs.as(Array).size)})"
+          when :between
+            "#{_lhs} BETWEEN #{Adapter.escape_string(1)} AND #{Adapter.escape_string(1)}"
           else
-            "#{_lhs} #{::Jennifer::Adapter::SqlGenerator.operator_to_sql(@operator)} " +
-              if filterable?
-                filter_out(@rhs)
-              elsif @rhs.is_a?(Criteria)
-                @rhs.as(Criteria).to_sql
-              else
-                @rhs.to_s
-              end
+            "#{_lhs} #{Adapter::SqlGenerator.operator_to_sql(@operator)} #{parsed_rhs}"
           end
         str = "NOT (#{str})" if @negative
         str
@@ -109,7 +106,7 @@ module Jennifer
       def sql_args : Array(DB::Any)
         res = [] of DB::Any
         if filterable?
-          if @operator == :in
+          if @operator == :in || @operator == :between
             @rhs.as(Array).each do |e|
               unless e.is_a?(Criteria)
                 res << e.as(DB::Any)
@@ -127,7 +124,7 @@ module Jennifer
       def sql_args_count
         if filterable?
           count = 0
-          if @operator == :in
+          if @operator == :in || @operator == :between
             @rhs.as(Array).each do |e|
               count += e.is_a?(Criteria) ? e.sql_args_count : 1
             end
@@ -138,6 +135,14 @@ module Jennifer
         else
           0
         end
+      end
+
+      def filter_out(arg : Criteria)
+        arg.as_sql
+      end
+
+      def filter_out(arg)
+        Adapter.escape_string(1)
       end
 
       private def filterable?

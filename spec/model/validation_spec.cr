@@ -114,7 +114,7 @@ describe Jennifer::Model::Validation do
     end
 
     it "doesn't pass invalid" do
-      country_create(name: "123asd")
+      Factory.create_country(name: "123asd")
       p = Factory.build_country(name: "123asd")
       p.validate!
       p.valid?.should be_false

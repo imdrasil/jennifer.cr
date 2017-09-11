@@ -19,8 +19,19 @@ module Jennifer
       adapter.query(_query, args) { |rs| yield rs }
     end
 
+    # :nodoc:
+    # Allows to assign newly created adapter and call setupe methods with existing adapter
+    private def self.adapter=(_adapter)
+      @@adapter = _adapter
+    end
+
     def self.adapter
-      @@adapter ||= adapter_class.not_nil!.build
+      @@adapter ||= begin
+        a = adapter_class.not_nil!.build
+        self.adapter = a
+        a.prepare
+        a
+      end
     end
 
     def self.adapter_class

@@ -1,8 +1,10 @@
 require "db"
+require "./shared/*"
 
 module Jennifer
   module Adapter
     abstract class Base
+      TICKS_PER_MICROSECOND = 10
       @db : DB::Database
       @transaction : DB::Transaction? = nil
       @locks = {} of UInt64 => DB::Transaction
@@ -15,11 +17,11 @@ module Jennifer
 
       def self.build
         a = new
-        a.prepare
         a
       end
 
       def prepare
+        ::Jennifer::Model::Base.models.each(&.actual_table_field_count)
       end
 
       def with_connection(&block)
@@ -63,23 +65,41 @@ module Jennifer
         @locks[Fiber.current.object_id]?
       end
 
+      def under_transaction?
+        @locks.has_key?(Fiber.current.object_id)
+      end
+
       def exec(_query, args = [] of DB::Any)
-        Config.logger.debug { regular_query_message(_query, args) }
-        with_connection { |conn| conn.exec(_query, args) }
+        time = Time.now.ticks
+        res = with_connection { |conn| conn.exec(_query, args) }
+        time = Time.now.ticks - time
+        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
+        res
+      rescue e : BaseException
+        raise e
       rescue e : Exception
         raise BadQuery.new(e.message, regular_query_message(_query, args))
       end
 
       def query(_query, args = [] of DB::Any)
-        Config.logger.debug { regular_query_message(_query, args) }
-        with_connection { |conn| conn.query(_query, args) { |rs| yield rs } }
+        time = Time.now.ticks
+        res = with_connection { |conn| conn.query(_query, args) { |rs| time = Time.now.ticks - time; yield rs } }
+        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
+        res
+      rescue e : BaseException
+        raise e
       rescue e : Exception
         raise BadQuery.new(e.message, regular_query_message(_query, args))
       end
 
       def scalar(_query, args = [] of DB::Any)
-        Config.logger.debug { regular_query_message(_query, args) }
-        with_connection { |conn| conn.scalar(_query, args) }
+        time = Time.now.ticks
+        res = with_connection { |conn| conn.scalar(_query, args) }
+        time = Time.now.ticks - time
+        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
+        res
+      rescue e : BaseException
+        raise e
       rescue e : Exception
         raise BadQuery.new(e.message, regular_query_message(_query, args))
       end
@@ -190,11 +210,9 @@ module Jennifer
 
       def result_to_array(rs)
         a = [] of DBAny
-        rs.columns.each do |col|
+        rs.each_column do
           temp = rs.read(DBAny)
-          if temp.is_a?(Int8)
-            temp = (temp == 1i8).as(Bool)
-          end
+          temp = (temp == 1i8).as(Bool) if temp.is_a?(Int8)
           a << temp
         end
         a
@@ -204,12 +222,11 @@ module Jennifer
         buf = {} of String => DBAny
         names.each { |n| buf[n] = nil }
         count = names.size
-        rs.column_count.times do |col|
-          col_name = rs.column_name(col)
-          if buf.has_key?(col_name)
-            buf[col_name] = rs.read.as(DBAny)
-            if buf[col_name].is_a?(Int8)
-              buf[col_name] = (buf[col_name] == 1i8).as(Bool)
+        rs.each_column do |column|
+          if buf.has_key?(column)
+            buf[column] = rs.read.as(DBAny)
+            if buf[column].is_a?(Int8)
+              buf[column] = (buf[column] == 1i8).as(Bool)
             end
             count -= 1
           else
@@ -223,11 +240,10 @@ module Jennifer
       # converts single ResultSet to hash
       def result_to_hash(rs)
         h = {} of String => DBAny
-        rs.column_count.times do |col|
-          col_name = rs.column_name(col)
-          h[col_name] = rs.read.as(DBAny)
-          if h[col_name].is_a?(Int8)
-            h[col_name] = (h[col_name] == 1i8).as(Bool)
+        rs.each_column do |column|
+          h[column] = rs.read.as(DBAny)
+          if h[column].is_a?(Int8)
+            h[column] = (h[column] == 1i8).as(Bool)
           end
         end
         h
@@ -391,6 +407,9 @@ module Jennifer
       abstract def column_exists?(table, name)
       abstract def translate_type(name)
       abstract def default_type_size(name)
+      abstract def table_column_count(table)
+
+      # private ===========================
 
       private def column_definition(name, options, io)
         type = options[:serial]? ? "serial" : (options[:sql_type]? || translate_type(options[:type].as(Symbol)))
@@ -417,11 +436,19 @@ module Jennifer
         io << " AUTO_INCREMENT" if options[:auto_increment]?
       end
 
-      private def regular_query_message(query, args : Array)
+      private def regular_query_message(ms, query : String, args : Array)
+        args.empty? ? "#{ms} µs #{query}" : "#{ms} µs #{query} | #{args.inspect}"
+      end
+
+      private def regular_query_message(query : String, args : Array)
         args.empty? ? query : "#{query} | #{args.inspect}"
       end
 
-      private def regular_query_message(query, arg = nil)
+      private def regular_query_message(ms, query : String, arg = nil)
+        arg ? "#{ms} µs #{query} | #{arg}" : "#{ms} µs #{query}"
+      end
+
+      private def regular_query_message(query : String, arg = nil)
         arg ? "#{query} | #{arg}" : query
       end
     end

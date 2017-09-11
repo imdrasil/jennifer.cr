@@ -28,7 +28,7 @@ describe Jennifer::QueryBuilder::Criteria do
 
     it "works via == as well" do
       c = Factory.build_criteria(field: "f1") == nil
-      c.to_sql.should eq("tests.f1 IS NULL")
+      c.as_sql.should eq("tests.f1 IS NULL")
       c.sql_args.empty?.should be_true
     end
   end
@@ -69,6 +69,30 @@ describe Jennifer::QueryBuilder::Criteria do
   describe "#|" do
     it "retruns OR operator" do
       (Factory.build_criteria | Factory.build_criteria).should be_a(Jennifer::QueryBuilder::Or)
+    end
+  end
+
+  describe "#take" do
+    it "creates json selector with proper type" do
+      c = Factory.build_criteria
+      s = c.take(1)
+      s.is_a?(Jennifer::QueryBuilder::JSONSelector)
+      s.table.should eq(c.table)
+      s.field.should eq(c.field)
+      s.type.should eq(:take)
+      s.path.should eq(1)
+    end
+  end
+
+  describe "#path" do
+    it "creates json selector with proper type" do
+      c = Factory.build_criteria
+      s = c.path("w")
+      s.is_a?(Jennifer::QueryBuilder::JSONSelector)
+      s.table.should eq(c.table)
+      s.field.should eq(c.field)
+      s.type.should eq(:path)
+      s.path.should eq("w")
     end
   end
 

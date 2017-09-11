@@ -5,6 +5,7 @@ require "ifrit/converter"
 
 require "./jennifer/exceptions"
 require "./jennifer/adapter"
+require "./jennifer/adapter/record"
 require "./jennifer/adapter/sql_generator"
 require "./jennifer/config"
 require "./jennifer/version"
@@ -42,7 +43,7 @@ module Jennifer
       raise "stubed relation"
     end
 
-    {% for method in [:table_name, :model_class, :type, :set_callback, :condition_clause, :join_query] %}
+    {% for method in %i(table_name model_class type set_callback condition_clause foreign_field primary_field join_query) %}
       def {{method.id}}
         raise "stubed relation"
       end

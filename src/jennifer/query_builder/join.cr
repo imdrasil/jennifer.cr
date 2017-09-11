@@ -11,7 +11,7 @@ module Jennifer
       def initialize(@table, @on : Condition | LogicOperator, @type, @aliass = nil, @relation = nil)
       end
 
-      def to_sql
+      def as_sql
         sql_string =
           case @type
           when :left
@@ -21,12 +21,11 @@ module Jennifer
           else
             "JOIN "
           end
-        sql_string +
-          if @aliass
-            "#{@table} #{@aliass} ON #{@on.to_sql}\n"
-          else
-            "#{@table} ON #{@on.to_sql}\n"
-          end
+        sql_string + "#{table_name} ON #{@on.as_sql}\n"
+      end
+
+      def table_name
+        @aliass ? "#{@table} #{@aliass}" : @table
       end
 
       def alias_tables(aliases)

@@ -1,6 +1,17 @@
 module Jennifer
   module Adapter
     class BaseSqlGenerator
+      ARRAY_ESCAPE = "\\\\\\\\"
+
+      # Generates insert query
+      def self.insert(table, hash)
+        String.build do |s|
+          s << "INSERT INTO " << table << "("
+          hash.keys.join(", ", s)
+          s << ") VALUES (" << Adapter.adapter_class.escape_string(hash.size) << ")"
+        end
+      end
+
       # Generates query for inserting new record to db
       def self.insert(obj : Model::Base)
         raise "Not implemented"
@@ -23,6 +34,7 @@ module Jennifer
         end
       end
 
+      # TODO: unify method generting - #parse_query should be called here or by caller
       def self.delete(query)
         parse_query(
           String.build do |s|
@@ -90,12 +102,20 @@ module Jennifer
 
       def self.body_section(io, query)
         join_clause(io, query)
-        where_clause(io, query)
+        where_clause(io, query.tree)
         order_clause(io, query)
         limit_clause(io, query)
         group_clause(io, query)
         having_clause(io, query)
         lock_clause(io, query)
+        union_clause(io, query)
+      end
+
+      def self.union_clause(io, query)
+        return if query._unions.empty?
+        query._unions.each do |u|
+          io << " UNION " << self.select(u)
+        end
       end
 
       def self.lock_clause(io, query)
@@ -107,7 +127,7 @@ module Jennifer
         s << "SELECT "
         unless query._raw_select
           table = query._table
-          if exact_fields.size > 0
+          if !exact_fields.empty?
             exact_fields.map { |f| "#{table}.#{f}" }.join(", ", s)
           else
             s << table << ".*"
@@ -133,7 +153,7 @@ module Jennifer
         io << "SELECT "
         unless query._raw_select
           table = query._table
-          if exact_fields.size > 0
+          if !exact_fields.empty?
             # TODO: avoid creating extra arrays
             exact_fields.map { |f| "#{table}.#{f}" }.join(", ", io)
           else
@@ -143,12 +163,13 @@ module Jennifer
           io << query._raw_select
         end
         io << "\n"
+
         from_clause(io, query)
       end
 
-      def self.from_clause(io, query)
+      def self.from_clause(io, query, from = nil)
         io << "FROM "
-        return io << query._table << "\n" unless query._from
+        return io << (from || query._table) << "\n" unless query._from
         io << "( " <<
           if query._from.is_a?(String)
             query._from
@@ -172,16 +193,20 @@ module Jennifer
 
       def self.having_clause(io, query)
         return unless query._having
-        io << "HAVING " << query._having.not_nil!.to_sql << "\n"
+        io << "HAVING " << query._having.not_nil!.as_sql << "\n"
       end
 
       def self.join_clause(io, query)
-        query._joins.map(&.to_sql).join(' ', io)
+        query._joins.map(&.as_sql).join(' ', io)
       end
 
-      def self.where_clause(io, query)
-        return unless query.tree
-        io << "WHERE " << query.tree.not_nil!.to_sql << "\n"
+      def self.where_clause(io, query : QueryBuilder::Query | QueryBuilder::ModelQuery)
+        where_clause(io, query.tree)
+      end
+
+      def self.where_clause(io, tree)
+        return unless tree
+        io << "WHERE " << tree.not_nil!.as_sql << "\n"
       end
 
       def self.limit_clause(io, query)
@@ -220,6 +245,22 @@ module Jennifer
         else
           operator.to_s
         end
+      end
+
+      def self.json_path(path : QueryBuilder::JSONSelector)
+        raise "Not Implemented"
+      end
+
+      def self.quote(value : Nil)
+        "NULL"
+      end
+
+      def self.quote(value : Bool)
+        value ? "TRUE" : "FALSE"
+      end
+
+      def self.quote(value : Int32 | Int16 | Float64 | Float32)
+        value.to_s
       end
 
       def self.escape_string(size = 1)

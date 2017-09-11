@@ -9,8 +9,8 @@ module Jennifer
         {% end %}
       end
 
+      # Generates getter and setters
       macro __field_declaration(properties, primary_auto_incrementable)
-        # generates getter and setters
         {% for key, value in properties %}
           @{{key.id}} : {{value[:parsed_type].id}}
           @{{key.id}}_changed = false
@@ -92,7 +92,7 @@ module Jennifer
             {% if @type.all_subclasses.size > 0 %}
               [{{ @type.all_subclasses.join(", ").id }}]
             {% else %}
-              [] of Model::Base
+              [] of Model::Base.class
             {% end %}
           {% end %}
         end
@@ -102,6 +102,12 @@ module Jennifer
             "{{key.id}}",
           {% end %}
         ]
+
+        @@strict_mapping : Bool?
+
+        def self.strict_mapping?
+          @@strict_mapping ||= ::Jennifer::Adapter.adapter.table_column_count(table_name) == field_count
+        end
 
         # Returns field count
         def self.field_count
@@ -114,6 +120,8 @@ module Jennifer
         end
 
         {% add_default_constructor = true %}
+        {% primary_auto_incrementable = false %}
+        {% primary = nil %}
 
         # generates hash with options
         {% for key, value in properties %}
@@ -130,6 +138,11 @@ module Jennifer
           {% t_string = properties[key][:type].stringify %}
           {% properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? t_string + "?" : t_string %}
           {% add_default_constructor = add_default_constructor && (properties[key][:primary] || properties[key][:null] || properties[key].keys.includes?(:default)) %}
+        {% end %}
+
+        # TODO: find way to allow model definition without any primary field
+        {% if primary == nil %}
+          {% raise "Model #{@type} has no defined primary field. For now model without primary field is not allowed" %}
         {% end %}
 
         __field_declaration({{properties}}, {{primary_auto_incrementable}})
@@ -153,50 +166,66 @@ module Jennifer
         end
 
         # Extracts arguments due to mapping from *pull* and returns tuple for
-        # fields assignment
+        # fields assignment. It stands on that fact result set has all defined fields in a raw
         # TODO: think about moving it to class scope
+        # NOTE: don't use it manually - there is some dependencies on caller such as reading tesult set to the end
+        # if eception was raised
         def _extract_attributes(pull : DB::ResultSet)
           {% for key, value in properties %}
             %var{key.id} = nil
             %found{key.id} = false
           {% end %}
-
-          {{properties.size}}.times do |i|
+          self.class.actual_table_field_count.times do
             column = pull.column_name(pull.column_index)
             case column
             {% for key, value in properties %}
               when {{value[:column_name] || key.id.stringify}}
                 %found{key.id} = true
-                %var{key.id} = pull.read({{value[:parsed_type].id}})
-                # if value[:type].is_a?(Path) || value[:type].is_a?(Generic)
+                begin
+                  %var{key.id} = pull.read({{value[:parsed_type].id}})
+                rescue e : Exception
+                  raise ::Jennifer::DataTypeMismatch.new(column, {{@type}}, e) if ::Jennifer::DataTypeMismatch.match?(e)
+                  raise e
+                end
             {% end %}
             else
               {% if strict %}
-                raise ::Jennifer::BaseException.new("Undefined column #{column}")
+                raise ::Jennifer::BaseException.new("Undefined column #{column} for model {{@type}}.")
               {% else %}
                 pull.read
               {% end %}
             end
           end
+          {% if strict %}
+            {% for key, value in properties %}
+              unless %found{key.id}
+                raise ::Jennifer::BaseException.new("Column #{{{@type}}}##{{{key.id.stringify}}} hasn't been found in the result set.")
+              end
+            {% end %}
+          {% end %}
           {% if properties.size > 1 %}
             {
             {% for key, value in properties %}
-              %var{key.id}.as({{value[:parsed_type].id}}),
+              begin
+                %var{key.id}.as({{value[:parsed_type].id}})
+              rescue e : Exception
+                raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
+                raise e
+              end,
             {% end %}
             }
           {% else %}
             {% key = properties.keys[0] %}
-            %var{key}.as({{properties[key][:parsed_type].id}})
+            begin
+              %var{key}.as({{properties[key][:parsed_type].id}})
+            rescue e : Exception
+              raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
+              raise e
+            end
           {% end %}
         end
 
-        # Accepts symbol hash or named tuple, stringify it and calls
-        # TODO: check how converting affects performance
-        def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-          initialize(stringify_hash(values, Jennifer::DBAny))
-        end
-
-        def initialize(values : Hash(String, ::Jennifer::DBAny))
+        def _extract_attributes(values : Hash(String, ::Jennifer::DBAny))
           {% for key, value in properties %}
             %var{key.id} = nil
             %found{key.id} = true
@@ -210,20 +239,49 @@ module Jennifer
             end
           {% end %}
 
-
           {% for key, value in properties %}
-            {% if value[:null] %}
-              {% if value[:default] != nil %}
-                @{{key.id}} = %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
+            begin
+              {% if value[:null] %}
+                {% if value[:default] != nil %}
+                  %casted_var{key.id} = %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
+                {% else %}
+                  %casted_var{key.id} = %var{key.id}.as({{value[:parsed_type].id}})
+                {% end %}
+              {% elsif value[:default] != nil %}
+                %casted_var{key.id} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
               {% else %}
-                @{{key.id}} = %var{key.id}.as({{value[:parsed_type].id}})
+                %casted_var{key.id} = __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
               {% end %}
-            {% elsif value[:default] != nil %}
-              @{{key.id}} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
-            {% else %}
-              @{{key.id}} = __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
-            {% end %}
+            rescue e : Exception
+              raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
+              raise e
+            end
           {% end %}
+
+          {% if properties.size > 1 %}
+            {
+            {% for key, value in properties %}
+              %casted_var{key.id},
+            {% end %}
+            }
+          {% else %}
+            {% key = properties.keys[0] %}
+            %casted_var{key}
+          {% end %}
+        end
+
+        # Accepts symbol hash or named tuple, stringify it and calls
+        # TODO: check how converting affects performance
+        def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
+          initialize(stringify_hash(values, Jennifer::DBAny))
+        end
+
+        def initialize(values : Hash(String, ::Jennifer::DBAny))
+          {% left_side = [] of String %}
+          {% for key in properties.keys %}
+            {% left_side << "@#{key.id}" %}
+          {% end %}
+          {{left_side.join(", ").id}} = _extract_attributes(values)
         end
 
         def initialize(values : Hash | NamedTuple, @new_record)
@@ -241,6 +299,7 @@ module Jennifer
         #    end
         #  {% end %}
         #end
+
         {% if add_default_constructor %}
           # Default constructor without any fields
           def initialize
@@ -261,8 +320,18 @@ module Jennifer
           end
         {% end %}
 
-        # Saves all changes to db; if validation not passed - returns `false`
         def save(skip_validation = false)
+          unless ::Jennifer::Adapter.adapter.under_transaction?
+            {{@type}}.transaction do
+              save_without_transaction(skip_validation)
+            end
+          else
+            save_without_transaction(skip_validation)
+          end
+        end
+
+        # Saves all changes to db without invoking transaction; if validation not passed - returns `false`
+        def save_without_transaction(skip_validation = false)
           unless skip_validation
             return false unless __before_validation_callback
             validate!
@@ -300,6 +369,8 @@ module Jennifer
             {% end %}
             {{left_side.join(", ").id}} = _extract_attributes(rs)
           end
+          __refresh_changes
+          __refresh_relation_retrieves
           self
         end
 
@@ -421,6 +492,7 @@ module Jennifer
 
         def arguments_to_insert
           args = [] of ::Jennifer::DBAny
+          # TODO: think about moving this array to constant
           fields = [] of String
           {% for key, value in properties %}
             {% unless value[:primary] && primary_auto_incrementable %}
@@ -444,265 +516,6 @@ module Jennifer
 
       macro mapping(**properties)
         mapping({{properties}})
-      end
-
-      macro sti_mapping(properties)
-        def self.sti_condition
-          c("type") == "{{@type.id}}"
-        end
-
-        def self.table_name
-          superclass.table_name
-        end
-
-        def self.singular_table_name
-          superclass.table_name
-        end
-
-        def self.table_name(name)
-          raise "You can't specify table name using STI on subclasses"
-        end
-
-        def self.singular_table_name(name)
-          raise "You can't specify table name using STI on subclasses"
-        end
-
-        FIELD_NAMES = [
-          {% for key, v in properties %}
-            "{{key.id}}",
-          {% end %}
-        ]
-
-        def self.field_count
-          super + {{properties.size}}
-        end
-
-        def self.field_names
-          super + FIELD_NAMES
-        end
-
-        # generating hash with options
-        {% for key, value in properties %}
-          {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
-            {% properties[key] = {type: value} %}
-          {% else %}
-            {% properties[key][:type] = properties[key][:type] %}
-          {% end %}
-          {% if properties[key][:primary] %}
-            {% primary = key %}
-            {% primary_type = properties[key][:type] %}
-            {% primary_auto_incrementable = ["Int32", "Int64"].includes?(properties[key][:type].stringify) %}
-          {% end %}
-          {% t_string = properties[key][:type].stringify %}
-          {% properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? t_string + "?" : t_string %}
-        {% end %}
-
-        __field_declaration({{properties}}, false)
-
-        @new_record = true
-
-        # creates object from db tuple
-        def initialize(%pull : DB::ResultSet)
-          initialize(::Jennifer::Adapter.adapter.result_to_hash(%pull), false)
-        end
-
-        def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-          initialize(stringify_hash(values, Jennifer::DBAny))
-        end
-
-        def initialize(values : Hash(String, ::Jennifer::DBAny))
-          values["type"] = "{{@type.id}}" if values.is_a?(Hash)
-          super
-          {% for key, value in properties %}
-            %var{key.id} = nil
-            %found{key.id} = true
-          {% end %}
-
-          {% for key, value in properties %}
-            if !values["{{key.id}}"]?.nil?
-              %var{key.id} = values["{{key.id}}"]
-            else
-              %found{key.id} = false
-            end
-          {% end %}
-
-
-          {% for key, value in properties %}
-            {% if value[:null] %}
-              {% if value[:default] != nil %}
-                @{{key.id}} = %found{key.id} ? %var{key.id}.as({{value[:parsed_type].id}}) : {{value[:default]}}
-              {% else %}
-                @{{key.id}} = %var{key.id}.as({{value[:parsed_type].id}})
-              {% end %}
-            {% elsif value[:default] != nil %}
-              @{{key.id}} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : %var{key.id}.as({{value[:parsed_type].id}})
-            {% else %}
-              @{{key.id}} = (%var{key.id}).as({{value[:parsed_type].id}})
-            {% end %}
-          {% end %}
-        end
-
-        def initialize(values : Hash | NamedTuple, @new_record)
-          initialize(values)
-        end
-
-        def initialize
-          initialize({} of String => ::Jennifer::DBAny)
-        end
-
-        def changed?
-          super ||
-          {% for key, value in properties %}
-            @{{key.id}}_changed ||
-          {% end %}
-          false
-        end
-
-        def to_h
-          hash = super
-          {% for key, value in properties %}
-            hash[:{{key.id}}] = @{{key.id}}
-          {% end %}
-          hash
-        end
-
-        def to_str_h
-          hash = super
-          {% for key, value in properties %}
-            hash[{{key.stringify}}] = @{{key.id}}
-          {% end %}
-          hash
-        end
-
-        def update_column(name, value : Jennifer::DBAny)
-          case name.to_s
-          {% for key, value in properties %}
-          when "{{key.id}}"
-            if value.is_a?({{value[:parsed_type].id}})
-              local = value.as({{value[:parsed_type].id}})
-              @{{key.id}} = local
-            else
-              raise ::Jennifer::BaseException.new("rong type for #{name} : #{value.class}")
-            end
-          {% end %}
-          end
-          super
-        end
-
-        def update_columns(values : Hash(String | Symbol, Jennifer::DBAny))
-          values.each do |name, value|
-            case name.to_s
-            {% for key, value in properties %}
-            when "{{key.id}}"
-              if value.is_a?({{value[:parsed_type].id}})
-                local = value.as({{value[:parsed_type].id}})
-                @{{key.id}} = local
-              else
-                raise ::Jennifer::BaseException.new("rong type for #{name} : #{value.class}")
-              end
-            {% end %}
-            end
-          end
-
-          super
-        end
-
-        def set_attribute(name, value)
-          case name.to_s
-          {% for key, value in properties %}
-            {% if value[:setter] == nil ? true : value[:setter] %}
-              when "{{key.id}}"
-                if value.is_a?({{value[:parsed_type].id}})
-                  self.{{key.id}} = value.as({{value[:parsed_type].id}})
-                else
-                  raise ::Jennifer::BaseException.new("rong type for #{name} : #{value.class}")
-                end
-            {% end %}
-          {% end %}
-          else
-            super
-          end
-        end
-
-        def attribute(name : String, raise_exception = true)
-          if raise_exception && !{{@type}}.field_names.includes?(name)
-            raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}")
-          end
-          case name
-          {% for key, value in properties %}
-          when "{{key.id}}"
-            @{{key.id}}
-          {% end %}
-          else
-            super
-          end
-        end
-
-        def attributes_hash
-          hash = super
-          {% for key, value in properties %}
-            {% if !value[:null] || value[:primary] %}
-              hash.delete(:{{key}}) if hash[:{{key}}]?.nil?
-            {% end %}
-          {% end %}
-          hash
-        end
-
-        def arguments_to_save
-          res = super
-          args = res[:args]
-          fields = res[:fields]
-          {% for key, value in properties %}
-            {% unless value[:primary] %}
-              if @{{key.id}}_changed
-                args << {% if value[:type].stringify == "JSON::Any" %}
-                          @{{key.id}}.to_json
-                        {% else %}
-                          @{{key.id}}
-                        {% end %}
-                fields << "{{key.id}}"
-              end
-            {% end %}
-          {% end %}
-          {args: args, fields: fields}
-        end
-
-        def arguments_to_insert
-          res = super
-          args = res[:args]
-          fields = res[:fields]
-          {% for key, value in properties %}
-            {% unless value[:primary] && primary_auto_incrementable %}
-              args << {% if value[:type].stringify == "JSON::Any" %}
-                        (@{{key.id}} ? @{{key.id}}.to_json : nil)
-                      {% else %}
-                        @{{key.id}}
-                      {% end %}
-              fields << {{key.stringify}}
-            {% end %}
-          {% end %}
-
-          { args: args, fields: fields }
-        end
-
-        def self.all
-          ::Jennifer::QueryBuilder::ModelQuery({{@type}}).build(table_name).where { _type == {{@type.stringify}} }
-        end
-
-        private def __refresh_changes
-          {% for key, value in properties %}
-            @{{key.id}}_changed = false
-          {% end %}
-          super
-        end
-
-        macro finished
-          ::Jennifer::Model::RelationDefinition.finished_hook
-        end
-      end
-
-      macro sti_mapping(**properties)
-        sti_mapping({{properties}})
       end
     end
   end

@@ -11,21 +11,17 @@ module Jennifer
       abstract def join_condition(a, b)
       abstract def query(a)
       abstract def insert(a, b)
-
-      def join_table!
-        @join_table.not_nil!
-      end
     end
 
+    # T - related model
+    # Q - parent model
     class Base(T, Q) < IRelation
       getter join_query : QueryBuilder::Condition | QueryBuilder::LogicOperator?
-      getter foreign : String?
-      getter primary : String?, join_table : String?, join_foreign : String?
+      getter foreign : String?, primary : String?, through : Symbol?
 
       @name : String
 
-      def initialize(@name, foreign : String | Symbol?, primary : String | Symbol?, @join_table, _join_foreign, query)
-        @join_foreign = _join_foreign.to_s if _join_foreign
+      def initialize(@name, foreign : String | Symbol?, primary : String | Symbol?, query, @through = nil)
         @foreign = foreign.to_s if foreign
         @primary = primary.to_s if primary
         @join_query = query.tree
@@ -43,6 +39,11 @@ module Jennifer
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
+      def condition_clause(ids : Array)
+        tree = T.c(foreign_field).in(ids)
+        @join_query ? tree & @join_query.not_nil!.clone : tree
+      end
+
       def condition_clause(id)
         tree = T.c(foreign_field) == id
         @join_query ? tree & @join_query.not_nil!.clone : tree
@@ -55,6 +56,7 @@ module Jennifer
         end
       end
 
+      # Returns query for given primary field values
       def query(primary_value)
         condition = condition_clause(primary_value)
         T.where { condition }
@@ -84,10 +86,7 @@ module Jennifer
         T.table_name
       end
 
-      def join_table_foreign_key
-        @join_foreign || T.to_s.foreign_key
-      end
-
+      # Foreign key on ~T~ model side
       def foreign_field
         @foreign ||= Q.singular_table_name + "_id"
       end

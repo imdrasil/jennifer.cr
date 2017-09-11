@@ -47,7 +47,7 @@ describe Jennifer::Adapter::SqlGenerator do
     # TODO: rewrite to metch with hardcoded text instead of methods calls
     body_section = sb { |io| described_class.body_section(io, s) }
     join_clause = sb { |io| described_class.join_clause(io, s) }
-    where_clause = sb { |io| described_class.where_clause(io, s) }
+    where_clause = sb { |io| described_class.where_clause(io, s.tree) }
     order_clause = sb { |io| described_class.order_clause(io, s) }
     limit_clause = sb { |io| described_class.limit_clause(io, s) }
     group_clause = sb { |io| described_class.group_clause(io, s) }
@@ -160,6 +160,56 @@ describe Jennifer::Adapter::SqlGenerator do
         query = Contact.all.lock("LOCK IN SHARE MODE")
         sb { |s| described_class.lock_clause(s, query) }.should match(/LOCK IN SHARE MODE/)
       {% end %}
+    end
+  end
+
+  describe "::union_clause" do
+    it "add keyword" do
+      sb { |s| described_class.union_clause(s, Jennifer::Query["users"].union(Jennifer::Query["contacts"])) }.should match(/UNION/)
+    end
+
+    it "adds next query to current one" do
+      query = Jennifer::Query["contacts"].union(Jennifer::Query["users"])
+      sb { |s| described_class.union_clause(s, query) }.should match(Regex.new(Jennifer::Adapter::SqlGenerator.select(Jennifer::Query["users"])))
+    end
+  end
+
+  describe "#json_path" do
+    criteria = Factory.build_criteria
+
+    mysql_only do
+      context "array index" do
+        it "converts number to proper selector" do
+          s = criteria.take(1)
+          described_class.json_path(s).should eq("tests.f1->\"$[1]\"")
+        end
+      end
+
+      it "quotes path" do
+        s = criteria.path("$[1][2]")
+        described_class.json_path(s).should eq("tests.f1->\"$[1][2]\"")
+      end
+    end
+
+    postgres_only do
+      context "array index" do
+        it "paste number without escaping" do
+          s = criteria.take(1)
+          described_class.json_path(s).should eq("tests.f1->1")
+        end
+      end
+
+      context "path" do
+        it "wraps path into quotes" do
+          s = criteria.path("{a, 1}")
+          described_class.json_path(s).should eq("tests.f1#>'{a, 1}'")
+        end
+
+        it "use arrow operator if need just first level extraction" do
+          s = criteria["a"]
+          described_class.json_path(s).should eq("tests.f1->'a'")
+        end
+      end
     end
   end
 end

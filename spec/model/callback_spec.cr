@@ -29,7 +29,7 @@ describe Jennifer::Model::Callback do
     end
 
     it "is not called before update" do
-      country_create
+      Factory.create_country
       c = Country.all.first!
       c.name = "k2"
       c.before_create_attr.should be_false
@@ -38,7 +38,7 @@ describe Jennifer::Model::Callback do
     end
 
     it "not stops creating if before callback raises Skip exceptions" do
-      c = country_create(name: "not create")
+      c = Factory.create_country(name: "not create")
       c.new_record?.should be_true
     end
   end
@@ -52,7 +52,7 @@ describe Jennifer::Model::Callback do
     end
 
     it "is not called after update" do
-      country_create
+      Factory.create_country
       c = Country.all.first!
       c.name = "k2"
       c.after_create_attr.should be_false
@@ -68,7 +68,7 @@ describe Jennifer::Model::Callback do
     end
 
     it "is called after loading from db" do
-      country_create
+      Factory.create_country
       c = Country.all.first!
       c.after_initialize_attr.should be_true
     end
@@ -76,13 +76,13 @@ describe Jennifer::Model::Callback do
 
   describe "before_destroy" do
     it "is called before destroy" do
-      c = country_create
+      c = Factory.create_country
       c.destroy
       c.before_destroy_attr.should be_true
     end
 
     it "is not called before delete" do
-      c = country_create
+      c = Factory.create_country
       c.delete
       c.before_destroy_attr.should be_false
     end
@@ -90,13 +90,13 @@ describe Jennifer::Model::Callback do
 
   describe "after_destroy" do
     it "is called after destroy" do
-      c = country_create
+      c = Factory.create_country
       c.destroy
       c.after_destroy_attr.should be_true
     end
 
     it "is not called if before destroy callback adds error" do
-      c = country_create(name: "not kill")
+      c = Factory.create_country(name: "not kill")
       c.destroy
       c.destroyed?.should be_false
       c.after_destroy_attr.should be_false

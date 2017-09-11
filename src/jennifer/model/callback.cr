@@ -81,6 +81,7 @@ module Jennifer
           \{% for method in AFTER_SAVE_CALLBACKS %}
             \{{method.id}}
           \{% end %}
+        rescue ::Jennifer::Skip
         end
 
         def __before_create_callback
@@ -96,12 +97,14 @@ module Jennifer
           \{% for method in AFTER_CREATE_CALLBACKS %}
             \{{method.id}}
           \{% end %}
+        rescue ::Jennifer::Skip
         end
 
         def __after_initialize_callback
           \{% for method in AFTER_INITIALIZE_CALLBACKS %}
             \{{method.id}}
           \{% end %}
+        rescue ::Jennifer::Skip
         end
 
         def __before_destroy_callback
@@ -117,6 +120,7 @@ module Jennifer
           \{% for method in AFTER_DESTROY_CALLBACKS %}
             \{{method.id}}
           \{% end %}
+        rescue ::Jennifer::Skip
         end
 
         def __before_validation_callback
@@ -132,6 +136,7 @@ module Jennifer
           \{% for method in AFTER_VALIDATION_CALLBACKS %}
             \{{method.id}}
           \{% end %}
+        rescue ::Jennifer::Skip
         end
       end
     end

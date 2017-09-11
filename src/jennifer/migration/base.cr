@@ -74,7 +74,7 @@ module Jennifer
               {% end %}
             ]
           {% else %}
-            {% raise "No migration defined" %}
+            [] of Jennifer::Migration::Base.class
           {% end %}
         {% end %}
       end

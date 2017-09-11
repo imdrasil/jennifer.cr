@@ -5,7 +5,7 @@ module Jennifer
     class Query
       extend Ifrit
 
-      {% for method in %i(having table limit offset raw_select table_aliases from lock joins order relations group lock) %}
+      {% for method in %i(having table limit offset raw_select table_aliases from lock joins order relations group lock unions) %}
         def _{{method.id}}
           @{{method.id}}
         end
@@ -16,19 +16,21 @@ module Jennifer
       @limit : Int32?
       @offset : Int32?
       @raw_select : String?
-      @table_aliases = {} of String => String
       @from : String | Query?
       @lock : String | Bool?
 
       property tree : Condition | LogicOperator?
 
       def initialize
+        @do_nothing = false
         @expression = ExpressionBuilder.new(@table)
         @joins = [] of Join
         @order = {} of String => String
         @relations = [] of String
         @group = {} of String => Array(String)
         @relation_used = false
+        @table_aliases = {} of String => String
+        @unions = [] of Query
       end
 
       def initialize(@table)
@@ -46,7 +48,11 @@ module Jennifer
       end
 
       def to_sql
-        @tree ? @tree.not_nil!.to_sql : ""
+        Adapter::SqlGenerator.select(self)
+      end
+
+      def as_sql
+        @tree ? @tree.not_nil!.as_sql : ""
       end
 
       def sql_args
@@ -157,9 +163,19 @@ module Jennifer
         self
       end
 
+      def none
+        @do_nothing = true
+        self
+      end
+
       def having
         other = with @expression yield
         @having = other
+        self
+      end
+
+      def union(query)
+        @unions << query
         self
       end
 
@@ -211,22 +227,6 @@ module Jennifer
       def pluck(*fields)
         ::Jennifer::Adapter.adapter.pluck(self, fields.to_a.map(&.to_s))
       end
-
-      # def pluck(**fields)
-      #  hash = fields.to_h
-      #  result = [] of Hash(String, DB::Any | Int16 | Int8)
-      #  ::Jennifer::Adapter.adapter.query(select_query, select_args) do |rs|
-      #    rs.each do
-      #      h = {} of String => DB::Any | Int8 | Int16
-      #      res_hash = ::Jennifer::Adapter.adapter_class.result_to_hash(rs)
-      #      fields.each do |k, v|
-      #        h[k.to_s] = res_hash[k.to_s]
-      #      end
-      #      result << h
-      #    end
-      #  end
-      #  result
-      # end
 
       def delete
         ::Jennifer::Adapter.adapter.delete(self)
@@ -450,10 +450,22 @@ module Jennifer
       end
 
       def to_a
+        results
+      end
+
+      def db_results
         result = [] of Hash(String, DBAny)
+        return result if @do_nothing
         each_result_set do |rs|
           result << Adapter.adapter.result_to_hash(rs)
         end
+        result
+      end
+
+      def results
+        result = [] of Record
+        return result if @do_nothing
+        each_result_set { |rs| result << Record.new(rs) }
         result
       end
 

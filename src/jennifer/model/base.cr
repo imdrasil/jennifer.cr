@@ -1,4 +1,5 @@
 require "./mapping"
+require "./sti_mapping"
 require "./validation"
 require "./callback"
 require "./relation_definition"
@@ -8,14 +9,23 @@ module Jennifer
     abstract class Base
       extend Ifrit
       include Mapping
+      include STIMapping
       include Validation
       include Callback
       include RelationDefinition
 
       alias Supportable = DBAny | Base
 
+      MODELS = [] of String
+
       @@table_name : String?
       @@singular_table_name : String?
+      @@actual_table_field_count : Int32?
+
+      # Represent actual amount of model's table column amount (is greped from db).
+      def self.actual_table_field_count
+        @@actual_table_field_count ||= ::Jennifer::Adapter.adapter.table_column_count(table_name)
+      end
 
       def self.table_name(value : String | Symbol)
         @@table_name = value.to_s
@@ -63,6 +73,8 @@ module Jennifer
         o
       end
 
+      # TODO: not always constructor without arguments could be generated
+      # this should be moved to mapping.cr
       def self.build
         o = new
         o.__after_initialize_callback
@@ -78,26 +90,26 @@ module Jennifer
       end
 
       def self.create(values : Hash | NamedTuple)
-        o = new(values)
+        o = build(values)
         o.save
         o
       end
 
       def self.create
         a = {} of String => DBAny
-        o = new(a)
+        o = build(a)
         o.save
         o
       end
 
       def self.create!(values : Hash | NamedTuple)
-        o = new(values)
+        o = build(values)
         o.save!
         o
       end
 
       def self.create!
-        o = new({} of Symbol => Supportable)
+        o = build({} of Symbol => Supportable)
         o.save!
         o
       end
@@ -191,6 +203,16 @@ module Jennifer
 
       # Deletes object from db and calls callbacks
       def destroy
+        unless ::Jennifer::Adapter.adapter.under_transaction?
+          {{@type}}.transaction do
+            destroy_without_transaction
+          end
+        else
+          destroy_without_transaction
+        end
+      end
+
+      def destroy_without_transaction
         return false if new_record? || !__before_destroy_callback
         @destroyed = true if delete
         __after_destroy_callback if @destroyed

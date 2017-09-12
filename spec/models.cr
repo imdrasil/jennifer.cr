@@ -1,3 +1,16 @@
+struct JohnyQuery < Jennifer::QueryBuilder::QueryObject
+  def call
+    relation.where { _name == "Johny" }
+  end
+end
+
+struct WithArgumentQuery < Jennifer::QueryBuilder::QueryObject
+  def call
+    this = self
+    relation.where { _age == this.params[0] }
+  end
+end
+
 class Contact < Jennifer::Model::Base
   with_timestamps
   {% if env("DB") == "postgres" || env("DB") == nil %}
@@ -40,6 +53,8 @@ class Contact < Jennifer::Model::Base
   scope :older { |age| where { _age >= age } }
   scope :ordered { order(name: :asc) }
   scope :with_main_address { relation(:addresses).where { _addresses__main } }
+  scope :johny, JohnyQuery
+  scope :by_age, WithArgumentQuery
 
   def name_check
     if @description && @description.not_nil!.size > 10

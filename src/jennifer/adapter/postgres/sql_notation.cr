@@ -12,9 +12,11 @@ module Jennifer
           else
             s << " DEFAULT VALUES"
           end
-          if with_primary_field
-            s << " RETURNING " << obj.class.primary_field_name
-          end
+
+          # TODO: uncomment after pg driver will raise error if inserting brakes smth
+          # if with_primary_field
+          #   s << " RETURNING " << obj.class.primary_field_name
+          # end
         end
       end
 

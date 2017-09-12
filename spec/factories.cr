@@ -67,7 +67,7 @@ end
 
 class AddressFactory < Factory::Jennifer::Base
   attr :main, false
-  attr :street, "Ant st."
+  sequence(:street) { |i| "Ant st. #{i}" }
   attr :contact_id, nil, Int32?
   attr :details, nil, JSON::Any?
 end

@@ -320,23 +320,29 @@ module Jennifer
           end
         {% end %}
 
-        def save(skip_validation = false)
+        def save!(skip_validation = false)
+          res = save(skip_validation)
+          raise Jennifer::BaseException.new("Record was not save. Error list: #{errors.inspect}") unless res
+          true
+        end
+
+        def save(skip_validation = false) : Bool
           unless ::Jennifer::Adapter.adapter.under_transaction?
             {{@type}}.transaction do
               save_without_transaction(skip_validation)
-            end
+            end || false
           else
             save_without_transaction(skip_validation)
           end
         end
 
         # Saves all changes to db without invoking transaction; if validation not passed - returns `false`
-        def save_without_transaction(skip_validation = false)
+        def save_without_transaction(skip_validation = false) : Bool
           unless skip_validation
             return false unless __before_validation_callback
             validate!
-            __after_validation_callback
             return false unless valid?
+            __after_validation_callback
           end
           return false unless __before_save_callback
           response =
@@ -511,6 +517,10 @@ module Jennifer
           {% for key, value in properties %}
             @{{key.id}}_changed = false
           {% end %}
+        end
+
+        private def __check_if_changed
+          raise Jennifer::Skip.new unless changed? || new_record?
         end
       end
 

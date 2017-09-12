@@ -333,9 +333,9 @@ describe Jennifer::QueryBuilder::ModelQuery do
           c1 = Factory.create_contact(name: "a")
           c2 = Factory.create_contact(name: "b")
 
-          a1 = Factory.create_address(main: false, street: "a1 st.", contact_id: c1.id)
-          a2 = Factory.create_address(main: false, street: "a2 st.", contact_id: c1.id)
-          a3 = Factory.create_address(main: true, street: "a2 st.", contact_id: c1.id)
+          a1 = Factory.create_address(main: false, contact_id: c1.id)
+          a2 = Factory.create_address(main: false, contact_id: c1.id)
+          a3 = Factory.create_address(main: true, contact_id: c1.id)
 
           q = Contact.all.includes(:addresses, :main_address)
           r = q.to_a

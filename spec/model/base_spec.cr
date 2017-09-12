@@ -93,6 +93,7 @@ describe Jennifer::Model::Base do
 
       it "returns true if record was saved" do
         c = Factory.create_contact
+        c.id.nil?.should be_false
         c.name = "new name"
         c.save.should be_true
       end
@@ -106,6 +107,17 @@ describe Jennifer::Model::Base do
         c.name = "new name"
         c.save
         c.name_changed?.should be_false
+      end
+    end
+
+    context "brakes unique index" do
+      it "raises exception" do
+        void_transaction do
+          Factory.create_address(street: "st. 1")
+          expect_raises(Jennifer::BaseException) do
+            Factory.create_address(street: "st. 1")
+          end
+        end
       end
     end
   end

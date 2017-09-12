@@ -243,8 +243,13 @@ module Jennifer
         id = -1i64
         affected = 0i64
         if obj.class.primary_auto_incrementable?
-          id = scalar(query, opts[:args]).as(Int32).to_i64
-          affected += 1 if id > 0
+          # TODO: move this back when pg driver will raise exception when inserted record brake some constraint
+          # id = scalar(query, opts[:args]).as(Int32).to_i64
+          # affected += 1 if id > 0
+          affected = exec(query, opts[:args]).rows_affected
+          if affected != 0
+            id = scalar("SELECT currval(pg_get_serial_sequence('#{obj.class.table_name}', '#{obj.class.primary_field_name}'))").as(Int64)
+          end
         else
           affected = exec(query, opts[:args]).rows_affected
         end

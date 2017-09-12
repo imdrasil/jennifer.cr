@@ -23,6 +23,11 @@ module Jennifer
       @@table_name : String?
       @@singular_table_name : String?
       @@actual_table_field_count : Int32?
+      @@has_table : Bool?
+
+      def self.has_table?
+        @@has_table ||= Jennifer::Adapter.adapter.table_exists?(table_name).as(Bool)
+      end
 
       # Represent actual amount of model's table column amount (is greped from db).
       def self.actual_table_field_count
@@ -116,11 +121,6 @@ module Jennifer
         o
       end
 
-      def save!(skip_validation = false)
-        raise Jennifer::BaseException.new("Record was not save. Error list: #{errors.inspect}") unless save(skip_validation)
-        true
-      end
-
       def append_relation(name, hash)
         raise Jennifer::UnknownRelation.new(self.class, name)
       end
@@ -147,6 +147,7 @@ module Jennifer
         @@relations = {} of String => ::Jennifer::Relation::IRelation
 
         after_save :__refresh_changes
+        before_save :__check_if_changed
 
         def self.table_name : String
           @@table_name ||= {{@type}}.to_s.underscore.pluralize
@@ -203,13 +204,13 @@ module Jennifer
       def delete
         return if new_record? || errors.any?
         this = self
-        self.class.where { this.class.primary == this.primary }.delete
+        self.class.all.where { this.class.primary == this.primary }.delete
       end
 
       # Lock current object in DB
       def lock!(type : String | Bool = true)
         this = self
-        self.class.where { this.class.primary == this.primary }.lock(type).to_a
+        self.class.all.where { this.class.primary == this.primary }.lock(type).to_a
       end
 
       # Starts transaction and locks current object
@@ -237,13 +238,13 @@ module Jennifer
       def self.find(id)
         _id = id
         this = self
-        where { this.primary == _id }.first
+        all.where { this.primary == _id }.first
       end
 
       def self.find!(id)
         _id = id
         this = self
-        where { this.primary == _id }.first!
+        all.where { this.primary == _id }.first!
       end
 
       def self.all
@@ -256,7 +257,7 @@ module Jennifer
 
       def self.destroy(ids : Array)
         _ids = ids
-        where do
+        all.where do
           if _ids.size == 1
             c(primary_field_name) == _ids[0]
           else
@@ -271,7 +272,7 @@ module Jennifer
 
       def self.delete(ids : Array)
         _ids = ids
-        where do
+        all.where do
           if _ids.size == 1
             c(primary_field_name) == _ids[0]
           else

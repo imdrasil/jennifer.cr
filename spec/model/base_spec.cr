@@ -116,38 +116,66 @@ describe Jennifer::Model::Base do
   describe "::c" do
   end
 
-  describe "scope macro" do
-    it "executes in query context" do
-      ::Jennifer::Adapter::SqlGenerator.select(Contact.all.ordered).should match(/ORDER BY name ASC/)
-    end
+  describe "%scope" do
+    context "with block" do
+      it "executes in query context" do
+        ::Jennifer::Adapter::SqlGenerator.select(Contact.all.ordered).should match(/ORDER BY name ASC/)
+      end
 
-    context "without arguemnt" do
-      it "is accessible from query object" do
-        Contact.all.main.as_sql.should match(/contacts\.age >/)
+      context "without arguemnt" do
+        it "is accessible from query object" do
+          Contact.all.main.as_sql.should match(/contacts\.age >/)
+        end
+      end
+
+      context "with argument" do
+        it "is accessible from query object" do
+          Contact.all.older(12).as_sql.should match(/contacts\.age >=/)
+        end
+      end
+
+      context "same names" do
+        it "is accessible from query object" do
+          Address.all.main.as_sql.should match(/addresses\.main/)
+          Contact.all.main.as_sql.should match(/contacts\.age >/)
+        end
+      end
+
+      it "is chainable" do
+        c1 = Factory.create_contact(age: 15)
+        c2 = Factory.create_contact(age: 15)
+        c3 = Factory.create_contact(age: 13)
+        Factory.create_address(contact_id: c1.id, main: true)
+        Factory.create_address(contact_id: c2.id, main: false)
+        Factory.create_address(contact_id: c3.id, main: true)
+        Contact.all.with_main_address.older(14).count.should eq(1)
       end
     end
 
-    context "with argument" do
-      it "is accessible from query object" do
-        Contact.all.older(12).as_sql.should match(/contacts\.age >=/)
+    context "with query object class" do
+      it "executes in class context" do
+        ::Jennifer::Adapter::SqlGenerator.select(Contact.johny).should match(/name =/)
       end
-    end
 
-    context "same names" do
-      it "is accessible from query object" do
-        Address.all.main.as_sql.should match(/addresses\.main/)
-        Contact.all.main.as_sql.should match(/contacts\.age >/)
+      context "without arguemnt" do
+        it "is accessible from query object" do
+          Contact.all.johny.as_sql.should match(/contacts\.name =/)
+        end
       end
-    end
 
-    it "is chainable" do
-      c1 = Factory.create_contact(age: 15)
-      c2 = Factory.create_contact(age: 15)
-      c3 = Factory.create_contact(age: 13)
-      Factory.create_address(contact_id: c1.id, main: true)
-      Factory.create_address(contact_id: c2.id, main: false)
-      Factory.create_address(contact_id: c3.id, main: true)
-      Contact.all.with_main_address.older(14).count.should eq(1)
+      context "with argument" do
+        it "is accessible from query object" do
+          Contact.all.by_age(12).as_sql.should match(/contacts\.age =/)
+        end
+      end
+
+      it "is chainable" do
+        c1 = Factory.create_contact(name: "Johny")
+        c3 = Factory.create_contact
+        Factory.create_address(contact_id: c1.id, main: true)
+        Factory.create_address(contact_id: c3.id, main: true)
+        Contact.all.with_main_address.johny.count.should eq(1)
+      end
     end
   end
 

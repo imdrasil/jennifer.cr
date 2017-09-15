@@ -152,6 +152,18 @@ Much more about query dsl could be found on wiki [[page|Query-DSL]]
 
 - sqlite3 has a lot of limitations so it's support will be added not soon
 
+### Versioning
+
+Now Jennifer is under hard development which could bring a lot of bracking changes. Thats why during Jennifer usage please check release notes (will be added to each release starting from 0.3.4) to check if there is any staff which can stop you from using it. Also until this library will be in beta version next version rules will be followed:
+
+- all bugfixies, new minor features or (sometimes) ones without braking existing API will be added under patch number (e.g. 0.3.*4*);
+
+- all braking changes, new important features will be added under minor digit (0.*4*.0); also reaching milstone will also invoke bumping minor digit.
+
+So even patch version change could bring a lot of new staff.
+
+If there is branch for next release - it will be removed after 1 month after release and after that will be removed. So please use them only as hotfix or for experiments or contibution.
+
 ### Test
 
 The fastest way to rollback all changes in DB after test case - transaction. So add:
@@ -175,17 +187,17 @@ There are still a lot of work to do. Tasks for next versions:
 
 - [ ] add SQLite support
 - [ ] increase test coverage to acceptable level
-- [ ] add json operators
 - [ ] add possibility for `#group` accept any sql string
 - [ ] add polymorphic associations
 - [ ] add through to relations
 - [ ] add subquery support
-- [ ] add join table option for all relations
 - [ ] refactor many-to-many relation
 - [ ] add seeds
 - [ ] rewrite tests to use minitest
 - [ ] add self documentation
 - [ ] add views support (materialized as well)
+
+Major amount ongoing features and new thoughts are created as issues.
 
 Before development create db user (information is in /spec/config.cr file), run
 ```shell
@@ -199,13 +211,17 @@ $ DB=mysql crystal spec
 
 ## Documentation
 
-I try to keep current README with uptodate information. Self documentation is not fully support yet but you can compile docs using shell script:
+Self documentation is not fully support yet but you can compile docs using shell script:
 
 ```shell
 $ ./generate-docs.sh
 ```
 
 It also depends on choosed adapter (postgres is by default).
+
+
+Now wiki pages have a lot of usefull information. But from 0.3.4 version no information will be added there untill it will be moved to separate `.md` pages to allow contributing.
+
 
 ## Contributing
 

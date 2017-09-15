@@ -16,6 +16,7 @@ require "./config"
 require "./models.cr"
 require "./factories.cr"
 
+# This was added to track exact count of hitting DB
 abstract class DB::Connection
   def scalar(query, *args)
     Jennifer::Adapter.adapter_class.log_query(query)
@@ -34,7 +35,6 @@ abstract class DB::Connection
   end
 end
 
-# This was added to track exact count of hitting DB
 abstract class Jennifer::Adapter::Base
   @@execution_counter = 0
   @@queries = [] of String
@@ -57,6 +57,8 @@ abstract class Jennifer::Adapter::Base
   end
 end
 
+# Callbaks =======================
+
 Spec.before_each do
   Jennifer::Adapter.adapter.begin_transaction
 end
@@ -64,6 +66,23 @@ end
 Spec.after_each do
   Jennifer::Adapter.adapter.class.remove_queries
   Jennifer::Adapter.adapter.rollback_transaction
+end
+
+# Helper methods ================
+
+def clean_db
+  Jennifer::Adapter.adapter.class.remove_queries
+  postgres_only do
+    Jennifer::Adapter.adapter.refresh_materialized_view(FemaleContact.table_name)
+  end
+  Jennifer::Model::Base.models.select { |t| t.has_table? }.each(&.all.delete)
+end
+
+macro void_transaction
+  Jennifer::Adapter.adapter.rollback_transaction
+  {{yield}}
+  clean_db
+  Jennifer::Adapter.adapter.begin_transaction
 end
 
 def match_array(expect, target)

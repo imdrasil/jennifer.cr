@@ -6,6 +6,10 @@ module Jennifer
         id: {type: Int32, primary: true},
         version: String
       )
+
+      def self.has_table?
+        false
+      end
     end
   end
 end

@@ -29,6 +29,10 @@ module Jennifer
   end
 
   class UnknownRelation < BaseException
+    def initialize(owner, exception : KeyError)
+      initialize(owner, /"(?<r>.*)"$/.match(exception.message.to_s).try &.["r"])
+    end
+
     def initialize(owner, relation)
       @message = "Unknown relation for #{owner}: #{relation}"
     end

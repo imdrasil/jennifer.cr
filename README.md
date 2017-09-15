@@ -2,8 +2,6 @@
 
 Another ActiveRecord pattern implementation for Crystal with great query DSL and migration mechanism.
 
-Please visit *[wiki](https://github.com/imdrasil/jennifer.cr/wiki)* to find extended information and instrcutions.
-
 ## Installation
 
 Add this to your application's `shard.yml`:
@@ -18,9 +16,7 @@ dependencies:
 
 ## Usage
 
-For detailed information how to use Jennifer see the [documentation](link:doc/index.md).
-
-Jennifer allows you to maintain everything for your models - from db migrations and field mapping to callbacks and building queries. All configuration instructions could be found on wiki [[page|Configuration]].
+Jennifer allows you to maintain everything for your models - from db migrations and field mapping to callbacks and building queries. For detailed information see the [documentation](./docs/index.md).
 
 #### Migration
 

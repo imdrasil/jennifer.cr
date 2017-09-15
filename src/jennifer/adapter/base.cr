@@ -49,7 +49,7 @@ module Jennifer
           conn = @db.checkout
           res = yield conn
           conn.release
-          res
+          res ? res : false
         end
       end
 
@@ -94,7 +94,9 @@ module Jennifer
 
       def scalar(_query, args = [] of DB::Any)
         time = Time.now.ticks
-        res = with_connection { |conn| conn.scalar(_query, args) }
+        res = with_connection { |conn|
+          conn.scalar(_query, args)
+        }
         time = Time.now.ticks - time
         Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
         res
@@ -106,12 +108,13 @@ module Jennifer
 
       def transaction(&block)
         previous_transaction = current_transaction
+        res = nil
         with_transactionable do |conn|
           conn.transaction do |tx|
             lock_connection(tx)
             begin
               Config.logger.debug("TRANSACTION START")
-              yield(tx)
+              res = yield(tx)
               Config.logger.debug("TRANSACTION COMMIT")
             rescue e
               Config.logger.debug("TRANSACTION ROLLBACK")
@@ -121,6 +124,7 @@ module Jennifer
             end
           end
         end
+        res
       end
 
       def parse_query(q, args)

@@ -2,7 +2,12 @@ require "./*"
 
 module Jennifer
   module QueryBuilder
-    class ModelQuery(T) < Query
+    abstract class IModelQuery < Query
+      abstract def model_class
+      abstract def with(arr)
+    end
+
+    class ModelQuery(T) < IModelQuery
       @preload_relations = [] of String
 
       def initialize(*opts)

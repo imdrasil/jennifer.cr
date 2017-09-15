@@ -2,32 +2,32 @@
 
 ## Content
 
-* Configuration
+* [Configuration](./configuration.md)
  
-* Migration
+* [Migration](./migation.md)
  
-* Model. Mapping
+* [Model. Mapping](./model_mapping.md)
  
-* Model. STI
+* [Model. STI](./model_sti.md)
  
-* Callbacks
+* [Callbacks](./callbacks.md)
  
-* Validation
+* [Validation](./validation.md)
  
-* Timestamps
+* [Timestamps](./timestamps.md)
  
-* Relations
+* [Relations](./relations.md)
  
-* CRUD
+* [CRUD](./crud.md)
  
-* Query DSL
+* [Query DSL](./query_dsl.md)
  
-* Eager loading
+* [Eager loading](./eager_loading.md)
  
-* Pagination and Ordering
+* [Pagination and Ordering](./pagination_and_ordering.md)
  
-* Model. Scopes
+* [Model. Scopes](./model_scopes.md)
  
-* Aggregation
+* [Aggregation](./aggregation.md)
  
-* Transaction and Lock
+* [Transaction and Lock](./transaction_and_lock.md)

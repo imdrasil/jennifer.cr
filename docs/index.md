@@ -4,7 +4,7 @@
 
 * [Configuration](./configuration.md)
  
-* [Migration](./migation.md)
+* [Migration](./migration.md)
  
 * [Model. Mapping](./model_mapping.md)
  

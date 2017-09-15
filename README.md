@@ -1,8 +1,6 @@
 # Jennifer [![Build Status](https://travis-ci.org/imdrasil/jennifer.cr.svg)](https://travis-ci.org/imdrasil/jennifer.cr) [![Latest Release](https://img.shields.io/github/release/imdrasil/jennifer.cr.svg)](https://github.com/imdrasil/jennifer.cr/releases)
 
-Another one ActiveRecord pattern realization for Crystal with grate query DSL and migration mechanism.
-
-Please visit *[wiki](https://github.com/imdrasil/jennifer.cr/wiki)* to find extended information and instrcutions.
+Another ActiveRecord pattern implementation for Crystal with great query DSL and migration mechanism.
 
 ## Installation
 
@@ -18,7 +16,7 @@ dependencies:
 
 ## Usage
 
-Jennifer allows you to maintain everything for your models - from db migrations and field mapping to callbacks and building queries. All configuration instructions could be found on wiki [[page|Configuration]].
+Jennifer allows you to maintain everything for your models - from db migrations and field mapping to callbacks and building queries. For detailed information see the [documentation](./docs/index.md).
 
 #### Migration
 

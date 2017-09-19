@@ -171,13 +171,13 @@ describe Jennifer::Model::Base do
 
       context "without arguemnt" do
         it "is accessible from query object" do
-          Contact.all.johny.as_sql.should match(/contacts\.name =/)
+          Contact.johny.as_sql.should match(/contacts\.name =/)
         end
       end
 
       context "with argument" do
         it "is accessible from query object" do
-          Contact.all.by_age(12).as_sql.should match(/contacts\.age =/)
+          Contact.by_age(12).as_sql.should match(/contacts\.age =/)
         end
       end
 
@@ -186,7 +186,7 @@ describe Jennifer::Model::Base do
         c3 = Factory.create_contact
         Factory.create_address(contact_id: c1.id, main: true)
         Factory.create_address(contact_id: c3.id, main: true)
-        Contact.all.with_main_address.johny.count.should eq(1)
+        Contact.with_main_address.johny.count.should eq(1)
       end
     end
   end

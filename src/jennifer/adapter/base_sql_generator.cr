@@ -123,9 +123,9 @@ module Jennifer
         io << (query._lock.is_a?(Bool) ? " FOR UPDATE " : query._lock)
       end
 
-      def self.select_clause(s, query : QueryBuilder::ModelQuery, exact_fields = [] of String)
+      def self.select_clause(s, query : QueryBuilder::IModelQuery, exact_fields = [] of String)
         s << "SELECT "
-        unless query._raw_select
+        if query._raw_select.nil?
           table = query._table
           if !exact_fields.empty?
             exact_fields.map { |f| "#{table}.#{f}" }.join(", ", s)

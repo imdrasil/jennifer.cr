@@ -7,10 +7,10 @@ module Jennifer
 
       getter relation : String?, field, table
 
+      def_clone
+
       def initialize(@field : String, @table : String, @relation = nil)
       end
-
-      def_clone
 
       def set_relation(table, name)
         @relation = name if @relation.nil? && @table == table

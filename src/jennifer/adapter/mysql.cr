@@ -80,6 +80,10 @@ module Jennifer
         end.exists?
       end
 
+      def view_exists?(name)
+        scalar "SELECT COUNT(*) FROM (SHOW FULL TABLES IN #{name} WHERE TABLE_TYPE LIKE '%VIEW%'"
+      end
+
       def table_row_hash(rs)
         h = {} of String => Hash(String, DBAny)
         rs.columns.each do |col|

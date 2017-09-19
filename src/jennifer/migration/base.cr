@@ -3,7 +3,8 @@ module Jennifer
     abstract class Base
       TABLE_NAME = "migration_versions"
 
-      delegate :create_data_type, to: Adapter.adapter
+      delegate create_data_type, to: Adapter.adapter
+      delegate table_exists?, index_exists?, column_exists?, view_exists?, to: Adapter.adapter
 
       abstract def up
       abstract def down
@@ -19,6 +20,7 @@ module Jennifer
         tb.process
       end
 
+      # Creates join table; raises table builder to given block
       def create_join_table(table1, table2, table_name : String? = nil)
         create_table(table_name || Adapter.adapter_class.join_table_name(table1, table2), false) do |tb|
           tb.integer(table1.to_s.singularize.foreign_key)
@@ -27,6 +29,7 @@ module Jennifer
         end
       end
 
+      # Creates join table.
       def create_join_table(table1, table2, table_name : String? = nil)
         create_join_table(table1, table2, table_name) { }
       end
@@ -47,6 +50,14 @@ module Jennifer
         tb = TableBuilder::ChangeTable.new(name)
         yield tb
         tb.process
+      end
+
+      def create_view(name, source)
+        TableBuilder::CreateView.new(name.to_s, source).process
+      end
+
+      def drop_view(name)
+        TableBuilder::DropView.new(name.to_s).process
       end
 
       def create_enum(name, options)

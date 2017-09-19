@@ -3,7 +3,16 @@ module Jennifer
     class ExpressionBuilder
       property query : Query?
 
+      def_clone
+
       def initialize(@table : String, @relation : String? = nil, @query = nil)
+      end
+
+      # Initialize object copy;
+      protected def initialize_copy(other)
+        @table = other.@table.clone
+        @relation = other.@relation.clone
+        @query = other.@query
       end
 
       def sql(_query : String, args = [] of DB::Any)

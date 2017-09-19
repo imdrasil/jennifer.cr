@@ -16,6 +16,8 @@ require "./jennifer/relation/base"
 require "./jennifer/relation/*"
 require "./jennifer/model/*"
 
+require "./jennifer/view/*"
+
 require "./jennifer/migration/table_builder/*"
 require "./jennifer/migration/*"
 

@@ -1,13 +1,15 @@
 require "db"
 require "./shared/*"
 
+require "./transactions"
+
 module Jennifer
   module Adapter
     abstract class Base
+      include Transactions
+
       TICKS_PER_MICROSECOND = 10
       @db : DB::Database
-      @transaction : DB::Transaction? = nil
-      @locks = {} of UInt64 => DB::Transaction
 
       getter db
 
@@ -22,51 +24,6 @@ module Jennifer
 
       def prepare
         ::Jennifer::Model::Base.models.each(&.actual_table_field_count)
-      end
-
-      def with_connection(&block)
-        if @locks.has_key?(Fiber.current.object_id)
-          yield @locks[Fiber.current.object_id].connection
-        else
-          conn = @db.checkout
-          res = yield conn
-          conn.release
-          res
-        end
-      end
-
-      def with_manual_connection(&block)
-        conn = @db.checkout
-        res = yield conn
-        conn.release
-        res
-      end
-
-      def with_transactionable(&block)
-        if @locks.has_key?(Fiber.current.object_id)
-          yield @locks[Fiber.current.object_id]
-        else
-          conn = @db.checkout
-          res = yield conn
-          conn.release
-          res ? res : false
-        end
-      end
-
-      def lock_connection(transaction : DB::Transaction)
-        @locks[Fiber.current.object_id] = transaction
-      end
-
-      def lock_connection(transaction : Nil)
-        @locks.delete(Fiber.current.object_id)
-      end
-
-      def current_transaction
-        @locks[Fiber.current.object_id]?
-      end
-
-      def under_transaction?
-        @locks.has_key?(Fiber.current.object_id)
       end
 
       def exec(_query, args = [] of DB::Any)
@@ -106,49 +63,12 @@ module Jennifer
         raise BadQuery.new(e.message, regular_query_message(_query, args))
       end
 
-      def transaction(&block)
-        previous_transaction = current_transaction
-        res = nil
-        with_transactionable do |conn|
-          conn.transaction do |tx|
-            lock_connection(tx)
-            begin
-              Config.logger.debug("TRANSACTION START")
-              res = yield(tx)
-              Config.logger.debug("TRANSACTION COMMIT")
-            rescue e
-              Config.logger.debug("TRANSACTION ROLLBACK")
-              raise e
-            ensure
-              lock_connection(previous_transaction)
-            end
-          end
-        end
-        res
-      end
-
       def parse_query(q, args)
         SqlGenerator.parse_query(q, args.size)
       end
 
       def parse_query(q)
         SqlGenerator.parse_query(q)
-      end
-
-      def begin_transaction
-        raise ::Jennifer::BaseException.new("Couldn't manually begin non top level transaction") if current_transaction
-        Config.logger.debug("TRANSACTION START")
-        lock_connection(@db.checkout.begin_transaction)
-      end
-
-      def rollback_transaction
-        t = current_transaction
-        raise ::Jennifer::BaseException.new("No transaction to rollback") unless t
-        t = t.not_nil!
-        t.rollback
-        Config.logger.debug("TRANSACTION ROLLBACK")
-        t.connection.release
-        lock_connection(nil)
       end
 
       def truncate(klass : Class)
@@ -287,9 +207,11 @@ module Jennifer
       end
 
       def self.generate_schema
+        raise "Not implemented"
       end
 
       def self.load_schema
+        raise "Not implemented"
       end
 
       # filter out value; should be refactored
@@ -386,22 +308,43 @@ module Jennifer
             s << ", " if i != 0
             column_definition(name, options, s)
           end
+          s << ")"
         end
-        exec buffer + ")"
+        exec buffer
       end
 
       def create_enum(name, options)
-        raise BaseException.new("Current adapter not support this method.")
+        raise BaseException.new("Current adapter doesn't support this method.")
       end
 
       def drop_enum(name, options)
-        raise BaseException.new("Current adapter not support this method.")
+        raise BaseException.new("Current adapter doesn't support this method.")
       end
 
       def change_enum(name, options)
-        raise BaseException.new("Current adapter not support this method.")
+        raise BaseException.new("Current adapter doesn't support this method.")
       end
 
+      def create_view(name, query, silent = true)
+        buff = String.build do |s|
+          s << "CREATE "
+          s << "OR REPLACE " if silent
+          s << "VIEW " << name << " AS " << SqlGenerator.select(query)
+        end
+        args = query.select_args
+        exec parse_query(buff, args), args
+      end
+
+      def drop_view(name, silent = true)
+        buff = String.build do |s|
+          s << "DROP VIEW "
+          s << "IF EXISTS " if silent
+          s << name
+        end
+        exec buff
+      end
+
+      abstract def view_exists?(name, silent = true)
       abstract def update(obj)
       abstract def update(q, h)
       abstract def insert(obj)

@@ -6,7 +6,13 @@ module Jennifer
 
         class Jennifer::QueryBuilder::ModelQuery(T)
           def {{name.id}}({{ block.args.splat }})
-            T.{{name.id}}(self, {{block.args.splat}})
+            # NOTE: this is woraround for responds_to?
+            klass = T
+            if klass.responds_to?(:{{name.id}})
+              klass.{{name.id}}(self, {{block.args.splat}})
+            else
+              raise Jennifer::BaseException.new("#{T} class has no {{name.id}} scope.")
+            end
           end
         end
 

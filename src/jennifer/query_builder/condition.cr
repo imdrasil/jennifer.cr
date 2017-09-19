@@ -10,6 +10,8 @@ module Jennifer
       @rhs = nil
       @negative = false
 
+      def_clone
+
       def initialize(field : String, table : String, relation = nil)
         @lhs = Criteria.new(field, table, relation)
       end
@@ -20,8 +22,6 @@ module Jennifer
 
       def initialize(@lhs, @operator, @rhs)
       end
-
-      def_clone
 
       protected def initialize_copy(other)
         @rhs = other.@rhs.dup

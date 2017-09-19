@@ -5,10 +5,20 @@ module Jennifer
     abstract class IModelQuery < Query
       abstract def model_class
       abstract def with(arr)
+      abstract def with(*arr)
+      abstract def model_class
+      abstract def preload(rel)
+      abstract def preload(*rels)
+
+      def clone
+        raise "Can't clone abstract"
+      end
     end
 
     class ModelQuery(T) < IModelQuery
       @preload_relations = [] of String
+
+      def_clone
 
       def initialize(*opts)
         super
@@ -143,7 +153,7 @@ module Jennifer
       private def to_a_with_relations
         h_result = {} of String => T
 
-        models = @relations.map { |e| T.relations[e].model_class }
+        models = @relations.map { |e| T.relation(e).model_class }
         existence = @relations.map { |_| {} of String => Bool }
         ::Jennifer::Adapter.adapter.select(self) do |rs|
           rs.each do

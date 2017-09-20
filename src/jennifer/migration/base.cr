@@ -60,6 +60,26 @@ module Jennifer
         TableBuilder::DropView.new(name.to_s).process
       end
 
+      def add_index(table_name, name : String, fields : Array(Symbol), type : Symbol, lengths : Hash(Symbol, Int32) = {} of Symbol => Int32, orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
+        TableBuilder::CreateIndex.new(table_name, name, fields, type, lengths, orders).process
+      end
+
+      def add_index(table_name, name : String, field : Symbol, type : Symbol, length : Int32? = nil, order : Symbol? = nil)
+        add_index(
+          table_name,
+          name,
+          [field],
+          type: type,
+          orders: (order ? {field => order.not_nil!} : {} of Symbol => Symbol),
+          lengths: (length ? {field => length.not_nil!} : {} of Symbol => Int32)
+        )
+      end
+
+      def drop_index(table_name, name)
+        TableBuilder::DropInde.new(table_name, name).process
+        self
+      end
+
       def create_enum(name, options)
         raise BaseException.new("Current adapter doesn't support this method.")
       end

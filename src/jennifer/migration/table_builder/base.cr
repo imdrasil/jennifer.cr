@@ -5,7 +5,6 @@ module Jennifer
         alias AllowedTypes = String | Int32 | Bool | Float32 | Nil
         alias EAllowedTypes = AllowedTypes | Symbol
         alias AAllowedTypes = EAllowedTypes | Array(EAllowedTypes)
-        alias HAllowedTypes = EAllowedTypes | Array(EAllowedTypes) | Hash(Symbol, EAllowedTypes | Array(EAllowedTypes)) | Hash(Symbol, EAllowedTypes)
         alias DB_OPTIONS = Hash(Symbol, EAllowedTypes | Array(EAllowedTypes))
 
         extend Ifrit
@@ -18,7 +17,7 @@ module Jennifer
 
         def initialize(@name)
           @fields = {} of String => DB_OPTIONS
-          @indexes = {} of String => Hash(Symbol, HAllowedTypes)
+          @indexes = [] of CreateIndex
         end
 
         def name

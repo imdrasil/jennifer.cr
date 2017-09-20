@@ -8,7 +8,7 @@ module Jennifer
           super
           @changed_columns = {} of String => DB_OPTIONS
           @drop_columns = [] of String
-          @drop_index = [] of String
+          @drop_index = [] of DropIndex
           @new_table_name = ""
         end
 
@@ -44,26 +44,23 @@ module Jennifer
 
         # add_index("index_name", [:field1, :field2], { :length => { :field1 => 2, :field2 => 3 }, :order => { :field1 => :asc }})
         # add_index("index_name", [:field1], { :length => { :field1 => 2, :field2 => 3 }, :order => { :field1 => :asc }})
-        def add_index(name : String, fields : Array(Symbol), type : Symbol, length = {} of Symbol => Int32?, order = {} of Symbol => Symbol?)
-          @indexes[name.to_s] =
-            sym_hash(
-              {
-                :_fields => typed_array_cast(fields, EAllowedTypes),
-                :type    => type,
-                :length  => sym_hash_cast(length, EAllowedTypes),
-                :order   => sym_hash_cast(order, EAllowedTypes),
-              },
-              HAllowedTypes
-            )
+        def add_index(name : String, fields : Array(Symbol), type : Symbol, lengths : Hash(Symbol, Int32) = {} of Symbol => Int32, orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
+          @indexes << CreateIndex.new(@name, name, fields, type, lengths, orders)
           self
         end
 
-        def add_index(name, field : Symbol, type : Symbol, length : Int32? = nil, order : Symbol? = nil)
-          add_index(name, [field], type: type, order: {field => order}, length: {field => length})
+        def add_index(name : String, field : Symbol, type : Symbol, length : Int32? = nil, order : Symbol? = nil)
+          add_index(
+            name,
+            [field],
+            type: type,
+            orders: (order ? {field => order.not_nil!} : {} of Symbol => Symbol),
+            lengths: (length ? {field => length.not_nil!} : {} of Symbol => Int32)
+          )
         end
 
         def drop_index(name)
-          @drop_index << name.to_s
+          @drop_index << DropIndex.new(@name, name.to_s)
           self
         end
 
@@ -73,10 +70,8 @@ module Jennifer
           @changed_columns.each do |n, opts|
             Adapter.adapter.change_column(@name, n, opts[:new_name], opts)
           end
-          @indexes.each do |k, options|
-            Adapter.adapter.add_index(@name, k, options)
-          end
-          @drop_index.each { |i| Adapter.adapter.drop_index(@name, i) }
+          @indexes.each(&.process)
+          @drop_index.each(&.process)
 
           Adapter.adapter.rename_table(@name, @new_table_name) unless @new_table_name.empty?
         end

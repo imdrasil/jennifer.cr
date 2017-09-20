@@ -4,7 +4,7 @@ module Jennifer
       class CreateTable < Base
         def process
           Adapter.adapter.create_table(self)
-          @indexes.each { |n, options| Adapter.adapter.add_index(@name, n, options) }
+          @indexes.each(&.process)
         end
 
         {% for method in Jennifer::Adapter::TYPE_TRANSLATIONS.keys %}
@@ -35,15 +35,19 @@ module Jennifer
           timestamp(:updated_at, {:null => true})
         end
 
-        def index(name, field : String | Symbol, options = DB_OPTIONS.new)
-          index(name, [field], {:order => {field => options[:order]?}, :length => {field => options[:length]?}})
+        def add_index(name : String, fields : Array(Symbol), type : Symbol, lengths : Hash(Symbol, Int32) = {} of Symbol => Int32, orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
+          @indexes << CreateIndex.new(@name, name, fields, type, lengths, orders)
+          self
         end
 
-        def index(name, fields : Array, options = {} of Symbol => HAllowedTypes)
-          @indexes[name.to_s] =
-            sym_hash({:_fields => fields, :length => {} of Symbol => Int32, :order => {} of Symbol => Symbol}, HAllowedTypes)
-                       .merge(sym_hash(options, HAllowedTypes))
-          self
+        def add_index(name : String, field : Symbol, type : Symbol, length : Int32? = nil, order : Symbol? = nil)
+          add_index(
+            name,
+            [field],
+            type: type,
+            orders: (order ? {field => order.not_nil!} : {} of Symbol => Symbol),
+            lengths: (length ? {field => length.not_nil!} : {} of Symbol => Int32)
+          )
         end
       end
     end

@@ -259,7 +259,7 @@ module Jennifer
               end
           end
           s << "INDEX " << name << " ON " << table << "("
-          fields = options.as(Hash)[:_fields].as(Array)
+          fields = options.as(Hash)[:fields].as(Array)
           fields.each_with_index do |f, i|
             s << "," if i != 0
             s << f

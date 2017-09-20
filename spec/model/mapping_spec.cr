@@ -59,6 +59,20 @@ describe Jennifer::Model::Mapping do
         end
       end
 
+      it "raised exception includes query explanation" do
+        Factory.create_contact
+        expect_raises(::Jennifer::BaseException, ) do
+          Contact.all.each_result_set do |rs|
+            ContactWithNotAllFields.build(rs)
+          end
+        end
+
+          ContactWithNillableName.create({name: nil})
+          expect_raises(::Jennifer::DataTypeMismatch, ) do
+            ContactWithCustomField.all.last!
+          end
+        end
+
       it "result set has no some field" do
         o = OneFieldModel.create({} of String => Jennifer::DBAny)
         error_message = "Column OneFieldModelWithExtraArgument#missing_field hasn't been found in the result set."
@@ -169,6 +183,13 @@ describe Jennifer::Model::Mapping do
             ContactWithCustomField.all.last!
           end
         end
+
+        it "raised exception includes query explanation" do
+          ContactWithNillableName.create({name: nil})
+          expect_raises(::Jennifer::DataTypeMismatch, /[\S\s]*SELECT contacts\.\*/i) do
+            ContactWithCustomField.all.last!
+          end
+        end
       end
 
       context "mismatching data type during loading from hash" do
@@ -177,6 +198,13 @@ describe Jennifer::Model::Mapping do
           Factory.create_address({:contact_id => c.id})
           expect_raises(::Jennifer::DataTypeCasting, "Column Contact.name can't be casted from Nil to it's type - String") do
             Address.all.includes(:contact).last!
+          end
+        end
+
+        it "raised exception includes query explanation" do
+          ContactWithNillableName.create({name: nil})
+          expect_raises(::Jennifer::DataTypeMismatch, /[\S\s]*SELECT contacts\.\*/i) do
+            ContactWithCustomField.all.last!
           end
         end
       end

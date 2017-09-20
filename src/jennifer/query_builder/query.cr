@@ -411,8 +411,13 @@ module Jennifer
 
       def each_result_set(&block)
         ::Jennifer::Adapter.adapter.select(self) do |rs|
-          rs.each do
-            yield rs
+          begin
+            rs.each do
+              yield rs
+            end
+          rescue e : Exception
+            rs.read_to_end
+            raise e
           end
         end
       end

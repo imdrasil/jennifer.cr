@@ -15,19 +15,19 @@ module Jennifer
           @{{key.id}} : {{value[:parsed_type].id}}
           @{{key.id}}_changed = false
 
-          {% if value[:setter] == nil ? true : value[:setter] %}
+          {% if value[:setter] == nil || value[:setter] %}
             def {{key.id}}=(_{{key.id}} : {{value[:parsed_type].id}})
               @{{key.id}}_changed = true if _{{key.id}} != @{{key.id}}
               @{{key.id}} = _{{key.id}}
             end
           {% end %}
 
-          {% if value[:getter] == nil ? true : value[:getter] %}
+          {% if value[:getter] == nil || value[:getter] %}
             def {{key.id}}
               @{{key.id}}
             end
 
-            {% if value[:null] == nil ? true : value[:null] %}
+            {% if value[:null] == nil || value[:null] %}
               def {{key.id}}!
                 @{{key.id}}.not_nil!
               end
@@ -127,8 +127,6 @@ module Jennifer
         {% for key, value in properties %}
           {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
             {% properties[key] = {type: value} %}
-          {% else %}
-            {% properties[key][:type] = properties[key][:type] %}
           {% end %}
           {% if properties[key][:primary] %}
             {% primary = key %}
@@ -232,8 +230,8 @@ module Jennifer
           {% end %}
 
           {% for key, value in properties %}
-            if !values["{{key.id}}"]?.nil?
-              %var{key.id} = values["{{key.id}}"]
+            if !values[{{value[:column_name] || key.id.stringify}}]?.nil?
+              %var{key.id} = values[{{value[:column_name] || key.id.stringify}}]
             else
               %found{key.id} = false
             end

@@ -4,6 +4,8 @@ module Jennifer
       @type : Symbol
       property table : String, type, on : Condition | LogicOperator, aliass : String?, relation : String?
 
+      def_clone
+
       def initialize(@table, on : Criteria, @type, @aliass = nil, @relation = nil)
         @on = on.to_condition
       end

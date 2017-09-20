@@ -6,6 +6,8 @@ module Jennifer
     class JSONSelector < Criteria
       getter path : Int32 | String, type : Symbol
 
+      def_clone
+
       def initialize(criteria : Criteria, @path, @type)
         initialize(criteria.field, criteria.table, criteria.relation)
       end

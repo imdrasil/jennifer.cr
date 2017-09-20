@@ -187,16 +187,17 @@ module Jennifer
               end
           end
           s << "INDEX " << name << " ON " << table
-          s << " USING " << options[:using] if options.has_key?(:using)
+          # TODO: add using option to migration
+          # s << " USING " << options[:using] if options.has_key?(:using)
           s << " ("
-          fields = options.as(Hash)[:_fields].as(Array)
-          fields.each_with_index do |f, i|
+          options[:fields].as(Array).each_with_index do |f, i|
             s << "," if i != 0
             s << f
             s << " " << options[:order].as(Hash)[f].to_s.upcase if options[:order]? && options[:order].as(Hash)[f]?
           end
           s << ")"
-          s << " " << options[:partial] if options.has_key?(:partial)
+          # TODO: add partial support to migration
+          # s << " " << options[:partial] if options.has_key?(:partial)
         end
         exec query
       end

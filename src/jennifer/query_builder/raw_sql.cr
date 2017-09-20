@@ -3,6 +3,8 @@ module Jennifer
     class RawSql < Criteria
       @params : Array(DB::Any)
 
+      def_clone
+
       def initialize(@field : String, args : Array)
         @table = ""
         @params = args.map { |e| e.as(DB::Any) }

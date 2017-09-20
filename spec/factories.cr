@@ -98,3 +98,13 @@ class TwitterProfileFactory < ProfileFactory
   attr :email, "some_email@example.com"
   attr :type, TwitterProfile.to_s
 end
+
+class MaleContactFactory < Factory::Base
+  postgres_only do
+    argument_type (Array(Int32) | Int32 | PG::Numeric | String?)
+  end
+
+  attr :name, "Raphael"
+  attr :age, 21
+  attr :gender, "male"
+end

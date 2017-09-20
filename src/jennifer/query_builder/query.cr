@@ -19,6 +19,8 @@ module Jennifer
       @from : String | Query?
       @lock : String | Bool?
 
+      def_clone
+
       property tree : Condition | LogicOperator?
 
       def initialize

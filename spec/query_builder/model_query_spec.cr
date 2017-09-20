@@ -378,4 +378,27 @@ describe Jennifer::QueryBuilder::ModelQuery do
       Contact.all.preload(:address)._joins.empty?.should be_true
     end
   end
+
+  context "complex query example" do
+    postgres_only do
+      it "allows custom select with crouping" do
+        # TODO: this is temporary behavior
+        # puts Contact.all.select("COUNT(*) AS stat_count, date_trunc('year', created_at) as period").group("period").to_sql
+        Factory.create_contact
+        result = [] of Jennifer::Record
+        query = <<-SQL
+        SELECT count(*) AS stat_count, date_trunc('year', created_at) AS period 
+        FROM contacts 
+        GROUP BY period 
+        ORDER BY period DESC
+      SQL
+        Jennifer::Adapter.adapter.query(query) do |rs|
+          rs.each do
+            result << Jennifer::Record.new(rs)
+          end
+        end
+        result.size.should eq(1)
+      end
+    end
+  end
 end

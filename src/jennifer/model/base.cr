@@ -18,8 +18,6 @@ module Jennifer
 
       alias Supportable = DBAny | Base
 
-      MODELS = [] of String
-
       @@table_name : String?
       @@singular_table_name : String?
       @@actual_table_field_count : Int32?
@@ -36,6 +34,10 @@ module Jennifer
 
       def self.table_name(value : String | Symbol)
         @@table_name = value.to_s
+      end
+
+      def self.table_name : String
+        @@table_name ||= to_s.underscore.pluralize
       end
 
       def self.singular_table_name(value : String | Symbol)
@@ -148,10 +150,6 @@ module Jennifer
 
         after_save :__refresh_changes
         before_save :__check_if_changed
-
-        def self.table_name : String
-          @@table_name ||= {{@type}}.to_s.underscore.pluralize
-        end
 
         def self.singular_table_name
           @@singular_table_name ||= {{@type}}.to_s.underscore

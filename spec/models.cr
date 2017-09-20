@@ -148,7 +148,7 @@ class Country < Jennifer::Model::Base
 
   has_and_belongs_to_many :contacts, Contact
 
-  {% for callback in [:before_save, :after_save, :after_create, :before_create, :after_initialize, :before_destroy, :after_destroy] %}
+  {% for callback in %i(before_save after_save after_create before_create after_initialize before_destroy after_destroy) %}
     getter {{callback.id}}_attr = false
 
     {{callback.id}} {{callback}}_check
@@ -256,8 +256,47 @@ class FemaleContact < Jennifer::Model::Base
   }, false)
 end
 
-# class ContactWithoutId < Jennifer::Model::Base
-#   mapping({
-#     name: String,
-#   })
-# end
+class MaleContact < Jennifer::View::Base
+  mapping({
+    id:     {type: Int32, primary: true},
+    name:   String,
+    gender: String,
+    age:    Int32,
+  }, false)
+
+  scope :main { where { _age < 50 } }
+  scope :older { |age| where { _age >= age } }
+  scope :johny, JohnyQuery
+end
+
+class FakeContactView < Jennifer::View::Base
+  view_name "male_contacs"
+
+  mapping({
+    id: {type: Int32, primary: true},
+  }, false)
+end
+
+class StrinctBrokenMaleContact < Jennifer::View::Base
+  view_name "male_contacts"
+  mapping({
+    id:   {type: Int32, primary: true},
+    name: String,
+  })
+end
+
+class StrictMaleContactWithExtraField < Jennifer::View::Base
+  view_name "male_contacts"
+  mapping({
+    id:            {type: Int32, primary: true},
+    missing_field: String,
+  })
+end
+
+class MaleContactWithDescription < Jennifer::View::Base
+  view_name "male_contacts"
+  mapping({
+    id:          {type: Int32, primary: true},
+    description: String,
+  }, false)
+end

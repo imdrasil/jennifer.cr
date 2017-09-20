@@ -1,6 +1,5 @@
 require "sqlite3"
 require "../adapter"
-require "./request_methods"
 require "./sqlite3/sql_notation"
 
 module Jennifer
@@ -10,8 +9,6 @@ module Jennifer
     alias EnumType = String
 
     class Sqlite3 < Base
-      include RequestMethods
-
       TYPE_TRANSLATIONS = {
         :integer   => "integer",
         :bool      => "integer",

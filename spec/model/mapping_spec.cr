@@ -1,6 +1,8 @@
 require "../spec_helper"
 
 describe Jennifer::Model::Mapping do
+  select_regexp = /[\S\s]*SELECT contacts\.\*/i
+
   describe "#reload" do
     it "assign all values from db to existing object" do
       c1 = Factory.create_contact
@@ -55,6 +57,15 @@ describe Jennifer::Model::Mapping do
             ensure
               rs.read_to_end
             end
+          end
+        end
+      end
+
+      it "raised exception includes query explanation" do
+        Factory.create_contact
+        expect_raises(::Jennifer::BaseException, select_regexp) do
+          Contact.all.each_result_set do |rs|
+            ContactWithNotAllFields.build(rs)
           end
         end
       end
@@ -169,6 +180,13 @@ describe Jennifer::Model::Mapping do
             ContactWithCustomField.all.last!
           end
         end
+
+        it "raised exception includes query explanation" do
+          ContactWithNillableName.create({name: nil})
+          expect_raises(::Jennifer::DataTypeMismatch, select_regexp) do
+            ContactWithCustomField.all.last!
+          end
+        end
       end
 
       context "mismatching data type during loading from hash" do
@@ -177,6 +195,13 @@ describe Jennifer::Model::Mapping do
           Factory.create_address({:contact_id => c.id})
           expect_raises(::Jennifer::DataTypeCasting, "Column Contact.name can't be casted from Nil to it's type - String") do
             Address.all.includes(:contact).last!
+          end
+        end
+
+        it "raised exception includes query explanation" do
+          ContactWithNillableName.create({name: nil})
+          expect_raises(::Jennifer::DataTypeMismatch, select_regexp) do
+            ContactWithCustomField.all.last!
           end
         end
       end

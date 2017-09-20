@@ -2,6 +2,8 @@ CallStack.skip(__FILE__)
 
 module Jennifer
   class BaseException < Exception
+    setter message
+
     def initialize(base_exception : Exception, extra_message : String? = nil)
       @message =
         if extra_message
@@ -17,8 +19,20 @@ module Jennifer
   end
 
   class BadQuery < BaseException
-    def initialize(original_message, query)
-      @message = "#{original_message}.\nOriginal query was:\n#{query}"
+    def initialize(original_message, query, args)
+      @message = "#{original_message}.\nOriginal query was:\n#{BadQuery.format_query(query, args)}"
+    end
+
+    def self.prepend_information(error : Exception, query, args)
+      error.message = "#{error.message}\nOriginal query was:\n#{format_query(query, args)}"
+    end
+
+    def self.format_query(query, args : Array)
+      args.empty? ? query : "#{query} | #{args.inspect}"
+    end
+
+    def self.format_query(query, arg = nil)
+      arg ? "#{query} | #{arg}" : query
     end
   end
 

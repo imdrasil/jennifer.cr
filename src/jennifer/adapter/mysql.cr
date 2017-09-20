@@ -1,6 +1,5 @@
 require "mysql"
 require "./base"
-require "./request_methods"
 require "./mysql/sql_notation"
 
 module Jennifer
@@ -40,8 +39,6 @@ module Jennifer
     }
 
     class Mysql < Base
-      include RequestMethods
-
       def translate_type(name : Symbol)
         Adapter::TYPE_TRANSLATIONS[name]
       rescue e : KeyError

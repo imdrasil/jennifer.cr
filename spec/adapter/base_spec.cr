@@ -17,7 +17,7 @@ describe Jennifer::Adapter::Base do
   describe Jennifer::UnknownRelation do
     it "raises UnknownRelation when joining unknown relation" do
       expect_raises(Jennifer::UnknownRelation, "Unknown relation for Contact: gibberish") do
-        Contact.all.includes(:gibberish).to_a
+        Contact.all.eager_load(:gibberish).to_a
       end
     end
   end

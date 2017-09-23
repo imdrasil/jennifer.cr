@@ -194,7 +194,7 @@ describe Jennifer::Model::Mapping do
           c = ContactWithNillableName.create({name: nil})
           Factory.create_address({:contact_id => c.id})
           expect_raises(::Jennifer::DataTypeCasting, "Column Contact.name can't be casted from Nil to it's type - String") do
-            Address.all.includes(:contact).last!
+            Address.all.eager_load(:contact).last!
           end
         end
 

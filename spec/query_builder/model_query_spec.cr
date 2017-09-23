@@ -25,11 +25,11 @@ describe Jennifer::QueryBuilder::ModelQuery do
     end
   end
 
-  describe "#includes" do
+  describe "#eager_load" do
     it "loads relation as well" do
       c1 = Factory.create_contact(name: "asd")
       Factory.create_address(contact_id: c1.id, street: "asd st.")
-      res = Contact.all.includes(:addresses).first!
+      res = Contact.all.eager_load(:addresses).first!
       res.addresses[0].street.should eq("asd st.")
     end
 
@@ -38,7 +38,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
         contacts = Factory.create_contact(3)
         ids = contacts.map(&.id)
         Factory.create_address(contact_id: contacts[0].id)
-        res = ContactWithDependencies.all.includes(:addresses).where { _id.in(ids) }.order("contacts.id": :asc).to_a
+        res = ContactWithDependencies.all.eager_load(:addresses).where { _id.in(ids) }.order("contacts.id": :asc).to_a
         res.size.should eq(3)
         res[0].addresses.size.should eq(1)
         res[0].name.nil?.should be_false
@@ -49,7 +49,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
       # TODO: move it to SqlGenerator
       it "it generates proper request" do
         contact = Factory.create_contact
-        query = Contact.all.includes(:main_address)
+        query = Contact.all.eager_load(:main_address)
         Jennifer::Adapter::SqlGenerator.select(query).should match(/addresses\.main/)
       end
     end
@@ -299,7 +299,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
       context "none was called" do
         it "doesn't hit db and return empty array" do
           count = query_count
-          result = Contact.all.includes(:addresses).none.to_a
+          result = Contact.all.eager_load(:addresses).none.to_a
           query_count.should eq(count)
           result.empty?.should be_true
         end
@@ -337,7 +337,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
           a2 = Factory.create_address(main: false, contact_id: c1.id)
           a3 = Factory.create_address(main: true, contact_id: c1.id)
 
-          q = Contact.all.includes(:addresses, :main_address)
+          q = Contact.all.eager_load(:addresses, :main_address)
           r = q.to_a
           r.size.should eq(2)
           r[0].addresses.size.should eq(3)
@@ -346,13 +346,13 @@ describe Jennifer::QueryBuilder::ModelQuery do
       end
     end
 
-    context "with preload" do
+    context "with includes" do
       it "loads all preloaded relations" do
         contacts = Factory.create_contact(3)
         a1 = Factory.create_address(contact_id: contacts[0].id)
         a2 = Factory.create_address(contact_id: contacts[1].id)
         f = Factory.create_facebook_profile(contact_id: contacts[1].id)
-        res = Contact.all.preload(:addresses, :facebook_profiles).where { _id.in(contacts[0..1].map(&.id)) }.to_a
+        res = Contact.all.includes(:addresses, :facebook_profiles).where { _id.in(contacts[0..1].map(&.id)) }.to_a
 
         res.size.should eq(2)
         match_array(res[0].addresses.map(&.id), [a1.id])
@@ -373,9 +373,9 @@ describe Jennifer::QueryBuilder::ModelQuery do
     end
   end
 
-  describe "#preload" do
+  describe "#includes" do
     it "doesn't add JOIN condition" do
-      Contact.all.preload(:address)._joins.empty?.should be_true
+      Contact.all.includes(:address)._joins.empty?.should be_true
     end
   end
 

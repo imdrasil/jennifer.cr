@@ -142,7 +142,7 @@ Jennifer allows you to query db using flexible dsl:
 Contact.all.left_join(Passport) { _contact_id == _contact__id }
             .order("contacts.id": :asc)
             .with(:passport).to_a
-Contact.all.includes(:countries).where { __countries { _name.like("%tan%") } }
+Contact.all.eager_load(:countries).where { __countries { _name.like("%tan%") } }
 Contact.all.group(:gender).group_avg(:age, PG::Numeric)
 ```
 

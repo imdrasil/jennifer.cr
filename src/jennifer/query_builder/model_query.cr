@@ -51,38 +51,54 @@ module Jennifer
         self
       end
 
-      def preload(relation : Symbol | String)
+      # Preload given relation after object loading
+      def includes(relation : Symbol | String)
         @preload_relations << relation.to_s
         self
       end
 
-      def preload(relations : Array)
+      # Preload given relations after object loading
+      def includes(relations : Array)
         relations.each { |rel| @preload_relations << rel.to_s }
         self
       end
 
-      def preload(*relations)
+      # Preload given relations after object loading
+      def includes(*relations)
         relations.each { |rel| @preload_relations << rel.to_s }
         self
+      end
+
+      # Alias for includes
+      def preload(relation)
+        includes(relation)
+      end
+
+      # Alias for includes
+      def preload(*relations)
+        includes(relations)
       end
 
       def relation(name, type = :left)
         T.relation(name.to_s).join_condition(self, type)
       end
 
-      def includes(*names)
+      # Adds to select statement given relations (with correspond joins) and loads them from result
+      def eager_load(*names)
         names.each do |name|
-          includes(name)
+          eager_load(name)
         end
         self
       end
 
-      def includes(name : String | Symbol)
+      # Adds to select statement given relation (with correspond joins) and loads them from result
+      def eager_load(name : String | Symbol)
         @relations << name.to_s
         relation(name)
       end
 
-      def includes(rels : Array(String), aliases = [] of String?)
+      # NOTE: Not implemented yet
+      def eager_load(rels : Array(String), aliases = [] of String?)
         @relations << name.to_s
         raise "Not implemented"
       end

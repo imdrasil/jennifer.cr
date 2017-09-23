@@ -119,7 +119,7 @@ Contact.all.left_join(Address) { _contacts__id == _contact_id }
 Contact.all.right_join("addresses") { _contacts__id == c("contact_id") }
 ```
 
-> For now Jennifer provide manual aliasing as second argument for `#join` and automatic when using `#includes` and `#with` methods. For details check out the code. 
+> For now Jennifer provide manual aliasing as second argument for `#join` and automatic when using `#eager_load` and `#with` methods. For details check out the code. 
 
 #### Relation
 
@@ -131,13 +131,13 @@ Contact.all.relation("addresses").relation(:passport, type: :left)
 
 #### Includes
 
-To automatically join some relation and get it from db use `#includes` and pass relation name:
+To automatically join some relation and get it from db use `#eager_load` and pass relation name:
 
 ```crystal
-Contact.all.includes("addresses")
+Contact.all.eager_load("addresses")
 ```
 
-If there are several includes with same table - Jennifer will auto alias tables.
+If there are several eager_load with same table - Jennifer will auto alias tables.
 
 #### Group
 

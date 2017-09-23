@@ -1,6 +1,8 @@
 require "../spec_helper"
 
 describe Jennifer::Model::Mapping do
+  select_regexp = /[\S\s]*SELECT contacts\.\*/i
+
   describe "#reload" do
     it "assign all values from db to existing object" do
       c1 = Factory.create_contact
@@ -61,17 +63,12 @@ describe Jennifer::Model::Mapping do
 
       it "raised exception includes query explanation" do
         Factory.create_contact
-        expect_raises(::Jennifer::BaseException, ) do
+        expect_raises(::Jennifer::BaseException, select_regexp) do
           Contact.all.each_result_set do |rs|
             ContactWithNotAllFields.build(rs)
           end
         end
-
-          ContactWithNillableName.create({name: nil})
-          expect_raises(::Jennifer::DataTypeMismatch, ) do
-            ContactWithCustomField.all.last!
-          end
-        end
+      end
 
       it "result set has no some field" do
         o = OneFieldModel.create({} of String => Jennifer::DBAny)
@@ -186,7 +183,7 @@ describe Jennifer::Model::Mapping do
 
         it "raised exception includes query explanation" do
           ContactWithNillableName.create({name: nil})
-          expect_raises(::Jennifer::DataTypeMismatch, /[\S\s]*SELECT contacts\.\*/i) do
+          expect_raises(::Jennifer::DataTypeMismatch, select_regexp) do
             ContactWithCustomField.all.last!
           end
         end
@@ -203,7 +200,7 @@ describe Jennifer::Model::Mapping do
 
         it "raised exception includes query explanation" do
           ContactWithNillableName.create({name: nil})
-          expect_raises(::Jennifer::DataTypeMismatch, /[\S\s]*SELECT contacts\.\*/i) do
+          expect_raises(::Jennifer::DataTypeMismatch, select_regexp) do
             ContactWithCustomField.all.last!
           end
         end

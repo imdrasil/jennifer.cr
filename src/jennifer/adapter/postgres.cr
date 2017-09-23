@@ -24,13 +24,13 @@ module Jennifer
       :numeric => "numeric", # PG::Numeric
       :decimal => "decimal", # PG::Numeric - is alias for numeric
 
-      :string     => "varchar",
       :char       => "char",
       :bool       => "boolean",
-      :text       => "text",
-      :var_string => "varchar",
-      :varchar    => "varchar",
-      :blchar     => "blchar", # String
+      :string     => "varchar", # String
+      :text       => "text",    # String
+      :var_string => "varchar", # String
+      :varchar    => "varchar", # String
+      :blchar     => "blchar",  # String
 
       :uuid => "uuid", # String
 
@@ -229,29 +229,24 @@ module Jennifer
       end
 
       def insert(obj : Model::Base)
-        opts = obj.arguments_to_insert
-        query = parse_query(SqlGenerator.insert(obj, obj.class.primary_auto_incrementable?), opts[:args])
+        query = SqlGenerator.insert(obj, obj.class.primary_auto_incrementable?)
         id = -1i64
-        affected = 0i64
-        if obj.class.primary_auto_incrementable?
+        affected = exec(query).rows_affected
+        if obj.class.primary_auto_incrementable? && affected != 0
           # TODO: move this back when pg driver will raise exception when inserted record brake some constraint
           # id = scalar(query, opts[:args]).as(Int32).to_i64
           # affected += 1 if id > 0
-          affected = exec(query, opts[:args]).rows_affected
-          if affected != 0
-            id = scalar("SELECT currval(pg_get_serial_sequence('#{obj.class.table_name}', '#{obj.class.primary_field_name}'))").as(Int64)
-          end
-        else
-          affected = exec(query, opts[:args]).rows_affected
+          id = scalar("SELECT currval(pg_get_serial_sequence(#{SqlGenerator.escape(obj.class.table_name)}, #{SqlGenerator.escape(obj.class.primary_field_name)}))").as(Int64)
         end
 
         ExecResult.new(id, affected)
       end
 
       def exists?(query)
-        args = query.select_args
+        # args = query.select_args
         body = SqlGenerator.exists(query)
-        scalar(body, args)
+        # scalar(body, args)
+        scalar(body)
       end
 
       private def column_definition(name, options, io)
@@ -265,7 +260,7 @@ module Jennifer
           end
         end
         io << " PRIMARY KEY" if options[:primary]?
-        io << " DEFAULT #{self.class.t(options[:default])}" if options[:default]?
+        io << " DEFAULT #{Adapter::SqlGenerator.escape(options[:default])}" if options[:default]?
       end
 
       private def column_type_definition(options, io)

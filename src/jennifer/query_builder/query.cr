@@ -1,16 +1,19 @@
 require "./expression_builder"
+require "./aggregations"
 
 module Jennifer
   module QueryBuilder
     class Query
       extend Ifrit
+      include Aggregations
 
-      {% for method in %i(having table limit offset raw_select table_aliases from lock joins order relations group lock unions) %}
+      {% for method in %i(having table limit offset raw_select table_aliases from lock joins order relations group lock unions prepared) %}
         def _{{method.id}}
           @{{method.id}}
         end
       {% end %}
 
+      # TODO: make all ontainers (like @order or @joins) lazy createble - will reduce time on initializing
       @having : Condition | LogicOperator | Nil
       @table : String = ""
       @limit : Int32?
@@ -18,6 +21,7 @@ module Jennifer
       @raw_select : String?
       @from : String | Query?
       @lock : String | Bool?
+      @prepared : Bool = false
 
       def_clone
 
@@ -57,6 +61,10 @@ module Jennifer
         @tree ? @tree.not_nil!.as_sql : ""
       end
 
+      def as_sql(io, escape = !@prepared)
+        @tree.not_nil!.as_sql(io, escaped) if @tree
+      end
+
       def sql_args
         if @tree
           @tree.not_nil!.sql_args
@@ -66,7 +74,7 @@ module Jennifer
       end
 
       def sql_args_count
-        @tree ? @tree.not_nil!.sql_args_count : 0
+        (!@prepared && @tree) ? @tree.not_nil!.sql_args_count : 0
       end
 
       def select_args
@@ -89,6 +97,11 @@ module Jennifer
         count += @tree.not_nil!.sql_args_count if @tree
         count += @having.not_nil!.sql_args_count if @having
         count
+      end
+
+      def prepared
+        @prepared = true
+        self
       end
 
       def with_relation!
@@ -338,71 +351,12 @@ module Jennifer
         self
       end
 
-      def max(field, klass : T.class) : T forall T
-        raise ArgumentError.new("Cannot use with grouping") unless @group.empty?
-        group_max(field, klass)[0]
-      end
-
-      def min(field, klass : T.class) : T forall T
-        raise ArgumentError.new("Cannot use with grouping") unless @group.empty?
-        group_min(field, klass)[0]
-      end
-
-      def sum(field, klass : T.class) : T forall T
-        raise ArgumentError.new("Cannot use with grouping") unless @group.empty?
-        group_sum(field, klass)[0]
-      end
-
-      def avg(field, klass : T.class) : T forall T
-        raise ArgumentError.new("Cannot use with grouping") unless @group.empty?
-        group_avg(field, klass)[0]
-      end
-
-      def group_max(field, klass : T.class) : Array(T) forall T
-        _select = @raw_select
-        @raw_select = "MAX(#{field}) as m"
-        result = to_a.map(&.["m"])
-        @raw_select = _select
-        typed_array_cast(result, T)
-      end
-
-      def group_min(field, klass : T.class) : Array(T) forall T
-        _select = @raw_select
-        @raw_select = "MIN(#{field}) as m"
-        result = to_a.map(&.["m"])
-        @raw_select = _select
-        typed_array_cast(result, T)
-      end
-
-      def group_sum(field, klass : T.class) : Array(T) forall T
-        _select = @raw_select
-        @raw_select = "SUM(#{field}) as m"
-        result = to_a.map(&.["m"])
-        @raw_select = _select
-        typed_array_cast(result, T)
-      end
-
-      def group_avg(field, klass : T.class) : Array(T) forall T
-        _select = @raw_select
-        @raw_select = "AVG(#{field}) as m"
-        result = to_a.map(&.["m"])
-        @raw_select = _select
-        typed_array_cast(result, T)
-      end
-
-      def group_count(field)
-        _select = @raw_select
-        @raw_select = "COUNT(#{field}) as m"
-        result = to_a.map(&.["m"])
-        @raw_select = _select
-        result
-      end
-
       def lock(type = true)
         @lock = type
         self
       end
 
+      # Firstly retrieves all data and then iterate over it
       def each
         to_a.each do |e|
           yield e

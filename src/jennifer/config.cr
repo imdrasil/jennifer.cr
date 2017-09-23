@@ -6,6 +6,7 @@ module Jennifer
     STRING_FIELDS = {:user, :password, :db, :host, :adapter, :migration_files_path, :schema, :structure_folder}
     INT_FIELDS    = {:max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
     FLOAT_FIELDS  = [:checkout_timeout, :retry_delay]
+    BOOL_FIELDS   = {:prepared_statements}
 
     macro define_fields(const, default)
       {% for field in @type.constant(const.stringify) %}
@@ -21,6 +22,7 @@ module Jennifer
     {% end %}
     end
 
+    define_fields(BOOL_FIELDS, false)
     define_fields(STRING_FIELDS, default: "")
 
     def self.structure_folder

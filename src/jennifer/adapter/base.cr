@@ -3,6 +3,7 @@ require "./shared/*"
 require "./transactions"
 require "./result_parsers"
 require "./request_methods"
+require "./executables"
 
 module Jennifer
   module Adapter
@@ -10,8 +11,8 @@ module Jennifer
       include Transactions
       include ResultParsers
       include RequestMethods
+      include Executables
 
-      TICKS_PER_MICROSECOND = 10
       @db : DB::Database
 
       getter db
@@ -29,52 +30,6 @@ module Jennifer
         ::Jennifer::Model::Base.models.each(&.actual_table_field_count)
       end
 
-      def exec(_query, args = [] of DB::Any)
-        time = Time.now.ticks
-        res = with_connection { |conn| conn.exec(_query, args) }
-        time = Time.now.ticks - time
-        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
-        res
-      rescue e : BaseException
-        BadQuery.prepend_information(e, _query, args)
-        raise e
-      rescue e : Exception
-        raise BadQuery.new(e.message, _query, args)
-      end
-
-      def query(_query, args = [] of DB::Any)
-        time = Time.now.ticks
-        res = with_connection { |conn| conn.query(_query, args) { |rs| time = Time.now.ticks - time; yield rs } }
-        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
-        res
-      rescue e : BaseException
-        BadQuery.prepend_information(e, _query, args)
-        raise e
-      rescue e : Exception
-        raise BadQuery.new(e.message, _query, args)
-      end
-
-      def scalar(_query, args = [] of DB::Any)
-        time = Time.now.ticks
-        res = with_connection { |conn| conn.scalar(_query, args) }
-        time = Time.now.ticks - time
-        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
-        res
-      rescue e : BaseException
-        BadQuery.prepend_information(e, _query, args)
-        raise e
-      rescue e : Exception
-        raise BadQuery.new(e.message, _query, args)
-      end
-
-      def parse_query(q, args)
-        SqlGenerator.parse_query(q, args.size)
-      end
-
-      def parse_query(q)
-        SqlGenerator.parse_query(q)
-      end
-
       def truncate(klass : Class)
         truncate(klass.table_name)
       end
@@ -84,18 +39,20 @@ module Jennifer
       end
 
       def delete(query : QueryBuilder::Query)
-        args = query.select_args
-        exec SqlGenerator.delete(query), args
+        # args = query.select_args
+        exec SqlGenerator.delete(query) # , args
       end
 
       def exists?(query)
-        args = query.select_args
-        scalar(SqlGenerator.exists(query), args) == 1
+        # args = query.select_args
+        # scalar(SqlGenerator.exists(query), args) == 1
+        scalar(SqlGenerator.exists(query)) == 1
       end
 
       def count(query)
-        args = query.select_args
-        scalar(SqlGenerator.count(query), args).as(Int64).to_i
+        # args = query.select_args
+        # scalar(SqlGenerator.count(query), args).as(Int64).to_i
+        scalar(SqlGenerator.count(query)).as(Int64).to_i
       end
 
       def self.db_connection
@@ -119,7 +76,7 @@ module Jennifer
           s << "/" << Config.db if options.includes?(:db)
           s << "?"
           [
-            {% for arg in [:max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts, :checkout_timeout, :retry_delay] %}
+            {% for arg in Config::STRING_FIELDS + Config::INT_FIELDS + Config::FLOAT_FIELDS + Config::BOOL_FIELDS %}
               "{{arg.id}}=#{Config.{{arg.id}}}"
             {% end %},
           ].join(",", s)
@@ -162,18 +119,6 @@ module Jennifer
 
       def self.load_schema
         raise "Not implemented"
-      end
-
-      # filter out value; should be refactored
-      def self.t(field)
-        case field
-        when Nil
-          "NULL"
-        when String
-          "'" + field + "'"
-        else
-          field
-        end
       end
 
       # migration ========================
@@ -332,7 +277,7 @@ module Jennifer
           end
         end
         io << " PRIMARY KEY" if options[:primary]?
-        io << " DEFAULT #{self.class.t(options[:default])}" if options[:default]?
+        io << " DEFAULT #{SqlGenerator.escape(options[:default])}" if options[:default]?
         io << " AUTO_INCREMENT" if options[:auto_increment]?
       end
 

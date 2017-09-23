@@ -1,6 +1,10 @@
+require "./sanitizer"
+
 module Jennifer
   module Adapter
     module SqlNotation
+      include Sanitizer
+
       def insert(obj : Model::Base, with_primary_field = true)
         opts = obj.arguments_to_insert
         String.build do |s|
@@ -8,7 +12,9 @@ module Jennifer
           unless opts[:fields].empty?
             s << "("
             opts[:fields].join(", ", s)
-            s << ") VALUES (" << Adapter.adapter_class.escape_string(opts[:fields].size) << ") "
+            s << ") VALUES ("
+            opts[:args].join(", ", s) { |v, io| io << escape(v) }
+            s << ") "
           else
             s << " DEFAULT VALUES"
           end
@@ -26,7 +32,8 @@ module Jennifer
         esc = Adapter.adapter_class.escape_string(1)
         String.build do |s|
           s << "UPDATE " << query.table << " SET "
-          options.map { |k, v| "#{k.to_s}= #{esc}" }.join(", ", s)
+
+          options.join(", ", s) { |(k, v), s| s << k << " = " << escape(v) }
           s << "\n"
           _joins = query._joins
 
@@ -34,7 +41,7 @@ module Jennifer
           where_clause(s, query.tree)
           unless _joins.empty?
             where_clause(s, _joins[0].on)
-            _joins[1..-1].map(&.as_sql).join(' ', s)
+            _joins[1..-1].join(" ", s) { |j| j.as_sql(s) }
           end
         end
       end
@@ -78,30 +85,7 @@ module Jennifer
           else
             raise "Wrong json path type"
           end
-        "#{path.identifier}#{operator}#{quote(path.path)}"
-      end
-
-      # for postgres column name
-      def escape(value : String)
-        case value
-        when "NULL", "TRUE", "FALSE"
-          value
-        else
-          value = value.gsub(/\\/, ARRAY_ESCAPE).gsub(/"/, "\\\"")
-          "\"#{value}\""
-        end
-      end
-
-      def escape(value : Nil)
-        quote(value)
-      end
-
-      def escape(value : Bool)
-        quote(value)
-      end
-
-      def escape(value : Int32 | Int16 | Float64 | Float32)
-        quote(value)
+        "#{path.identifier}#{operator}#{escape(path.path)}"
       end
 
       def quote(value : String)

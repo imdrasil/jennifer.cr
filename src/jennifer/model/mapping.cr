@@ -444,7 +444,7 @@ module Jennifer
                 if value.is_a?({{value[:parsed_type].id}})
                   self.{{key.id}} = value.as({{value[:parsed_type].id}})
                 else
-                  raise ::Jennifer::BaseException.new("wrong type for #{name} : #{value.class}")
+                  raise ::Jennifer::BaseException.new("Wrong type for #{name} : #{value.class}")
                 end
             {% end %}
           {% end %}
@@ -482,11 +482,7 @@ module Jennifer
           {% for key, value in properties %}
             {% unless value[:primary] %}
               if @{{key.id}}_changed
-                args << {% if value[:type].stringify == "JSON::Any" %}
-                          @{{key.id}}.to_json
-                        {% else %}
-                          @{{key.id}}
-                        {% end %}
+                args << @{{key.id}}
                 fields << "{{key.id}}"
               end
             {% end %}
@@ -500,11 +496,7 @@ module Jennifer
           fields = [] of String
           {% for key, value in properties %}
             {% unless value[:primary] && primary_auto_incrementable %}
-              args << {% if value[:type].stringify == "JSON::Any" %}
-                        (@{{key.id}} ? @{{key.id}}.to_json : nil)
-                      {% else %}
-                        @{{key.id}}
-                      {% end %}
+              args << @{{key.id}}
               fields << "{{key.id}}"
             {% end %}
           {% end %}

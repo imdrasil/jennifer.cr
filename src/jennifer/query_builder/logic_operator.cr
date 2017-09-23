@@ -49,6 +49,12 @@ module Jennifer
         "(" + @parts.map(&.as_sql).join(" #{operator} ") + ")"
       end
 
+      def as_sql(io, escape = true)
+        io << "("
+        @parts.join(" #{operator} ", io) { |e| e.as_sql(io, escape) }
+        io << ")"
+      end
+
       def sql_args : Array(DB::Any)
         @parts.flat_map(&.sql_args)
       end

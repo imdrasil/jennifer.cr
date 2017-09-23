@@ -16,6 +16,10 @@ module Jennifer
         "(" + @field + ")"
       end
 
+      def as_sql(io, escaped = true)
+        io << "(" << @field << ")"
+      end
+
       def sql_args
         @params
       end

@@ -103,6 +103,39 @@ module Jennifer
         str
       end
 
+      def as_sql(io, escape = true)
+        if escape
+          as_escaped_sql(io)
+        else
+          io << as_sql
+        end
+      end
+
+      def as_escaped_sql(io)
+        io << "NOT (" if @negative
+        @lhs.as_sql(io)
+        case @operator
+        when :bool
+        when :in
+          io << " IN("
+          @rhs.as(Array).join(", ", io) { |e| io << Adapter::SqlGenerator.escape(e) }
+          io << ")"
+        when :between
+          io.print(
+            " BETWEEN ",
+            Adapter::SqlGenerator.escape(@rhs.as(Array)[0]),
+            " AND ",
+            Adapter::SqlGenerator.escape(@rhs.as(Array)[1])
+          )
+        else
+          if @operator == :is
+            puts @rhs
+          end
+          io << " " << Adapter::SqlGenerator.operator_to_sql(@operator) << " " << Adapter::SqlGenerator.escape(@rhs)
+        end
+        io << ")" if @negative
+      end
+
       def sql_args : Array(DB::Any)
         res = [] of DB::Any
         if filterable?
@@ -135,10 +168,6 @@ module Jennifer
         else
           0
         end
-      end
-
-      def filter_out(arg : Criteria)
-        arg.as_sql
       end
 
       def filter_out(arg)

@@ -77,11 +77,11 @@ module Jennifer
       end
 
       def is(value : Symbol | Bool | Nil)
-        Condition.new(self, :is, translate(value))
+        Condition.new(self, :is, value)
       end
 
       def not(value : Symbol | Bool | Nil)
-        Condition.new(self, :not, translate(value))
+        Condition.new(self, :not, value)
       end
 
       def not
@@ -107,6 +107,10 @@ module Jennifer
 
       def as_sql
         identifier
+      end
+
+      def as_sql(io, escape = true)
+        io << @table << "." << @field
       end
 
       def identifier

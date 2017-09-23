@@ -15,6 +15,10 @@ module Jennifer
       def as_sql
         Adapter::SqlGenerator.json_path(self)
       end
+
+      def as_sql(io, escape = true)
+        io << as_sql
+      end
     end
   end
 end

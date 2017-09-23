@@ -26,6 +26,25 @@ module Jennifer
         sql_string + "#{table_name} ON #{@on.as_sql}\n"
       end
 
+      def as_sql(io, escape = true)
+        if escape
+          io <<
+            case @type
+            when :left
+              "LEFT JOIN "
+            when :right
+              "RIGHT JOIN "
+            else
+              "JOIN "
+            end
+          io << table_name << " ON "
+          @on.as_sql(io, escape)
+          io << "\n"
+        else
+          io << as_sql
+        end
+      end
+
       def table_name
         @aliass ? "#{@table} #{@aliass}" : @table
       end

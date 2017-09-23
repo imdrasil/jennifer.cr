@@ -8,7 +8,9 @@ module Jennifer
         String.build do |s|
           s << "INSERT INTO " << table << "("
           hash.keys.join(", ", s)
-          s << ") VALUES (" << Adapter.adapter_class.escape_string(hash.size) << ")"
+          s << ") VALUES ("
+          hash.join(", ", s) { |(k, v), io| io << escape(v) }
+          s << ")"
         end
       end
 
@@ -34,55 +36,44 @@ module Jennifer
         end
       end
 
-      # TODO: unify method generting - #parse_query should be called here or by caller
       def self.delete(query)
-        parse_query(
-          String.build do |s|
-            s << "DELETE "
-            from_clause(s, query)
-            body_section(s, query)
-          end,
-          query.select_args_count
-        )
+        String.build do |s|
+          s << "DELETE "
+          from_clause(s, query)
+          body_section(s, query)
+        end
       end
 
       def self.exists(query)
-        parse_query(
-          String.build do |s|
-            s << "SELECT EXISTS(SELECT 1 "
-            from_clause(s, query)
-            body_section(s, query)
-            s << ")"
-          end,
-          query.select_args_count
-        )
+        String.build do |s|
+          s << "SELECT EXISTS(SELECT 1 "
+          from_clause(s, query)
+          body_section(s, query)
+          s << ")"
+        end
       end
 
       def self.count(query)
-        parse_query(
-          String.build do |s|
-            s << "SELECT COUNT(*) "
-            from_clause(s, query)
-            body_section(s, query)
-          end,
-          query.select_args_count
-        )
+        String.build do |s|
+          s << "SELECT COUNT(*) "
+          from_clause(s, query)
+          body_section(s, query)
+        end
       end
 
       def self.update(obj : Model::Base)
-        esc = escape_string(1)
+        options = obj.arguments_to_save
         String.build do |s|
           s << "UPDATE " << obj.class.table_name << " SET "
-          obj.arguments_to_save[:fields].map { |f| "#{f}= #{esc}" }.join(", ", s)
-          s << " WHERE " << obj.class.primary_field_name << " = " << esc
+          options[:fields].each_with_index.join(", ", s) { |(f, i), s| s << f << "= " << escape(options[:args][i]) }
+          s << " WHERE " << obj.class.primary_field_name << " = " << obj.primary
         end
       end
 
       def self.update(query, options : Hash)
-        esc = Adapter.adapter_class.escape_string(1)
         String.build do |s|
           s << "UPDATE " << query.table << " SET "
-          options.map { |k, v| "#{k.to_s}= #{esc}" }.join(", ", s)
+          options.join(", ", s) { |(k, v), s| s << k << "= " << v }
           s << "\n"
           body_section(s, query)
         end
@@ -92,7 +83,7 @@ module Jennifer
         esc = escape_string(1)
         String.build do |s|
           s << "UPDATE " << q.table << " SET "
-          modifications.map { |field, value| "#{field.to_s} = #{field.to_s} #{value[:operator]} #{esc}" }.join(", ", s)
+          modifications.join(", ", s) { |(field, value), s| s << field << " = " << field << " " << value[:operator] << " " << value[:value] }
           s << "\n"
           body_section(s, q)
         end
@@ -128,7 +119,7 @@ module Jennifer
         if query._raw_select.nil?
           table = query._table
           if !exact_fields.empty?
-            exact_fields.map { |f| "#{table}.#{f}" }.join(", ", s)
+            exact_fields.join(", ", s) { |f, s| s << table << "." << f }
           else
             s << table << ".*"
             unless query._relations.empty?
@@ -155,7 +146,7 @@ module Jennifer
           table = query._table
           if !exact_fields.empty?
             # TODO: avoid creating extra arrays
-            exact_fields.map { |f| "#{table}.#{f}" }.join(", ", io)
+            exact_fields.join(", ", io) { |f, s| s << table << "." << f }
           else
             io << table << ".*"
           end
@@ -187,17 +178,19 @@ module Jennifer
         return if query._group.empty?
         # TODO: make building better
         io << "GROUP BY "
-        query._group.map { |t, fields| fields.map { |f| "#{t}.#{f}" }.join(", ") }.join(", ", io)
+        query._group.join(", ", io) { |(t, fields), s| fields.join(", ", io) { |f| io << t << "." << f } }
         io << "\n"
       end
 
       def self.having_clause(io, query)
         return unless query._having
-        io << "HAVING " << query._having.not_nil!.as_sql << "\n"
+        io << "HAVING "
+        query._having.not_nil!.as_sql(io)
+        io << "\n"
       end
 
       def self.join_clause(io, query)
-        query._joins.map(&.as_sql).join(' ', io)
+        query._joins.join(" ", io) { |e| e.as_sql(io) }
       end
 
       def self.where_clause(io, query : QueryBuilder::Query | QueryBuilder::ModelQuery)
@@ -206,7 +199,9 @@ module Jennifer
 
       def self.where_clause(io, tree)
         return unless tree
-        io << "WHERE " << tree.not_nil!.as_sql << "\n"
+        io << "WHERE "
+        tree.not_nil!.as_sql(io)
+        io << "\n"
       end
 
       def self.limit_clause(io, query)

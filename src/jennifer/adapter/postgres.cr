@@ -1,6 +1,5 @@
 require "pg"
 require "../adapter"
-require "./request_methods"
 require "./postgres/sql_notation"
 
 module Jennifer
@@ -61,8 +60,6 @@ module Jennifer
     }
 
     class Postgres < Base
-      include RequestMethods
-
       def prepare
         _query = <<-SQL
           SELECT e.enumtypid
@@ -177,15 +174,8 @@ module Jennifer
       def add_index(table, name, options)
         query = String.build do |s|
           s << "CREATE "
-          if options[:type]?
-            s <<
-              case options[:type]
-              when :unique, :uniq
-                "UNIQUE "
-              else
-                raise ArgumentError.new("Unknown index type: #{options[:type]}")
-              end
-          end
+
+          s << index_type_translate(options[:type]) if options[:type]?
           s << "INDEX " << name << " ON " << table
           # TODO: add using option to migration
           # s << " USING " << options[:using] if options.has_key?(:using)
@@ -293,6 +283,15 @@ module Jennifer
       def self.create_database
         opts = [Config.db, "-O", Config.user, "-h", Config.host, "-U", Config.user]
         Process.run("PGPASSWORD=#{Config.password} createdb \"${@}\"", opts, shell: true).inspect
+      end
+
+      private def index_type_translate(name)
+        case name
+        when :unique, :uniq
+          "UNIQUE "
+        else
+          raise ArgumentError.new("Unknown index type: #{name}")
+        end
       end
 
       def self.drop_database

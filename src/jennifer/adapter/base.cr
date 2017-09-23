@@ -1,12 +1,15 @@
 require "db"
 require "./shared/*"
-
 require "./transactions"
+require "./result_parsers"
+require "./request_methods"
 
 module Jennifer
   module Adapter
     abstract class Base
       include Transactions
+      include ResultParsers
+      include RequestMethods
 
       TICKS_PER_MICROSECOND = 10
       @db : DB::Database
@@ -33,9 +36,10 @@ module Jennifer
         Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
         res
       rescue e : BaseException
+        BadQuery.prepend_information(e, _query, args)
         raise e
       rescue e : Exception
-        raise BadQuery.new(e.message, regular_query_message(_query, args))
+        raise BadQuery.new(e.message, _query, args)
       end
 
       def query(_query, args = [] of DB::Any)
@@ -44,23 +48,23 @@ module Jennifer
         Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
         res
       rescue e : BaseException
+        BadQuery.prepend_information(e, _query, args)
         raise e
       rescue e : Exception
-        raise BadQuery.new(e.message, regular_query_message(_query, args))
+        raise BadQuery.new(e.message, _query, args)
       end
 
       def scalar(_query, args = [] of DB::Any)
         time = Time.now.ticks
-        res = with_connection { |conn|
-          conn.scalar(_query, args)
-        }
+        res = with_connection { |conn| conn.scalar(_query, args) }
         time = Time.now.ticks - time
         Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
         res
       rescue e : BaseException
+        BadQuery.prepend_information(e, _query, args)
         raise e
       rescue e : Exception
-        raise BadQuery.new(e.message, regular_query_message(_query, args))
+        raise BadQuery.new(e.message, _query, args)
       end
 
       def parse_query(q, args)
@@ -132,60 +136,6 @@ module Jennifer
         {args: args, fields: fields}
       end
 
-      def result_to_array(rs)
-        a = [] of DBAny
-        rs.each_column do
-          temp = rs.read(DBAny)
-          temp = (temp == 1i8).as(Bool) if temp.is_a?(Int8)
-          a << temp
-        end
-        a
-      end
-
-      def result_to_array_by_names(rs, names)
-        buf = {} of String => DBAny
-        names.each { |n| buf[n] = nil }
-        count = names.size
-        rs.each_column do |column|
-          if buf.has_key?(column)
-            buf[column] = rs.read.as(DBAny)
-            if buf[column].is_a?(Int8)
-              buf[column] = (buf[column] == 1i8).as(Bool)
-            end
-            count -= 1
-          else
-            rs.read
-          end
-          break if count == 0
-        end
-        buf.values
-      end
-
-      # converts single ResultSet to hash
-      def result_to_hash(rs)
-        h = {} of String => DBAny
-        rs.each_column do |column|
-          h[column] = rs.read.as(DBAny)
-          if h[column].is_a?(Int8)
-            h[column] = (h[column] == 1i8).as(Bool)
-          end
-        end
-        h
-      end
-
-      # converts single ResultSet which contains several tables
-      def table_row_hash(rs)
-        h = {} of String => Hash(String, DBAny)
-        rs.columns.each do |col|
-          h[col.table] ||= {} of String => DBAny
-          h[col.table][col.name] = rs.read
-          if h[col.table][col.name].is_a?(Int8)
-            h[col.table][col.name] = h[col.table][col.name] == 1i8
-          end
-        end
-        h
-      end
-
       def self.arg_replacement(arr)
         escape_string(arr.size)
       end
@@ -243,21 +193,9 @@ module Jennifer
       def add_index(table, name, options)
         query = String.build do |s|
           s << "CREATE "
-          if options[:type]?
-            s <<
-              case options[:type]
-              when :unique, :uniq
-                "UNIQUE "
-              when :fulltext
-                "FULLTEXT "
-              when :spatial
-                "SPATIAL "
-              when nil
-                " "
-              else
-                raise ArgumentError.new("Unknown index type: #{options[:type]}")
-              end
-          end
+
+          s << index_type_translate(options[:type]) if options[:type]?
+
           s << "INDEX " << name << " ON " << table << "("
           fields = options.as(Hash)[:fields].as(Array)
           fields.each_with_index do |f, i|
@@ -358,6 +296,21 @@ module Jennifer
 
       # private ===========================
 
+      private def index_type_translate(name)
+        case name
+        when :unique, :uniq
+          "UNIQUE "
+        when :fulltext
+          "FULLTEXT "
+        when :spatial
+          "SPATIAL "
+        when nil
+          " "
+        else
+          raise ArgumentError.new("Unknown index type: #{name}")
+        end
+      end
+
       private def column_definition(name, options, io)
         type = options[:serial]? ? "serial" : (options[:sql_type]? || translate_type(options[:type].as(Symbol)))
         size = options[:size]? || default_type_size(options[:type])
@@ -387,16 +340,8 @@ module Jennifer
         args.empty? ? "#{ms} µs #{query}" : "#{ms} µs #{query} | #{args.inspect}"
       end
 
-      private def regular_query_message(query : String, args : Array)
-        args.empty? ? query : "#{query} | #{args.inspect}"
-      end
-
       private def regular_query_message(ms, query : String, arg = nil)
         arg ? "#{ms} µs #{query} | #{arg}" : "#{ms} µs #{query}"
-      end
-
-      private def regular_query_message(query : String, arg = nil)
-        arg ? "#{query} | #{arg}" : query
       end
     end
   end

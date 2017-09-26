@@ -1,3 +1,5 @@
+# Aggregations
+
 There are 2 types of aggregation functions: ones which are orking without GROUP clause and returns single values (e.g. `max`, `min`, `count`) and ones, working with GROUP clause and returning array of values.
 
 #### Max

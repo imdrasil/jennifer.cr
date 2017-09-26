@@ -1,3 +1,5 @@
+# Model Validations
+
 For validation purposes is used [accord](https://github.com/neovintage/accord) shard. Also there are several general macroses for declaring validations:
 
 - `validates_with_method(*names)` - accepts method name/names

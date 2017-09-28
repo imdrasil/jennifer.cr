@@ -69,6 +69,70 @@ describe Jennifer::QueryBuilder::Query do
     end
   end
 
+  describe "#select" do
+    context "with string argument" do
+      it "uses argument as raw sql" do
+        described_class["table"].select("raw sql")._raw_select.should eq("raw sql")
+      end
+    end
+
+    context "with symbol" do
+      it "creates criteria for given fields and current table" do
+        fields = described_class["table"].select(:f1)._select_fields
+        fields.size.should eq(1)
+        fields[0].field.should eq("f1")
+        fields[0].table.should eq("table")
+      end
+    end
+
+    context "with symbol tuple" do
+      it "adds all as criteria" do
+        fields = described_class["table"].select(:f1, :f2)._select_fields
+        fields.size.should eq(2)
+        fields[0].field.should eq("f1")
+        fields[1].field.should eq("f2")
+      end
+    end
+
+    context "with criteria" do
+      it "adds it to select fields" do
+        fields = described_class["table"].select(Contact._id)._select_fields
+        fields.size.should eq(1)
+        fields[0].field.should eq("id")
+        fields[0].table.should eq("contacts")
+      end
+
+      context "as raw sql" do
+        it "removes brackets" do
+          field = described_class["table"].select(Contact.context.sql("some sql"))._select_fields[0]
+          field.identifier.should eq("some sql")
+        end
+      end
+    end
+
+    context "with array of criterias" do
+      it "removes brackets for all raw sql" do
+        fields = described_class["table"].select([Contact._id, Contact.context.sql("some sql")])._select_fields
+        fields.size.should eq(2)
+        fields[1].identifier.should eq("some sql")
+      end
+    end
+
+    context "with block" do
+      it "yield expression builder as current context and accepts array" do
+        fields = described_class["table"].select { [_f1, Contact._id] }._select_fields
+        fields.size.should eq(2)
+        fields[0].field.should eq("f1")
+        fields[0].table.should eq("table")
+      end
+
+      it "removes brackets from raw sql" do
+        field = described_class["table"].select { [sql("f1")] }._select_fields[0]
+        field.identifier.should eq("f1")
+      end
+    end
+  end
+
   describe "#where" do
     it "allows to pass criteria and sets it via AND" do
       q1 = Factory.build_query
@@ -82,7 +146,7 @@ describe Jennifer::QueryBuilder::Query do
     it "addes inner join by default" do
       q1 = Factory.build_query
       q1.join(Address) { _test__id == _contact_id }
-      q1._joins.map(&.type).should eq([:inner])
+      q1._joins!.map(&.type).should eq([:inner])
     end
   end
 
@@ -90,7 +154,7 @@ describe Jennifer::QueryBuilder::Query do
     it "addes left join" do
       q1 = Factory.build_query
       q1.left_join(Address) { _test__id == _contact_id }
-      q1._joins.map(&.type).should eq([:left])
+      q1._joins!.map(&.type).should eq([:left])
     end
   end
 
@@ -98,7 +162,7 @@ describe Jennifer::QueryBuilder::Query do
     it "addes right join" do
       q1 = Factory.build_query
       q1.right_join(Address) { _test__id == _contact_id }
-      q1._joins.map(&.type).should eq([:right])
+      q1._joins!.map(&.type).should eq([:right])
     end
   end
 
@@ -136,6 +200,102 @@ describe Jennifer::QueryBuilder::Query do
     end
   end
 
+  describe "#group" do
+    context "with symbol" do
+      it "creates criteria for given fields and current table" do
+        fields = described_class["table"].group(:f1)._groups
+        fields.size.should eq(1)
+        fields[0].field.should eq("f1")
+        fields[0].table.should eq("table")
+      end
+    end
+
+    context "with symbol tuple" do
+      it "adds all as criteria" do
+        fields = described_class["table"].group(:f1, :f2)._groups
+        fields.size.should eq(2)
+        fields[0].field.should eq("f1")
+        fields[1].field.should eq("f2")
+      end
+    end
+
+    context "with criteria" do
+      it "adds it to select fields" do
+        fields = described_class["table"].group(Contact._id)._groups
+        fields.size.should eq(1)
+        fields[0].field.should eq("id")
+        fields[0].table.should eq("contacts")
+      end
+
+      context "as raw sql" do
+        it "removes brackets" do
+          field = described_class["table"].group(Contact.context.sql("some sql"))._groups[0]
+          field.identifier.should eq("some sql")
+        end
+      end
+    end
+
+    context "with block" do
+      it "yield expression builder as current context and accepts array" do
+        fields = described_class["table"].group { [_f1, Contact._id] }._groups
+        fields.size.should eq(2)
+        fields[0].field.should eq("f1")
+        fields[0].table.should eq("table")
+      end
+
+      it "removes brackets from raw sql" do
+        field = described_class["table"].group { [sql("f1")] }._groups[0]
+        field.identifier.should eq("f1")
+      end
+    end
+  end
+
+  describe "#order" do
+    context "with named tuple" do
+      it "converts all keys to criterias" do
+        orders = Contact.all.order(age: :desc, id: "asc")._order
+        orders.size.should eq(2)
+        orders = orders.keys
+        orders[0].table.should eq("contacts")
+        orders[0].field.should eq("age")
+      end
+    end
+
+    context "with hash with string keys" do
+      it "treats all keys as raw sql without brackets" do
+        orders = Contact.all.order({"age" => :desc})._order.keys
+        orders[0].is_a?(Jennifer::QueryBuilder::RawSql)
+        orders[0].identifier.should eq("age")
+      end
+    end
+
+    context "with hash with symbol keys" do
+      it "treats all keys as criterias" do
+        orders = Contact.all.order({:age => :desc})._order.keys
+        orders[0].identifier.should eq("contacts.age")
+      end
+    end
+
+    context "wiht hash with criterias as keys" do
+      it "adds them to pool" do
+        orders = Contact.all.order({Contact._id => :desc})._order
+        orders.keys[0].identifier.should eq("contacts.id")
+      end
+
+      it "marks raw sql not to use brackets" do
+        orders = Contact.all.order({Contact.context.sql("raw sql") => :desc, Contact._id => "asc"})._order.keys
+        orders[0].identifier.should eq("raw sql")
+      end
+    end
+
+    context "with block" do
+      it "marks raw sql not to use brackets" do
+        orders = Contact.all.order { {sql("raw sql") => :desc, _id => "asc"} }._order.keys
+        orders[0].identifier.should eq("raw sql")
+      end
+    end
+  end
+
   describe "#limit" do
     pending "sets @limit" do
     end
@@ -143,14 +303,6 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#offset" do
     pending "sets @offset" do
-    end
-  end
-
-  describe "#count" do
-    it "returns count of rows for given query" do
-      Factory.create_contact(name: "Asd")
-      Factory.create_contact(name: "BBB")
-      described_class.new("contacts").where { _name.like("%A%") }.count.should eq(1)
     end
   end
 
@@ -163,103 +315,6 @@ describe Jennifer::QueryBuilder::Query do
     it "accepts query object" do
       select_clause(Factory.build_query(table: "contacts").from(Contact.where { _id > 2 }))
         .should eq("SELECT contacts.*\nFROM ( SELECT contacts.*\nFROM contacts\nWHERE contacts.id > %s\n ) ")
-    end
-  end
-
-  describe "#max" do
-    it "returns maximum value" do
-      Factory.create_contact(name: "Asd")
-      Factory.create_contact(name: "BBB")
-      described_class.new("contacts").max(:name, String).should eq("BBB")
-    end
-  end
-
-  describe "#min" do
-    it "returns minimum value" do
-      Factory.create_contact(name: "Asd", age: 19)
-      Factory.create_contact(name: "BBB", age: 20)
-      described_class.new("contacts").min(:age, Int32).should eq(19)
-    end
-  end
-
-  describe "#sum" do
-    it "returns sum value" do
-      Factory.create_contact(name: "Asd", age: 20)
-      Factory.create_contact(name: "BBB", age: 19)
-      {% if env("DB") == "mysql" %}
-        described_class.new("contacts").sum(:age, Float64).should eq(39)
-      {% else %}
-        described_class.new("contacts").sum(:age, Int64).should eq(39i64)
-      {% end %}
-    end
-  end
-
-  describe "#avg" do
-    it "returns average value" do
-      Factory.create_contact(name: "Asd", age: 20)
-      Factory.create_contact(name: "BBB", age: 35)
-      {% if env("DB") == "mysql" %}
-        described_class.new("contacts").avg(:age, Float64).should eq(27.5)
-      {% else %}
-        described_class.new("contacts").avg(:age, PG::Numeric).should eq(27.5)
-      {% end %}
-    end
-  end
-
-  describe "#group_max" do
-    it "returns array of maximum values" do
-      Factory.create_contact(name: "Asd", gender: "male", age: 18)
-      Factory.create_contact(name: "BBB", gender: "female", age: 19)
-      Factory.create_contact(name: "Asd", gender: "male", age: 20)
-      Factory.create_contact(name: "BBB", gender: "female", age: 21)
-      match_array(described_class.new("contacts").group(:gender).group_max(:age, Int32), [20, 21])
-    end
-  end
-
-  describe "#group_min" do
-    it "returns minimum value" do
-      Factory.create_contact(name: "Asd", gender: "male", age: 18)
-      Factory.create_contact(name: "BBB", gender: "female", age: 19)
-      Factory.create_contact(name: "Asd", gender: "male", age: 20)
-      Factory.create_contact(name: "BBB", gender: "female", age: 21)
-      match_array(described_class.new("contacts").group(:gender).group_min(:age, Int32), [18, 19])
-    end
-  end
-
-  describe "#group_sum" do
-    it "returns sum value" do
-      Factory.create_contact(name: "Asd", gender: "male", age: 18)
-      Factory.create_contact(name: "BBB", gender: "female", age: 19)
-      Factory.create_contact(name: "Asd", gender: "male", age: 20)
-      Factory.create_contact(name: "BBB", gender: "female", age: 21)
-      {% if env("DB") == "mysql" %}
-        match_array(described_class.new("contacts").group(:gender).group_sum(:age, Float64), [38.0, 40.0])
-      {% else %}
-        match_array(described_class.new("contacts").group(:gender).group_sum(:age, Int64), [38i64, 40i64])
-      {% end %}
-    end
-  end
-
-  describe "#group_avg" do
-    it "returns average value" do
-      Factory.create_contact(name: "Asd", gender: "male", age: 18)
-      Factory.create_contact(name: "BBB", gender: "female", age: 19)
-      Factory.create_contact(name: "Asd", gender: "male", age: 20)
-      Factory.create_contact(name: "BBB", gender: "female", age: 21)
-      {% if env("DB") == "mysql" %}
-        match_each([19, 20], described_class.new("contacts").group(:gender).group_avg(:age, Float64))
-      {% else %}
-        match_each([19, 20], described_class.new("contacts").group(:gender).group_avg(:age, PG::Numeric))
-      {% end %}
-    end
-  end
-
-  describe "#group_count" do
-    it "returns count of each group elements" do
-      Factory.create_contact(name: "Asd", gender: "male", age: 18)
-      Factory.create_contact(name: "BBB", gender: "female", age: 18)
-      Factory.create_contact(name: "Asd", gender: "male", age: 20)
-      match_each([2, 1], described_class.new("contacts").group(:age).group_count(:age))
     end
   end
 
@@ -301,7 +356,7 @@ describe Jennifer::QueryBuilder::Query do
     it "adds query to own array of unions" do
       q = Jennifer::Query["table"]
       q.union(Jennifer::Query["table2"]).should eq(q)
-      q._unions.empty?.should be_false
+      q._unions!.empty?.should be_false
     end
   end
 
@@ -316,5 +371,51 @@ describe Jennifer::QueryBuilder::Query do
     end
   end
 
-  # TODO: move other plain query methods here
+  describe "#_select_fields" do
+    context "query has no specified select fields" do
+      it "returns array with only star" do
+        fields = Contact.all._select_fields
+        fields.size.should eq(1)
+
+        fields[0].is_a?(Jennifer::QueryBuilder::Star).should be_true
+      end
+    end
+
+    context "query has specified fields" do
+      it "returns specified fields" do
+        fields = Contact.all.select { [_id, _age] }._select_fields
+        fields.size.should eq(2)
+        fields[0].field.should eq("id")
+        fields[1].field.should eq("age")
+      end
+    end
+  end
+
+  describe "#each_result_set" do
+    it "yields rows from result set" do
+      Factory.create_contact(name: "a", age: 13)
+      Factory.create_contact(name: "b", age: 14)
+
+      i = 0
+      Contact.all.each_result_set do |rs|
+        rs.should be_a DB::ResultSet
+        Contact.new(rs)
+        i += 1
+      end
+      i.should eq(2)
+    end
+  end
+
+  describe "#each" do
+    it "yields each found row" do
+      Factory.create_contact(name: "a", age: 13)
+      Factory.create_contact(name: "b", age: 14)
+      i = 13
+      Contact.all.order(age: :asc).each do |c|
+        c.age.should eq(i)
+        i += 1
+      end
+      i.should eq(15)
+    end
+  end
 end

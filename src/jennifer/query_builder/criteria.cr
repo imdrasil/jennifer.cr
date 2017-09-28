@@ -5,25 +5,30 @@ module Jennifer
     class Criteria
       alias Rightable = JSONSelector | Criteria | DBAny | Array(DBAny)
 
-      getter relation : String?, field, table
+      getter relation : String?, alias : String?, field, table
 
       def_clone
 
       def initialize(@field : String, @table : String, @relation = nil)
       end
 
-      def set_relation(table, name)
+      def set_relation(table : String, name : String)
         @relation = name if @relation.nil? && @table == table
       end
 
-      def alias_tables(aliases)
+      def alias_tables(aliases : Hash(String, String))
         @table = aliases[@relation.as(String)] if @relation
       end
 
-      def change_table(old_name, new_name)
+      def change_table(old_name : String, new_name : String)
         return if @table != old_name
         @table = new_name
         @relation = nil
+      end
+
+      def alias(name : String?)
+        @alias = name
+        self
       end
 
       def path(elements : String)
@@ -105,12 +110,16 @@ module Jennifer
         as_sql
       end
 
-      def as_sql
+      def as_sql : String
         identifier
       end
 
-      def identifier
+      def identifier : String
         "#{@table}.#{@field.to_s}"
+      end
+
+      def definition
+        @alias ? "#{identifier} AS #{@alias}" : identifier
       end
 
       def sql_args

@@ -1,6 +1,7 @@
 require "../spec_helper"
 
 describe Jennifer::QueryBuilder::Criteria do
+  described_class = Jennifer::QueryBuilder::Criteria
   # all sql checks are in operator_spec.cr
   {% for op in [:==, :<, :>, :<=, :>=, :!=] %}
     describe "#{{{op.stringify}}}" do
@@ -96,14 +97,41 @@ describe Jennifer::QueryBuilder::Criteria do
     end
   end
 
-  describe "#to_sql" do
-    pending "add" do
+  describe "#as_sql" do
+    it "returns identifier" do
+      c = Factory.build_criteria
+      c.as_sql.should eq(c.identifier)
     end
   end
 
   describe "#sql_args" do
     it "returns empty array" do
       Factory.build_criteria.sql_args.empty?.should be_true
+    end
+  end
+
+  describe "#alias" do
+    it "sets alias" do
+      Factory.build_criteria.alias("sdf").alias.should eq("sdf")
+    end
+  end
+
+  describe "#identifier" do
+    it "returns table name and field separated by dot" do
+      Factory.build_criteria(table: "tab", field: "field").identifier.should eq("tab.field")
+    end
+  end
+
+  describe "#definition" do
+    context "with alias" do
+      it "add alias name at the end" do
+        Factory.build_criteria.alias("asd").definition.ends_with?("AS asd").should be_true
+      end
+    end
+
+    it "renders identifier" do
+      c = Factory.build_criteria
+      c.definition.should eq(c.identifier)
     end
   end
 end

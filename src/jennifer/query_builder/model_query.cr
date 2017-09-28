@@ -24,6 +24,23 @@ module Jennifer
         super
       end
 
+      def _select_fields : Array(Criteria)
+        if @select_fields.empty?
+          buff = [] of Criteria
+          buff << @expression.star
+
+          if !@relations.empty?
+            @relations.each do |r|
+              table_name = @table_aliases[r]? || model_class.relation(r).table_name
+              buff << @expression.star(table_name)
+            end
+          end
+          buff
+        else
+          @select_fields
+        end
+      end
+
       def model_class
         T
       end
@@ -39,11 +56,15 @@ module Jennifer
       def with(arr : Array)
         arr.each do |name|
           table_name = T.relation(name).table_name
-          temp_joins = @joins.select { |j| j.table == table_name }
-          join = temp_joins.find(&.relation.nil?)
-          if join
-            join.not_nil!.relation = name
-          elsif temp_joins.size == 0
+          if @joins
+            temp_joins = _joins!.select { |j| j.table == table_name }
+            join = temp_joins.find(&.relation.nil?)
+            if join
+              join.not_nil!.relation = name
+            elsif temp_joins.size == 0
+              raise BaseException.new("#with should be called after correspond join: no such table \"#{table_name}\" of relation \"#{name}\"")
+            end
+          else
             raise BaseException.new("#with should be called after correspond join: no such table \"#{table_name}\" of relation \"#{name}\"")
           end
           @relations << name
@@ -126,15 +147,6 @@ module Jennifer
 
       # ========= private ==============
 
-      private def reverse_order
-        if @order.empty?
-          # TODO: make smth like T.primary_field.to_s
-          @order["#{T.table_name}.#{T.primary_field_name}"] = "DESC"
-        else
-          super
-        end
-      end
-
       # Loads relations added by `preload` method; makes one separate request per each relation
       private def add_preloaded(collection)
         return collection if collection.empty?
@@ -203,18 +215,21 @@ module Jennifer
       end
 
       private def add_aliases
-        table_names = [table] + @joins.map { |e| e.table if !e.aliass }.compact
+        table_names = [table]
+        table_names.concat(_joins!.map { |e| e.table if !e.aliass }.compact) if @joins
         duplicates = extract_duplicates(table_names)
         return if duplicates.empty?
         i = 0
         @table_aliases.clear
-        @joins.each do |j|
-          if j.relation && duplicates.includes?(j.table)
-            @table_aliases[j.relation.as(String)] = "t#{i}"
-            i += 1
+        if @joins
+          _joins!.each do |j|
+            if j.relation && duplicates.includes?(j.table)
+              @table_aliases[j.relation.as(String)] = "t#{i}"
+              i += 1
+            end
           end
+          _joins!.each { |j| j.alias_tables(@table_aliases) }
         end
-        @joins.each { |j| j.alias_tables(@table_aliases) }
         @tree.not_nil!.alias_tables(@table_aliases) if @tree
       end
 

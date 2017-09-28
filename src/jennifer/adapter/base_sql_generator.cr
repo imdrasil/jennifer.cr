@@ -103,17 +103,17 @@ module Jennifer
       def self.body_section(io, query)
         join_clause(io, query)
         where_clause(io, query.tree)
+        group_clause(io, query)
         order_clause(io, query)
         limit_clause(io, query)
-        group_clause(io, query)
         having_clause(io, query)
         lock_clause(io, query)
         union_clause(io, query)
       end
 
       def self.union_clause(io, query)
-        return if query._unions.empty?
-        query._unions.each do |u|
+        return unless query._unions
+        query._unions!.each do |u|
           io << " UNION " << self.select(u)
         end
       end
@@ -123,41 +123,15 @@ module Jennifer
         io << (query._lock.is_a?(Bool) ? " FOR UPDATE " : query._lock)
       end
 
-      def self.select_clause(s, query : QueryBuilder::IModelQuery, exact_fields = [] of String)
-        s << "SELECT "
-        if query._raw_select.nil?
-          table = query._table
-          if !exact_fields.empty?
-            exact_fields.map { |f| "#{table}.#{f}" }.join(", ", s)
-          else
-            s << table << ".*"
-            unless query._relations.empty?
-              s << ", "
-              query._relations.each_with_index do |r, i|
-                s << ", " if i != 0
-                # TODO: cover with tests
-                s << (query._table_aliases[r]? || query.model_class.relations[r].table_name) << ".*"
-              end
-            end
-          end
-        else
-          # NOTE: `not_nil!` is a fix for "BUG: no target defs"
-          s << query._raw_select.not_nil!
-        end
-        s << "\n"
-        from_clause(s, query)
-      end
-
       # Renders SELECT and FROM parts
       def self.select_clause(io, query, exact_fields = [] of String)
         io << "SELECT "
         unless query._raw_select
           table = query._table
           if !exact_fields.empty?
-            # TODO: avoid creating extra arrays
-            exact_fields.map { |f| "#{table}.#{f}" }.join(", ", io)
+            exact_fields.join(", ", io) { |f| io << "#{table}.#{f}" }
           else
-            io << table << ".*"
+            query._select_fields.join(", ", io) { |f| io << f.definition }
           end
         else
           io << query._raw_select
@@ -184,10 +158,9 @@ module Jennifer
       end
 
       def self.group_clause(io, query)
-        return if query._group.empty?
-        # TODO: make building better
+        return if query._groups.empty?
         io << "GROUP BY "
-        query._group.map { |t, fields| fields.map { |f| "#{t}.#{f}" }.join(", ") }.join(", ", io)
+        query._groups.each.join(", ", io) { |c| io << c.as_sql }
         io << "\n"
       end
 
@@ -197,7 +170,8 @@ module Jennifer
       end
 
       def self.join_clause(io, query)
-        query._joins.map(&.as_sql).join(' ', io)
+        return unless query._joins
+        query._joins!.join(" ", io) { |j| io << j.as_sql }
       end
 
       def self.where_clause(io, query : QueryBuilder::Query | QueryBuilder::ModelQuery)
@@ -217,10 +191,7 @@ module Jennifer
       def self.order_clause(io, query)
         return if query._order.empty?
         io << "ORDER BY "
-        query._order.each_with_index do |(k, v), i|
-          io << ", " if i > 0
-          io << k << " " << v.upcase
-        end
+        query._order.join(", ", io) { |(k, v)| io.print k.as_sql, " ", v.upcase }
         io << "\n"
       end
 

@@ -9,27 +9,31 @@ module Jennifer
       end
 
       # Initialize object copy;
-      protected def initialize_copy(other)
+      protected def initialize_copy(other : Criteria)
         @table = other.@table.clone
         @relation = other.@relation.clone
         @query = other.@query
       end
 
-      def sql(_query : String, args = [] of DB::Any)
-        RawSql.new(_query, args)
+      def sql(_query : String, args : Array(DB::Any) = [] of DB::Any, use_brackets : Bool = true)
+        RawSql.new(_query, args, use_brackets)
+      end
+
+      def sql(_query : String, use_brackets : Bool = true)
+        RawSql.new(_query, use_brackets)
       end
 
       def c(name : String)
         Criteria.new(name, @table, @relation)
       end
 
-      def c(name : String, table_name : String)
-        Criteria.new(name, table_name, @relation)
+      def c(name : String, table_name : String? = nil, relation : String? = nil)
+        @query.not_nil!.with_relation! if @query
+        Criteria.new(name, table_name || @table, relation || @relation)
       end
 
-      def c(name : String, table_name : String, relation : String)
-        @query.not_nil!.with_relation! if @query
-        Criteria.new(name, table_name, relation)
+      def star(table : String = @table)
+        Star.new(table)
       end
 
       macro method_missing(call)

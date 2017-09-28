@@ -131,7 +131,7 @@ describe Jennifer::Model::Base do
   describe "%scope" do
     context "with block" do
       it "executes in query context" do
-        ::Jennifer::Adapter::SqlGenerator.select(Contact.all.ordered).should match(/ORDER BY name ASC/)
+        ::Jennifer::Adapter::SqlGenerator.select(Contact.all.ordered).should match(/ORDER BY contacts\.name ASC/)
       end
 
       context "without arguemnt" do

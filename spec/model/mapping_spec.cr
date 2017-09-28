@@ -328,6 +328,12 @@ describe Jennifer::Model::Mapping do
             c.set_attribute(:name, 123)
           end
         end
+
+        it "marks changed field as modified" do
+          c = Factory.build_contact
+          c.set_attribute(:name, "asd")
+          c.name_changed?.should be_true
+        end
       end
 
       context "no such setter" do

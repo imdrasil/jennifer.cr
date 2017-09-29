@@ -1,4 +1,4 @@
-#### STI
+# Model Single Table Inheritance (STI)
 
 Single table inheritance could be used in next way:
 ```crystal

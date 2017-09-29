@@ -140,7 +140,7 @@ end
 Jennifer allows you to query db using flexible dsl:
 ```crystal
 Contact.all.left_join(Passport) { _contact_id == _contact__id }
-            .order("contacts.id": :asc)
+            .order(id: :asc)
             .with(:passport).to_a
 Contact.all.eager_load(:countries).where { __countries { _name.like("%tan%") } }
 Contact.all.group(:gender).group_avg(:age, PG::Numeric)

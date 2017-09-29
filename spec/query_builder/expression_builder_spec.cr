@@ -44,10 +44,35 @@ describe ::Jennifer::QueryBuilder::ExpressionBuilder do
   end
 
   describe "#c" do
-    it "creates criteria with given field name" do
-      c = Factory.build_expression.c("some field")
-      c.should be_a(Jennifer::QueryBuilder::Criteria)
-      c.field.should eq("some field")
+    context "with field name" do
+      it "creates criteria with given field name" do
+        c = Factory.build_expression.c("some field")
+        c.should be_a(Jennifer::QueryBuilder::Criteria)
+        c.field.should eq("some field")
+      end
+
+      context "with table name" do
+        it "assign given table name" do
+          c = Factory.build_expression.c("field", "str_table")
+          c.table.should eq("str_table")
+        end
+
+        context "with relation" do
+          it "assigns both table and relation" do
+            c = Factory.build_expression.c("f", "t", "r")
+            c.table.should eq("t")
+            c.relation.should eq("r")
+          end
+        end
+      end
+
+      context "with relation" do
+        it "assign only relation" do
+          c = Factory.build_expression(table: "some_table").c("f1", relation: "r")
+          c.relation.should eq("r")
+          c.table.should eq("some_table")
+        end
+      end
     end
   end
 
@@ -56,6 +81,19 @@ describe ::Jennifer::QueryBuilder::ExpressionBuilder do
       c = Factory.build_expression.sql("contacts.name LIKE ?", ["%jo%"])
       c.should be_a(Jennifer::QueryBuilder::RawSql)
       c.field.should eq("contacts.name LIKE ?")
+    end
+  end
+
+  describe "#star" do
+    it "creates star object with current table name by default" do
+      c = Factory.build_expression(table: "asd").star
+      c.is_a?(Jennifer::QueryBuilder::Star).should be_true
+      c.table.should eq("asd")
+    end
+
+    it "creates star object with geven table name" do
+      c = Factory.build_expression(table: "asd").star("qwe")
+      c.table.should eq("qwe")
     end
   end
 end

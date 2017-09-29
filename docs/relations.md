@@ -1,4 +1,4 @@
-There are 4 types of relations: has_many, has_and_belongs_to_many, belongs_to and has_one. All of them have same semantic but generate slightly different methods.
+There are 4 types of relations: `has_many`, `has_and_belongs_to_many`, `belongs_to` and `has_one`. All of them have same semantic but generate slightly different methods.
 
 They takes next arguments:
 
@@ -32,4 +32,21 @@ address = contact.addresses.last
 contact.remove_addresses(address)
 ```
 
-`belongs_to` and `has_one` add extra method `#relation_name!` which also adds assertion for `nil`.
+`belongs_to` and `has_one` add extra method `#relation_name!` which also adds assertion for `nil` inside of it.
+
+`%has_and_belongs_to_many` relation allows to define many-to-many relationship between 2 models. By given parameters could be specified field names described on the next schema:
+```
+| "Model A" |   | "Join Table" (join_table) |		| "Model B" 			  |
+| --------- |	|---------------------------|		|-------------------------|
+| primary 	|<--| foreign 					|   /-->| "model b primary field" |
+				| association_foreign		|--/
+```
+
+As you can see primary field of related model can't be specified - defined primary key (in the mapping) will be got.
+
+Also `mas_many`, `belongs_to` and `has_one` relations have `dependent` parameter - defines extra callback for cleaning up related data after destroying parent one. Allowed types are:
+- `nullify` - sets foreign key to `null` (`belongs_to` doesn't support it) - default for `has_many` and `has_one`
+- `delete` - deletes all related objects
+- `destroy` - destroyes all related objects
+- `restrict_with_exception` - will raise `Jennifer::RecordExists` exception if there is any related object
+- `none` - will do nothing - default for `belongs_to`

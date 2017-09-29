@@ -38,7 +38,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
         contacts = Factory.create_contact(3)
         ids = contacts.map(&.id)
         Factory.create_address(contact_id: contacts[0].id)
-        res = ContactWithDependencies.all.eager_load(:addresses).where { _id.in(ids) }.order("contacts.id": :asc).to_a
+        res = ContactWithDependencies.all.eager_load(:addresses).where { _id.in(ids) }.order(id: :asc).to_a
         res.size.should eq(3)
         res[0].addresses.size.should eq(1)
         res[0].name.nil?.should be_false
@@ -160,28 +160,6 @@ describe Jennifer::QueryBuilder::ModelQuery do
     end
   end
 
-  describe "#order" do
-    context "using named tuple" do
-      it "correctly sorts" do
-        Factory.create_contact(age: 13)
-        Factory.create_contact(age: 14)
-
-        Contact.all.order(age: :desc).first!.age.should eq(14)
-        Contact.all.order(age: :asc).first!.age.should eq(13)
-      end
-    end
-
-    context "using hash" do
-      it "correctly sorts" do
-        Factory.create_contact(age: 13)
-        Factory.create_contact(age: 14)
-
-        Contact.all.order({:age => :desc}).first!.age.should eq(14)
-        Contact.all.order({:age => :asc}).first!.age.should eq(13)
-      end
-    end
-  end
-
   describe "#distinct" do
     it "returns correct names" do
       Factory.create_contact(name: "a1")
@@ -193,42 +171,6 @@ describe Jennifer::QueryBuilder::ModelQuery do
     end
 
     pending "using table as argument" do
-    end
-  end
-
-  describe "#group_by" do
-    context "given column" do
-      it "returns unique values by given field" do
-        Factory.create_contact(name: "a1")
-        Factory.create_contact(name: "a2")
-        Factory.create_contact(name: "a1")
-
-        r = Contact.all.group("name").pluck(:name)
-        r.size.should eq(2)
-        r.should contain("a1")
-        r.should contain("a2")
-      end
-    end
-
-    context "given columns" do
-      it "returns unique values by given field" do
-        c1 = Factory.create_contact(name: "a1", age: 29)
-        c2 = Factory.create_contact(name: "a2", age: 29)
-        c3 = Factory.create_contact(name: "a1", age: 29)
-        a1 = Factory.create_address(street: "asd st.", contact_id: c1.id)
-        r = Contact.all.group("name", "age").pluck(:name, :age)
-        r.size.should eq(2)
-        r[0][0].should eq("a1")
-        r[0][1].should eq(29)
-
-        r[1][0].should eq("a2")
-        r[1][1].should eq(29)
-      end
-    end
-
-    context "given named tuple" do
-      pending "returns unique values by given field and tables" do
-      end
     end
   end
 
@@ -246,34 +188,6 @@ describe Jennifer::QueryBuilder::ModelQuery do
   describe "#select_args" do
     it "returns array of join and condition args" do
       Contact.where { _id == 2 }.join(Address) { _name == "asd" }.select_args.should eq(db_array("asd", 2))
-    end
-  end
-
-  describe "#each" do
-    it "yields each found row" do
-      Factory.create_contact(name: "a", age: 13)
-      Factory.create_contact(name: "b", age: 14)
-      i = 13
-      Contact.all.order(age: :asc).each do |c|
-        c.age.should eq(i)
-        i += 1
-      end
-      i.should eq(15)
-    end
-  end
-
-  describe "#each_result_set" do
-    it "yields rows from result set" do
-      Factory.create_contact(name: "a", age: 13)
-      Factory.create_contact(name: "b", age: 14)
-
-      i = 0
-      Contact.all.each_result_set do |rs|
-        rs.should be_a DB::ResultSet
-        Contact.new(rs)
-        i += 1
-      end
-      i.should eq(2)
     end
   end
 
@@ -317,7 +231,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
 
           res = Contact.all.left_join(Address) { _contact_id == _contact__id }
                            .left_join(Passport) { _contact_id == _contact__id }
-                           .order("contacts.id": :asc)
+                           .order(id: :asc)
                            .with(:addresses, :passport).to_a
 
           res.size.should eq(2)
@@ -375,29 +289,53 @@ describe Jennifer::QueryBuilder::ModelQuery do
 
   describe "#includes" do
     it "doesn't add JOIN condition" do
-      Contact.all.includes(:address)._joins.empty?.should be_true
+      Contact.all.includes(:address)._joins.nil?.should be_true
+    end
+  end
+
+  describe "#_select_fields" do
+    context "query has no specified select fields" do
+      context "has eager loaded relations" do
+        subject = Contact.all.eager_load(:addresses)._select_fields
+
+        it "includes own star criteria" do
+          subject.any? { |e| e.table == "contacts" && e.field == "*" }.should be_true
+        end
+
+        it "includes all mentioned relation star criterias" do
+          subject.any? { |e| e.table == "addresses" && e.field == "*" }.should be_true
+        end
+      end
+
+      it "returns only own star riteria" do
+        fields = Contact.all._select_fields
+        fields.size.should eq(1)
+
+        fields[0].is_a?(Jennifer::QueryBuilder::Star).should be_true
+        fields[0].table.should eq("contacts")
+      end
+    end
+
+    context "query has specified fields" do
+      it "returns specified fields" do
+        fields = Contact.all.select { [_id, _age] }._select_fields
+        fields.size.should eq(2)
+        fields[0].field.should eq("id")
+        fields[1].field.should eq("age")
+      end
     end
   end
 
   context "complex query example" do
     postgres_only do
       it "allows custom select with crouping" do
-        # TODO: this is temporary behavior
-        # puts Contact.all.select("COUNT(*) AS stat_count, date_trunc('year', created_at) as period").group("period").to_sql
         Factory.create_contact
-        result = [] of Jennifer::Record
-        query = <<-SQL
-        SELECT count(*) AS stat_count, date_trunc('year', created_at) AS period 
-        FROM contacts 
-        GROUP BY period 
-        ORDER BY period DESC
-      SQL
-        Jennifer::Adapter.adapter.query(query) do |rs|
-          rs.each do
-            result << Jennifer::Record.new(rs)
-          end
-        end
-        result.size.should eq(1)
+        Contact
+          .all
+          .select { [sql("count(*)").alias("stat_count"), sql("date_trunc('year', created_at)").alias("period")] }
+          .group("period")
+          .order({"period" => :desc})
+          .results.size.should eq(1)
       end
     end
   end

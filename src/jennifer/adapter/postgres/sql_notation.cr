@@ -28,13 +28,12 @@ module Jennifer
           s << "UPDATE " << query.table << " SET "
           options.map { |k, v| "#{k.to_s}= #{esc}" }.join(", ", s)
           s << "\n"
-          _joins = query._joins
 
-          from_clause(s, query, _joins[0].table_name) unless _joins.empty?
+          from_clause(s, query, query._joins![0].table_name) if query._joins
           where_clause(s, query.tree)
-          unless _joins.empty?
-            where_clause(s, _joins[0].on)
-            _joins[1..-1].map(&.as_sql).join(' ', s)
+          if query._joins
+            where_clause(s, query._joins![0].on)
+            query._joins![1..-1].join(" ", s) { |e| s << e.as_sql }
           end
         end
       end

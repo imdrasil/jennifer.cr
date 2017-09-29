@@ -24,12 +24,12 @@ module Jennifer
           s << "\n"
           _joins = query._joins
 
-          unless _joins.empty?
+          unless _joins.nil?
             where_clause(s, _joins[0].on)
-            _joins[1..-1].map(&.as_sql).join(' ', s)
+            _joins[1..-1].join(" ", s) { |e| s << e.as_sql }
           end
           s << " SET "
-          options.map { |k, v| "#{k.to_s}= #{esc}" }.join(", ", s)
+          options.join(", ", s) { |(k, v)| s << k << " = " << esc }
           s << " "
           where_clause(s, query.tree)
         end

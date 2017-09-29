@@ -11,4 +11,4 @@ There are next macroses for defining callbacks:
 
 They accept method names.
 
-Raising `::Jennifer::Skip` inside of any before callback stops current action from being processed. 
+Raising `::Jennifer::Skip` exception inside of any calback will stop further callback invoking; such behavior in the any before callback stops current action from being processed. 

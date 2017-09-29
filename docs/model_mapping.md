@@ -97,7 +97,7 @@ class Country < Jennifer::Model::Base
 end
 ```
 
-`mapping` macros stands for describing all model attributes. If field has no extra parameter, you can just specify name and type (type in case of crystal language): `field_name: :Type`. But you can use tuple and provide next parameters:
+`%mapping(options, strict = true)` macros stands for describing all model attributes. If field has no extra parameter, you can just specify name and type (type in case of crystal language): `field_name: :Type`. But you can use tuple and provide next parameters:
 
 | argument | description |
 | --- | --- |
@@ -108,7 +108,7 @@ end
 | `:getter` | if getter should be created (default - `true`) |
 | `:setter` | if setter should be created (default - `true`) |
 
-> By default expected that all fields are defined in model. It that is not true you should to pass `false` as second argument and override `::field_count` method to represent correct field count.
+If you don't want to define all the table fields - pass seond argument to mapping as `false`.
 
 It defines next methods:
 
@@ -145,3 +145,5 @@ It defines next methods:
 | `#attribute` | `String \| Symbol` | returns attribute value by it's name |
 
 Automatically model is associated with table with underscored pluralized class name, but special name can be defined using `::table_name` method in own body before using any relation (`::singular_table_name` - for singular variant).
+
+**Important restriction** - model with any no primary field is not allowed for now.

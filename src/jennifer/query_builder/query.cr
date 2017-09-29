@@ -1,13 +1,19 @@
 require "./expression_builder"
+require "./aggregations"
 
 module Jennifer
   module QueryBuilder
     class Query
       extend Ifrit
+      include Aggregations
 
-      {% for method in %i(having table limit offset raw_select table_aliases from lock joins order relations group lock unions) %}
+      {% for method in %i(having table limit offset raw_select table_aliases from lock joins order relations groups lock unions) %}
         def _{{method.id}}
           @{{method.id}}
+        end
+
+        def _{{method.id}}!
+          @{{method.id}}.not_nil!
         end
       {% end %}
 
@@ -18,25 +24,51 @@ module Jennifer
       @raw_select : String?
       @from : String | Query?
       @lock : String | Bool?
+      @joins : Array(Join)?
+      @unions : Array(Query)?
 
       def_clone
 
       property tree : Condition | LogicOperator?
+      getter table
 
       def initialize
         @do_nothing = false
         @expression = ExpressionBuilder.new(@table)
-        @joins = [] of Join
-        @order = {} of String => String
+        @order = {} of Criteria => String
         @relations = [] of String
-        @group = {} of String => Array(String)
+        @groups = [] of Criteria
         @relation_used = false
         @table_aliases = {} of String => String
-        @unions = [] of Query
+        @select_fields = [] of Criteria
       end
 
       def initialize(@table)
         initialize
+      end
+
+      def expression_builder
+        @expression
+      end
+
+      def _select_fields : Array(Criteria)
+        if @select_fields.empty?
+          b = [] of Criteria
+          b << @expression.star
+          b
+        else
+          @select_fields
+        end
+      end
+
+      protected def add_join(value : Join)
+        @joins ||= [] of Join
+        @joins.not_nil! << value
+      end
+
+      protected def add_union(value : Query)
+        @unions ||= [] of Query
+        @unions.not_nil! << value
       end
 
       def self.build(*opts)
@@ -72,9 +104,7 @@ module Jennifer
       def select_args
         args = [] of DB::Any
         args.concat(@from.as(Query).select_args) if @from.is_a?(Query)
-        @joins.each do |join|
-          args.concat(join.sql_args)
-        end
+        _joins!.each { |join| args.concat(join.sql_args) } if @joins
         args.concat(@tree.not_nil!.sql_args) if @tree
         args.concat(@having.not_nil!.sql_args) if @having
         args
@@ -83,9 +113,7 @@ module Jennifer
       def select_args_count
         count = 0
         count += @from.as(Query).select_args_count if @from.is_a?(Query)
-        @joins.each do |join|
-          count += join.sql_args_count
-        end
+        _joins!.each { |join| count += join.sql_args_count } if @joins
         count += @tree.not_nil!.sql_args_count if @tree
         count += @having.not_nil!.sql_args_count if @having
         count
@@ -99,17 +127,9 @@ module Jennifer
         @relation_used
       end
 
-      def expression_builder
-        @expression
-      end
-
-      def table
-        @table
-      end
-
       def empty?
         @tree.nil? && @limit.nil? && @offset.nil? &&
-          @joins.empty? && @order.empty? && @relations.empty?
+          (@joins.nil? || @joins.not_nil!.empty?) && @order.empty? && @relations.empty?
       end
 
       def exec(&block)
@@ -127,7 +147,7 @@ module Jennifer
         eb = ExpressionBuilder.new(klass.table_name, relation, self)
         with_relation! if relation
         other = with eb yield eb
-        @joins << Join.new(klass.table_name, other, type, relation: relation)
+        add_join(Join.new(klass.table_name, other, type, relation: relation))
         self
       end
 
@@ -135,7 +155,7 @@ module Jennifer
         eb = ExpressionBuilder.new(_table, relation, self)
         with_relation! if relation
         other = with eb yield eb
-        @joins << Join.new(_table, other, type, relation)
+        add_join(Join.new(_table, other, type, relation))
         self
       end
 
@@ -160,7 +180,40 @@ module Jennifer
         self
       end
 
-      def from(_from)
+      def select(field : Criteria)
+        @select_fields << field
+        field.as(RawSql).without_brackets if field.is_a?(RawSql)
+        self
+      end
+
+      def select(field_name : Symbol)
+        @select_fields << @expression.c(field_name.to_s)
+        self
+      end
+
+      def select(*fields : Symbol)
+        fields.each { |f| @select_fields << @expression.c(f.to_s) }
+        self
+      end
+
+      def select(fields : Array(Criteria))
+        fields.each do |f|
+          @select_fields << f
+          f.as(RawSql).without_brackets if f.is_a?(RawSql)
+        end
+        self
+      end
+
+      def select(&block)
+        fields = with @expression yield
+        fields.each do |f|
+          f.as(RawSql).without_brackets if f.is_a?(RawSql)
+        end
+        @select_fields.concat(fields)
+        self
+      end
+
+      def from(_from : String | Query)
         @from = _from
         self
       end
@@ -177,7 +230,7 @@ module Jennifer
       end
 
       def union(query)
-        @unions << query
+        add_union(query)
         self
       end
 
@@ -222,11 +275,11 @@ module Jennifer
         ::Jennifer::Adapter.adapter.pluck(self, fields.map(&.to_s))
       end
 
-      def pluck(field)
+      def pluck(field : String | Symbol)
         ::Jennifer::Adapter.adapter.pluck(self, field.to_s)
       end
 
-      def pluck(*fields)
+      def pluck(*fields : String | Symbol)
         ::Jennifer::Adapter.adapter.pluck(self, fields.to_a.map(&.to_s))
       end
 
@@ -242,7 +295,7 @@ module Jennifer
         ::Jennifer::Adapter.adapter.count(self)
       end
 
-      def distinct(column, _table)
+      def distinct(column : String, _table : String)
         ::Jennifer::Adapter.adapter.distinct(self, column, _table)
       end
 
@@ -250,30 +303,49 @@ module Jennifer
         ::Jennifer::Adapter.adapter.distinct(self, column, table)
       end
 
-      def group(column)
-        arr = _groups(table)
-        arr << column.to_s
+      # Groups by given column realizes it as is
+      def group(column : String)
+        @groups << @expression.sql(column, false)
         self
       end
 
-      def group(*columns)
-        _groups(table).concat(columns.to_a)
+      # Groups by given column realizes it as current table's field
+      def group(column : Symbol)
+        @groups << @expression.c(column.to_s)
         self
       end
 
-      def group(**columns)
-        columns.each do |t, fields|
-          _groups(t.to_s).concat(fields)
-        end
+      # Groups by given columns realizes them as are
+      def group(*columns : String)
+        columns.each { |c| @groups << @expression.sql(c, false) }
         self
       end
 
-      def limit(count)
+      # Groups by given columns realizes them as current table's ones
+      def group(*columns : Symbol)
+        columns.each { |c| @groups << @expression.c(c.to_s) }
+        self
+      end
+
+      def group(column : Criteria)
+        column.as(RawSql).without_brackets if column.is_a?(RawSql)
+        @groups << column
+        self
+      end
+
+      def group(&block)
+        fields = with @expression yield
+        fields.each { |f| f.as(RawSql).without_brackets if f.is_a?(RawSql) }
+        @groups.concat(fields)
+        self
+      end
+
+      def limit(count : Int32)
         @limit = count
         self
       end
 
-      def offset(count)
+      def offset(count : Int32)
         @offset = count
         self
       end
@@ -331,74 +403,33 @@ module Jennifer
         order(opts.to_h)
       end
 
-      def order(opts : Hash(String | Symbol, String | Symbol))
+      def order(opts : Hash(String, String | Symbol))
         opts.each do |k, v|
-          @order[k.to_s] = v.to_s
+          @order[@expression.sql(k, false)] = v.to_s
         end
         self
       end
 
-      def max(field, klass : T.class) : T forall T
-        raise ArgumentError.new("Cannot use with grouping") unless @group.empty?
-        group_max(field, klass)[0]
+      def order(opts : Hash(Symbol, String | Symbol))
+        opts.each do |k, v|
+          @order[@expression.c(k.to_s)] = v.to_s
+        end
+        self
       end
 
-      def min(field, klass : T.class) : T forall T
-        raise ArgumentError.new("Cannot use with grouping") unless @group.empty?
-        group_min(field, klass)[0]
+      def order(opts : Hash(Criteria, String | Symbol))
+        opts.each do |k, v|
+          @order[k] = v.to_s
+          k.as(RawSql).without_brackets if k.is_a?(RawSql)
+        end
+        self
       end
 
-      def sum(field, klass : T.class) : T forall T
-        raise ArgumentError.new("Cannot use with grouping") unless @group.empty?
-        group_sum(field, klass)[0]
+      def order(&block)
+        order(with @expression yield)
       end
 
-      def avg(field, klass : T.class) : T forall T
-        raise ArgumentError.new("Cannot use with grouping") unless @group.empty?
-        group_avg(field, klass)[0]
-      end
-
-      def group_max(field, klass : T.class) : Array(T) forall T
-        _select = @raw_select
-        @raw_select = "MAX(#{field}) as m"
-        result = to_a.map(&.["m"])
-        @raw_select = _select
-        typed_array_cast(result, T)
-      end
-
-      def group_min(field, klass : T.class) : Array(T) forall T
-        _select = @raw_select
-        @raw_select = "MIN(#{field}) as m"
-        result = to_a.map(&.["m"])
-        @raw_select = _select
-        typed_array_cast(result, T)
-      end
-
-      def group_sum(field, klass : T.class) : Array(T) forall T
-        _select = @raw_select
-        @raw_select = "SUM(#{field}) as m"
-        result = to_a.map(&.["m"])
-        @raw_select = _select
-        typed_array_cast(result, T)
-      end
-
-      def group_avg(field, klass : T.class) : Array(T) forall T
-        _select = @raw_select
-        @raw_select = "AVG(#{field}) as m"
-        result = to_a.map(&.["m"])
-        @raw_select = _select
-        typed_array_cast(result, T)
-      end
-
-      def group_count(field)
-        _select = @raw_select
-        @raw_select = "COUNT(#{field}) as m"
-        result = to_a.map(&.["m"])
-        @raw_select = _select
-        result
-      end
-
-      def lock(type = true)
+      def lock(type : String | Bool = true)
         @lock = type
         self
       end
@@ -422,7 +453,7 @@ module Jennifer
         end
       end
 
-      def find_batch(batch_size = 1000)
+      def find_batch(batch_size : Int32 = 1000)
         raise "Not implemented"
       end
 
@@ -482,7 +513,7 @@ module Jennifer
 
       private def reverse_order
         if @order.empty?
-          @order["id"] = "DESC"
+          @order[@expression.c("id")] = "DESC"
         else
           @order.each do |k, v|
             @order[k] =
@@ -496,7 +527,7 @@ module Jennifer
         end
       end
 
-      private def _groups(name)
+      private def _groups(name : String)
         @group[name] ||= [] of String
       end
 

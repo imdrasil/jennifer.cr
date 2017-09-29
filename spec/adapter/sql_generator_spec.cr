@@ -137,7 +137,7 @@ describe Jennifer::Adapter::SqlGenerator do
 
     it "returns all orders" do
       sb { |s| described_class.order_clause(s, Contact.all.order(age: :desc, name: :asc)) }
-        .should match(/ORDER BY age DESC, name ASC/)
+        .should match(/ORDER BY contacts\.age DESC, contacts\.name ASC/)
     end
   end
 

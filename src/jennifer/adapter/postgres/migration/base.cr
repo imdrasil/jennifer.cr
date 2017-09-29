@@ -17,8 +17,12 @@ module Jennifer
         Adapter.adapter.as(Postgres).data_type_exists?(name)
       end
 
-      def create_materialized_view(name, _as, options)
-        TableBuilder::CreateMaterializedView.new(name, _as, options)
+      def create_materialized_view(name, _as)
+        TableBuilder::CreateMaterializedView.new(name, _as).process
+      end
+
+      def drop_materialized_view(name)
+        TableBuilder::DropMaterializedView.new(name).process
       end
     end
   end

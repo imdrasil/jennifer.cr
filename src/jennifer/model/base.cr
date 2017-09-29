@@ -22,6 +22,7 @@ module Jennifer
       @@singular_table_name : String?
       @@actual_table_field_count : Int32?
       @@has_table : Bool?
+      @@expression_builder : QueryBuilder::ExpressionBuilder?
 
       def self.has_table?
         @@has_table ||= Jennifer::Adapter.adapter.table_exists?(table_name).as(Bool)
@@ -45,11 +46,19 @@ module Jennifer
       end
 
       def self.c(name)
-        ::Jennifer::QueryBuilder::Criteria.new(name, table_name)
+        context.c(name)
       end
 
-      def self.c(name, relation)
+      def self.c(name : String | Symbol, relation)
         ::Jennifer::QueryBuilder::Criteria.new(name, table_name, relation)
+      end
+
+      def self.context
+        @@expression_builder ||= QueryBuilder::ExpressionBuilder.new(table_name)
+      end
+
+      def self.star
+        context.star
       end
 
       def self.build(pull : DB::ResultSet)
@@ -131,6 +140,14 @@ module Jennifer
       abstract def attribute(name)
       abstract def set_attribute(name, value)
 
+      def self.relations
+        raise "Not Implemented"
+      end
+
+      def self.relation(name)
+        raise "Not Implemented"
+      end
+
       macro def self.models
         {% begin %}
           [
@@ -139,41 +156,6 @@ module Jennifer
             {% end %}
           ]
         {% end %}
-      end
-
-      macro inherited
-        ::Jennifer::Model::Validation.inherited_hook
-        ::Jennifer::Model::Callback.inherited_hook
-        ::Jennifer::Model::RelationDefinition.inherited_hook
-
-        @@relations = {} of String => ::Jennifer::Relation::IRelation
-
-        after_save :__refresh_changes
-        before_save :__check_if_changed
-
-        def self.singular_table_name
-          @@singular_table_name ||= {{@type}}.to_s.underscore
-        end
-
-        def self.relations
-          @@relations
-        end
-
-        def self.superclass
-          {{@type.superclass}}
-        end
-
-        macro finished
-          ::Jennifer::Model::Validation.finished_hook
-          ::Jennifer::Model::Callback.finished_hook
-          ::Jennifer::Model::RelationDefinition.finished_hook
-
-          def self.relation(name : String)
-            @@relations[name]
-          rescue e : KeyError
-            raise Jennifer::UnknownRelation.new(self, e)
-          end
-        end
       end
 
       def update_attributes(hash : Hash)
@@ -287,6 +269,41 @@ module Jennifer
           end
         end
         result
+      end
+
+      macro inherited
+        ::Jennifer::Model::Validation.inherited_hook
+        ::Jennifer::Model::Callback.inherited_hook
+        ::Jennifer::Model::RelationDefinition.inherited_hook
+
+        @@relations = {} of String => ::Jennifer::Relation::IRelation
+
+        after_save :__refresh_changes
+        before_save :__check_if_changed
+
+        def self.singular_table_name
+          @@singular_table_name ||= {{@type}}.to_s.underscore
+        end
+
+        def self.relations
+          @@relations
+        end
+
+        def self.superclass
+          {{@type.superclass}}
+        end
+
+        macro finished
+          ::Jennifer::Model::Validation.finished_hook
+          ::Jennifer::Model::Callback.finished_hook
+          ::Jennifer::Model::RelationDefinition.finished_hook
+
+          def self.relation(name : String)
+            @@relations[name]
+          rescue e : KeyError
+            raise Jennifer::UnknownRelation.new(self, e)
+          end
+        end
       end
     end
   end

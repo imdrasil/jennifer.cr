@@ -80,34 +80,59 @@ end
 Regular example for creating table:
 
 ```crystal
-  create_table(:addresses) do |t|
-    t.reference :contact # creates field contact_id with Int type and allows null values
-    t.string :street, {:size => 20, :sql_type => "char"} # creates string field with CHAR(20) db type
-    t.bool :main, {:default => false} # sets false as default value
-  end
+create_table(:addresses) do |t|
+  t.reference :contact # creates field contact_id with Int type and allows null values
+  t.string :street, {:size => 20, :sql_type => "char"} # creates string field with CHAR(20) db type
+  t.bool :main, {:default => false} # sets false as default value
+end
 ```
 
 There are next methods which represents corresponding types:
 
-| internal alias | PostgreSQL | MySql | Crystal type |
+| Method | PostgreSQL | MySql | Crystal type |
 | --- | --- | --- | --- |
 | `#integer` | `int` | `int` | `Int32` |
-| `#string` | `varchar(254)` | `varchar(254)` | `String` |
-| `#bool` | `boolean` | `bool` | `Bool` |
-| `#char` | `char` | - | `String` |
+| `#short` | `SMALLINT` | `SMALLINT` | `Int16` |
+| `#bigint` | `BIGINT` | `BIGINT` | `Int64` |
+| `#tinyint` | - | `TINYINT` | `Int8` |
 | `#float` | `real` | `float` | `Float32` |
 | `#double` | `double precision` | `double` | `Float64` |
-| `#short` | `smallint` | `smallint` | `Int16` |
-| `#timestamp` | `timestamp` | `timestamp` | `Time` |
+| `#numeric` | `NUMERIC` | - | `PG::Numeric` |
+| `#decimal` | `DECIMAL` | `DECIMAL` | `PG::Numeric` (pg); `Float64` (mysql) |
+| `#string` | `varchar(254)` | `varchar(254)` | `String` |
+| `#char` | `char` | - | `String` |
+| `#var_string` / `#varchar` | `varchar(254)` | `varstring` | `String` |
+| `#text` | `TEXT` | `TEXT` | `String` |
+| `#bool` | `boolean` | `bool` | `Bool` |
+| `#timestamp` | `timestamp` | `datetime` | `Time` |
 | `#date_time` | `datetime` | `datetime` | `Time` |
 | `#blob` | `blob` | `blob` | `Bytes` |
-| `#var_string` | `varchar(254)` | `varstring` | `String` |
 | `#json` | `json` | `json` | `JSON::Any` |
-| `#enum` | `enum` | `enum` | `String` |
+| `#enum` | - | `ENUM` | `String` |
+
+In Postgres enum type is defined using custom user datatype which also is mapped to the `String`.
+
+PostgreSQL specific datatypes:
+
+| Method | Datatype | Type |
+| --- | --- | --- |
+| `#oid` | `OID` | `UInt32` |
+| `#jsonb` | `JSONB` | `JSON::Any` |
+| `#xml` | `XML` | `String` |
+| `#blchar` | `BLCHAR` | `String` |
+| `#uuid` | `UUID` | `String` |
+| `#timestampz` | `TIMESTAMPZ` | `Time` |
+| `#point` | `POINT` | `PG::Geo::Point` |
+| `#lseg` | `lseg` | `PG::Geo::LineSegment` |
+| `#path` | `PATH` | `PG::Geo::Path` |
+| `#box` | `BOX` | `PG::Geo::Box` |
+| `#polygon` | `POLYGON` | `PG::Geo::Polygon` |
+| `#line` | `LINE` | `PG::Geo::Line` |
+| `#circle` | `CIRCLE` | `PG::Geo::Circle` |
 
 Also if you use postgres array types are available as well: `Array(Int32)`, `Array(Char)`, `Array(Float32)`,  `Array(Float64)`, `Array(Int16)`, `Array(Int32)`, `Array(Int64)`, `Array(String)`.
 
-All of them accepts additional options:
+All those methods accepts additional options:
 
 - `:sql_type` - gets exact (except size) field type;
 - `:null` - represent nullable if field (by default is `false` for all types and field);
@@ -124,6 +149,18 @@ To drop table just write
 drop_table(:addresses) # drops if exists
 ```
 
+To create materialized view (postgres only):
+
+```crystal
+create_materialized_view("female_contacts", Contact.all.where { _gender == "female" })
+```
+
+And to drop it:
+
+```crystal
+drop_materialized_view("female_contacts")
+```
+
 To alter existing table use next methods:
  - `#change_column(name, [new_name], options)` - to change column definition; postgres has slighly another implementation of this than mysql one - check source code for details;
  - `#add_column(name, type, options)` - add new column;
@@ -137,6 +174,7 @@ Also next support methods are available:
 - `#index_exists?(table, name)`
 - `#column_exists?(table, name)`
 - `#data_type_exists?(name)` for postgres ENUM
+- `#material_view_exists?(name)`
 
 Here is quick example:
 

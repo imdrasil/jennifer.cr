@@ -61,4 +61,22 @@ describe Jennifer::Record do
       get_record["name"].should eq("Jennifer")
     end
   end
+
+  describe "#attribute" do
+    context "without typecasting" do
+      it "returns value of any type" do
+        value = get_record.attribute("name")
+        value.should eq("Jennifer")
+        typeof(value).should eq(Jennifer::DBAny)
+      end
+    end
+
+    context "with typecasting" do
+      it "returns value casted to the given type" do
+        value = get_record.attribute("name", String)
+        value.should eq("Jennifer")
+        typeof(value).should eq(String)
+      end
+    end
+  end
 end

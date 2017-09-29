@@ -9,6 +9,8 @@
 * [Model. Mapping](./model_mapping.md)
  
 * [Model. STI](./model_sti.md)
+
+* [View](./view.md)
  
 * [Callbacks](./callbacks.md)
  
@@ -19,6 +21,8 @@
 * [Relations](./relations.md)
  
 * [CRUD](./crud.md)
+
+* [Jennifer::Record](./record.md)
  
 * [Query DSL](./query_dsl.md)
  

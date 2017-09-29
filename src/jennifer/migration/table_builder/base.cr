@@ -10,6 +10,7 @@ module Jennifer
         extend Ifrit
 
         delegate table_exists?, index_exists?, column_exists?, to: Adapter.adapter
+        delegate adapter, to: Adapter
 
         getter fields
 

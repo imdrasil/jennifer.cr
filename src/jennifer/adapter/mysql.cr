@@ -23,6 +23,7 @@ module Jennifer
       :decimal => "decimal", # Float64
 
       :string     => "varchar",
+      :varchar    => "varchar",
       :text       => "text",
       :var_string => "varstring",
 

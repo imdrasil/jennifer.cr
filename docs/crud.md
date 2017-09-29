@@ -16,6 +16,8 @@ c.age = 18
 c.save
 ```
 
+> Any `::create` and `#save` method call by default process under a transation. If transation is already started will not create new one.
+
 #### Read
 
 Object could be retrieved by id using `#find` (returns `T?`) and `#find!` (returns `T` or raise `RecordNotFound` exception) methods.
@@ -84,6 +86,7 @@ class MyModel < Jennifer::Model::Base
   end
 end
 ```
+> Any `#destroy` method call as well as `#save` use a transaction.
 
 ##### Truncation
 

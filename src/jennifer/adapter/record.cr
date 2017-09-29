@@ -17,16 +17,25 @@ module Jennifer
       @attributes.keys
     end
 
-    def [](name : Symbol)
-      self[name.to_s]
+    def [](name : Symbol | String)
+      attribute(name)
     end
 
-    def [](name : String)
+    def attribute(name : String)
       @attributes[name]
     end
 
-    def attribute(value)
-      self[value]
+    def attribute(name : Symbol)
+      @attributes[name.to_s]
+    end
+
+    def attribute(name : String | Symbol, type : T.class) : T forall T
+      value = @attributes[name.to_s]
+      if value.is_a?(T)
+        value
+      else
+        raise BaseException.new("Field \"#{name}\" (#{value.class}) is not of type #{T}.")
+      end
     end
 
     macro method_missing(call)
@@ -36,12 +45,7 @@ module Jennifer
         end
       {% elsif call.args.size == 1 %}
         def {{call.name.id}}(type : T.class) : T forall T
-          value = {{call.name.id}}
-          if value.is_a?(T)
-            value
-          else
-            raise BaseException.new("Field {{call.name.id}} is not of type #{T}.")
-          end
+          attribute({{call.name.stringify}}, T)
         end
       {% end %}
     end

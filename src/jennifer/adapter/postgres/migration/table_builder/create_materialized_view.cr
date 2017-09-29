@@ -3,16 +3,16 @@ module Jennifer
   module Migration
     module TableBuilder
       class CreateMaterializedView < Base
-        def initialize(name, @as : QueryBuilder::Query, @options : Hash(Symbol, Array(String)))
+        def initialize(name, @as : String)
           super(name)
-          @adapter = Adapter.adapter.as(Adapter::Postgres)
         end
 
         def process
-          @adapter.execute <<-SQL
+          query = <<-SQL
             CREATE MATERIALIZED VIEW #{name}
-            AS #{Adapter::SqlGenerator.select(@as)}
+            AS #{@as}
           SQL
+          adapter.exec(query)
         end
       end
     end

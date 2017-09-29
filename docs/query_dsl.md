@@ -1,4 +1,4 @@
-My favorite part. Jennifer allows you to build lazy evaluated queries with chaining syntax. But some of them could be only at the and of a chain (such as `#fisrt` or `#pluck`). Here is a list of all dsl methods:
+My favorite part. Jennifer allows you to build lazy evaluated queries with chaining syntax. But some of them could be only at the and of a chain (such as `#fisrt` or `#pluck`).
 
 #### Where
 
@@ -49,6 +49,7 @@ And operator-like methods:
 | `is` | `IS` and provided value |
 | `not` | `NOT` and provided value (or as unary operator if no one is given) |
 | `in` | `IN` |
+| `between` | `BETWEEN` |
 
 And postgres specific:
 
@@ -58,6 +59,41 @@ And postgres specific:
 | `contained` |`<@` |
 | `overlap` | `&&` |
 
+Also Jennifer supports json field path methods for criterias: `Criteria#take` (also accessible as `Criteria#[]`) and `Criteria#path`.
+
+**MySQL**
+
+For mysql both `take` and `path` methods behave in the same way.
+
+Thera are 2 supported cases:
+
+ * 
+ ```SQL
+ WHERE field_name->"$.selector"
+ ```
+ could be specified using
+
+ ```crystal
+where { _field_name["$.selector"]}
+```
+
+*
+```SQL
+WHERE field_name->"$[1]"
+```
+
+can be specified as:
+
+```crystal
+where { _field_name.take(1) }
+```
+
+**PostgreSQL
+
+- `#path` method use `#>` operator
+- `#take` method use `->` operator
+
+
 To specify exact sql query use `#sql` method:
 
 ```crystal
@@ -65,7 +101,7 @@ To specify exact sql query use `#sql` method:
 Contact.all.where { sql("age > ?",  [15]) & (_name == "Stephan") } 
 ```
 
-Query will be inserted "as is". Usage of `#sql` allows to use nested plain request.
+Query will be inserted "as is". Usage of `#sql` allows to use nested plain request. Such plain sql will be surrounded by brackets (in common case).
 
 **Tips**
 
@@ -129,7 +165,9 @@ To join model relation (has_many, belongs_to and has_one) pass it's name and joi
 Contact.all.relation("addresses").relation(:passport, type: :left)
 ```
 
-#### Includes
+#### Eager loading
+
+##### Atual eager load
 
 To automatically join some relation and get it from db use `#eager_load` and pass relation name:
 
@@ -138,6 +176,14 @@ Contact.all.eager_load("addresses")
 ```
 
 If there are several eager_load with same table - Jennifer will auto alias tables.
+
+##### Includes (preload)
+
+To load all related objects after main query being executed use `#includes` method (or it's alias `#preload`):
+
+```crystal
+Contact.all.includes(:addresses)
+```
 
 #### Group
 
@@ -177,3 +223,27 @@ Contant.all.distinct("age") # returns array of ages (Array(DB::Any | Int16 | Int
 ```
 
 `#distinct` retrieves from db column values without repeats. Can accept column name and as optional second parameter - table name. Can be only as at he end of call chain - hit the db.
+
+#### Union
+
+To make common SQL `UNION` you can use `#union` method which accepts nother query object. But be carefull - all selected fields should be same.
+
+```crystal
+Address.all.where { _street.like("%St. Paul%") }.union(Profile.all.where { _login.in(["login1", "login2"]) }.select(:contact_id)).select(:contact_id).results
+```
+
+In this example you can't use regular `#to_a` because result reords will be not an address or profile so it couldn't be mapped to any of these models. That's why only `Jennifer::Record` could be got.
+
+
+#### None
+
+If at some point you desides to make query to return empty result set - use next:
+
+```crystal
+q = Contats.where { _age > 19 }
+q.none
+q.where { _name.like("Jo%") }
+q.to_a
+```
+
+But be carefull - all further chainable method calls will continue modify the object - only db call will be avoided.

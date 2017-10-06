@@ -113,9 +113,9 @@ describe Jennifer::Model::Base do
     context "brakes unique index" do
       it "raises exception" do
         void_transaction do
-          Factory.create_address(street: "st. 1")
+          Factory.create_address(street: "st. 2")
           expect_raises(Jennifer::BaseException) do
-            Factory.create_address(street: "st. 1")
+            Factory.create_address(street: "st. 2")
           end
         end
       end

@@ -53,8 +53,9 @@ module Jennifer
   end
 
   class RecordInvalid < BaseException
-    def initialize(obj)
-      @message = "Object is invalid: #{obj.to_s}"
+    getter :errors
+    def initialize(@errors : Accord::ErrorList)
+      @message = "Object is invalid: #{errors.inspect}"
     end
   end
 

@@ -319,8 +319,7 @@ module Jennifer
         {% end %}
 
         def save!(skip_validation = false)
-          res = save(skip_validation)
-          raise Jennifer::BaseException.new("Record was not save. Error list: #{errors.inspect}") unless res
+          raise Jennifer::RecordInvalid.new(errors) unless save(skip_validation)
           true
         end
 

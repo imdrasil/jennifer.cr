@@ -12,6 +12,33 @@ describe Jennifer::Model::Mapping do
       c2.reload
       c2.age.should eq(55)
     end
+
+    it "raises exception with errors if invalid on save!" do
+        contact = Factory.create_contact
+        contact.age = 12
+        contact.name = "much too long for name"
+        contact.description = "much too long for description"
+        begin
+          contact.save!
+          fail("should raise validation exception")
+        rescue ex : Jennifer::RecordInvalid
+          ex.errors.size.should eq(3)
+          raw_errors = ex.errors.@errors
+          validate_error(raw_errors[0], :age, "should be in 13..75 but is 12")
+          validate_error(raw_errors[1], :name, "should be lte 15 but is much too long for name")
+          validate_error(raw_errors[2], :description, "Too large description")
+        end
+    end
+
+    it "should not raise validation exception when skipped" do
+        contact = Factory.create_contact
+        contact.age = 12
+        begin
+          contact.save!(true)
+        rescue ex : Jennifer::RecordInvalid
+          fail("should not raise validation exception")
+        end
+    end
   end
 
   describe "#_extract_attributes" do
@@ -415,4 +442,9 @@ describe Jennifer::Model::Mapping do
       ((c.updated_at! - Time.now).total_seconds < 1).should be_true
     end
   end
+end
+
+def validate_error(error, attr, message)
+  error.attr.should eq(attr)
+  error.message.should eq(message)
 end

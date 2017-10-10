@@ -289,6 +289,8 @@ module Jennifer
         case name
         when :unique, :uniq
           "UNIQUE "
+        when nil
+          " "
         else
           raise ArgumentError.new("Unknown index type: #{name}")
         end

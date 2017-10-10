@@ -11,7 +11,16 @@ postgres_only do
 
     describe "#add_index" do
       # tested via adding index in migration
-      pending "add" do
+      it "should add a covering index if no type is specified" do
+        index_name = "contacts_age_index"
+        options = {
+          :type => nil,
+          :fields => [:age],
+          :order => {} of Symbol => Symbol,
+          :lengths => {} of Symbol => Symbol
+        }
+        adapter.add_index("contacts", index_name, options)
+        adapter.index_exists?("", index_name).should be_true
       end
     end
 

@@ -9,7 +9,7 @@ module Jennifer
       end
 
       # Initialize object copy;
-      protected def initialize_copy(other : Criteria)
+      protected def initialize_copy(other : ExpressionBuilder)
         @table = other.@table.clone
         @relation = other.@relation.clone
         @query = other.@query
@@ -30,6 +30,22 @@ module Jennifer
       def c(name : String, table_name : String? = nil, relation : String? = nil)
         @query.not_nil!.with_relation! if @query
         Criteria.new(name, table_name || @table, relation || @relation)
+      end
+
+      def g(condition : LogicOperator)
+        Grouping.new(condition)
+      end
+
+      def group(condition : LogicOperator)
+        g(condition)
+      end
+
+      def any(query : Query)
+        Any.new(query)
+      end
+
+      def all(query : Query)
+        All.new(query)
       end
 
       def star(table : String = @table)

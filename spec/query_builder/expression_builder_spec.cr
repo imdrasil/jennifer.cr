@@ -96,4 +96,31 @@ describe ::Jennifer::QueryBuilder::ExpressionBuilder do
       c.table.should eq("qwe")
     end
   end
+
+  describe "#any" do
+    it "creates any object with given query" do
+      query = Contact.all.where { _id == 1 }
+      any = Factory.build_expression.any(query)
+      any.is_a?(Jennifer::QueryBuilder::Any).should be_true
+      any.query.should eq(query)
+    end
+  end
+
+  describe "#all" do
+    it "creates all object with given query" do
+      query = Contact.all.where { _id == 1 }
+      all = Factory.build_expression.all(query)
+      all.is_a?(Jennifer::QueryBuilder::All).should be_true
+      all.query.should eq(query)
+    end
+  end
+
+  describe "#g" do
+    it "creates grouping with given condition" do
+      c1 = Factory.build_criteria
+      c2 = Factory.build_criteria
+      g = Factory.build_expression.g(c1 & c2)
+      g.is_a?(Jennifer::QueryBuilder::Grouping).should be_true
+    end
+  end
 end

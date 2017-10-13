@@ -227,7 +227,7 @@ module Jennifer
         all.where { this.primary == _id }.first!
       end
 
-      def self.all
+      def self.all : QueryBuilder::ModelQuery(self)
         QueryBuilder::ModelQuery(self).build(table_name)
       end
 

@@ -45,6 +45,7 @@ module Jennifer
         T
       end
 
+      # Returns target table name
       def table
         @table.empty? ? T.table_name : @table
       end
@@ -106,9 +107,7 @@ module Jennifer
 
       # Adds to select statement given relations (with correspond joins) and loads them from result
       def eager_load(*names)
-        names.each do |name|
-          eager_load(name)
-        end
+        names.each { |name| eager_load(name) }
         self
       end
 
@@ -124,21 +123,46 @@ module Jennifer
         raise "Not implemented"
       end
 
+      # Loads all records and call `#destroy` on the each
       def destroy
         to_a.each(&.destroy)
       end
 
+      # Perform search using given plain query and arguments and builds ` but also allow to preload
+      # related records using `#preload` method nad respects `#none`
+      def find_by_sql(query : String, args : Array(DBAny) = [] of DBAny)
+        results = [] of T
+        return results if @do_nothing
+        ::Jennifer::Adapter.adapter.query(query, args) do |rs|
+          begin
+            rs.each do
+              results << T.build(rs)
+            end
+          rescue e : Exception
+            rs.read_to_end
+            raise e
+          end
+        end
+        add_preloaded(results)
+      end
+
+      def find_in_batches(start = nil, batch_size : Int32 = 1000, &block)
+        super(start, batch_size, T.primary) { |records| yield records }
+      end
+
+      # Executes request and maps result set to objects with loading any requested related objects
       def to_a
-        add_aliases if @relation_used
         return [] of T if @do_nothing
+        add_aliases if @relation_used
         return to_a_with_relations unless @relations.empty?
         result = [] of T
         ::Jennifer::Adapter.adapter.select(self) do |rs|
           rs.each do
             begin
               result << T.build(rs)
-            ensure
+            rescue e : Exception
               rs.read_to_end
+              raise e
             end
           end
         end
@@ -178,6 +202,8 @@ module Jennifer
       end
 
       # TODO: brake this method to smaller ones
+      # Perform request and maps results set to objects and related objects grepping fields from joined tables; preloading also
+      # are perfomed
       private def to_a_with_relations
         h_result = {} of String => T
 
@@ -216,7 +242,7 @@ module Jennifer
 
       private def add_aliases
         table_names = [table]
-        table_names.concat(_joins!.map { |e| e.table if !e.aliass }.compact) if @joins
+        table_names.concat(_joins!.map { |e| e.table unless e.has_alias? }.compact) if @joins
         duplicates = extract_duplicates(table_names)
         return if duplicates.empty?
         i = 0

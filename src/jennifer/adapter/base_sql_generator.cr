@@ -25,15 +25,6 @@ module Jennifer
         end
       end
 
-      # Generates select sql request with distinct
-      def self.select_distinct(query, column, table)
-        String.build do |s|
-          s << "SELECT DISTINCT " << table << "." << column << "\n"
-          from_clause(s, query)
-          body_section(s, query)
-        end
-      end
-
       # TODO: unify method generting - #parse_query should be called here or by caller
       def self.delete(query)
         parse_query(
@@ -100,7 +91,7 @@ module Jennifer
 
       # ========== sql clauses ================
 
-      def self.body_section(io, query)
+      def self.body_section(io : String::Builder, query)
         join_clause(io, query)
         where_clause(io, query.tree)
         group_clause(io, query)
@@ -111,21 +102,22 @@ module Jennifer
         union_clause(io, query)
       end
 
-      def self.union_clause(io, query)
+      def self.union_clause(io : String::Builder, query)
         return unless query._unions
         query._unions!.each do |u|
           io << " UNION " << self.select(u)
         end
       end
 
-      def self.lock_clause(io, query)
+      def self.lock_clause(io : String::Builder, query)
         return if query._lock.nil?
         io << (query._lock.is_a?(Bool) ? " FOR UPDATE " : query._lock)
       end
 
       # Renders SELECT and FROM parts
-      def self.select_clause(io, query, exact_fields = [] of String)
+      def self.select_clause(io : String::Builder, query, exact_fields = [] of String)
         io << "SELECT "
+        io << "DISTINCT " if query._distinct
         unless query._raw_select
           table = query._table
           if !exact_fields.empty?
@@ -141,7 +133,7 @@ module Jennifer
         from_clause(io, query)
       end
 
-      def self.from_clause(io, query, from = nil)
+      def self.from_clause(io : String::Builder, query, from = nil)
         io << "FROM "
         return io << (from || query._table) << "\n" unless query._from
         io << "( " <<
@@ -157,38 +149,38 @@ module Jennifer
         io << " ) "
       end
 
-      def self.group_clause(io, query)
+      def self.group_clause(io : String::Builder, query)
         return if query._groups.empty?
         io << "GROUP BY "
         query._groups.each.join(", ", io) { |c| io << c.as_sql }
         io << "\n"
       end
 
-      def self.having_clause(io, query)
+      def self.having_clause(io : String::Builder, query)
         return unless query._having
         io << "HAVING " << query._having.not_nil!.as_sql << "\n"
       end
 
-      def self.join_clause(io, query)
+      def self.join_clause(io : String::Builder, query)
         return unless query._joins
         query._joins!.join(" ", io) { |j| io << j.as_sql }
       end
 
-      def self.where_clause(io, query : QueryBuilder::Query | QueryBuilder::ModelQuery)
+      def self.where_clause(io : String::Builder, query : QueryBuilder::Query | QueryBuilder::ModelQuery)
         where_clause(io, query.tree)
       end
 
-      def self.where_clause(io, tree)
+      def self.where_clause(io : String::Builder, tree)
         return unless tree
         io << "WHERE " << tree.not_nil!.as_sql << "\n"
       end
 
-      def self.limit_clause(io, query)
+      def self.limit_clause(io : String::Builder, query)
         io.print "LIMIT ", query._limit, "\n" if query._limit
         io.print "OFFSET ", query._offset, "\n" if query._offset
       end
 
-      def self.order_clause(io, query)
+      def self.order_clause(io : String::Builder, query)
         return if query._order.empty?
         io << "ORDER BY "
         query._order.join(", ", io) { |(k, v)| io.print k.as_sql, " ", v.upcase }

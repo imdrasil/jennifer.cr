@@ -169,11 +169,13 @@ module Jennifer
         # NOTE: don't use it manually - there is some dependencies on caller such as reading tesult set to the end
         # if eception was raised
         def _extract_attributes(pull : DB::ResultSet)
+          requested_columns_count = self.class.actual_table_field_count
+          ::Jennifer::BaseException.assert_column_count(requested_columns_count, pull.column_count)
           {% for key, value in properties %}
             %var{key.id} = nil
             %found{key.id} = false
           {% end %}
-          self.class.actual_table_field_count.times do
+          requested_columns_count.times do
             column = pull.column_name(pull.column_index)
             case column
             {% for key, value in properties %}

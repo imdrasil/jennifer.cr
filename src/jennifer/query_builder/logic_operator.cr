@@ -1,30 +1,45 @@
 module Jennifer
   module QueryBuilder
+    class Grouping < SQLNode
+    end
+
+    class Criteria < SQLNode
+    end
+
     abstract class LogicOperator
-      def initialize
-        @parts = [] of LogicOperator | Condition
+      module Operators
+        def &(other : Criteria)
+          And.new(self, other.to_condition)
+        end
+
+        def |(other : Criteria)
+          Or.new(self, other.to_condition)
+        end
+
+        def xor(other : Criteria)
+          Xor.new(self, other.to_condition)
+        end
+
+        def &(other : Operandable)
+          And.new(self, other)
+        end
+
+        def |(other : Operandable)
+          Or.new(self, other)
+        end
+
+        def xor(other : Operandable)
+          Xor.new(self, other)
+        end
       end
 
-      protected def parts
-        @parts
-      end
+      include Operators
 
-      def add(other : LogicOperator | Condition)
-        @parts << other
-      end
+      alias Operandable = LogicOperator | Condition | Grouping | Criteria
 
-      def &(other : Condition | LogicOperator)
-        op = And.new
-        op.add(self)
-        op.add(other)
-        op
-      end
+      getter lhs : Operandable, rhs : Operandable
 
-      def |(other : Condition | LogicOperator)
-        op = Or.new
-        op.add(self)
-        op.add(other)
-        op
+      def initialize(@lhs, @rhs)
       end
 
       abstract def operator
@@ -34,31 +49,35 @@ module Jennifer
       end
 
       def alias_tables(aliases)
-        @parts.each(&.alias_tables(aliases))
+        @rhs.alias_tables(aliases)
+        @lhs.alias_tables(aliases)
       end
 
       def set_relation(table, name)
-        @parts.each(&.set_relation(table, name))
+        @rhs.set_relation(table, name)
+        @lhs.set_relation(table, name)
       end
 
       def change_table(old_name, new_name)
-        @parts.each(&.change_table(old_name, new_name))
+        @rhs.change_table(old_name, new_name)
+        @lhs.change_table(old_name, new_name)
       end
 
       def as_sql
-        "(" + @parts.map(&.as_sql).join(" #{operator} ") + ")"
+        @lhs.as_sql + " " + operator + " " + @rhs.as_sql
       end
 
-      def sql_args : Array(DB::Any)
-        @parts.flat_map(&.sql_args)
+      def sql_args
+        @lhs.sql_args + @rhs.sql_args
       end
 
       def sql_args_count
-        @parts.reduce(0) { |sum, e| sum += e.sql_args_count }
+        @lhs.sql_args_count + @rhs.sql_args_count
       end
 
       def ==(other : LogicOperator)
-        @parts == other.parts
+        @lhs == other.lhs &&
+          @rhs == other.rhs
       end
     end
 
@@ -66,15 +85,6 @@ module Jennifer
       OPERATOR = "AND"
 
       def_clone
-
-      protected def initialize_copy(other)
-        @parts = other.@parts.dup
-      end
-
-      def &(other : LogicOperator | Condition)
-        add(other)
-        self
-      end
 
       def operator
         OPERATOR
@@ -86,15 +96,6 @@ module Jennifer
 
       def_clone
 
-      protected def initialize_copy(other)
-        @parts = other.@parts.dup
-      end
-
-      def |(other : Condition | LogicOperator)
-        add(other)
-        self
-      end
-
       def operator
         OPERATOR
       end
@@ -104,10 +105,6 @@ module Jennifer
       OPERATOR = "XOR"
 
       def_clone
-
-      protected def initialize_copy(other)
-        @parts = other.@parts.dup
-      end
 
       def operator
         OPERATOR

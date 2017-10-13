@@ -16,6 +16,12 @@ module Jennifer
 
     def initialize(@message)
     end
+
+    def self.assert_column_count(requested, actual)
+      if requested > actual
+        raise self.new("ResultSet includes only #{actual} columns when at least #{requested} are required")
+      end
+    end
   end
 
   class BadQuery < BaseException
@@ -60,6 +66,7 @@ module Jennifer
 
   class RecordInvalid < BaseException
     getter :errors
+
     def initialize(@errors : Accord::ErrorList)
       @message = "Object is invalid: #{errors.inspect}"
     end

@@ -3,11 +3,12 @@ require "./criteria"
 module Jennifer
   module QueryBuilder
     class Condition
+      include LogicOperator::Operators
+
       RAW_OPERATORS = [:is, :is_not]
 
-      getter rhs : Criteria::Rightable, lhs : Criteria, operator : Symbol = :bool
+      getter lhs : Criteria, rhs : Criteria::Rightable?, operator : Symbol = :bool
 
-      @rhs = nil
       @negative = false
 
       def_clone
@@ -16,8 +17,7 @@ module Jennifer
         @lhs = Criteria.new(field, table, relation)
       end
 
-      def initialize(criteria)
-        @lhs = criteria
+      def initialize(@lhs)
       end
 
       def initialize(@lhs, @operator, @rhs)
@@ -48,28 +48,6 @@ module Jennifer
       def not
         @negative = !@negative
         self
-      end
-
-      def &(other : Condition | LogicOperator)
-        op = And.new
-        op.add(self)
-        op.add(other)
-        op
-      end
-
-      def &(other : Criteria)
-        self & Condition.new(other)
-      end
-
-      def |(other : Condition | LogicOperator)
-        op = Or.new
-        op.add(self)
-        op.add(other)
-        op
-      end
-
-      def |(other : Criteria)
-        self | Condition.new(other)
       end
 
       def to_s

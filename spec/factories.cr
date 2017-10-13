@@ -1,6 +1,7 @@
 alias Criteria = Jennifer::QueryBuilder::Criteria
 alias Condition = Jennifer::QueryBuilder::Condition
 alias Join = Jennifer::QueryBuilder::Join
+alias Query = Jennifer::QueryBuilder::Query
 
 class CriteriaFactory < Factory::Base
   describe_class Criteria
@@ -19,14 +20,15 @@ end
 class JoinFactory < Factory::Base
   describe_class Join
   skip_all_constructors
-  argument_type String | Symbol | Criteria | Condition
+  argument_type String | Symbol | Criteria | Condition | Query?
 
   attr :table, "tests"
   attr :on, ->{ Factory.build_criteria == 1 }
   attr :type, :inner
+  attr :aliass, nil
 
   initialize_with do |hash, traits|
-    obj = described_class.new(hash["table"].as(String), hash["on"].as(Condition | Criteria), hash["type"].as(Symbol))
+    obj = described_class.new(hash["table"].as(String | Query), hash["on"].as(Condition | Criteria), hash["type"].as(Symbol))
     make_assigns(obj, traits)
     obj
   end

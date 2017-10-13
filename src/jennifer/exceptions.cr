@@ -36,6 +36,12 @@ module Jennifer
     end
   end
 
+  class InvalidConfig < BaseException
+    def initialize(message)
+      @message = message
+    end
+  end
+
   class RecordNotFound < BaseException
     def initialize(query)
       @message = "There is no record by given query:\n#{query}"

@@ -114,12 +114,16 @@ module Jennifer
       def self.connection_string(*options)
         auth_part = Config.user
         auth_part += ":#{Config.password}" if Config.password && !Config.password.empty?
+
+        host_part = Config.host
+        host_part += Config.port.to_s if Config.port && Config.port > 0
+
         String.build do |s|
-          s << Config.adapter << "://" << auth_part << "@" << Config.host
+          s << Config.adapter << "://" << auth_part << "@" << host_part
           s << "/" << Config.db if options.includes?(:db)
           s << "?"
           [
-            {% for arg in [:max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts, :checkout_timeout, :retry_delay] %}
+            {% for arg in Config::CONNECTION_URI_PARAMS %}
               "{{arg.id}}=#{Config.{{arg.id}}}"
             {% end %},
           ].join(",", s)

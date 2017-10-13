@@ -21,7 +21,7 @@ module Jennifer
 
       @name : String
 
-      def initialize(@name, foreign : String | Symbol?, primary : String | Symbol?, query, @through = nil)
+      def initialize(@name, foreign : String | Symbol?, primary : String | Symbol?, query : QueryBuilder::Query, @through = nil)
         @foreign = foreign.to_s if foreign
         @primary = primary.to_s if primary
         @join_query = query.tree

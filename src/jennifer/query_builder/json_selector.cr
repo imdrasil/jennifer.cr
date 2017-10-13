@@ -1,6 +1,6 @@
 module Jennifer
   module QueryBuilder
-    class Criteria
+    class Criteria < SQLNode
     end
 
     class JSONSelector < Criteria

@@ -2,14 +2,21 @@ require "./json_selector"
 
 module Jennifer
   module QueryBuilder
-    class Criteria
-      alias Rightable = JSONSelector | Criteria | DBAny | Array(DBAny)
+    class Criteria < SQLNode
+      alias Rightable = SQLNode | DBAny | Array(DBAny)
 
-      getter relation : String?, alias : String?, field, table
+      @ident : String?
+
+      getter relation : String?, alias : String?, field : String, table : String
 
       def_clone
 
       def initialize(@field : String, @table : String, @relation = nil)
+      end
+
+      # NOTE: workaround for passing criteria to the hash as a key - somewhy any Criteria is realized as same one
+      def hash
+        to_s.hash
       end
 
       def set_relation(table : String, name : String)
@@ -98,12 +105,16 @@ module Jennifer
         Condition.new(self, :in, arr.map { |e| e.as(DBAny) })
       end
 
-      def &(other : Criteria | Condition | LogicOperator)
+      def &(other : LogicOperator::Operandable)
         Condition.new(self) & other
       end
 
-      def |(other : Criteria | Condition | LogicOperator)
+      def |(other : LogicOperator::Operandable)
         Condition.new(self) | other
+      end
+
+      def xor(other : LogicOperator::Operandable)
+        to_condition.xor(other)
       end
 
       def to_s
@@ -111,7 +122,7 @@ module Jennifer
       end
 
       def as_sql : String
-        identifier
+        @ident ||= identifier
       end
 
       def identifier : String
@@ -122,8 +133,8 @@ module Jennifer
         @alias ? "#{identifier} AS #{@alias}" : identifier
       end
 
-      def sql_args
-        [] of DBAny
+      def sql_args : Array(DB::Any)
+        [] of DB::Any
       end
 
       def sql_args_count

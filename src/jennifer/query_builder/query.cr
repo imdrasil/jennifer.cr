@@ -1,13 +1,19 @@
 require "./expression_builder"
 require "./aggregations"
+require "./ordering"
+require "./joining"
+require "./executables"
 
 module Jennifer
   module QueryBuilder
     class Query
       extend Ifrit
       include Aggregations
+      include Ordering
+      include Joining
+      include Executables
 
-      {% for method in %i(having table limit offset raw_select table_aliases from lock joins order relations groups lock unions) %}
+      {% for method in %i(having table limit offset raw_select table_aliases from lock joins order relations groups lock unions distinct) %}
         def _{{method.id}}
           @{{method.id}}
         end
@@ -17,9 +23,10 @@ module Jennifer
         end
       {% end %}
 
-      @having : Condition | LogicOperator | Nil
-      @table : String = ""
+      @having : Condition | LogicOperator?
       @limit : Int32?
+      @table : String = ""
+      @distinct : Bool = false
       @offset : Int32?
       @raw_select : String?
       @from : String | Query?
@@ -30,7 +37,6 @@ module Jennifer
       def_clone
 
       property tree : Condition | LogicOperator?
-      getter table
 
       def initialize
         @do_nothing = false
@@ -59,11 +65,6 @@ module Jennifer
         else
           @select_fields
         end
-      end
-
-      protected def add_join(value : Join)
-        @joins ||= [] of Join
-        @joins.not_nil! << value
       end
 
       protected def add_union(value : Query)
@@ -143,38 +144,6 @@ module Jennifer
         self
       end
 
-      def join(klass : Class, aliass : String? = nil, type = :inner, relation : String? = nil)
-        eb = ExpressionBuilder.new(klass.table_name, relation, self)
-        with_relation! if relation
-        other = with eb yield eb
-        add_join(Join.new(klass.table_name, other, type, relation: relation))
-        self
-      end
-
-      def join(_table : String, aliass : String? = nil, type = :inner, relation : String? = nil)
-        eb = ExpressionBuilder.new(_table, relation, self)
-        with_relation! if relation
-        other = with eb yield eb
-        add_join(Join.new(_table, other, type, relation))
-        self
-      end
-
-      def left_join(klass : Class, aliass : String? = nil)
-        join(klass, aliass, :left) { |eb| with eb yield }
-      end
-
-      def left_join(_table : String, aliass : String? = nil)
-        join(_table, aliass, :left) { |eb| with eb yield }
-      end
-
-      def right_join(klass : Class, aliass : String? = nil)
-        join(klass, aliass, :right) { |eb| with eb yield }
-      end
-
-      def right_join(_table : String)
-        join(_table, aliass, :left) { |eb| with eb yield }
-      end
-
       def select(raw_sql : String)
         @raw_select = raw_sql
         self
@@ -225,7 +194,11 @@ module Jennifer
 
       def having
         other = with @expression yield
-        @having = other
+        if @having.nil?
+          @having = other
+        else
+          @having = @having.not_nil! & other
+        end
         self
       end
 
@@ -234,73 +207,9 @@ module Jennifer
         self
       end
 
-      def last
-        reverse_order
-        old_limit = @limit
-        @limit = 1
-        r = to_a[0]?
-        @limit = old_limit
-        reverse_order
-        r
-      end
-
-      def last!
-        old_limit = @limit
-        @limit = 1
-        reverse_order
-        result = to_a
-        reverse_order
-        @limit = old_limit
-        raise RecordNotFound.new(Adapter::SqlGenerator.select(self)) if result.empty?
-        result[0]
-      end
-
-      def first
-        old_limit = @limit
-        @limit = 1
-        r = to_a[0]?
-        @limit = old_limit
-        r
-      end
-
-      def first!
-        old_limit = @limit
-        result = to_a
-        @limit = old_limit
-        raise RecordNotFound.new(Adapter::SqlGenerator.select(self)) if result.empty?
-        result[0]
-      end
-
-      def pluck(fields : Array)
-        ::Jennifer::Adapter.adapter.pluck(self, fields.map(&.to_s))
-      end
-
-      def pluck(field : String | Symbol)
-        ::Jennifer::Adapter.adapter.pluck(self, field.to_s)
-      end
-
-      def pluck(*fields : String | Symbol)
-        ::Jennifer::Adapter.adapter.pluck(self, fields.to_a.map(&.to_s))
-      end
-
-      def delete
-        ::Jennifer::Adapter.adapter.delete(self)
-      end
-
-      def exists?
-        ::Jennifer::Adapter.adapter.exists?(self)
-      end
-
-      def count : Int32
-        ::Jennifer::Adapter.adapter.count(self)
-      end
-
-      def distinct(column : String, _table : String)
-        ::Jennifer::Adapter.adapter.distinct(self, column, _table)
-      end
-
-      def distinct(column : String)
-        ::Jennifer::Adapter.adapter.distinct(self, column, table)
+      def distinct
+        @distinct = true
+        self
       end
 
       # Groups by given column realizes it as is
@@ -350,116 +259,9 @@ module Jennifer
         self
       end
 
-      def update(options : Hash)
-        ::Jennifer::Adapter.adapter.update(self, options)
-      end
-
-      def update(**options)
-        update(options.to_h)
-      end
-
-      # skips any callbacks and validations
-      def increment(fields : Hash)
-        hash = {} of Symbol | String => NamedTuple(value: DBAny, operator: Symbol)
-        fields.each do |k, v|
-          hash[k] = {value: v, operator: :+}
-        end
-        modify(hash)
-      end
-
-      # skips any callbacks and validations
-      def increment(**fields)
-        hash = {} of Symbol | String => NamedTuple(value: DBAny, operator: Symbol)
-        fields.each do |k, v|
-          hash[k] = {value: v, operator: :+}
-        end
-        modify(hash)
-      end
-
-      # skips any callbacks and validations
-      def decrement(fields : Hash)
-        hash = {} of Symbol | String => NamedTuple(value: DBAny, operator: Symbol)
-        fields.each do |k, v|
-          hash[k] = {value: v, operator: :-}
-        end
-        modify(hash)
-      end
-
-      # skips any callbacks and validations
-      def decrement(**fields)
-        hash = {} of Symbol | String => NamedTuple(value: DBAny, operator: Symbol)
-        fields.each do |k, v|
-          hash[k] = {value: v, operator: :-}
-        end
-        modify(hash)
-      end
-
-      # skips any callbacks and validations
-      def modify(options : Hash)
-        ::Jennifer::Adapter.adapter.modify(self, options)
-      end
-
-      def order(**opts)
-        order(opts.to_h)
-      end
-
-      def order(opts : Hash(String, String | Symbol))
-        opts.each do |k, v|
-          @order[@expression.sql(k, false)] = v.to_s
-        end
-        self
-      end
-
-      def order(opts : Hash(Symbol, String | Symbol))
-        opts.each do |k, v|
-          @order[@expression.c(k.to_s)] = v.to_s
-        end
-        self
-      end
-
-      def order(opts : Hash(Criteria, String | Symbol))
-        opts.each do |k, v|
-          @order[k] = v.to_s
-          k.as(RawSql).without_brackets if k.is_a?(RawSql)
-        end
-        self
-      end
-
-      def order(&block)
-        order(with @expression yield)
-      end
-
       def lock(type : String | Bool = true)
         @lock = type
         self
-      end
-
-      def each
-        to_a.each do |e|
-          yield e
-        end
-      end
-
-      def each_result_set(&block)
-        ::Jennifer::Adapter.adapter.select(self) do |rs|
-          begin
-            rs.each do
-              yield rs
-            end
-          rescue e : Exception
-            rs.read_to_end
-            raise e
-          end
-        end
-      end
-
-      def find_batch(batch_size : Int32 = 1000)
-        raise "Not implemented"
-      end
-
-      # works only if there is id field and it is covertable to Int32
-      def ids
-        pluck(:id).map(&.to_i)
       end
 
       def to_s
@@ -487,51 +289,12 @@ module Jennifer
         raise ArgumentError.new("Condition tree couldn't be nil")
       end
 
-      def to_a
-        results
-      end
-
-      def db_results
-        result = [] of Hash(String, DBAny)
-        return result if @do_nothing
-        each_result_set do |rs|
-          result << Adapter.adapter.result_to_hash(rs)
-        end
-        result
-      end
-
-      def results
-        result = [] of Record
-        return result if @do_nothing
-        each_result_set { |rs| result << Record.new(rs) }
-        result
-      end
-
       #
       # private methods
       #
 
-      private def reverse_order
-        if @order.empty?
-          @order[@expression.c("id")] = "DESC"
-        else
-          @order.each do |k, v|
-            @order[k] =
-              case v
-              when "asc", "ASC"
-                "DESC"
-              else
-                "ASC"
-              end
-          end
-        end
-      end
-
       private def _groups(name : String)
         @group[name] ||= [] of String
-      end
-
-      private def find_with_nested
       end
     end
   end

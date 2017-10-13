@@ -10,7 +10,10 @@ require "./jennifer/adapter/sql_generator"
 require "./jennifer/config"
 require "./jennifer/version"
 
+require "./jennifer/query_builder/sql_node"
+require "./jennifer/query_builder/logic_operator"
 require "./jennifer/query_builder/*"
+
 require "./jennifer/adapter/base"
 require "./jennifer/relation/base"
 require "./jennifer/relation/*"

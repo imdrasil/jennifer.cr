@@ -160,20 +160,6 @@ describe Jennifer::QueryBuilder::ModelQuery do
     end
   end
 
-  describe "#distinct" do
-    it "returns correct names" do
-      Factory.create_contact(name: "a1")
-      Factory.create_contact(name: "a2")
-      Factory.create_contact(name: "a1")
-
-      r = Contact.all.order(name: :asc).distinct("name")
-      r.should eq(["a1", "a2"])
-    end
-
-    pending "using table as argument" do
-    end
-  end
-
   describe "#update" do
     it "updates given fields in all matched rows" do
       Factory.create_contact(age: 13, name: "a")
@@ -323,6 +309,61 @@ describe Jennifer::QueryBuilder::ModelQuery do
         fields[0].field.should eq("id")
         fields[1].field.should eq("age")
       end
+    end
+  end
+
+  describe "#find_by_sql" do
+    query = <<-SQL
+      SELECT contacts.*
+      FROM contacts
+    SQL
+
+    it "builds all requested objects" do
+      Factory.create_contact
+      res = Contact.all.find_by_sql(query)
+      res.size.should eq(1)
+      res[0].id.nil?.should be_false
+    end
+
+    it "raises exception if not all required fields are listed in the select clause" do
+      Factory.create_contact
+      _query = <<-SQL
+        SELECT id
+        FROM contacts
+      SQL
+      expect_raises(Jennifer::BaseException, /includes only/) do
+        res = Contact.all.find_by_sql(_query)
+      end
+    end
+
+    it "respects none method" do
+      Factory.create_contact
+      res = Contact.all.none.find_by_sql(query)
+      res.size.should eq(0)
+    end
+
+    it "preloads related objects if given" do
+      c = Factory.create_contact
+      Factory.create_address(contact_id: c.id)
+      executed_query_count = query_count
+      res = Contact.all.includes(:addresses).find_by_sql(query)
+      (query_count - executed_query_count).should eq(2)
+      res.size.should eq(1)
+      res[0].addresses.size.should eq(1)
+      (query_count - executed_query_count).should eq(2)
+    end
+  end
+
+  describe "#find_in_batches" do
+    it "loads in batches without specifying primary key" do
+      ids = Factory.create_contact(3).map(&.id)
+      yield_count = 0
+      Contact.all.find_in_batches(ids[1], 2) do |records|
+        yield_count += 1
+        records[0].id.should eq(ids[1])
+        records[1].id.should eq(ids[2])
+      end
+      yield_count.should eq(1)
     end
   end
 

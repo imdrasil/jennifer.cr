@@ -25,7 +25,7 @@ module Jennifer
       def update(query, options : Hash)
         esc = Adapter.adapter_class.escape_string(1)
         String.build do |s|
-          s << "UPDATE " << query.table << " SET "
+          s << "UPDATE " << query._table << " SET "
           options.map { |k, v| "#{k.to_s}= #{esc}" }.join(", ", s)
           s << "\n"
 

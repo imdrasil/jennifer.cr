@@ -155,6 +155,10 @@ module Jennifer
         exec "DROP TYPE #{name}"
       end
 
+      def drop_index(table, name)
+        exec "DROP INDEX #{name}"
+      end
+
       def query_string_array(_query, field_count = 1)
         result = [] of Array(String)
         query(_query) do |rs|
@@ -289,6 +293,8 @@ module Jennifer
         case name
         when :unique, :uniq
           "UNIQUE "
+        when nil
+          " "
         else
           raise ArgumentError.new("Unknown index type: #{name}")
         end

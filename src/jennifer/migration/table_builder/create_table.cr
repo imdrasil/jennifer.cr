@@ -35,12 +35,12 @@ module Jennifer
           timestamp(:updated_at, {:null => true})
         end
 
-        def add_index(name : String, fields : Array(Symbol), type : Symbol, lengths : Hash(Symbol, Int32) = {} of Symbol => Int32, orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
+        def add_index(name : String, fields : Array(Symbol), type : Symbol? = nil, lengths : Hash(Symbol, Int32) = {} of Symbol => Int32, orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
           @indexes << CreateIndex.new(@name, name, fields, type, lengths, orders)
           self
         end
 
-        def add_index(name : String, field : Symbol, type : Symbol, length : Int32? = nil, order : Symbol? = nil)
+        def add_index(name : String, field : Symbol, type : Symbol? = nil, length : Int32? = nil, order : Symbol? = nil)
           add_index(
             name,
             [field],

@@ -9,9 +9,44 @@ postgres_only do
       end
     end
 
-    describe "#add_index" do
-      # tested via adding index in migration
-      pending "add" do
+    describe "index manipulation" do
+      age_index_options = {
+        :type => nil,
+        :fields => [:age],
+        :order => {} of Symbol => Symbol,
+        :lengths => {} of Symbol => Symbol
+      }
+      index_name = "contacts_age_index"
+
+      context "#index_exists?" do
+        it "returns true if exists index with given name" do
+          adapter.index_exists?("", "contacts_description_index").should be_true
+        end
+
+        it "returns false if index is not exist" do
+          adapter.index_exists?("", "contacts_description_index_test").should be_false
+        end
+      end
+
+      context "#add_index" do
+        it "should add a covering index if no type is specified" do
+          delete_index_if_exists(adapter, index_name)
+
+          adapter.add_index("contacts", index_name, age_index_options)
+          adapter.index_exists?("", index_name).should be_true
+        end
+      end
+
+      context "#drop_index" do
+        it "should drop an index if it exists" do
+          delete_index_if_exists(adapter, index_name)
+
+          adapter.add_index("contacts", index_name, age_index_options)
+          adapter.index_exists?("", index_name).should be_true
+
+          adapter.drop_index("", index_name)
+          adapter.index_exists?("", index_name).should be_false
+        end
       end
     end
 
@@ -25,15 +60,7 @@ postgres_only do
     describe "#insert" do
     end
 
-    describe "#index_exists?" do
-      it "returns true if exists index with given name" do
-        adapter.index_exists?("", "contacts_description_index").should be_true
-      end
 
-      it "returns false if index is not exist" do
-        adapter.index_exists?("", "contacts_description_index_test").should be_false
-      end
-    end
 
     describe "#material_view_exists?" do
       it "returns true if exists" do
@@ -73,4 +100,8 @@ postgres_only do
       end
     end
   end
+end
+
+def delete_index_if_exists(adapter, index)
+  adapter.drop_index("", index) if adapter.index_exists?("", index)
 end

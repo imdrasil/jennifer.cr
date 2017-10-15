@@ -67,7 +67,7 @@ module Jennifer
           \{% RELATION_NAMES << "#{name.id}" %}
 
           @\{{name.id}} = [] of \{{klass}}
-          @__\{{name.id}}_retrived = false
+          @__\{{name.id}}_retrieved = false
 
           # returns relation metaobject
           def self.\{{name.id}}_relation
@@ -83,22 +83,26 @@ module Jennifer
 
           # returns array of related objects
           def \{{name.id}}
-            if !@__\{{name.id}}_retrived && @\{{name.id}}.empty?
-              @__\{{name.id}}_retrived = true
+            if !@__\{{name.id}}_retrieved && @\{{name.id}}.empty?
+              @__\{{name.id}}_retrieved = true
               @\{{name.id}} = \{{name.id}}_query.to_a.as(Array(\{{klass}}))
             end
             @\{{name.id}}
           end
 
-          # builds related object from hash
+          # builds related object from hash and adds to relation
           def append_\{{name.id}}(rel : Hash)
-            @__\{{name.id}}_retrived = true
+            @__\{{name.id}}_retrieved = true
             @\{{name.id}} << \{{klass}}.build(rel, false)
           end
 
           def append_\{{name.id}}(rel : \{{klass}})
-            @__\{{name.id}}_retrived = true
+            @__\{{name.id}}_retrieved = true
             @\{{name.id}} << rel
+          end
+
+          def __\{{name.id}}_retrieved
+            @__\{{name.id}}_retrieved = true
           end
 
           # removes given object from relation array
@@ -111,6 +115,7 @@ module Jennifer
             rel
           end
 
+          # Insert given object to db and relation
           def add_\{{name.id}}(rel : Hash)
             @\{{name.id}} << \{{@type}}.\{{name.id}}_relation.insert(self, rel).as(\{{klass}})
           end
@@ -143,7 +148,7 @@ module Jennifer
           end
 
           @\{{name.id}} = [] of \{{klass}}
-          @__\{{name.id}}_retrived = false
+          @__\{{name.id}}_retrieved = false
 
           def self.\{{name.id}}_relation
             @@\{{name.id}}_relation ||= ::Jennifer::Relation::ManyToMany(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}},
@@ -161,21 +166,25 @@ module Jennifer
           end
 
           def \{{name.id}}
-            if !@__\{{name.id}}_retrived && @\{{name.id}}.empty?
-              @__\{{name.id}}_retrived = true
+            if !@__\{{name.id}}_retrieved && @\{{name.id}}.empty?
+              @__\{{name.id}}_retrieved = true
               @\{{name.id}} = \{{name.id}}_query.to_a.as(Array(\{{klass}}))
             end
             @\{{name.id}}
           end
 
           def append_\{{name.id}}(rel : Hash)
-            @__\{{name.id}}_retrived = true
+            @__\{{name.id}}_retrieved = true
             @\{{name.id}} << \{{klass}}.build(rel, false)
           end
 
           def append_\{{name.id}}(rel : \{{klass}})
-            @__\{{name.id}}_retrived = true
+            @__\{{name.id}}_retrieved = true
             @\{{name.id}} << rel
+          end
+
+          def __\{{name.id}}_retrieved
+            @__\{{name.id}}_retrieved = true
           end
 
           def remove_\{{name.id}}(rel : \{{klass}})
@@ -210,7 +219,7 @@ module Jennifer
           \{% RELATION_NAMES << "#{name.id}" %}
 
           @\{{name.id}} : \{{klass}}?
-          @__\{{name.id}}_retrived = false
+          @__\{{name.id}}_retrieved = false
 
           def self.\{{name.id}}_relation
             @@\{{name.id}}_relation ||= ::Jennifer::Relation::BelongsTo(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}},
@@ -218,8 +227,8 @@ module Jennifer
           end
 
           def \{{name.id}}
-            if !@__\{{name.id}}_retrived && @\{{name.id}}.nil?
-              @__\{{name.id}}_retrived = true
+            if !@__\{{name.id}}_retrieved && @\{{name.id}}.nil?
+              @__\{{name.id}}_retrieved = true
               @\{{name.id}} = \{{name.id}}_reload
             end
             @\{{name.id}}
@@ -239,13 +248,17 @@ module Jennifer
           end
 
           def append_\{{name.id}}(rel : Hash)
-            @__\{{name.id}}_retrived = true
+            @__\{{name.id}}_retrieved = true
             @\{{name.id}} = \{{klass}}.build(rel, false)
           end
 
           def append_\{{name.id}}(rel : \{{klass}})
-            @__\{{name.id}}_retrived = true
+            @__\{{name.id}}_retrieved = true
             @\{{name.id}} = rel
+          end
+
+          def __\{{name.id}}_retrieved
+            @__\{{name.id}}_retrieved = true
           end
 
           def remove_\{{name.id}}
@@ -272,7 +285,7 @@ module Jennifer
           \{% RELATION_NAMES << "#{name.id}" %}
 
           @\{{name.id}} : \{{klass}}?
-          @__\{{name.id}}_retrived = false
+          @__\{{name.id}}_retrieved = false
 
           def self.\{{name.id}}_relation
             @@\{{name.id}}_relation ||= ::Jennifer::Relation::HasOne(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}},
@@ -280,8 +293,8 @@ module Jennifer
           end
 
           def \{{name.id}}
-            if !@__\{{name.id}}_retrived && @\{{name.id}}.nil?
-              @__\{{name.id}}_retrived = true
+            if !@__\{{name.id}}_retrieved && @\{{name.id}}.nil?
+              @__\{{name.id}}_retrieved = true
               @\{{name.id}} = \{{name.id}}_reload
             end
             @\{{name.id}}
@@ -301,13 +314,17 @@ module Jennifer
           end
 
           def append_\{{name.id}}(rel : Hash)
-            @__\{{name.id}}_retrived = true
+            @__\{{name.id}}_retrieved = true
             @\{{name.id}} = \{{klass}}.build(rel, false)
           end
 
           def append_\{{name.id}}(rel : \{{klass}})
-            @__\{{name.id}}_retrived = true
+            @__\{{name.id}}_retrieved = true
             @\{{name.id}} = rel
+          end
+
+          def __\{{name.id}}_retrieved
+            @__\{{name.id}}_retrieved = true
           end
 
           def remove_\{{name.id}}
@@ -323,35 +340,52 @@ module Jennifer
             @\{{name.id}} = \{{@type}}.\{{name.id}}_relation.insert(self, rel)
           end
         end
-
-        macro update_relation_methods
-          def append_relation(name, hash)
-            \\{% if RELATION_NAMES.size > 0 %}
-              case name
-              \\{% for rel in RELATION_NAMES %}
-                when \\{{rel}}
-                  append_\\{{rel.id}}(hash)
-              \\{% end %}
-              else
-                super(name, hash)
-              end
-            \\{% end %}
-          end
-        end
-      end
-
-      macro finished_hook
-        update_relation_methods
-
-        def __refresh_relation_retrieves
-          \{% for rel in RELATION_NAMES %}
-            @__\{{rel.id}}_retrived = false
-          \{% end %}
-        end
       end
 
       macro inherited_hook
         RELATION_NAMES = [] of String
+
+        macro def append_relation(name, hash)
+          \{% begin %}
+            \{% relations = @type.constant("RELATION_NAMES") %}
+            \{% if relations.size > 0 %}
+              case name
+              \{% for rel in relations %}
+                when \{{rel}}
+                  append_\{{rel.id}}(hash)
+              \{% end %}
+              else
+                super(name, hash)
+              end
+            \{% end %}
+          \{% end %}
+        end
+
+        macro def relation_retrieved(name)
+          \{% begin %}
+            \{% relations = @type.constant("RELATION_NAMES") %}
+            \{% if relations.size > 0 %}
+              case name
+              \{% for rel in relations %}
+                when \{{rel}}
+                  __\{{rel.id}}_retrieved
+              \{% end %}
+              else
+                super(name)
+              end
+            \{% end %}
+          \{% end %}
+        end
+
+
+        macro def __refresh_relation_retrieves
+          \{% begin %}
+            \{% relations = @type.constant("RELATION_NAMES") %}
+            \{% for rel in relations %}
+              @__\{{rel.id}}_retrieved = false
+            \{% end %}
+          \{% end %}
+        end
       end
     end
   end

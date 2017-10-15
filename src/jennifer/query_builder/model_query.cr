@@ -190,7 +190,9 @@ module Jennifer
 
           new_collection = rel.query(primary_fields).db_results
 
-          unless new_collection.empty?
+          if new_collection.empty?
+            collection.each(&.relation_retrieved(name))
+          else
             collection.each_with_index do |mod, i|
               pv = primary_fields[i]
               # TODO: check if deleting elements from array will increase performance
@@ -237,7 +239,11 @@ module Jennifer
             end
           end
         end
-        add_preloaded(h_result.values)
+        collection = h_result.values
+        @relations.each do |rel|
+          collection.each(&.relation_retrieved(rel))
+        end
+        add_preloaded(collection)
       end
 
       private def add_aliases

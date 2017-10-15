@@ -56,6 +56,23 @@ describe Jennifer::QueryBuilder::ModelQuery do
 
     pending "with aliases" do
     end
+
+    it "stops reloading relation from db if there is no records" do
+      Factory.create_contact
+      c = Contact.all.eager_load(:addresses).to_a
+      count = query_count
+      c[0].addresses
+      (query_count - count).should eq(0)
+    end
+
+    it "stop reloading relation from the db if it is already loaded" do
+      c = Factory.create_contact
+      Factory.create_address(contact_id: c.id)
+      c = Contact.all.eager_load(:addresses).to_a
+      count = query_count
+      c[0].addresses.size.should eq(1)
+      (query_count - count).should eq(0)
+    end
   end
 
   describe "#relation" do
@@ -276,6 +293,23 @@ describe Jennifer::QueryBuilder::ModelQuery do
   describe "#includes" do
     it "doesn't add JOIN condition" do
       Contact.all.includes(:address)._joins.nil?.should be_true
+    end
+
+    it "stops reloading relation from db if there is no records" do
+      Factory.create_contact
+      c = Contact.all.includes(:addresses).to_a
+      count = query_count
+      c[0].addresses
+      (query_count - count).should eq(0)
+    end
+
+    it "stop reloading relation from the db if it is already loaded" do
+      c = Factory.create_contact
+      Factory.create_address(contact_id: c.id)
+      c = Contact.all.includes(:addresses).to_a
+      count = query_count
+      c[0].addresses.size.should eq(1)
+      (query_count - count).should eq(0)
     end
   end
 

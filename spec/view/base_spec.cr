@@ -113,18 +113,6 @@ describe Jennifer::View::Base do
     end
   end
 
-  describe "::search_by_sql" do
-    it "returns array" do
-      Factory.create_contact(name: "Ivan", age: 15)
-      Factory.create_contact(name: "Max", age: 22)
-      Factory.create_contact(name: "Ivan", age: 50)
-
-      res = MaleContact.search_by_sql("SELECT male_contacts.* from male_contacts where age > 20")
-
-      res.size.should eq(2)
-    end
-  end
-
   describe "::views" do
     it "returns all model classes" do
       views = Jennifer::View::Base.views

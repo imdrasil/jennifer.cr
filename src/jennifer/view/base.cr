@@ -48,16 +48,6 @@ module Jennifer
         build(values)
       end
 
-      def self.search_by_sql(query : String, args = [] of DBAny)
-        result = [] of self
-        ::Jennifer::Adapter.adapter.query(query, args) do |rs|
-          rs.each do
-            result << build(rs)
-          end
-        end
-        result
-      end
-
       def self.all
         QueryBuilder::ModelQuery(self).new(table_name)
       end
@@ -78,6 +68,10 @@ module Jennifer
       end
 
       def append_relation(name, hash)
+        raise Jennifer::UnknownRelation.new(self.class, name)
+      end
+
+      def relation_retrieved(name)
         raise Jennifer::UnknownRelation.new(self.class, name)
       end
 

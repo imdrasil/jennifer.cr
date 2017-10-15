@@ -274,10 +274,6 @@ module Jennifer
           {% end %}
           super
         end
-
-        macro finished
-          ::Jennifer::Model::RelationDefinition.finished_hook
-        end
       end
 
       macro sti_mapping(**properties)

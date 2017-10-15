@@ -61,7 +61,7 @@ end
 
 Spec.before_each do
   Jennifer::Adapter.adapter.begin_transaction
-  reset_config
+  set_default_configuration
 end
 
 Spec.after_each do
@@ -70,11 +70,6 @@ Spec.after_each do
 end
 
 # Helper methods ================
-
-def reset_config
-  Jennifer::Config.reset_config
-  Jennifer::Config.config.db = "jennifer_test"
-end
 
 def clean_db
   Jennifer::Adapter.adapter.class.remove_queries

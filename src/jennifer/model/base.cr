@@ -136,6 +136,10 @@ module Jennifer
         raise Jennifer::UnknownRelation.new(self.class, name)
       end
 
+      def relation_retrieved(name)
+        raise Jennifer::UnknownRelation.new(self.class, name)
+      end
+
       abstract def primary
       abstract def attribute(name)
       abstract def set_attribute(name, value)
@@ -261,16 +265,6 @@ module Jennifer
         end.delete
       end
 
-      def self.search_by_sql(query : String, args = [] of Supportable)
-        result = [] of self
-        ::Jennifer::Adapter.adapter.query(query, args) do |rs|
-          rs.each do
-            result << build(rs)
-          end
-        end
-        result
-      end
-
       macro inherited
         ::Jennifer::Model::Validation.inherited_hook
         ::Jennifer::Model::Callback.inherited_hook
@@ -296,7 +290,6 @@ module Jennifer
         macro finished
           ::Jennifer::Model::Validation.finished_hook
           ::Jennifer::Model::Callback.finished_hook
-          ::Jennifer::Model::RelationDefinition.finished_hook
 
           def self.relation(name : String)
             @@relations[name]

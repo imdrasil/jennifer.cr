@@ -277,18 +277,6 @@ describe Jennifer::Model::Base do
     end
   end
 
-  describe "::search_by_sql" do
-    it "returns array" do
-      Factory.create_contact(name: "Ivan", age: 15)
-      Factory.create_contact(name: "Max", age: 19)
-      Factory.create_contact(name: "Ivan", age: 50)
-
-      res = Contact.search_by_sql("SELECT contacts.* from contacts where age > 16")
-
-      res.size.should eq(2)
-    end
-  end
-
   describe "::models" do
     it "returns all model classes" do
       models = Jennifer::Model::Base.models

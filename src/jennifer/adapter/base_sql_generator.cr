@@ -93,7 +93,7 @@ module Jennifer
 
       def self.body_section(io : String::Builder, query)
         join_clause(io, query)
-        where_clause(io, query.tree)
+        where_clause(io, query)
         group_clause(io, query)
         order_clause(io, query)
         limit_clause(io, query)
@@ -104,14 +104,14 @@ module Jennifer
 
       def self.union_clause(io : String::Builder, query)
         return unless query._unions
-        query._unions!.each do |u|
+        query._unions.not_nil!.each do |u|
           io << " UNION " << self.select(u)
         end
       end
 
       def self.lock_clause(io : String::Builder, query)
         return if query._lock.nil?
-        io << (query._lock.is_a?(Bool) ? " FOR UPDATE " : query._lock)
+        io << (query._lock.is_a?(String) ? query._lock : " FOR UPDATE ")
       end
 
       # Renders SELECT and FROM parts
@@ -123,10 +123,10 @@ module Jennifer
           if !exact_fields.empty?
             exact_fields.join(", ", io) { |f| io << "#{table}.#{f}" }
           else
-            query._select_fields.join(", ", io) { |f| io << f.definition }
+            query._select_fields.not_nil!.join(", ", io) { |f| io << f.definition }
           end
         else
-          io << query._raw_select
+          io << query._raw_select.not_nil!
         end
         io << "\n"
 
@@ -150,9 +150,9 @@ module Jennifer
       end
 
       def self.group_clause(io : String::Builder, query)
-        return if query._groups.empty?
+        return if !query._groups || query._groups.empty?
         io << "GROUP BY "
-        query._groups.each.join(", ", io) { |c| io << c.as_sql }
+        query._groups.not_nil!.each.join(", ", io) { |c| io << c.as_sql }
         io << "\n"
       end
 
@@ -163,11 +163,11 @@ module Jennifer
 
       def self.join_clause(io : String::Builder, query)
         return unless query._joins
-        query._joins!.join(" ", io) { |j| io << j.as_sql }
+        query._joins.not_nil!.join(" ", io) { |j| io << j.as_sql }
       end
 
       def self.where_clause(io : String::Builder, query : QueryBuilder::Query | QueryBuilder::ModelQuery)
-        where_clause(io, query.tree)
+        where_clause(io, query.tree.not_nil!) if query.tree
       end
 
       def self.where_clause(io : String::Builder, tree)
@@ -176,14 +176,14 @@ module Jennifer
       end
 
       def self.limit_clause(io : String::Builder, query)
-        io.print "LIMIT ", query._limit, "\n" if query._limit
-        io.print "OFFSET ", query._offset, "\n" if query._offset
+        io.print "LIMIT ", query._limit.not_nil!, "\n" if query._limit
+        io.print "OFFSET ", query._offset.not_nil!, "\n" if query._offset
       end
 
       def self.order_clause(io : String::Builder, query)
-        return if query._order.empty?
+        return if !query._order || query._order.empty?
         io << "ORDER BY "
-        query._order.join(", ", io) { |(k, v)| io.print k.as_sql, " ", v.upcase }
+        query._order.not_nil!.join(", ", io) { |(k, v)| io.print k.as_sql, " ", v.upcase }
         io << "\n"
       end
 

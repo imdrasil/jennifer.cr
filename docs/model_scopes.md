@@ -1,3 +1,5 @@
+# Scopes
+
 Also you can specify prepared query statement.
 
 ```crystal

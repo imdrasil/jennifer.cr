@@ -1,3 +1,5 @@
+# Relations
+
 There are 4 types of relations: `has_many`, `has_and_belongs_to_many`, `belongs_to` and `has_one`. All of them have same semantic but generate slightly different methods.
 
 They takes next arguments:

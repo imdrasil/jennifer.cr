@@ -1,3 +1,5 @@
+# Pagination & Ordering
+
 #### Pagination
 
 For now you can only specify `limit` and `offset`:

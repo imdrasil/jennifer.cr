@@ -1,3 +1,5 @@
+# Query DSL
+
 My favorite part. Jennifer allows you to build lazy evaluated queries with chaining syntax. But some of them could be only at the and of a chain (such as `#fisrt` or `#pluck`).
 
 #### Where

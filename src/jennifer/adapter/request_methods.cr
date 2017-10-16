@@ -39,18 +39,6 @@ module Jennifer
         exec(parse_query(query, args), args)
       end
 
-      def distinct(query : QueryBuilder::ModelQuery, column, table)
-        str = SqlGenerator.select_distinct(query, column, table)
-        args = query.select_args
-        result = [] of DBAny
-        query(parse_query(str, args), args) do |rs|
-          rs.each do
-            result << result_to_array(rs)[0]
-          end
-        end
-        result
-      end
-
       def pluck(query, fields : Array)
         result = [] of Array(DBAny)
         body = SqlGenerator.select(query, fields)

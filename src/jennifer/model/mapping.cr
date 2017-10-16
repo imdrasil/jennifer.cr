@@ -61,9 +61,9 @@ module Jennifer
 
             {% if primary_auto_incrementable %}
               # Inits primary field
-              def init_primary_field(value : {{value[:type]}})
-                raise "Primary field is already initialized" if @{{key.id}}
-                @{{key.id}} = value
+              def init_primary_field(value)
+                raise ::Jennifer::AlreadyInitialized.new(@{{key.id}}, value) if @{{key.id}}
+                @{{key.id}} = value.as({{value[:type]}})
               end
             {% end %}
           {% end %}

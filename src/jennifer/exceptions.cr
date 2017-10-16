@@ -64,6 +64,12 @@ module Jennifer
     end
   end
 
+  class AlreadyInitialized < BaseException
+    def initialize(old_value, new_value)
+      @message = "Primary field is already initialized with #{old_value} but #{new_value} was given anyway."
+    end
+  end
+
   class RecordInvalid < BaseException
     getter :errors
 
@@ -72,6 +78,7 @@ module Jennifer
     end
   end
 
+  # Exception class to stoping model callback invoking.
   class Skip < BaseException
     def initialize
       @message = ""

@@ -205,11 +205,23 @@ module Jennifer
         end
       end
 
-      # Starts transaction
+      # Starts transaction.
       def self.transaction
         Adapter.adapter.transaction do |t|
           yield(t)
         end
+      end
+
+      # Performs table lock for current model's table.
+      def self.with_table_lock(type : String | Symbol, &block)
+        adapter.with_table_lock(table_name, type.to_s) do |t|
+          yield t
+        end
+      end
+
+      # Returns adapter instance.
+      def self.adapter
+        Adapter.adapter
       end
 
       def self.where(&block)
@@ -263,6 +275,20 @@ module Jennifer
             c(primary_field_name).in(_ids)
           end
         end.delete
+      end
+
+      def self.search_by_sql(query : String, args = [] of Supportable)
+        result = [] of self
+        ::Jennifer::Adapter.adapter.query(query, args) do |rs|
+          rs.each do
+            result << build(rs)
+          end
+        end
+        result
+      end
+
+      def self.import(collection : Array(self))
+        Adapter.adapter.bulk_insert(collection)
       end
 
       macro inherited

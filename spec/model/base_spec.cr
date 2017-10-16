@@ -123,9 +123,13 @@ describe Jennifer::Model::Base do
   end
 
   describe "::table_name" do
+    pending "add" do
+    end
   end
 
   describe "::c" do
+    pending "add" do
+    end
   end
 
   describe "%scope" do
@@ -236,13 +240,15 @@ describe Jennifer::Model::Base do
 
   describe "::transaction" do
     it "allow to start transaction" do
-      expect_raises(DivisionByZero) do
-        Contact.transaction do
-          Factory.create_contact
-          1 / 0
+      void_transaction do
+        expect_raises(DivisionByZero) do
+          Contact.transaction do
+            Factory.create_contact
+            1 / 0
+          end
         end
+        Contact.all.count.should eq(0)
       end
-      Contact.all.count.should eq(0)
     end
   end
 
@@ -283,6 +289,39 @@ describe Jennifer::Model::Base do
       models.is_a?(Array(Jennifer::Model::Base.class)).should be_true
       # I tired from modifing this each time new model is added
       (models.size > 6).should be_true
+    end
+  end
+
+  describe "::import" do
+    context "with autoincrementable primary key" do
+      it "imports objects" do
+        void_transaction do
+          objects = Factory.build_contact(2)
+          Contact.all.count.should eq(0)
+          Contact.import(objects)
+          Contact.all.count.should eq(2)
+        end
+      end
+
+      it "sets ids to all given objects" do
+        void_transaction do
+          objects = Factory.build_contact(2)
+          new_collection = Contact.import(objects)
+          objects.should eq(new_collection)
+          objects[0].id.nil?.should be_false
+          objects[1].id.nil?.should be_false
+        end
+      end
+    end
+
+    context "with custom primary key" do
+      it "imports objects" do
+        void_transaction do
+          objects = [Factory.build_address(enn: "qwer"), Factory.build_address(enn: "zxcc")]
+          Address.import(objects)
+          Address.all.count.should eq(2)
+        end
+      end
     end
   end
 end

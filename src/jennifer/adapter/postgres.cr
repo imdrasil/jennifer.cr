@@ -59,6 +59,18 @@ module Jennifer
       :var_string => 254,
     }
 
+    TABLE_LOCK_TYPES = {
+      "as"      => "ACCESS SHARE",
+      "rs"      => "ROW SHARE",
+      "re"      => "ROW EXCLUSIVE",
+      "sue"     => "SHARE UPDATE EXCLUSIVE",
+      "s"       => "SHARE",
+      "sre"     => "SHARE ROW EXCLUSIVE",
+      "e"       => "EXCLUSIVE",
+      "ae"      => "ACCESS EXCLUSIVE",
+      "default" => "SHARE", # "s"
+    }
+
     class Postgres < Base
       def prepare
         _query = <<-SQL
@@ -142,9 +154,19 @@ module Jennifer
       end
 
       def enum_values(name)
-        query_string_array("SELECT unnest(enum_range(NULL::#{name})::varchar[])")
+        query_array("SELECT unnest(enum_range(NULL::#{name})::varchar[])", String)
       end
 
+      def with_table_lock(table : String, type : String = "default", &block)
+        transaction do |t|
+          exec "LOCK TABLE #{table} IN #{TABLE_LOCK_TYPES[type]} MODE"
+          yield t
+        end
+      rescue e : KeyError
+        raise BaseException.new("Unknown table lock type '#{type}'.")
+      end
+
+      # TODO: sanitize query
       def define_enum(name, values)
         exec <<-SQL
           CREATE TYPE #{name} AS ENUM(#{values.as(Array).map { |e| "'#{e}'" }.join(", ")})
@@ -157,20 +179,6 @@ module Jennifer
 
       def drop_index(table, name)
         exec "DROP INDEX #{name}"
-      end
-
-      def query_string_array(_query, field_count = 1)
-        result = [] of Array(String)
-        query(_query) do |rs|
-          rs.each do
-            temp = [] of String
-            field_count.times do
-              temp << rs.read(String)
-            end
-            result << temp
-          end
-        end
-        result
       end
 
       # =========== overrides
@@ -250,6 +258,19 @@ module Jennifer
         end
 
         ExecResult.new(id, affected)
+      end
+
+      def self.bulk_insert(collection : Array(Model::Base))
+        opts = collection.flat_map(&.arguments_to_insert[:args])
+        query = parse_query(SqlGenerator.bulk_insert(collection))
+        # TODO: change to checking for autoincrementability
+        affected = exec(qyery, opts).rows_affected
+        if true
+          if affected == collection.size
+          else
+            raise ::Jennifer::BaseException.new("Bulk insert failed with #{collection.size - affected} records.")
+          end
+        end
       end
 
       def exists?(query)

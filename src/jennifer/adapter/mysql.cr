@@ -39,6 +39,15 @@ module Jennifer
       :string => 254,
     }
 
+    # NOTE: now is not used
+    TABLE_LOCK_TYPES = {
+      "r"       => "READ",
+      "rl"      => "READ LOCAL",
+      "w"       => "WRITE",
+      "lpw"     => "LOW_PRIORITY WRITE",
+      "default" => "READ", # "r"
+    }
+
     class Mysql < Base
       def translate_type(name : Symbol)
         Adapter::TYPE_TRANSLATIONS[name]
@@ -92,6 +101,21 @@ module Jennifer
           end
         end
         h
+      end
+
+      def with_table_lock(table : String, type : String = "default", &block)
+        transaction do |t|
+          Config.logger.debug("MySQL doesn't support manual locking table from prepared statement." \
+                              " Instead of this only transaction was started.")
+          yield t
+        end
+        # transaction do |t|
+        #   exec "LOCK TABLES #{table} #{TABLE_LOCK_TYPES[type]}"
+        #   yield t
+        #   exec "UNLOCK TABLES"
+        # end
+        # rescue e : KeyError
+        # raise BaseException.new("MySQL don't support table lock type '#{type}'.")
       end
 
       def self.generate_schema

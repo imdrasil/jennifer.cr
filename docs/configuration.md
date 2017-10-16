@@ -1,3 +1,5 @@
+# Configuration
+
 Put
 ```crystal
 require "jennifer/adapter/mysql" # for mysql

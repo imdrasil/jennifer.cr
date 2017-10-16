@@ -1,3 +1,5 @@
+# Migration
+
 For command management Jennifer now uses [Sam](https://github.com/imdrasil/sam.cr). So in your `sam.cr` just add loading migrations and Jennifer hooks.
 
 ```crystal

@@ -1,4 +1,4 @@
-### Record
+# Record
 
 There are 2 types of query classes:
 - `Jennifer::QueryBuilder::Query` - general class which allows to generate request to any table

@@ -14,7 +14,18 @@ module Jennifer
 
       # Generates query for inserting new record to db
       def self.insert(obj : Model::Base)
+        # NOTE: is overrided by each adapter
         raise "Not implemented"
+      end
+
+      def self.bulk_insert(table : String, field_names : Array(String), rows : Int32)
+        String.build do |s|
+          s << "INSERT INTO " << table << "("
+          field_names.join(", ", s) { |e| s << e }
+          escaped_row = "(" + Adapter.adapter_class.escape_string(field_names.size) + ")"
+          s << ") VALUES "
+          rows.times.join(", ", s) { s << escaped_row }
+        end
       end
 
       # Generates common select sql request
@@ -23,6 +34,10 @@ module Jennifer
           select_clause(s, query, exact_fields)
           body_section(s, query)
         end
+      end
+
+      def self.trancate(table : String)
+        "TRUNCATE #{table}"
       end
 
       # TODO: unify method generting - #parse_query should be called here or by caller
@@ -189,7 +204,7 @@ module Jennifer
 
       # ======== utils
 
-      def self.operator_to_sql(operator)
+      def self.operator_to_sql(operator : Symbol)
         case operator
         when :like
           "LIKE"
@@ -226,7 +241,7 @@ module Jennifer
         value.to_s
       end
 
-      def self.escape_string(size = 1)
+      def self.escape_string(size : Int32 = 1)
         case size
         when 1
           "%s"
@@ -239,7 +254,8 @@ module Jennifer
         end
       end
 
-      def self.parse_query(query, arg_count)
+      # TODO: optimize array initializing
+      def self.parse_query(query : String, arg_count : Int32)
         arr = [] of String
         arg_count.times do
           arr << "?"
@@ -247,7 +263,7 @@ module Jennifer
         query % arr
       end
 
-      def self.parse_query(query)
+      def self.parse_query(query : String)
         query
       end
     end

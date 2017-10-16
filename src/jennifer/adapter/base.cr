@@ -67,11 +67,11 @@ module Jennifer
         raise BadQuery.new(e.message, _query, args)
       end
 
-      def parse_query(q, args)
+      def parse_query(q : String, args)
         SqlGenerator.parse_query(q, args.size)
       end
 
-      def parse_query(q)
+      def parse_query(q : String)
         SqlGenerator.parse_query(q)
       end
 
@@ -80,7 +80,7 @@ module Jennifer
       end
 
       def truncate(table_name : String)
-        exec "TRUNCATE #{table_name}"
+        exec SqlGenerator.truncate(table_name)
       end
 
       def delete(query : QueryBuilder::Query)
@@ -88,14 +88,41 @@ module Jennifer
         exec SqlGenerator.delete(query), args
       end
 
-      def exists?(query)
+      def exists?(query : QueryBuilder::Query)
         args = query.select_args
         scalar(SqlGenerator.exists(query), args) == 1
       end
 
-      def count(query)
+      def count(query : QueryBuilder::Query)
         args = query.select_args
         scalar(SqlGenerator.count(query), args).as(Int64).to_i
+      end
+
+      def bulk_insert(collection : Array(Model::Base))
+        return collection if collection.empty?
+        klass = collection[0].class
+        fields = collection[0].arguments_to_insert[:fields]
+        values = collection.flat_map(&.arguments_to_insert[:args])
+        parsed_query = parse_query(SqlGenerator.bulk_insert(klass.table_name, fields, collection.size), values)
+
+        with_table_lock(klass.table_name) do
+          exec(parsed_query, values)
+          if klass.primary_auto_incrementable?
+            klass.all.order({klass.primary => :desc}).limit(collection.size).pluck(:id).reverse_each.each_with_index do |id, i|
+              collection[i].init_primary_field(id)
+            end
+          end
+        end
+        collection
+      end
+
+      def bulk_insert(table : String, fields : Array(String), values : Array(Array(DBAny))) : Nil
+        return if values.empty?
+        with_table_lock(table) do
+          flat_values = values.flatten
+          exec(parse_query(SqlGenerator.bulk_insert(table, fields, values.size), flat_values), flat_values)
+        end
+        nil
       end
 
       def self.db_connection
@@ -286,19 +313,34 @@ module Jennifer
         exec buff
       end
 
+      def query_array(_query : String, klass : T.class, field_count : Int32 = 1) forall T
+        result = [] of Array(T)
+        query(_query) do |rs|
+          rs.each do
+            temp = [] of T
+            field_count.times do
+              temp << rs.read(T)
+            end
+            result << temp
+          end
+        end
+        result
+      end
+
       abstract def view_exists?(name, silent = true)
       abstract def update(obj)
       abstract def update(q, h)
       abstract def insert(obj)
-      abstract def distinct(q, c, t)
       abstract def table_exists?(table)
       abstract def index_exists?(table, name)
       abstract def column_exists?(table, name)
       abstract def translate_type(name)
       abstract def default_type_size(name)
       abstract def table_column_count(table)
+      abstract def with_table_lock(table : String, type : String = "default", &block)
 
       # private ===========================
+      # NOTE: adding here type will bring a lot of small issues around
 
       private def index_type_translate(name)
         case name

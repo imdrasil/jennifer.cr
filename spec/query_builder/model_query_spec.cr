@@ -54,6 +54,17 @@ describe Jennifer::QueryBuilder::ModelQuery do
       end
     end
 
+    context "with defined inverse_of" do
+      it "sets owner during building collection" do
+        c = Factory.create_contact
+        a = Factory.create_address(contact_id: c.id)
+        count = query_count
+        res = Contact.all.eager_load(:addresses).to_a
+        res[0].addresses[0].contact
+        query_count.should eq(count + 1)
+      end
+    end
+
     pending "with aliases" do
     end
 
@@ -310,6 +321,17 @@ describe Jennifer::QueryBuilder::ModelQuery do
       count = query_count
       c[0].addresses.size.should eq(1)
       (query_count - count).should eq(0)
+    end
+
+    context "with defined inverse_of" do
+      it "sets owner during building collection" do
+        c = Factory.create_contact
+        a = Factory.create_address(contact_id: c.id)
+        count = query_count
+        res = Contact.all.includes(:addresses).to_a
+        res[0].addresses[0].contact
+        query_count.should eq(count + 2)
+      end
     end
   end
 

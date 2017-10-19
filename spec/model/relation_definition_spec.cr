@@ -119,6 +119,16 @@ describe Jennifer::Model::RelationDefinition do
         c.addresses
         query_count.should eq(count + 1)
       end
+
+      context "with defined inverse_of" do
+        it "sets owner during building collection" do
+          c = Factory.create_contact
+          a = Factory.create_address(contact_id: c.id)
+          count = query_count
+          c.addresses[0].contact
+          query_count.should eq(count + 1)
+        end
+      end
     end
 
     describe "#add_/relation_name/" do
@@ -295,6 +305,16 @@ describe Jennifer::Model::RelationDefinition do
         query_count.should eq(count + 1)
         c.main_address
         query_count.should eq(count + 1)
+      end
+
+      context "with defined inverse_of" do
+        it "sets owner during building collection" do
+          c = Factory.create_contact
+          a = Factory.create_address(contact_id: c.id, main: true)
+          count = query_count
+          c.main_address!.contact
+          query_count.should eq(count + 1)
+        end
       end
     end
 

@@ -63,15 +63,15 @@ module Jennifer
         ::Jennifer::QueryBuilder::Criteria.new(name, table_name)
       end
 
-      def self.c(name, relation)
+      def self.c(name : String, relation)
         ::Jennifer::QueryBuilder::Criteria.new(name, table_name, relation)
       end
 
-      def append_relation(name, hash)
+      def append_relation(name : String, hash)
         raise Jennifer::UnknownRelation.new(self.class, name)
       end
 
-      def relation_retrieved(name)
+      def relation_retrieved(name : String)
         raise Jennifer::UnknownRelation.new(self.class, name)
       end
 
@@ -92,18 +92,18 @@ module Jennifer
           raise Jennifer::UnknownRelation.new(self, e)
         end
 
+        # NOTE: override regular behavior - used fields count instead of
+        # quering db
+        def self.actual_table_field_count
+          FIELDS.size
+        end
+
         macro finished
           def __after_initialize_callback
             \{% for method in AFTER_INITIALIZE_CALLBACKS %}
               \{{method.id}}
             \{% end %}
           rescue ::Jennifer::Skip
-          end
-
-          # NOTE: override expected behavior - use fields count instead of
-          # quering db
-          macro def self.actual_table_field_count
-            FIELDS.size
           end
         end
       end

@@ -132,11 +132,15 @@ module Jennifer
         o
       end
 
-      def append_relation(name, hash)
+      def set_inverse_of(name : String, object)
         raise Jennifer::UnknownRelation.new(self.class, name)
       end
 
-      def relation_retrieved(name)
+      def append_relation(name : String, hash)
+        raise Jennifer::UnknownRelation.new(self.class, name)
+      end
+
+      def relation_retrieved(name : String)
         raise Jennifer::UnknownRelation.new(self.class, name)
       end
 

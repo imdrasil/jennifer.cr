@@ -77,11 +77,31 @@ module Jennifer
         raise Jennifer::InvalidConfig.new("No database configured") if db.empty?
       end
 
+      def connection_string(*options)
+        auth_part = @user
+        auth_part += ":#{@password}" if @password && !@password.empty?
+
+        host_part = @host
+        host_part += ":#{@port}" if @port && @port > 0
+
+        String.build do |s|
+          s << @adapter << "://"
+          s << auth_part << "@" if auth_part.size > 0
+          s << host_part
+          s << "/" << @db if options.includes?(:db)
+          s << "?"
+          {% for arg, index in CONNECTION_URI_PARAMS %}
+            s << "{{arg.id}}=#{@{{arg.id}}}"
+            s << "&" if {{index}} < {{CONNECTION_URI_PARAMS.size - 1}}
+          {% end %}
+        end
+      end
+
       def from_uri(db_uri : String)
         begin
           from_uri(URI.parse(db_uri))
-        rescue e
-          self.logger.error("Error parsing database uri #{db_uri}")
+        rescue e : URI::Error
+          self.logger.error("Error parsing database uri #{db_uri} - #{e.message}")
         end
       end
 

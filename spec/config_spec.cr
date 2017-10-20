@@ -96,6 +96,34 @@ describe Jennifer::Config do
       Jennifer::Config.retry_delay.should eq(666)
     end
   end
+
+  describe "::connection_string" do
+    it "should build a connection string from config" do
+      loaded_uri = "mysql://root:somepass@somehost/some_database?max_pool_size=111&initial_pool_size=222&max_idle_pool_size=333&retry_attempts=444&checkout_timeout=555.0&retry_delay=666.0"
+      Jennifer::Config.from_uri(loaded_uri)
+      Jennifer::Config.connection_string(:db).should eq(loaded_uri)
+    end
+
+    it "should ignore password if unset" do
+      clear_password
+      loaded_uri = "mysql://root@somehost/some_database?max_pool_size=111&initial_pool_size=222&max_idle_pool_size=333&retry_attempts=444&checkout_timeout=555.0&retry_delay=666.0"
+      Jennifer::Config.from_uri(loaded_uri)
+      Jennifer::Config.connection_string(:db).should eq(loaded_uri)
+    end
+
+    it "should build host part with host:port " do
+      clear_password
+      loaded_uri = "mysql://root@somehost:5432/some_database?max_pool_size=111&initial_pool_size=222&max_idle_pool_size=333&retry_attempts=444&checkout_timeout=555.0&retry_delay=666.0"
+      Jennifer::Config.from_uri(loaded_uri)
+      Jennifer::Config.connection_string(:db).should eq(loaded_uri)
+    end
+  end
+end
+
+def clear_password
+  Jennifer::Config.configure do |config|
+    config.password = ""
+  end
 end
 
 def ignoring_config_error(&block)

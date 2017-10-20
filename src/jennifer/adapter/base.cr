@@ -17,7 +17,7 @@ module Jennifer
       getter db
 
       def initialize
-        @db = DB.open(Base.connection_string(:db))
+        @db = DB.open(Config.connection_string(:db))
       end
 
       def self.build
@@ -126,7 +126,7 @@ module Jennifer
       end
 
       def self.db_connection
-        DB.open(connection_string) do |db|
+        DB.open(Config.connection_string(:db)) do |db|
           yield(db)
         end
       rescue e
@@ -136,25 +136,6 @@ module Jennifer
 
       def self.join_table_name(table1, table2)
         [table1.to_s, table2.to_s].sort.join("_")
-      end
-
-      def self.connection_string(*options)
-        auth_part = Config.user
-        auth_part += ":#{Config.password}" if Config.password && !Config.password.empty?
-
-        host_part = Config.host
-        host_part += Config.port.to_s if Config.port && Config.port > 0
-
-        String.build do |s|
-          s << Config.adapter << "://" << auth_part << "@" << host_part
-          s << "/" << Config.db if options.includes?(:db)
-          s << "?"
-          [
-            {% for arg in Config::CONNECTION_URI_PARAMS %}
-              "{{arg.id}}=#{Config.{{arg.id}}}"
-            {% end %},
-          ].join(",", s)
-        end
       end
 
       def self.extract_arguments(hash)

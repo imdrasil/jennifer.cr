@@ -39,6 +39,7 @@ Supported operators:
 | `=~` | `REGEXP`, `~` |
 | `&` | `AND` |
 | `|` | `OR` |
+| `xor` | `XOR` |
 
 And operator-like methods:
 
@@ -120,6 +121,31 @@ Contact.where { (_id > 40) & _name.regexp("^[a-d]") }
 Address.where { _contact_id.is(nil) }
 ```
 
+`ANY` and `ALL` statement allow to path nested query:
+
+```crystal
+Cotnact.all.where { _id == any(Address.all.where { _main }.select(:contact_id)) }
+```
+
+##### Complex logical condition
+
+To design some complex logcal expression like: `a & (b | c) & d` use `ExpressionBuilder#g` method:
+
+```crystal
+Contact.all.where { (_id > 0) & g(_name.like("%asd%") | _age > 15) & id < 100 }
+```
+
+##### Smart arguments parsing
+
+Next methods provide flexible api for passing arguments:
+
+- `#order`
+- `#reorder`
+- `#group`
+- `#select`
+
+Theys allows pass argument (tuple, named tuple or hash - depending on context) of `String`, `Symbol` or `Cryteria`. `String` arguments will be parsed as plain sql (`RawSql`) and `Symbol` - as `Criteria`.
+
 #### Select
 
 Raw sql for `SELECT` clause could be passed into `#select` method. This have highest priority during forming this query part.
@@ -127,6 +153,13 @@ Raw sql for `SELECT` clause could be passed into `#select` method. This have hig
 ```crystal
 Contact.all.select("COUNT(id) as count, contacts.name").group("name")
        .having { sql("COUNT(id)") > 1 }.pluck(:name)
+```
+
+Also `#select` accepts block where all fields could be specified and aliased:
+
+```crystal
+Contact.all.select { [sql("COUNT(id)").alias("count"), _name] }.group("name")
+	   .having { sql("count") > 1 }.pluck(:name)
 ```
 
 #### From
@@ -167,9 +200,9 @@ To join model relation (has_many, belongs_to and has_one) pass it's name and joi
 Contact.all.relation("addresses").relation(:passport, type: :left)
 ```
 
-#### Eager loading
+#### Relation eager loading
 
-##### Atual eager load
+##### Actual eager load
 
 To automatically join some relation and get it from db use `#eager_load` and pass relation name:
 
@@ -220,11 +253,11 @@ Contact.where { _age > 42 }.exists? # returns true or false
 
 #### Distinct
 
-```crystal
-Contant.all.distinct("age") # returns array of ages (Array(DB::Any | Int16 | Int8))
-```
+Adds `DISTINCT` keyword of at the very beginning of `SELECT` statement
 
-`#distinct` retrieves from db column values without repeats. Can accept column name and as optional second parameter - table name. Can be only as at he end of call chain - hit the db.
+```crystal
+Contant.all.distinct # Array(Contact) with unique attributes (all)
+```
 
 #### Union
 

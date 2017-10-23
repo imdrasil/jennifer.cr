@@ -4,13 +4,13 @@ There are 4 types of relations: `has_many`, `has_and_belongs_to_many`, `belongs_
 
 They takes next arguments:
 
-- relation name
-- target class
+- `name` - relation name
+- `klass` - target class
 - `request` - additional request (will be used inside of where clause) - optional
 - `foreign` - name of foreign key - optional; by default use singularized table name + "_id"
 - `primary` - primary field name - optional;  by default it uses default primary field of class.
 
-has_and_belongs_to_many also accepts next 2 arguments and use regular arguments slightly in another way:
+has_and_belongs_to_many also accepts extra 2 arguments and use regular arguments slightly in another way:
 - `join_table` - join table name; be default relation table names in alphabetic order joined by underscore is used
 - `join_foreign` - foreign key for current model (left foreign key of join table)
 - `foreign` - used as right foreign key
@@ -52,3 +52,7 @@ Also `mas_many`, `belongs_to` and `has_one` relations have `dependent` parameter
 - `destroy` - destroyes all related objects
 - `restrict_with_exception` - will raise `Jennifer::RecordExists` exception if there is any related object
 - `none` - will do nothing - default for `belongs_to`
+
+#### Inverse of
+
+`has_many` and `has_one` relations also accepts `inverse_of` option which represents inverse relation name. Specifying this option will automatically load owner object during any relation loading (because of `ModelQuery#includes` or `ModelQuery#eager_load` or even plaint `SomeModel#relation_name` mathod call) 

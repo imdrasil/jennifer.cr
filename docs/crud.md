@@ -20,6 +20,13 @@ c.save
 
 > Any `::create` and `#save` method call by default process under a transation. If transation is already started will not create new one.
 
+To insert multiple records at once use `::import`:
+
+```crystal
+objects = [Contact.new({name: "Tom", age: 18}), Contact.new({name: "Jerry", age: 16})]
+Contact.import(objects)
+```
+
 #### Read
 
 Object could be retrieved by id using `#find` (returns `T?`) and `#find!` (returns `T` or raise `RecordNotFound` exception) methods.

@@ -1,6 +1,6 @@
 # Transaction & Lock
 
-#### Transaction
+### Transaction
 
 Transaction mechanism provides block-like syntax:
 
@@ -14,7 +14,9 @@ If any error was raised in block transaction will be rollbacked. To rollback tra
 
 Transaction lock connection for current fiber avoiding grepping new one from pool.
 
-#### Lock
+### Lock
+
+#### Row level
 
 Provides support for row-level locking using `SELECT … FOR UPDATE` and other lock types.
 
@@ -49,6 +51,26 @@ contact.with_lock do
   contact.save!
 end
 ```
+
+#### Table level
+
+To lock table use `Jennifer::Adapter#with_table_lock` method
+
+```crystal
+Jennifer::Adapter.adapter("table_name") do 
+  # some operations here
+end
+```
+
+Or performing directly on model class:
+
+```crystal
+Contact.with_table_lock do
+  # some operations here
+end
+```
+
+> But **only** postgres adapter supprots trully table `LOCK` staement - mysql one just wrap call to transation. This is caused by performing queries with prepared statements and mysql doesn't allow lock table via it.
 
 Database-specific information on row locking:
 - [MySQL](http://dev.mysql.com/doc/refman/5.7/en/innodb-locking-reads.html)

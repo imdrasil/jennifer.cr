@@ -54,6 +54,7 @@ All configs:
 | `migration_files_path` | `"./db/migrations"` |
 | `structure_folder` | parent folder of `migration_files_path` |
 | `host` | `"localhost"` |
+| `port` | -1 |
 | `logger` | `Logger.new(STDOUT)` |
 | `schema` | `"public"` |
 | `user` | - |
@@ -66,6 +67,15 @@ All configs:
 | `retry_attempts` | 1 |
 | `checkout_timeout` | 5.0 |
 | `retry_delay` | 1.0 |
+
+> `port = -1` will provide connection URI without port mention
+
+Also configuration can be parsed directly from URI:
+
+```crystal
+db_uri = "mysql://root@somehost/some_database?max_pool_size=111&initial_pool_size=222&max_idle_pool_size=333&retry_attempts=444&checkout_timeout=555&retry_delay=666"
+Jennifer::Config.from_uri(db)
+```
 
 #### Logging
 

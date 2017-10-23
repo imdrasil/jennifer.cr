@@ -1,3 +1,69 @@
+# 0.4.1 (20-10-2017)
+
+**Config**
+
+* added `port` configuration
+
+* `::reset_config` resets to default configurations
+
+* added validation for adapter and db
+
+* `::from_uri` allows to load onfiguration from uri
+
+**Adapter**
+
+* added `#query_array` method to request array of arrays of given type
+
+* added `#with_table_lock` which allows to lock table (mysql and postgres have different behaviors)
+
+**Query**
+
+* added `all` and `any` statements
+
+* refactored logical operators - now they don't group themselves with "()"
+
+* added `ExpressionBuilder#g` (`ExpressionBuilder#grouping`) to group some condition
+
+* added `XOR`
+
+* moved all executable methods to `Executables` module
+
+* change behavior of `#distinct` - now it accepts no arguments and just prepend `DISTINCT` to common select query
+
+* added `#find_in_batches` - allows to search over requested collection reqtrieved only determined amount of records per iteration
+
+* `#find_records_by_sql` - returns array of `Record` by given sql string
+
+* added `:full_outer` join type
+
+* added `#lateral_join` to make `LATERAL JOIN` (for now is supported only by PostgreSQL)
+
+* extracted all join methods to `Joining` module
+
+* extracted all ordering methods to `Ordering` module
+
+* added `#reorder` method allowing to reorder existing query
+
+**ModelQuery**
+
+* added `#find_by_sql` similar to `Query#find_records_by_sql`
+
+**Model**
+
+* added `::with_table_lock`
+
+* added `::adapter`
+
+* added `::import` to perform one query import
+
+* fixed bug with reloading empty relations
+
+**Mapping**
+
+* added `inverse_of` option to `has_many` and `has_one` relations to sets owner during relation loading
+
+
+
 # 0.4.0 (30-09-2017)
 
 **Exception**

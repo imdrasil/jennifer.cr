@@ -1,6 +1,6 @@
 # Jennifer [![Build Status](https://travis-ci.org/imdrasil/jennifer.cr.svg)](https://travis-ci.org/imdrasil/jennifer.cr) [![Latest Release](https://img.shields.io/github/release/imdrasil/jennifer.cr.svg)](https://github.com/imdrasil/jennifer.cr/releases)
 
-Another ActiveRecord pattern implementation for Crystal with great query DSL and migration mechanism.
+Another ActiveRecord pattern implementation for Crystal with a great query DSL and migration mechanism.
 
 ## Installation
 
@@ -20,13 +20,13 @@ Jennifer allows you to maintain everything for your models - from db migrations 
 
 #### Migration
 
-To start using Jennifer firstly generate migration:
+To start using Jennifer you'll first need to generate a migration:
 
 ```shell
 $ crystal sam.cr -- generate:migration CreateContact
 ```
 
-and fill created migration file with next content:
+then fill the created migration file with content:
 
 ```crystal
 class CreateContact20170119011451314 < Jennifer::Migration::Base
@@ -54,7 +54,7 @@ and run
 $ crystal sam.cr -- db:setup
 ```
 
-to create database and run newly added migration.
+to create the database and run the newly created migration.
 > For command management Jennifer uses [Sam](https://github.com/imdrasil/sam.cr).
 
 #### Model
@@ -137,7 +137,7 @@ end
 
 #### Quering
 
-Jennifer allows you to query db using flexible dsl:
+Jennifer allows you to query the db using a flexible DSL:
 ```crystal
 Contact.all.left_join(Passport) { _contact_id == _contact__id }
             .order(id: :asc)
@@ -146,27 +146,27 @@ Contact.all.eager_load(:countries).where { __countries { _name.like("%tan%") } }
 Contact.all.group(:gender).group_avg(:age, PG::Numeric)
 ```
 
-Much more about query dsl could be found on wiki [[page|Query-DSL]]
+Much more about the query DSL can be found on the wiki [[page|Query-DSL]]
 
 ### Important restrictions
 
-- sqlite3 has a lot of limitations so it's support will be added not soon
+- sqlite3 has many limitations so its support won't be added any time soon
 
 ### Versioning
 
-Now Jennifer is under hard development which could bring a lot of bracking changes. Thats why during Jennifer usage please check release notes (will be added to each release starting from 0.3.4) to check if there is any staff which can stop you from using it. Also until this library will be in beta version next version rules will be followed:
+Now that Jennifer is under heavy development, there could be many breaking changes. So please check the release notes (which will be added to each release starting from 0.3.4) to check if any of the changes may prevent you from using it. Also, until this library reaches a beta version, the next version rules will be followed:
 
-- all bugfixies, new minor features or (sometimes) ones without braking existing API will be added under patch number (e.g. 0.3.*4*);
+- all bugfixies, new minor features or (sometimes) ones that don't break the existing API will be added as a patch number (e.g. 0.3.*4*);
 
-- all braking changes, new important features will be added under minor digit (0.*4*.0); also reaching milstone will also invoke bumping minor digit.
+- all breaking changes and new important features (as well as reaching a milestone) will be added by bumping the minor digit (0.*4*.0);
 
-So even patch version change could bring a lot of new staff.
+So even a patch version change could bring a lot of new stuff.
 
-If there is branch for next release - it will be removed after 1 month after release and after that will be removed. So please use them only as hotfix or for experiments or contibution.
+If there is a branch for the next release - it will be removed 1 month after the release. So please use them only as a hotfix or for experiments or contibution.
 
 ### Test
 
-The fastest way to rollback all changes in DB after test case - transaction. So add:
+The fastest way to rollback all changes in the DB after test case is by using a transaction. So add:
 ```crystal
 Spec.before_each do
   Jennifer::Adapter.adapter.begin_transaction
@@ -177,13 +177,13 @@ Spec.after_each do
 end
 ```
 
-to your `spec_helper.cr`. Also just regular deleting or truncation could be used but transaction provide 15x speed up (at least for postgres; mysql gets less impact).
+to your `spec_helper.cr`. NB. you could simply use regular deleting or truncation, but a transaction will provide a 15x speed up (at least for postgres; mysql gets less impact).
 
 > This functions can be safely used only under test environment.
 
 ## Development
 
-There are still a lot of work to do. Tasks for next versions:
+There is still a lot of work to do for future versions. These tasks include:
 
 - [ ] add SQLite support
 - [ ] increase test coverage to acceptable level
@@ -197,30 +197,30 @@ There are still a lot of work to do. Tasks for next versions:
 - [ ] add self documentation
 - [ ] add views support (materialized as well)
 
-Major amount ongoing features and new thoughts are created as issues.
+Thera are many ongoing features and new ideas created as github issues.
 
-Before development create db user (information is in /spec/config.cr file), run
+Before development create the db user (see `/spec/config.cr` file) by running
 ```shell
 $ crystal example/migrate.cr -- db:setup
 ```
 
-Support both MySql and PostgreSQL are critical. By default postgres are turned on. To run tests with mysql use next:
+PostgreSQL is supported by default, but MySql is also supported while running tests by using:
 ```shell
 $ DB=mysql crystal spec
 ```
 
 ## Documentation
 
-Self documentation is not fully support yet but you can compile docs using shell script:
+Self documentation is not fully support yet but docs can be compiled using this shell script:
 
 ```shell
 $ ./generate-docs.sh
 ```
 
-It also depends on choosed adapter (postgres is by default).
+NB. It also depends on then choosen adapter (postgres by default).
 
 
-Now wiki pages have a lot of usefull information. But from 0.3.4 version no information will be added there untill it will be moved to separate `.md` pages to allow contributing.
+The wiki pages also have a lot of usefull information. But from version 0.3.4 no new information will be added there untill it is moved to separate `.md` pages to allow contributing.
 
 
 ## Contributing
@@ -233,9 +233,9 @@ Now wiki pages have a lot of usefull information. But from 0.3.4 version no info
 
 Please ask me before starting work on smth.
 
-Also if you want to use it in your application (for now shard is almost ready for use in production) - ping me please, my email you can find in my profile.
+Also if you want to use it in your application (NB. shard is almost ready for use in production) - please ping me at the email you can find in my profile.
 
-To run tests use regular `crystal spec`. All migrations is under `./examples/migrations` directory.
+To run tests use the regular `crystal spec`. All migrations are under the `./examples/migrations` directory.
 
 ## Contributors
 

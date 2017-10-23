@@ -152,13 +152,25 @@ Much more about the query DSL can be found on the wiki [[page|Query-DSL]]
 
 - sqlite3 has many limitations so its support won't be added any time soon
 
+### Similar shards
+
+- [active_record.cr](https://github.com/waterlink/active_record.cr) - small simple AR realization
+
+- [crecto](https://github.com/vladfaust/core.cr) - based on Phoenix's ecto lib and follows the repository pattern; 
+
+- [granite-orm](https://github.com/amberframework/granite-orm) - light weight orm focusing on mapping fields from request to your objects
+
+- [topaz](https://github.com/topaz-crystal/topaz) - inspired by AR ORM with migration mechanism
+
+- [micrate](https://github.com/juanedi/micrate) - standalone migration tool for crystal
+
 ### Versioning
 
 Now that Jennifer is under heavy development, there could be many breaking changes. So please check the release notes (which will be added to each release starting from 0.3.4) to check if any of the changes may prevent you from using it. Also, until this library reaches a beta version, the next version rules will be followed:
 
-- all bugfixies, new minor features or (sometimes) ones that don't break the existing API will be added as a patch number (e.g. 0.3.*4*);
+- all bugfixies, new minor features or (sometimes) ones that don't break the existing API will be added as a patch number (e.g. 0.3.**4**);
 
-- all breaking changes and new important features (as well as reaching a milestone) will be added by bumping the minor digit (0.*4*.0);
+- all breaking changes and new important features (as well as reaching a milestone) will be added by bumping the minor digit (0.**4**.0);
 
 So even a patch version change could bring a lot of new stuff.
 
@@ -183,28 +195,14 @@ to your `spec_helper.cr`. NB. you could simply use regular deleting or truncatio
 
 ## Development
 
-There is still a lot of work to do for future versions. These tasks include:
-
-- [ ] add SQLite support
-- [ ] increase test coverage to acceptable level
-- [ ] add possibility for `#group` accept any sql string
-- [ ] add polymorphic associations
-- [ ] add through to relations
-- [ ] add subquery support
-- [ ] refactor many-to-many relation
-- [ ] add seeds
-- [ ] rewrite tests to use minitest
-- [ ] add self documentation
-- [ ] add views support (materialized as well)
-
-Thera are many ongoing features and new ideas created as github issues.
+> Before developing any feature please create an issue where you describe your idea.
 
 Before development create the db user (see `/spec/config.cr` file) by running
 ```shell
 $ crystal example/migrate.cr -- db:setup
 ```
 
-PostgreSQL is supported by default, but MySql is also supported while running tests by using:
+PostgreSQL is used by default, but MySql is also supported while running tests by using:
 ```shell
 $ DB=mysql crystal spec
 ```

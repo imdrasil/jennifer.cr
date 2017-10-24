@@ -36,7 +36,7 @@ module Jennifer
         end
       end
 
-      def self.trancate(table : String)
+      def self.truncate(table : String)
         "TRUNCATE #{table}"
       end
 

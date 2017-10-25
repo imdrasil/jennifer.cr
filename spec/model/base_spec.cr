@@ -79,6 +79,28 @@ describe Jennifer::Model::Base do
     end
   end
 
+  describe "::build" do
+    context "without arguments" do
+      it "builds new object without any exception" do
+        p = Passport.build
+        p.enn.nil?.should be_true
+        p.contact_id.nil?.should be_true
+      end
+    end
+
+    pending "with splatted named tuple" do
+    end
+
+    pending "with named tuple" do
+    end
+
+    pending "with symbol based hash" do
+    end
+
+    pending "with string based hash" do
+    end
+  end
+
   describe "#save" do
     pending "saves new object to db" do
     end

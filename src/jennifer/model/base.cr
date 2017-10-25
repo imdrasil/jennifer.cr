@@ -91,14 +91,6 @@ module Jennifer
         o
       end
 
-      # TODO: not always constructor without arguments could be generated
-      # this should be moved to mapping.cr
-      def self.build
-        o = new
-        o.__after_initialize_callback
-        o
-      end
-
       def new_record?
         @new_record
       end

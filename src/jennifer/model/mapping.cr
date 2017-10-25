@@ -318,6 +318,13 @@ module Jennifer
                 {% end %}
             {% end %}
           end
+
+          # Default builder method
+          def self.build
+            o = new
+            o.__after_initialize_callback
+            o
+          end
         {% end %}
 
         def save!(skip_validation = false)

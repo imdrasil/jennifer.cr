@@ -76,7 +76,7 @@ module Jennifer
       end
 
       def drop_index(table_name, name)
-        TableBuilder::DropInde.new(table_name, name).process
+        TableBuilder::DropIndex.new(table_name, name).process
         self
       end
 

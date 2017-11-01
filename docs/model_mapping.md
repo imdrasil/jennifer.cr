@@ -148,4 +148,18 @@ It defines next methods:
 
 Automatically model is associated with table with underscored pluralized class name, but special name can be defined using `::table_name` method in own body before using any relation (`::singular_table_name` - for singular variant).
 
-**Important restriction** - model with any no primary field is not allowed for now.
+**Important restriction** - model with no primary field is not allowed for now.
+
+You can inherite from one basic abstract class:
+
+```crystal
+abstract class ApplicationRecord < Jennifer::Model::Base
+end
+
+class SomeModel < ApplicationRecord
+  mapping(
+    id: Int32,
+    name: String
+  )
+end
+```

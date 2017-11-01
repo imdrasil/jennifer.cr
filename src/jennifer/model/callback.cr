@@ -1,6 +1,42 @@
 module Jennifer
   module Model
     module Callback
+      def __before_save_callback
+        true
+      end
+
+      def __before_create_callback
+        true
+      end
+
+      def __before_destroy_callback
+        true
+      end
+
+      def __before_validation_callback
+        true
+      end
+
+      def __after_save_callback
+        true
+      end
+
+      def __after_create_callback
+        true
+      end
+
+      def __after_initialize_callback
+        true
+      end
+
+      def __after_destroy_callback
+        true
+      end
+
+      def __after_validation_callback
+        true
+      end
+
       macro before_save(*names)
         {% for name in names %}
           {% BEFORE_SAVE_CALLBACKS << name.id.stringify %}
@@ -69,6 +105,7 @@ module Jennifer
 
       macro finished_hook
         def __before_save_callback
+          return false unless super
           \{% for method in BEFORE_SAVE_CALLBACKS %}
             \{{method.id}}
           \{% end %}
@@ -78,13 +115,17 @@ module Jennifer
         end
 
         def __after_save_callback
+          return false unless super
           \{% for method in AFTER_SAVE_CALLBACKS %}
             \{{method.id}}
           \{% end %}
+          true
         rescue ::Jennifer::Skip
+          false
         end
 
         def __before_create_callback
+          return false unless super
           \{% for method in BEFORE_CREATE_CALLBACKS %}
             \{{method.id}}
           \{% end %}
@@ -94,20 +135,27 @@ module Jennifer
         end
 
         def __after_create_callback
+          return false unless super
           \{% for method in AFTER_CREATE_CALLBACKS %}
             \{{method.id}}
           \{% end %}
+          true
         rescue ::Jennifer::Skip
+          false
         end
 
         def __after_initialize_callback
+          return false unless super
           \{% for method in AFTER_INITIALIZE_CALLBACKS %}
             \{{method.id}}
           \{% end %}
+          true
         rescue ::Jennifer::Skip
+          false
         end
 
         def __before_destroy_callback
+          return false unless super
           \{% for method in BEFORE_DESTROY_CALLBACKS %}
             \{{method.id}}
           \{% end %}
@@ -117,13 +165,17 @@ module Jennifer
         end
 
         def __after_destroy_callback
+          return false unless super
           \{% for method in AFTER_DESTROY_CALLBACKS %}
             \{{method.id}}
           \{% end %}
+          true
         rescue ::Jennifer::Skip
+          false
         end
 
         def __before_validation_callback
+          return false unless super
           \{% for method in BEFORE_VALIDATION_CALLBACKS %}
             \{{method.id}}
           \{% end %}
@@ -133,10 +185,13 @@ module Jennifer
         end
 
         def __after_validation_callback
+          return false unless super
           \{% for method in AFTER_VALIDATION_CALLBACKS %}
             \{{method.id}}
           \{% end %}
+          true
         rescue ::Jennifer::Skip
+          false
         end
       end
     end

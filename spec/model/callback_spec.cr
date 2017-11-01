@@ -103,4 +103,10 @@ describe Jennifer::Model::Callback do
       Country.all.count.should eq(1)
     end
   end
+
+  context "inherited" do
+    it "is also invoked" do
+      Factory.create_contact.super_class_callback_called.should be_true
+    end
+  end
 end

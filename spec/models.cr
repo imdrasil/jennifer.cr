@@ -11,7 +11,17 @@ struct WithArgumentQuery < Jennifer::QueryBuilder::QueryObject
   end
 end
 
-class Contact < Jennifer::Model::Base
+abstract class ApplicationRecord < Jennifer::Model::Base
+  getter super_class_callback_called = false
+
+  before_create :before_abstract_create
+
+  def before_abstract_create
+    @super_class_callback_called = true
+  end
+end
+
+class Contact < ApplicationRecord
   with_timestamps
   {% if env("DB") == "postgres" || env("DB") == nil %}
     mapping(
@@ -112,7 +122,7 @@ class Passport < Jennifer::Model::Base
   end
 end
 
-class Profile < Jennifer::Model::Base
+class Profile < ApplicationRecord
   mapping(
     id: {type: Int32, primary: true},
     login: String,

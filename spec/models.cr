@@ -140,11 +140,12 @@ end
 class Country < Jennifer::Model::Base
   mapping(
     id: {type: Int32, primary: true},
-    name: String
+    name: {type: String, null: true}
   )
 
   validates_exclusion :name, ["asd", "qwe"]
   validates_uniqueness :name
+  validates_presence_of :name
 
   has_and_belongs_to_many :contacts, Contact
 
@@ -255,6 +256,10 @@ class FemaleContact < Jennifer::Model::Base
     name: {type: String, null: true},
   }, false)
 end
+
+# ===========
+# views
+# ===========
 
 class MaleContact < Jennifer::View::Base
   mapping({

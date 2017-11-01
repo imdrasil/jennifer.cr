@@ -7,6 +7,9 @@ For validation purposes is used [accord](https://github.com/neovintage/accord) s
 - `validates_exclusion(field, value)` - checks if `value` excludes `@{{field}}`
 - `validates_format(field, format)` - checks if `{{format}}` matches `@{{field}}`
 - `validates_length(field, **options)` - check `@{{field}}` size; allowed options are: `:in`, `:is`, `:maximum`, `:minimum`
-- `validates_uniqueness(field)` - check if `@{{field}}` is unique
+- `validates_uniqueness(field)` - check if `@{{field.id}}` is unique
+- `validates_presence_of(field)` - check if `@{{field.id}}` is not `nil`
 
 Methods `#save!` and `#create!` will raise an exception if at validation fails. `#save` will return true\false representing object saving.
+
+To manually check validity call `#validate!` before `#valid?`.

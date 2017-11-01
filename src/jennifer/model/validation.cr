@@ -98,6 +98,18 @@ module Jennifer
           end
         end
       end
+
+      # Validates field to not be nil
+      macro validates_presence_of(field)
+        validates_with_method(%validate_method)
+
+        def %validate_method
+          value = @{{field.id}}
+          if value.nil?
+            errors.add({{field}}, "Should not be nil.")
+          end
+        end
+      end
     end
   end
 end

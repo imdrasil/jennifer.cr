@@ -1,7 +1,7 @@
 require "../spec_helper"
 
 describe Jennifer::Model::Validation do
-  describe "validates_with" do
+  describe "%validates_with" do
     it "accepts accord class validators" do
       p = Factory.build_passport(enn: "abc")
       p.validate!
@@ -14,7 +14,7 @@ describe Jennifer::Model::Validation do
     end
   end
 
-  describe "validates_with_method" do
+  describe "%validates_with_method" do
     it "pass valid" do
       a = Factory.build_contact(description: "1234567890")
       a.validate!
@@ -28,7 +28,7 @@ describe Jennifer::Model::Validation do
     end
   end
 
-  describe "validates_inclucions" do
+  describe "%validates_inclucions" do
     it "pass valid" do
       a = Factory.build_contact(age: 75)
       a.validate!
@@ -42,7 +42,7 @@ describe Jennifer::Model::Validation do
     end
   end
 
-  describe "validates_exclusion" do
+  describe "%validates_exclusion" do
     it "pass valid" do
       c = Factory.build_country(name: "Costa")
       c.validate!
@@ -56,7 +56,7 @@ describe Jennifer::Model::Validation do
     end
   end
 
-  describe "validates_format" do
+  describe "%validates_format" do
     it "pass valid names" do
       a = Factory.build_address(street: "Saint Moon st.")
       a.validate!
@@ -70,7 +70,7 @@ describe Jennifer::Model::Validation do
     end
   end
 
-  describe "validates_length" do
+  describe "%validates_length" do
     context "minimum" do
       it "pass valid names" do
         a = Factory.build_contact(name: "a")
@@ -106,7 +106,7 @@ describe Jennifer::Model::Validation do
     end
   end
 
-  describe "validates_uniqueness" do
+  describe "%validates_uniqueness" do
     it "pass valid" do
       p = Factory.build_country(name: "123asd")
       p.validate!
@@ -118,6 +118,24 @@ describe Jennifer::Model::Validation do
       p = Factory.build_country(name: "123asd")
       p.validate!
       p.valid?.should be_false
+    end
+  end
+
+  describe "%validates_presence_of" do
+    context "when field is not nil" do
+      it "pass validation" do
+        c = Country.build({:name => "New country"})
+        c.validate!
+        c.valid?.should be_true
+      end
+    end
+
+    context "when field is nil" do
+      it "doesn't pass validation" do
+        c = Country.build({} of String => String)
+        c.validate!
+        c.valid?.should be_false
+      end
     end
   end
 end

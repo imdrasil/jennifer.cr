@@ -146,8 +146,12 @@ module Jennifer
         add_preloaded(results)
       end
 
-      def find_in_batches(start = nil, batch_size : Int32 = 1000, &block)
-        super(start, batch_size, T.primary) { |records| yield records }
+      def find_in_batches(batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
+        super(T.primary, batch_size, start, direction) { |records| yield records }
+      end
+
+      def find_each(batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
+        super(T.primary, batch_size, start, direction) { |record| yield record }
       end
 
       # Executes request and maps result set to objects with loading any requested related objects

@@ -68,6 +68,10 @@ module Jennifer
         reorder(with @expression yield)
       end
 
+      def ordered?
+        !@order.empty?
+      end
+
       private def reverse_order
         if @order.empty?
           @order[@expression.c("id")] = "DESC"

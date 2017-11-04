@@ -100,105 +100,6 @@ describe Jennifer::QueryBuilder::ModelQuery do
     end
   end
 
-  describe "#first" do
-    it "returns first record" do
-      c1 = Factory.create_contact(age: 15)
-      c2 = Factory.create_contact(age: 15)
-
-      r = Contact.all.first
-      r.not_nil!.id.should eq(c1.id)
-    end
-
-    it "returns nil if there is no such records" do
-      Contact.all.first.should be_nil
-    end
-  end
-
-  describe "#first!" do
-    it "returns first record" do
-      c1 = Factory.create_contact(age: 15)
-      c2 = Factory.create_contact(age: 15)
-
-      r = Contact.all.first!
-      r.id.should eq(c1.id)
-    end
-
-    it "raises error if there is no such records" do
-      expect_raises(Jennifer::RecordNotFound) do
-        Contact.all.first!
-      end
-    end
-  end
-
-  describe "#last" do
-    it "inverse all orders" do
-      c1 = Factory.create_contact(age: 15)
-      c2 = Factory.create_contact(age: 16)
-
-      r = Contact.all.order(age: :desc).last!
-      r.id.should eq(c1.id)
-    end
-
-    it "add order by primary key if no order was specified" do
-      c1 = Factory.create_contact(age: 15)
-      c2 = Factory.create_contact(age: 16)
-
-      r = Contact.all.last!
-      r.id.should eq(c2.id)
-    end
-  end
-
-  describe "#pluck" do
-    context "given list of attributes" do
-      it "returns array of arrays" do
-        Factory.create_contact(name: "a", age: 13)
-        Factory.create_contact(name: "b", age: 14)
-        res = Contact.all.pluck(:name, :age)
-        res.size.should eq(2)
-        res[0][0].should eq("a")
-        res[1][1].should eq(14)
-      end
-    end
-
-    context "given one argument" do
-      it "correctly extracts json" do
-        Factory.create_address(details: JSON.parse({:city => "Duplin"}.to_json))
-        Address.all.pluck(:details)[0].should be_a(JSON::Any)
-      end
-
-      it "accepts plain sql" do
-        Factory.create_contact(name: "a", age: 13)
-        res = Contact.all.select("COUNT(id) + 1 as test").pluck(:test)
-        res[0].should eq(2)
-      end
-
-      pending "properly works with #with" do
-      end
-    end
-
-    context "given array of attributes" do
-      it "returns array of arrays" do
-        Factory.create_contact(name: "a", age: 13)
-        Factory.create_contact(name: "b", age: 14)
-        res = Contact.all.pluck([:name, :age])
-        res.size.should eq(2)
-        res[0][0].should eq("a")
-        res[1][1].should eq(14)
-      end
-    end
-  end
-
-  describe "#update" do
-    it "updates given fields in all matched rows" do
-      Factory.create_contact(age: 13, name: "a")
-      Factory.create_contact(age: 14, name: "a")
-      Factory.create_contact(age: 15, name: "a")
-
-      Contact.where { _age < 15 }.update({:age => 20, :name => "b"})
-      Contact.where { (_age == 20) & (_name == "b") }.count.should eq(2)
-    end
-  end
-
   describe "#select_args" do
     it "returns array of join and condition args" do
       Contact.where { _id == 2 }.join(Address) { _name == "asd" }.select_args.should eq(db_array("asd", 2))
@@ -414,12 +315,24 @@ describe Jennifer::QueryBuilder::ModelQuery do
     it "loads in batches without specifying primary key" do
       ids = Factory.create_contact(3).map(&.id)
       yield_count = 0
-      Contact.all.find_in_batches(ids[1], 2) do |records|
+      Contact.all.find_in_batches(2, ids[1]) do |records|
         yield_count += 1
         records[0].id.should eq(ids[1])
         records[1].id.should eq(ids[2])
       end
       yield_count.should eq(1)
+    end
+  end
+
+  describe "#find_each" do
+    it "loads each in batches without specifying primary key" do
+      ids = Factory.create_contact(3).map(&.id)
+      yield_count = 0
+      buff = [] of Int32
+      Contact.all.find_each(2, ids[1]) do |record|
+        buff << record.id!
+      end
+      buff.should eq(ids[1..2])
     end
   end
 

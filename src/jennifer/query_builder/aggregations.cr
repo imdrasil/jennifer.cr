@@ -1,6 +1,10 @@
 module Jennifer
   module QueryBuilder
     module Aggregations
+      def count : Int32
+        ::Jennifer::Adapter.adapter.count(self)
+      end
+
       def max(field, klass : T.class) : T forall T
         raise ArgumentError.new("Cannot use with grouping") unless @groups.empty?
         group_max(field, klass)[0]

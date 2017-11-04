@@ -58,10 +58,6 @@ module Jennifer
         ::Jennifer::Adapter.adapter.exists?(self)
       end
 
-      def count : Int32
-        ::Jennifer::Adapter.adapter.count(self)
-      end
-
       # skips any callbacks and validations
       def modify(options : Hash)
         ::Jennifer::Adapter.adapter.modify(self, options)
@@ -155,40 +151,67 @@ module Jennifer
         end
       end
 
-      def find_in_batches(start = nil, batch_size : Int32 = 1000, primary_key : Criteria? = nil, &block)
-        if primary_key.nil?
-          start ||= 0
-          Config.logger.warn("#find_in_batches methods was called without passing primary_key" \
-                             " key field name which may results in not proper records extraction; 'start' argument" \
-                             " was realized as page number.")
-          request = clone.reorder({} of String => String).limit(batch_size)
+      def find_in_batches(primary_key : Criteria, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
+        Config.logger.warn("#find_in_batches is invoked with already ordered query - it will be reordered") if ordered?
+        request = clone.reorder({primary_key => direction.to_s}).limit(batch_size)
 
-          records = request.offset(start * batch_size).to_a
-          while records.any?
-            records_size = records.size
-            yield records
-            break if records_size < batch_size
-            start += 1
-            records = request.offset(start * batch_size).to_a
-          end
-        else
-          primary_key = primary_key.not_nil!
-          request = clone.reorder({primary_key => "asc"}).limit(batch_size)
-
-          records = start ? request.clone.where { primary_key >= start }.to_a : request.to_a
-          while records.any?
-            records_size = records.size
-            primary_key_offset = records.last.attribute(primary_key.field)
-            yield records
-            break if records_size < batch_size
-            records = request.clone.where { primary_key > primary_key_offset }.to_a
-          end
+        records = start ? request.clone.where { primary_key >= start }.to_a : request.to_a
+        while records.any?
+          records_size = records.size
+          primary_key_offset = records.last.attribute(primary_key.field)
+          yield records
+          break if records_size < batch_size
+          records = request.clone.where { primary_key > primary_key_offset }.to_a
         end
       end
 
-      def find_in_batches(start = nil, batch_size : Int32 = 1000, primary_key : String? = nil, &block)
-        raise ArgumentError.new("Primary key shoulb not be nil") if primary_key.nil?
-        find_in_batches(start, batch_size, @expression.c(primary_key.not_nil!)) { |records| yield records }
+      def find_in_batches(primary_key : Nil, batch_size : Int32 = 1000, start : Int32 = 0, &block)
+        Config.logger.warn("#find_in_batches is invoked with already ordered query - it will be reordered") if ordered?
+        Config.logger.warn("#find_in_batches methods was invoked without passing primary_key" \
+                           " key field name which may results in not proper records extraction; 'start' argument" \
+                           " was realized as page number.")
+        request = clone.reorder({} of String => String).limit(batch_size)
+
+        records = request.offset(start * batch_size).to_a
+        while records.any?
+          records_size = records.size
+          yield records
+          break if records_size < batch_size
+          start += 1
+          records = request.offset(start * batch_size).to_a
+        end
+      end
+
+      def find_in_batches(batch_size : Int32 = 1000, start : Int32 = 0, &block)
+        find_in_batches(nil, batch_size, start) { |records| yield records }
+      end
+
+      def find_in_batches(primary_key : String, batch_size : Int32 = 1000, start : Int32? = nil, direction : String | Symbol = "asc", &block)
+        find_in_batches(@expression.c(primary_key.not_nil!), batch_size, start, direction) { |records| yield records }
+      end
+
+      def find_each(primary_key : Criteria, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
+        find_in_batches(primary_key, batch_size, start, direction) do |records|
+          records.each { |rec| yield rec }
+        end
+      end
+
+      def find_each(primary_key : Nil, batch_size : Int32 = 1000, start : Int32 = 0, direction : String | Symbol = "asc", &block)
+        find_in_batches(batch_size, start) do |records|
+          records.each { |rec| yield rec }
+        end
+      end
+
+      def find_each(batch_size : Int32 = 1000, start : Int32 = 0, direction : String | Symbol = "asc", &block)
+        find_in_batches(batch_size, start) do |records|
+          records.each { |rec| yield rec }
+        end
+      end
+
+      def find_each(primary_key : String, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
+        find_in_batches(primary_key, batch_size, start, direction) do |records|
+          records.each { |rec| yield rec }
+        end
       end
 
       def find_records_by_sql(query : String, args : Array(DBAny) = [] of DBAny)

@@ -5,6 +5,7 @@ require "ifrit/converter"
 
 require "./jennifer/exceptions"
 require "./jennifer/adapter"
+require "./jennifer/adapter/adapter_registry"
 require "./jennifer/adapter/record"
 require "./jennifer/adapter/sql_generator"
 require "./jennifer/config"

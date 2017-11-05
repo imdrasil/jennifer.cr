@@ -16,13 +16,16 @@ module Jennifer
 
       getter db
 
-      def initialize
-        @db = DB.open(Config.connection_string(:db))
+      def initialize(@config_key : Symbol = :default)
+        @db = DB.open(config.connection_string(:db))
       end
 
-      def self.build
-        a = new
-        a
+      def config
+        Jennifer::Config.get_instance(@config_key)
+      end
+
+      def self.build(config_key = :default)
+        new config_key
       end
 
       def prepare

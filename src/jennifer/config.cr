@@ -28,6 +28,8 @@ module Jennifer
       define_fields(INT_FIELDS, default: 0)
       define_fields(FLOAT_FIELDS, default: 0.0)
 
+      property :key
+
       def initialize
         @adapter = "postgres"
         @host = "localhost"

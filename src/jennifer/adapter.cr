@@ -26,12 +26,7 @@ module Jennifer
     end
 
     def self.adapter
-      @@adapter ||= begin
-        a = adapter_class.not_nil!.build
-        self.adapter = a
-        a.prepare
-        a
-      end
+      Jennifer::Adapter::AdapterRegistry.adapter
     end
 
     def self.adapter_class

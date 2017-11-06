@@ -12,10 +12,14 @@ module Jennifer
         @@adapter_classes[name] = adapter_class
       end
 
-
-      register_adapter("postgres", Jennifer::Adapter::Postgres)
-      # register_adapter("mysql", Jennifer::Adapter::Mysql)
-      # register_adapter(:sqlite3, Jennifer::Adapter::Sqlite.class)
+      # temporary and will be refactored away when adapters can co-exist
+      {% if env("DB") == "mysql" %}
+        register_adapter("mysql", Jennifer::Adapter::Mysql)
+      {% elsif env("DB") == "sqlite3" %}
+        register_adapter("sqlite3", Jennifer::Adapter::Sqlite.class)
+      {% else %}
+        register_adapter("postgres", Jennifer::Adapter::Postgres)
+      {% end %}
 
       # Retrieve the adapter class registered with a given name
       # Raises UnknownAdapter error if no adapter has been regiestered with that name

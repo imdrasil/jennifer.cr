@@ -6,6 +6,7 @@ def create_configuration(adapter_name = nil)
       custom.adapter = adapter_name
     else
       {% if env("DB") == "mysql" %}
+        custom.user = ENV["DB_USER"]? || "root"
         custom.adapter = "mysql"
       {% else %}
         custom.user = ENV["DB_USER"]? || "developer"
@@ -18,7 +19,12 @@ end
 
 describe Jennifer::Adapter::AdapterRegistry do
   it "should have packaged adapters registered" do
-    Jennifer::Adapter::AdapterRegistry.adapter_class("postgres").should eq(Jennifer::Adapter::Postgres)
+    # again, TBR when adapters can coexist
+    {% if env("DB") == "mysql" %}
+      Jennifer::Adapter::AdapterRegistry.adapter_class("mysql").should eq(Jennifer::Adapter::Mysql)
+    {% else %}
+      Jennifer::Adapter::AdapterRegistry.adapter_class("postgres").should eq(Jennifer::Adapter::Postgres)
+    {% end %}
   end
 
   it "should fail if an unknown adapter is requested" do

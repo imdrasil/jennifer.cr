@@ -36,7 +36,7 @@ module Jennifer
         time = Time.now.ticks
         res = with_connection { |conn| conn.exec(_query, args) }
         time = Time.now.ticks - time
-        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
+        config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
         res
       rescue e : BaseException
         BadQuery.prepend_information(e, _query, args)
@@ -48,7 +48,7 @@ module Jennifer
       def query(_query, args = [] of DB::Any)
         time = Time.now.ticks
         res = with_connection { |conn| conn.query(_query, args) { |rs| time = Time.now.ticks - time; yield rs } }
-        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
+        config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
         res
       rescue e : BaseException
         BadQuery.prepend_information(e, _query, args)
@@ -61,7 +61,7 @@ module Jennifer
         time = Time.now.ticks
         res = with_connection { |conn| conn.scalar(_query, args) }
         time = Time.now.ticks - time
-        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
+        config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
         res
       rescue e : BaseException
         BadQuery.prepend_information(e, _query, args)
@@ -129,7 +129,7 @@ module Jennifer
       end
 
       def self.db_connection
-        DB.open(Config.connection_string(:db)) do |db|
+        DB.open(config.connection_string(:db)) do |db|
           yield(db)
         end
       rescue e
@@ -161,13 +161,13 @@ module Jennifer
 
       def self.drop_database
         db_connection do |db|
-          db.exec "DROP DATABASE #{Config.db}"
+          db.exec "DROP DATABASE #{config.db}"
         end
       end
 
       def self.create_database
         db_connection do |db|
-          puts db.exec "CREATE DATABASE #{Config.db}"
+          puts db.exec "CREATE DATABASE #{config.db}"
         end
       end
 

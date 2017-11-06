@@ -61,13 +61,13 @@ module Jennifer
 
       def table_column_count(table)
         Query["information_schema.COLUMNS"].where do
-          (_table_name == table) & (_table_schema == Config.db)
+          (_table_name == table) & (_table_schema == config.db)
         end.count
       end
 
       def table_exists?(table)
         Query["information_schema.TABLES"]
-          .where { (_table_schema == Config.db) & (_table_name == table) }
+          .where { (_table_schema == config.db) & (_table_name == table) }
           .exists?
       end
 
@@ -75,7 +75,7 @@ module Jennifer
         Query["information_schema.statistics"].where do
           (_table_name == table) &
             (_index_name == name) &
-            (_table_schema == Config.db)
+            (_table_schema == config.db)
         end.exists?
       end
 
@@ -83,7 +83,7 @@ module Jennifer
         Query["information_schema.COLUMNS"].where do
           (_table_name == table) &
             (_column_name == name) &
-            (_table_schema == Config.db)
+            (_table_schema == config.db)
         end.exists?
       end
 
@@ -105,7 +105,7 @@ module Jennifer
 
       def with_table_lock(table : String, type : String = "default", &block)
         transaction do |t|
-          Config.logger.debug("MySQL doesn't support manual locking table from prepared statement." \
+          config.logger.debug("MySQL doesn't support manual locking table from prepared statement." \
                               " Instead of this only transaction was started.")
           yield t
         end
@@ -121,17 +121,17 @@ module Jennifer
       def self.generate_schema
         io = IO::Memory.new
         error = IO::Memory.new
-        s = Process.run("mysqldump \"${@}\"", ["-u", Config.user, "--no-data", "-h", Config.host, "--skip-lock-tables", Config.db], shell: true, output: io, error: error)
+        s = Process.run("mysqldump \"${@}\"", ["-u", config.user, "--no-data", "-h", config.host, "--skip-lock-tables", config.db], shell: true, output: io, error: error)
         raise error.to_s if s.exit_code != 0
-        File.write(Config.structure_path, io.to_s)
+        File.write(config.structure_path, io.to_s)
       end
 
       def self.load_schema
         io = IO::Memory.new
-        s = if !Config.password.empty?
-              Process.run("mysql \"${@}\"", ["-u", Config.user, "-h", Config.host, "-p", Config.password, Config.db], shell: true, output: io, error: io)
+        s = if !config.password.empty?
+              Process.run("mysql \"${@}\"", ["-u", config.user, "-h", config.host, "-p", config.password, config.db], shell: true, output: io, error: io)
             else
-              Process.run("mysql \"${@}\"", ["-u", Config.user, "-h", Config.host, Config.db, "-B", "-s", "-e", "source #{Config.structure_path};"], shell: true, output: io, error: io)
+              Process.run("mysql \"${@}\"", ["-u", config.user, "-h", config.host, config.db, "-B", "-s", "-e", "source #{config.structure_path};"], shell: true, output: io, error: io)
             end
         raise io.to_s if s.exit_code != 0
       end

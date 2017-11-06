@@ -56,11 +56,11 @@ module Jennifer
           conn.transaction do |tx|
             lock_connection(tx)
             begin
-              Config.logger.debug("TRANSACTION START")
+              config.logger.debug("TRANSACTION START")
               res = yield(tx)
-              Config.logger.debug("TRANSACTION COMMIT")
+              config.logger.debug("TRANSACTION COMMIT")
             rescue e
-              Config.logger.debug("TRANSACTION ROLLBACK")
+              config.logger.debug("TRANSACTION ROLLBACK")
               raise e
             ensure
               lock_connection(previous_transaction)
@@ -73,7 +73,7 @@ module Jennifer
       # NOTICE: designed for test usage
       def begin_transaction
         raise ::Jennifer::BaseException.new("Couldn't manually begin non top level transaction") if current_transaction
-        Config.logger.debug("TRANSACTION START")
+        config.logger.debug("TRANSACTION START")
         lock_connection(@db.checkout.begin_transaction)
       end
 
@@ -83,7 +83,7 @@ module Jennifer
         raise ::Jennifer::BaseException.new("No transaction to rollback") unless t
         t = t.not_nil!
         t.rollback
-        Config.logger.debug("TRANSACTION ROLLBACK")
+        config.logger.debug("TRANSACTION ROLLBACK")
         t.connection.release
         lock_connection(nil)
       end

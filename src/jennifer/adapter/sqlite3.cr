@@ -94,7 +94,7 @@ module Jennifer
       #
 
       private def self.db_path
-        File.join(Config.host, Config.db)
+        File.join(config.host, config.db)
       end
 
       private def column_definition(name, options, io)

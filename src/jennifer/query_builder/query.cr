@@ -53,15 +53,54 @@ module Jennifer
         initialize
       end
 
+      def initialize_copy_without(other, except : Array(String))
+        {% for segment in %w(having limit offset raw_select from lock distinct) %}
+          @{{segment.id}} = other.@{{segment.id}}.clone unless except.includes?({{segment}})
+        {% end %}
+
+        @order = except.includes?("order") ? {} of Criteria => String : other.@order.clone
+        @joins = other.@joins.clone unless except.includes?("join")
+        @unions = other.@unions.clone unless except.includes?("union")
+        @groups = except.includes?("group") ? [] of Criteria : other.@groups.clone
+        @do_nothing = except.includes?("none") ? false : other.@do_nothing
+        @select_fields = except.includes?("select") ? [] of Criteria : other.@select_fields
+        @tree = other.@tree.clone unless except.includes?("where")
+
+        @table = other.@table.clone
+        @table_aliases = other.@table_aliases.clone
+
+        @relation_used = false
+        @relations = [] of String
+        @expression = ExpressionBuilder.new(@table)
+      end
+
+      # Compare current object with given comparing generated sql query and parameters.
+      # Is mostly used for testing
+      def eql?(other : Query)
+        sql_args == other.sql_args && to_sql == other.to_sql
+      end
+
+      def clone
+        clone = {{@type}}.allocate
+        clone.initialize_copy(self)
+        clone.expression_builder.query = clone
+        clone
+      end
+
+      def except(parts : Array(String))
+        clone = {{@type}}.allocate
+        clone.initialize_copy_without(self, parts)
+        clone.expression_builder.query = clone
+        clone
+      end
+
       def expression_builder
         @expression
       end
 
       def _select_fields : Array(Criteria)
         if @select_fields.empty?
-          b = [] of Criteria
-          b << @expression.star
-          b
+          ([] of Criteria) << @expression.star
         else
           @select_fields
         end

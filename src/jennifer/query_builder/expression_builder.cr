@@ -28,8 +28,17 @@ module Jennifer
       end
 
       def c(name : String, table_name : String? = nil, relation : String? = nil)
-        @query.not_nil!.with_relation! if @query
+        if @query
+          @query.not_nil!.with_relation!
+        end
         Criteria.new(name, table_name || @table, relation || @relation)
+      end
+
+      def c_with_relation(name : String, relation : String)
+        if @query
+          @query.not_nil!.with_relation!
+        end
+        Criteria.new(name, @table, relation)
       end
 
       def g(condition : LogicOperator)

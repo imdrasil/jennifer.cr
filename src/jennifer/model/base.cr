@@ -45,7 +45,7 @@ module Jennifer
         @@singular_table_name = value.to_s
       end
 
-      def self.c(name)
+      def self.c(name : String)
         context.c(name)
       end
 

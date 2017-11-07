@@ -59,7 +59,7 @@ describe ::Jennifer::QueryBuilder::ExpressionBuilder do
 
         context "with relation" do
           it "assigns both table and relation" do
-            c = Factory.build_expression.c("f", "t", "r")
+            c = Factory.build_expression.c("f", "t", "r").not_nil!
             c.table.should eq("t")
             c.relation.should eq("r")
           end
@@ -68,7 +68,7 @@ describe ::Jennifer::QueryBuilder::ExpressionBuilder do
 
       context "with relation" do
         it "assign only relation" do
-          c = Factory.build_expression(table: "some_table").c("f1", relation: "r")
+          c = Factory.build_expression(table: "some_table").c("f1", relation: "r").not_nil!
           c.relation.should eq("r")
           c.table.should eq("some_table")
         end

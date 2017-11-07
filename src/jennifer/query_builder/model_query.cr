@@ -3,6 +3,8 @@ require "./*"
 module Jennifer
   module QueryBuilder
     abstract class IModelQuery < Query
+      @preload_relations = [] of String
+
       abstract def model_class
       abstract def with(arr)
       abstract def with(*arr)
@@ -13,16 +15,8 @@ module Jennifer
       def clone
         raise "Can't clone abstract"
       end
-    end
 
-    class ModelQuery(T) < IModelQuery
-      @preload_relations = [] of String
-
-      def_clone
-
-      def initialize(*opts)
-        super
-      end
+      abstract def preload_relations
 
       def _select_fields : Array(Criteria)
         if @select_fields.empty?
@@ -39,6 +33,23 @@ module Jennifer
         else
           @select_fields
         end
+      end
+    end
+
+    class ModelQuery(T) < IModelQuery
+      def_clone
+
+      def initialize(*opts)
+        super
+      end
+
+      def initialize_copy_with(other, except : Array(String))
+        super
+        @preload_relations = [] of String
+      end
+
+      protected def preload_relations
+        @preload_relations
       end
 
       def model_class

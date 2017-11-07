@@ -274,4 +274,79 @@ describe Jennifer::QueryBuilder::Query do
       r.map(&.name).should eq(["a1", "a2"])
     end
   end
+
+  describe "#except" do
+    it "creates new instance" do
+      q = Query["contacts"].where { _id > 2 }
+      q.except([""]).should_not eq(q)
+    end
+
+    it "creates equal object if nothing to exclude was given" do
+      q = Query["contacts"].where { _id > 2 }
+      clone = q.except([""])
+      clone.eql?(q).should be_true
+    end
+
+    it "excludes having if given" do
+      q = Query["contacts"].group(:age).having { _age > 20 }
+      clone = q.except(["having"])
+      clone._having.nil?.should be_true
+    end
+
+    it "excludes order if given" do
+      q = Query["contacts"].order(age: "asc")
+      clone = q.except(["order"])
+      clone._order.empty?.should be_true
+    end
+
+    it "excludes join if given" do
+      q = Query["contacts"].join("passports") { _contact_id == _contacts__id }
+      clone = q.except(["join"])
+      clone._joins.nil?.should be_true
+    end
+
+    it "excludes join if given" do
+      q = Query["contacts"].union(Query["contacts"])
+      clone = q.except(["union"])
+      clone._unions.nil?.should be_true
+    end
+
+    it "excludes group if given" do
+      q = Query["contacts"].group(:age)
+      clone = q.except(["group"])
+      clone._groups.empty?.should be_true
+    end
+
+    it "excludes muting if given" do
+      q = Query["contacts"].join("passports") { _contact_id == _contacts__id }
+      clone = q.except(["none"])
+      clone.eql?(q).should be_true
+    end
+
+    it "excludes select if given" do
+      q = Query["contacts"].select { [_id] }
+      clone = q.except(["select"])
+      clone._select_fields.size.should eq(1)
+      clone._select_fields[0].should be_a(Jennifer::QueryBuilder::Star)
+    end
+
+    it "excludes where if given" do
+      q = Query["contacts"].where { _age < 99 }
+      clone = q.except(["where"])
+      clone.to_sql.should_not match(/WHERE/)
+    end
+
+    it "expression builder follow newly created object" do
+      q = Query["contacts"]
+      clone = q.except([""])
+      clone.expression_builder.query.should eq(clone)
+    end
+
+    it "automatially ignores any relation usage" do
+      q = Contact.all.eager_load(:addresses)
+      clone = q.except([""])
+      clone.with_relation?.should be_false
+      clone._joins!.empty?.should be_false
+    end
+  end
 end

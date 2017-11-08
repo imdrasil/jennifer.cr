@@ -305,7 +305,7 @@ module Jennifer
         io << " ARRAY" if options[:array]?
       end
 
-      def self.create_database
+      def create_database
         opts = [config.db, "-O", config.user, "-h", config.host, "-U", config.user]
         Process.run("PGPASSWORD=#{config.password} createdb \"${@}\"", opts, shell: true).inspect
       end
@@ -321,7 +321,7 @@ module Jennifer
         end
       end
 
-      def self.drop_database
+      def drop_database
         io = IO::Memory.new
         opts = [config.db, "-h", config.host, "-U", config.user]
         s = Process.run("PGPASSWORD=#{config.password} dropdb \"${@}\"", opts, shell: true, output: io, error: io)
@@ -330,14 +330,14 @@ module Jennifer
         end
       end
 
-      def self.generate_schema
+      def generate_schema
         io = IO::Memory.new
         opts = ["-U", config.user, "-d", config.db, "-h", config.host, "-s"]
         s = Process.run("PGPASSWORD=#{config.password} pg_dump \"${@}\"", opts, shell: true, output: io)
         File.write(config.structure_path, io.to_s)
       end
 
-      def self.load_schema
+      def load_schema
         io = IO::Memory.new
         opts = ["-U", config.user, "-d", config.db, "-h", config.host, "-a", "-f", config.structure_path]
         s = Process.run("PGPASSWORD=#{config.password} psql \"${@}\"", opts, shell: true, output: io)

@@ -4,7 +4,7 @@ module Jennifer
 
       @@adapter_classes = {} of String => Base.class
 
-      @@adapter_instances = {} of Symbol => Jennifer::Adapter::Base
+      @@adapter_instances = {} of String => Jennifer::Adapter::Base
 
       # Register an adapter class with a given name.
       #
@@ -33,7 +33,8 @@ module Jennifer
       # if no config key is supplied then :default is assumed. the first time this
       # is invoked, the adapter is created and this instance
       #
-      def self.adapter(config_key : Symbol = :default)
+      def self.adapter(config_key : String | Symbol = :default)
+        config_key = config_key.to_s
         unless @@adapter_instances.has_key?(config_key)
           config = Config.get_instance(config_key)
           config.logger.debug("Creating instance of '#{config.adapter}' adapter using '#{config_key}' config")

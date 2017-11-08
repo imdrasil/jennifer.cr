@@ -3,19 +3,33 @@ module Jennifer
     module Runner
       MIGRATION_DATE_FORMAT = "%Y%m%d%H%M%S%L"
 
-      def self.migrate(count)
+      def self.adapter(config_key)
+        Jennifer::Adapter::AdapterRegistry.adapter(config_key)
+      end
+
+      def self.migrate(config_key = "default", count = 1)
         performed = false
-        Adapter.adapter.ready_to_migrate!
-        return if ::Jennifer::Migration::Base.migrations.empty?
+        puts "Attempting to migrate using config '#{config_key}'"
+        adapter(config_key).ready_to_migrate!
+
+        if ::Jennifer::Migration::Base.migrations.empty?
+          puts "No migrations found."
+          return
+        end
+
         interpolation = {} of String => typeof(Base.migrations[0])
         Base.migrations.each { |m| interpolation[m.version] = m }
 
         pending = interpolation.keys - Version.all.pluck(:version).map(&.as(String))
-        return if pending.empty?
-        brocken = Version.where { _version.in(pending) }.pluck(:version).map(&.as(String))
-        unless brocken.empty?
+        if pending.empty?
+          puts "There are no pending migrations"
+          return
+        end
+
+        broken = Version.where { _version.in(pending) }.pluck(:version).map(&.as(String))
+        unless broken.empty?
           puts "Can't run migrations because some of them are older then relase version.\nThey are:"
-          brocken.sort.each do |v|
+          broken.sort.each do |v|
             puts "- #{v}"
           end
           return
@@ -31,7 +45,7 @@ module Jennifer
           begin
             instance.up
           rescue e
-            puts "rollbacked"
+            puts "Error during migration - rolled back"
             puts e.message
             raise e
           end
@@ -41,27 +55,23 @@ module Jennifer
         puts e.message
         puts e.backtrace.join("\n")
       ensure
-        Adapter.adapter_class.generate_schema if performed
+        adapter(config_key).generate_schema if performed
       end
 
-      def self.migrate
-        migrate(-1)
-      end
-
-      def self.create
-        r = Adapter.adapter_class.create_database
-        puts "DB created!"
+      def self.create(config_key = "default")
+        r = adapter(config_key).create_database
+        puts "DB created!" # todo: refactor creation to verify that db is created.
         r
       end
 
-      def self.drop
-        puts Adapter.adapter_class.drop_database
+      def self.drop(config_key = "default")
+        puts adapter(config_key).drop_database
         puts "DB droped"
       end
 
-      def self.rollback(options : Hash(Symbol, DBAny))
+      def self.rollback(config_key = "default", options : Hash(Symbol, DBAny) = {} of Symbol => DBAny)
         processed = true
-        Adapter.adapter.ready_to_migrate!
+        adapter(config_key).ready_to_migrate!
         return if ::Jennifer::Migration::Base.migrations.empty? || !Version.all.exists?
         interpolation = {} of String => typeof(Base.migrations[0])
         Base.migrations.each { |m| interpolation[m.version] = m }
@@ -84,13 +94,14 @@ module Jennifer
           puts "Droped migration #{v}"
         end
       rescue e
+        puts "Error during migration rollback"
         puts e.message
       ensure
-        Adapter.adapter_class.generate_schema if processed
+        adapter(config_key).generate_schema if processed
       end
 
-      def self.load_schema
-        Adapter.adapter_class.load_schema
+      def self.load_schema(config_key = "default")
+        adapter(config_key).load_schema
       end
 
       def self.generate(name)

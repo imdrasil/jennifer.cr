@@ -16,7 +16,7 @@ module Jennifer
 
       getter db
 
-      def initialize(@config_key : Symbol = :default)
+      def initialize(@config_key : String | Symbol = :default)
         @db = DB.open(config.connection_string(:db))
       end
 
@@ -128,7 +128,7 @@ module Jennifer
         nil
       end
 
-      def self.db_connection
+      def db_connection
         DB.open(config.connection_string(:db)) do |db|
           yield(db)
         end
@@ -159,23 +159,23 @@ module Jennifer
         SqlGenerator.escape_string(size)
       end
 
-      def self.drop_database
+      def drop_database
         db_connection do |db|
           db.exec "DROP DATABASE #{config.db}"
         end
       end
 
-      def self.create_database
+      def create_database
         db_connection do |db|
           puts db.exec "CREATE DATABASE #{config.db}"
         end
       end
 
-      def self.generate_schema
+      def generate_schema
         raise "Not implemented"
       end
 
-      def self.load_schema
+      def load_schema
         raise "Not implemented"
       end
 

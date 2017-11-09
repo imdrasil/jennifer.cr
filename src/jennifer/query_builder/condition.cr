@@ -71,11 +71,11 @@ module Jennifer
           when :bool
             _lhs
           when :in
-            "#{_lhs} IN(#{Adapter::SqlGenerator.escape_string(@rhs.as(Array).size)})"
+            "#{_lhs} IN(#{Adapter.adapter.sql_generator.escape_string(@rhs.as(Array).size)})"
           when :between
             "#{_lhs} BETWEEN #{Adapter.escape_string(1)} AND #{Adapter.escape_string(1)}"
           else
-            "#{_lhs} #{Adapter::SqlGenerator.operator_to_sql(@operator)} #{parsed_rhs}"
+            "#{_lhs} #{Adapter.adapter.sql_generator.operator_to_sql(@operator)} #{parsed_rhs}"
           end
         str = "NOT (#{str})" if @negative
         str

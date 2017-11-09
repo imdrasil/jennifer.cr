@@ -1,6 +1,6 @@
 module Jennifer
   module Adapter
-    class BaseSqlGenerator
+    class BaseSQLGenerator
       ARRAY_ESCAPE = "\\\\\\\\"
 
       # Generates insert query
@@ -156,9 +156,9 @@ module Jennifer
             query._from
           else
             if query.is_a?(QueryBuilder::ModelQuery)
-              SqlGenerator.select(query._from.as(QueryBuilder::ModelQuery))
+              self.select(query._from.as(QueryBuilder::ModelQuery))
             else
-              SqlGenerator.select(query._from.as(QueryBuilder::Query))
+              self.select(query._from.as(QueryBuilder::Query))
             end
           end
         io << " ) "

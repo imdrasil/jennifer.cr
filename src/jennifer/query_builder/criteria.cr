@@ -154,11 +154,11 @@ module Jennifer
       private def translate(value : Symbol | Bool | Nil)
         case value
         when nil, true, false
-          Adapter::SqlGenerator.quote(value)
+          Adapter.adapter.sql_generator.quote(value)
         when :unknown
           "UNKNOWN"
         when :nil
-          Adapter::SqlGenerator.quote(nil)
+          Adapter.adapter.sql_generator.quote(nil)
         end
       end
     end

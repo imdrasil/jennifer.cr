@@ -66,12 +66,12 @@ module Jennifer
         raise BadQuery.new(e.message, _query, args)
       end
 
-      def parse_query(q : String, args : Array)
-        SqlGenerator.parse_query(q, args.size)
+      def parse_query(q : String, args)
+        sql_generator.parse_query(q, args.size)
       end
 
       def parse_query(q : String)
-        SqlGenerator.parse_query(q)
+        sql_generator.parse_query(q)
       end
 
       def truncate(klass : Class)
@@ -79,22 +79,22 @@ module Jennifer
       end
 
       def truncate(table_name : String)
-        exec SqlGenerator.truncate(table_name)
+        exec sql_generator.truncate(table_name)
       end
 
       def delete(query : QueryBuilder::Query)
         args = query.select_args
-        exec SqlGenerator.delete(query), args
+        exec sql_generator.delete(query), args
       end
 
       def exists?(query : QueryBuilder::Query)
         args = query.select_args
-        scalar(SqlGenerator.exists(query), args) == 1
+        scalar(sql_generator.exists(query), args) == 1
       end
 
       def count(query : QueryBuilder::Query)
         args = query.select_args
-        scalar(SqlGenerator.count(query), args).as(Int64).to_i
+        scalar(sql_generator.count(query), args).as(Int64).to_i
       end
 
       def bulk_insert(collection : Array(Model::Base))
@@ -102,7 +102,7 @@ module Jennifer
         klass = collection[0].class
         fields = collection[0].arguments_to_insert[:fields]
         values = collection.flat_map(&.arguments_to_insert[:args])
-        parsed_query = parse_query(SqlGenerator.bulk_insert(klass.table_name, fields, collection.size), values)
+        parsed_query = parse_query(sql_generator.bulk_insert(klass.table_name, fields, collection.size), values)
 
         with_table_lock(klass.table_name) do
           exec(parsed_query, values)
@@ -119,7 +119,7 @@ module Jennifer
         return if values.empty?
         with_table_lock(table) do
           flat_values = values.flatten
-          exec(parse_query(SqlGenerator.bulk_insert(table, fields, values.size), flat_values), flat_values)
+          exec(parse_query(sql_generator.bulk_insert(table, fields, values.size), flat_values), flat_values)
         end
         nil
       end
@@ -172,8 +172,8 @@ module Jennifer
         escape_string(arr.size)
       end
 
-      def self.escape_string(size : Int32 = 1)
-        SqlGenerator.escape_string(size)
+      def self.escape_string(size = 1)
+        Adapter.adapter.sql_generator.escape_string(size)
       end
 
       def self.drop_database
@@ -300,7 +300,7 @@ module Jennifer
         buff = String.build do |s|
           s << "CREATE "
           s << "OR REPLACE " if silent
-          s << "VIEW " << name << " AS " << SqlGenerator.select(query)
+          s << "VIEW " << name << " AS " << sql_generator.select(query)
         end
         exec buff
       end
@@ -328,6 +328,7 @@ module Jennifer
         result
       end
 
+      abstract def sql_generator
       abstract def view_exists?(name, silent = true)
       abstract def update(obj)
       abstract def update(q, h)

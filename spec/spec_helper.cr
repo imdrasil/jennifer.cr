@@ -49,11 +49,11 @@ macro void_transaction
 end
 
 def select_clause(query)
-  String.build { |s| ::Jennifer::Adapter::SqlGenerator.select_clause(s, query) }
+  String.build { |s| ::Jennifer::Adapter.adapter.sql_generator.select_clause(s, query) }
 end
 
 def select_query(query)
-  ::Jennifer::Adapter::SqlGenerator.select(query)
+  ::Jennifer::Adapter.adapter.sql_generator.select(query)
 end
 
 def db_array(*element)

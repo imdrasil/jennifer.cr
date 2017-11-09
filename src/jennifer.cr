@@ -8,7 +8,6 @@ require "./jennifer/macros"
 require "./jennifer/exceptions"
 require "./jennifer/adapter"
 require "./jennifer/adapter/record"
-require "./jennifer/adapter/sql_generator"
 require "./jennifer/config"
 require "./jennifer/version"
 

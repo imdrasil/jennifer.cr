@@ -1,8 +1,12 @@
 require "../spec_helper"
 
-describe Jennifer::Adapter::SqlGenerator do
+def sb
+  String.build { |io| yield io }
+end
+
+describe "Jennifer::Adapter::SQLGenerator" do
   adapter = Jennifer::Adapter.adapter
-  described_class = Jennifer::Adapter::SqlGenerator
+  described_class = Jennifer::Adapter.adapter.sql_generator
 
   describe "::select_query" do
     s = Contact.where { _age == 1 }.join(Contact) { _age == Contact._age }.order(age: :desc).limit(1)
@@ -171,7 +175,7 @@ describe Jennifer::Adapter::SqlGenerator do
 
     it "adds next query to current one" do
       query = Jennifer::Query["contacts"].union(Jennifer::Query["users"])
-      sb { |s| described_class.union_clause(s, query) }.should match(Regex.new(Jennifer::Adapter::SqlGenerator.select(Jennifer::Query["users"])))
+      sb { |s| described_class.union_clause(s, query) }.should match(Regex.new(Jennifer::Adapter.adapter.sql_generator.select(Jennifer::Query["users"])))
     end
   end
 

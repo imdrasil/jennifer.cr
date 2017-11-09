@@ -122,7 +122,7 @@ module Jennifer
       end
 
       def to_sql
-        Adapter::SqlGenerator.select(self)
+        Adapter.adapter.sql_generator.select(self)
       end
 
       def as_sql

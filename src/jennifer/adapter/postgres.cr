@@ -1,6 +1,10 @@
 require "pg"
 require "../adapter"
-require "./postgres/sql_notation"
+
+class Jennifer::Adapter::Postgres < Jennifer::Adapter::Base
+end
+
+require "./postgres/sql_generator"
 
 module Jennifer
   alias DBAny = Array(Int32) | Array(Char) | Array(Float32) | Array(Float64) |
@@ -72,6 +76,10 @@ module Jennifer
     }
 
     class Postgres < Base
+      def sql_generator
+        SQLGenerator
+      end
+
       def prepare
         _query = <<-SQL
           SELECT e.enumtypid
@@ -248,7 +256,7 @@ module Jennifer
 
       def insert(obj : Model::Base)
         opts = obj.arguments_to_insert
-        query = parse_query(SqlGenerator.insert(obj, obj.class.primary_auto_incrementable?), opts[:args])
+        query = parse_query(sql_generator.insert(obj, obj.class.primary_auto_incrementable?), opts[:args])
         id = -1i64
         affected = 0i64
         if obj.class.primary_auto_incrementable?
@@ -268,7 +276,7 @@ module Jennifer
 
       def self.bulk_insert(collection : Array(Model::Base))
         opts = collection.flat_map(&.arguments_to_insert[:args])
-        query = parse_query(SqlGenerator.bulk_insert(collection))
+        query = parse_query(sql_generator.bulk_insert(collection))
         # TODO: change to checking for autoincrementability
         affected = exec(qyery, opts).rows_affected
         if true
@@ -281,7 +289,7 @@ module Jennifer
 
       def exists?(query)
         args = query.select_args
-        body = SqlGenerator.exists(query)
+        body = sql_generator.exists(query)
         scalar(body, args)
       end
 

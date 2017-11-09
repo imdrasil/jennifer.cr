@@ -54,7 +54,7 @@ describe Jennifer::View::Base do
   describe "%scope" do
     context "with block" do
       it "executes in query context" do
-        ::Jennifer::Adapter::SqlGenerator.select(MaleContact.all.older(18)).should match(/male_contacts.age >/)
+        ::Jennifer::Adapter.adapter.sql_generator.select(MaleContact.all.older(18)).should match(/male_contacts.age >/)
       end
 
       context "without arguemnt" do
@@ -86,7 +86,7 @@ describe Jennifer::View::Base do
 
     context "with query object class" do
       it "executes in class context" do
-        ::Jennifer::Adapter::SqlGenerator.select(MaleContact.johny).should match(/name =/)
+        ::Jennifer::Adapter.adapter.sql_generator.select(MaleContact.johny).should match(/name =/)
       end
 
       context "without arguemnt" do

@@ -49,6 +49,10 @@ module Jennifer
     }
 
     class Mysql < Base
+      def sql_generator
+        SQLGenerator
+      end
+
       def translate_type(name : Symbol)
         Adapter::TYPE_TRANSLATIONS[name]
       rescue e : KeyError

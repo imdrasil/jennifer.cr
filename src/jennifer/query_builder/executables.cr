@@ -18,7 +18,7 @@ module Jennifer
         result = to_a
         reverse_order
         @limit = old_limit
-        raise RecordNotFound.new(Adapter::SqlGenerator.select(self)) if result.empty?
+        raise RecordNotFound.new(Adapter.adapter.sql_generator.select(self)) if result.empty?
         result[0]
       end
 
@@ -34,7 +34,7 @@ module Jennifer
         old_limit = @limit
         result = to_a
         @limit = old_limit
-        raise RecordNotFound.new(Adapter::SqlGenerator.select(self)) if result.empty?
+        raise RecordNotFound.new(Adapter.adapter.sql_generator.select(self)) if result.empty?
         result[0]
       end
 

@@ -5,19 +5,19 @@ module Jennifer
 
       def insert(table, opts : Hash)
         values = opts.values
-        exec parse_query(SqlGenerator.insert(table, opts), values), values
+        exec parse_query(sql_generator.insert(table, opts), values), values
       end
 
       def insert(obj : Model::Base)
         opts = obj.arguments_to_insert
-        exec parse_query(SqlGenerator.insert(obj), opts[:args]), opts[:args]
+        exec parse_query(sql_generator.insert(obj), opts[:args]), opts[:args]
       end
 
       def update(obj : Model::Base)
         opts = obj.arguments_to_save
         return DB::ExecResult.new(0i64, -1i64) if opts[:args].empty?
         opts[:args] << obj.primary
-        exec(parse_query(SqlGenerator.update(obj), opts[:args]), opts[:args])
+        exec(parse_query(sql_generator.update(obj), opts[:args]), opts[:args])
       end
 
       def update(query, options : Hash)
@@ -26,11 +26,11 @@ module Jennifer
           args << v
         end
         args.concat(query.select_args)
-        exec(parse_query(SqlGenerator.update(query, options), args), args)
+        exec(parse_query(sql_generator.update(query, options), args), args)
       end
 
       def modify(q, modifications : Hash)
-        query = SqlGenerator.modify(q, modifications)
+        query = sql_generator.modify(q, modifications)
         args = [] of DBAny
         modifications.each do |k, v|
           args << v[:value]
@@ -41,7 +41,7 @@ module Jennifer
 
       def pluck(query, fields : Array)
         result = [] of Array(DBAny)
-        body = SqlGenerator.select(query, fields)
+        body = sql_generator.select(query, fields)
         args = query.select_args
         query(parse_query(body, args), args) do |rs|
           rs.each do
@@ -54,7 +54,7 @@ module Jennifer
       def pluck(query, field)
         result = [] of DBAny
         fields = [field.to_s]
-        body = SqlGenerator.select(query, fields)
+        body = sql_generator.select(query, fields)
         args = query.select_args
         query(parse_query(body, args), args) do |rs|
           rs.each do
@@ -65,7 +65,7 @@ module Jennifer
       end
 
       def select(q)
-        body = SqlGenerator.select(q)
+        body = sql_generator.select(q)
         args = q.select_args
         query(parse_query(body, args), args) { |rs| yield rs }
       end

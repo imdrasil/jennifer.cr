@@ -13,7 +13,7 @@ module Jennifer
       end
 
       def as_sql
-        Adapter::SqlGenerator.json_path(self)
+        Adapter.adapter.sql_generator.json_path(self)
       end
     end
   end

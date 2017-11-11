@@ -37,6 +37,7 @@ def clean_db
   Jennifer::Model::Base.models.select { |t| t.has_table? }.each(&.all.delete)
 end
 
+# Ends current transaction, yields and starts next one
 macro void_transaction
   begin
     Jennifer::Adapter.adapter.rollback_transaction

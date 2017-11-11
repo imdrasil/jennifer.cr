@@ -1,66 +1,68 @@
 require "mysql"
 require "./base"
-require "./mysql/sql_notation"
+
+class Jennifer::Adapter::Mysql < Jennifer::Adapter::Base
+end
+
+require "./mysql/sql_generator"
 
 module Jennifer
-  alias DBAny = DB::Any | Int16 | Int8 | JSON::Any
-
   module Adapter
-    alias EnumType = String
-
-    TYPE_TRANSLATIONS = {
-      :bool => "bool",
-      :enum => "enum",
-
-      :bigint  => "bigint",   # Int64
-      :integer => "int",      # Int32
-      :short   => "SMALLINT", # Int16
-      :tinyint => "TINYINT",  # Int8
-
-      :float  => "float",  # Float32
-      :double => "double", # Float64
-
-      :decimal => "decimal", # Float64
-
-      :string     => "varchar",
-      :varchar    => "varchar",
-      :text       => "text",
-      :var_string => "varstring",
-
-      :timestamp => "datetime", # "timestamp",
-      :date_time => "datetime",
-
-      :blob => "blob",
-      :json => "json",
-
-    }
-
-    DEFAULT_SIZES = {
-      :string => 254,
-    }
-
-    # NOTE: now is not used
-    TABLE_LOCK_TYPES = {
-      "r"       => "READ",
-      "rl"      => "READ LOCAL",
-      "w"       => "WRITE",
-      "lpw"     => "LOW_PRIORITY WRITE",
-      "default" => "READ", # "r"
-    }
-
     class Mysql < Base
+      alias EnumType = String
+
+      TYPE_TRANSLATIONS = {
+        :bool => "bool",
+        :enum => "enum",
+
+        :bigint  => "bigint",   # Int64
+        :integer => "int",      # Int32
+        :short   => "SMALLINT", # Int16
+        :tinyint => "TINYINT",  # Int8
+
+        :float  => "float",  # Float32
+        :double => "double", # Float64
+
+        :decimal => "decimal", # Float64
+
+        :string     => "varchar",
+        :varchar    => "varchar",
+        :text       => "text",
+        :var_string => "varstring",
+
+        :timestamp => "datetime", # "timestamp",
+        :date_time => "datetime",
+
+        :blob => "blob",
+        :json => "json",
+
+      }
+
+      DEFAULT_SIZES = {
+        :string => 254,
+      }
+
+      # NOTE: now is not used
+      TABLE_LOCK_TYPES = {
+        "r"       => "READ",
+        "rl"      => "READ LOCAL",
+        "w"       => "WRITE",
+        "lpw"     => "LOW_PRIORITY WRITE",
+        "default" => "READ", # "r"
+      }
+
       def sql_generator
         SQLGenerator
       end
 
       def translate_type(name : Symbol)
-        Adapter::TYPE_TRANSLATIONS[name]
+        TYPE_TRANSLATIONS[name]
       rescue e : KeyError
         raise BaseException.new("Unknown data alias #{name}")
       end
 
       def default_type_size(name)
-        Adapter::DEFAULT_SIZES[name]?
+        DEFAULT_SIZES[name]?
       end
 
       def table_column_count(table)

@@ -1,3 +1,5 @@
+require "../base_sql_generator"
+
 module Jennifer
   module Adapter
     class Mysql

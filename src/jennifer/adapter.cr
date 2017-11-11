@@ -4,7 +4,26 @@ module Jennifer
   alias AnyResult = DB::Any | Int8 | Int16 | JSON::Any
   alias AnyArgument = AnyResult | Array(AnyResult)
 
+  alias DBAny = Array(Int32) | Array(Char) | Array(Float32) | Array(Float64) |
+                Array(Int16) | Array(Int32) | Array(Int64) | Array(String) |
+                Bool | Char | Float32 | Float64 | Int8 | Int16 | Int32 | Int64 | JSON::Any | PG::Geo::Box |
+                PG::Geo::Circle | PG::Geo::Line | PG::Geo::LineSegment | PG::Geo::Path | PG::Geo::Point |
+                PG::Geo::Polygon | PG::Numeric | Slice(UInt8) | String | Time | UInt32 | Nil
+
   module Adapter
+    TYPES = %i(
+      integer short bigint oid
+      float double
+      numeric decimal
+      bool
+      string char text var_string varchar blchar
+      uuid
+      timestamp timestamptz date_time
+      blob bytea
+      json jsonb xml
+      point lseg path box polygon line circle
+    )
+
     @@adapter : Base?
     @@adapters = {} of String => Base.class
     @@adapter_class : Base.class | Nil

@@ -382,6 +382,7 @@ end
 
 require "./postgres/criteria"
 require "./postgres/numeric"
+require "./postgres/migration/table_builder/base"
 require "./postgres/migration/table_builder/*"
 
 ::Jennifer::Adapter.register_adapter("postgres", ::Jennifer::Postgres::Adapter)

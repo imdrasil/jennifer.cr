@@ -4,14 +4,14 @@ module Jennifer
       class CreateView < Base
         @query : QueryBuilder::Query
 
-        def initialize(name, @query)
-          initialize(name)
+        def initialize(adapter, name, @query)
+          initialize(adapter, name)
         end
 
         # TODO: move query generating to SqlGenerator class and make
         # table builder classes to call executions by themselves
         def process
-          Adapter.adapter.create_view(@name, @query)
+          adapter.create_view(@name, @query)
         end
       end
     end

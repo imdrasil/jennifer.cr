@@ -1,14 +1,22 @@
 module Jennifer
   module Migration
     abstract class Base
-      delegate create_data_type, to: Adapter.adapter
-      delegate table_exists?, index_exists?, column_exists?, view_exists?, to: Adapter.adapter
-      delegate migration_processor, to: Adapter.adapter
+      TABLE_NAME = "migration_versions"
+
+      delegate adapter, to: Adapter
+
+      delegate create_data_type, to: adapter
+      delegate table_exists?, index_exists?, column_exists?, view_exists?, to: adapter
+      delegate migration_processor, to: adapter
 
       delegate create_table, create_join_table, drop_join_table, exec, drop_table,
         change_table, create_view, create_materialized_view, drop_materialized_view,
         drop_view, add_index, create_enum, drop_enum, change_enum,
         to: migration_processor
+
+      def adapter_class
+        adapter.class
+      end
 
       abstract def up
       abstract def down

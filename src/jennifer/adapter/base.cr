@@ -214,7 +214,7 @@ module Jennifer
 
       def ready_to_migrate!
         return if table_exists?(Migration::Version.table_name)
-        tb = Migration::TableBuilder::CreateTable.new(Migration::Version.table_name)
+        tb = Migration::TableBuilder::CreateTable.new(self, Migration::Base.table_name)
         tb.integer(:id, {:primary => true, :auto_increment => true})
           .string(:version, {:size => 17})
         create_table(tb)

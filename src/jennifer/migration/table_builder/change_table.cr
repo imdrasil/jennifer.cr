@@ -4,7 +4,7 @@ module Jennifer
       class ChangeTable < Base
         getter changed_columns, drop_columns, drop_index, new_table_rename
 
-        def initialize(name)
+        def initialize(adapter, name)
           super
           @changed_columns = {} of String => DB_OPTIONS
           @drop_columns = [] of String
@@ -45,7 +45,7 @@ module Jennifer
         # add_index("index_name", [:field1, :field2], { :length => { :field1 => 2, :field2 => 3 }, :order => { :field1 => :asc }})
         # add_index("index_name", [:field1], { :length => { :field1 => 2, :field2 => 3 }, :order => { :field1 => :asc }})
         def add_index(name : String, fields : Array(Symbol), type : Symbol? = nil, lengths : Hash(Symbol, Int32) = {} of Symbol => Int32, orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
-          @indexes << CreateIndex.new(@name, name, fields, type, lengths, orders)
+          @indexes << CreateIndex.new(@adapter, @name, name, fields, type, lengths, orders)
           self
         end
 
@@ -60,20 +60,20 @@ module Jennifer
         end
 
         def drop_index(name)
-          @drop_index << DropIndex.new(@name, name.to_s)
+          @drop_index << DropIndex.new(@adapter, @name, name.to_s)
           self
         end
 
         def process
-          @drop_columns.each { |c| Adapter.adapter.drop_column(@name, c) }
-          @fields.each { |n, opts| Adapter.adapter.add_column(@name, n, opts) }
+          @drop_columns.each { |c| adapter.drop_column(@name, c) }
+          @fields.each { |n, opts| adapter.add_column(@name, n, opts) }
           @changed_columns.each do |n, opts|
-            Adapter.adapter.change_column(@name, n, opts[:new_name].as(String | Symbol), opts)
+            adapter.change_column(@name, n, opts[:new_name].as(String | Symbol), opts)
           end
           @indexes.each(&.process)
           @drop_index.each(&.process)
 
-          Adapter.adapter.rename_table(@name, @new_table_name) unless @new_table_name.empty?
+          adapter.rename_table(@name, @new_table_name) unless @new_table_name.empty?
         end
       end
     end

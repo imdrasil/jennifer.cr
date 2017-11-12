@@ -3,7 +3,7 @@ module Jennifer
     module TableBuilder
       class CreateTable < Base
         def process
-          Adapter.adapter.create_table(self)
+          adapter.create_table(self)
           @indexes.each(&.process)
         end
 

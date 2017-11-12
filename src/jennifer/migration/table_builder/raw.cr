@@ -4,13 +4,13 @@ module Jennifer
       class Raw < Base
         getter raw_sql
 
-        def initialize(query : String)
-          super("")
+        def initialize(adapter, query : String)
+          super(adapter, "")
           @raw_sql = query
         end
 
         def process
-          Adapter.adapter.exec(@raw_sql)
+          adapter.exec(@raw_sql)
         end
       end
     end

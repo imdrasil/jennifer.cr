@@ -3,7 +3,7 @@ require "../migration/table_builder/*"
 module Jennifer
   module Adapter
     class MigrationProcessor
-      macro unsupported_methods(*names)
+      macro unsupported_method(*names)
         {% for name in names %}
           def {{name.id}}(*args, **opts)
             raise BaseException.new("Current adapter doesn't support this method: #{{{name.id}}}")
@@ -11,13 +11,15 @@ module Jennifer
         {% end %}
       end
 
+      unsupported_method create_enum, drop_enum, change_enum, create_materialized_view, drop_materialized_view
+
       getter adapter : Adapter::Base
 
       def initialize(@adapter)
       end
 
       def create_table(name, id = true)
-        tb = Migration::TableBuilder::CreateTable.new(name)
+        tb = Migration::TableBuilder::CreateTable.new(@adapter, name)
         tb.integer(:id, {:primary => true, :auto_increment => true}) if id
         yield tb
         tb.process
@@ -42,29 +44,29 @@ module Jennifer
       end
 
       def exec(string)
-        Migration::TableBuilder::Raw.new(string).process
+        Migration::TableBuilder::Raw.new(@adapter, string).process
       end
 
       def drop_table(name)
-        Migration::TableBuilder::DropTable.new(name).process
+        Migration::TableBuilder::DropTable.new(@adapter, name).process
       end
 
       def change_table(name)
-        tb = Migration::TableBuilder::ChangeTable.new(name)
+        tb = Migration::TableBuilder::ChangeTable.new(@adapter, name)
         yield tb
         tb.process
       end
 
       def create_view(name, source)
-        Migration::TableBuilder::CreateView.new(name.to_s, source).process
+        Migration::TableBuilder::CreateView.new(@adapter, name.to_s, source).process
       end
 
       def drop_view(name)
-        Migration::TableBuilder::DropView.new(name.to_s).process
+        Migration::TableBuilder::DropView.new(@adapter, name.to_s).process
       end
 
       def add_index(table_name, name : String, fields : Array(Symbol), type : Symbol, lengths : Hash(Symbol, Int32) = {} of Symbol => Int32, orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
-        Migration::TableBuilder::CreateIndex.new(table_name, name, fields, type, lengths, orders).process
+        Migration::TableBuilder::CreateIndex.new(@adapter, table_name, name, fields, type, lengths, orders).process
       end
 
       def add_index(table_name, name : String, field : Symbol, type : Symbol, length : Int32? = nil, order : Symbol? = nil)
@@ -79,10 +81,8 @@ module Jennifer
       end
 
       def drop_index(table_name, name)
-        Migration::TableBuilder::DropIndex.new(table_name, name).process
+        Migration::TableBuilder::DropIndex.new(@adapter, table_name, name).process
       end
-
-      unsupported_methods create_enum, drop_enum, change_enum, create_materialized_view, drop_materialized_view
 
       private def adapter_class
         @adapter.class

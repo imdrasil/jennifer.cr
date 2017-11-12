@@ -1,9 +1,9 @@
 require "../spec_helper"
 
 postgres_only do
-  describe Jennifer::Adapter::Postgres do
-    described_class = Jennifer::Adapter::Postgres
-    adapter = Jennifer::Adapter.adapter.as(Jennifer::Adapter::Postgres)
+  describe Jennifer::Postgres::Adapter do
+    described_class = Jennifer::Postgres::Adapter
+    adapter = Jennifer::Adapter.adapter.as(Jennifer::Postgres::Adapter)
 
     describe "#translate_type" do
       it "returns sql type associated with given synonim" do
@@ -23,7 +23,7 @@ postgres_only do
       end
     end
 
-    describe "index manipulation" do
+    context "index manipulation" do
       age_index_options = {
         :type    => nil,
         :fields  => [:age],
@@ -32,7 +32,7 @@ postgres_only do
       }
       index_name = "contacts_age_index"
 
-      context "#index_exists?" do
+      describe "#index_exists?" do
         it "returns true if exists index with given name" do
           adapter.index_exists?("", "contacts_description_index").should be_true
         end
@@ -42,20 +42,16 @@ postgres_only do
         end
       end
 
-      context "#add_index" do
+      describe "#add_index" do
         it "should add a covering index if no type is specified" do
-          delete_index_if_exists(adapter, index_name)
-
-          adapter.add_index("contacts", index_name, age_index_options)
+          adapter.add_index("contacts", index_name, [:age])
           adapter.index_exists?("", index_name).should be_true
         end
       end
 
-      context "#drop_index" do
+      describe "#drop_index" do
         it "should drop an index if it exists" do
-          delete_index_if_exists(adapter, index_name)
-
-          adapter.add_index("contacts", index_name, age_index_options)
+          adapter.add_index("contacts", index_name, [:age])
           adapter.index_exists?("", index_name).should be_true
 
           adapter.drop_index("", index_name)
@@ -159,8 +155,4 @@ postgres_only do
       end
     end
   end
-end
-
-def delete_index_if_exists(adapter, index)
-  adapter.drop_index("", index) if adapter.index_exists?("", index)
 end

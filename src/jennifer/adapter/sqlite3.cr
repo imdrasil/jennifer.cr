@@ -115,10 +115,6 @@ module Jennifer
       end
     end
   end
-
-  macro after_load_hook
-
-  end
 end
 
 require "./sqlite3/result_set"

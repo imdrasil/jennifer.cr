@@ -4,7 +4,7 @@ module Jennifer
       class DropEnum < Base
         def initialize(name)
           super(name)
-          @adapter = Adapter.adapter.as(Adapter::Postgres)
+          @adapter = Adapter.adapter.as(Postgres::Adapter)
         end
 
         def process

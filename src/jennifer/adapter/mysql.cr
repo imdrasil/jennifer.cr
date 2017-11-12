@@ -1,14 +1,10 @@
 require "mysql"
 require "./base"
-
-class Jennifer::Adapter::Mysql < Jennifer::Adapter::Base
-end
-
 require "./mysql/sql_generator"
 
 module Jennifer
-  module Adapter
-    class Mysql < Base
+  module Mysql
+    class Adapter < Adapter::Base
       alias EnumType = String
 
       TYPE_TRANSLATIONS = {
@@ -137,12 +133,9 @@ module Jennifer
       end
     end
   end
-
-  macro after_load_hook
-  end
 end
 
 require "./mysql/result_set"
 require "./mysql/type"
 
-::Jennifer::Adapter.register_adapter("mysql", ::Jennifer::Adapter::Mysql)
+::Jennifer::Adapter.register_adapter("mysql", ::Jennifer::Mysql::Adapter)

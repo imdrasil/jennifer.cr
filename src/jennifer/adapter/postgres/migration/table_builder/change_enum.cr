@@ -2,9 +2,12 @@ module Jennifer
   module Migration
     module TableBuilder
       class ChangeEnum < Base
+        @effected_tables : Array(Array(DBAny))
+
         def initialize(name, @options : Hash(Symbol, Array(String)))
           super(name)
-          @adapter = Adapter.adapter.as(Adapter::Postgres)
+          @adapter = Adapter.adapter.as(Postgres::Adapter)
+          @effected_tables = _effected_tables
         end
 
         def process
@@ -18,10 +21,21 @@ module Jennifer
           new_values = [] of String
           @adapter.enum_values(@name).map { |e| new_values << e[0] }
           new_values -= @options[:remove_values]
-          if effected_tables.empty?
-            recreate_enum(new_values)
+          if @effected_tables.empty?
+            @adapter.drop_enum(@name)
+            @adapter.define_enum(@name, new_values)
           else
-            change_enum_with_related_tables(effected_tables, new_values)
+            temp_name = "#{@name}_temp"
+            @adapter.define_enum(temp_name, new_values)
+            @effected_tables.each do |row|
+              @adapter.exec <<-SQL
+                ALTER TABLE #{row[0]} 
+                ALTER COLUMN #{row[1]} TYPE #{temp_name} 
+                USING (#{row[1]}::text::#{temp_name})
+              SQL
+              @adapter.drop_enum(@name)
+              rename(temp_name, @name)
+            end
           end
         end
 
@@ -68,12 +82,11 @@ module Jennifer
           end
         end
 
-        private def effected_tables
-          @effected_tables ||=
-            Query["information_schema.columns"]
-              .select("table_name, column_name")
-              .where { (c("udt_name") == @name.dup) & (c("table_catalog") == Config.db) }
-              .pluck(:table_name, :column_name)
+        private def _effected_tables
+          Query["information_schema.columns"]
+            .select("table_name, column_name")
+            .where { (c("udt_name") == @name.dup) & (c("table_catalog") == Config.db) }
+            .pluck(:table_name, :column_name)
         end
       end
     end

@@ -1,77 +1,84 @@
 require "pg"
 require "../adapter"
+require "./base"
 
-class Jennifer::Adapter::Postgres < Jennifer::Adapter::Base
-end
+require "./postgres/result_set"
+require "./postgres/field"
+require "./postgres/exec_result"
 
 require "./postgres/sql_generator"
+require "./postgres/migration_processor"
 
 module Jennifer
-  module Adapter
-    alias EnumType = Bytes
+  module Postgres
+    class Adapter < Adapter::Base
+      alias EnumType = Bytes
 
-    TYPE_TRANSLATIONS = {
-      :integer => "int",      # Int32
-      :short   => "SMALLINT", # Int16
-      :bigint  => "BIGINT",   # Int64
-      :oid     => "oid",      # UInt32
+      TYPE_TRANSLATIONS = {
+        :integer => "int",      # Int32
+        :short   => "SMALLINT", # Int16
+        :bigint  => "BIGINT",   # Int64
+        :oid     => "oid",      # UInt32
 
-      :float  => "real",             # Float32
-      :double => "double precision", # Float64
+        :float  => "real",             # Float32
+        :double => "double precision", # Float64
 
-      :numeric => "numeric", # PG::Numeric
-      :decimal => "decimal", # PG::Numeric - is alias for numeric
+        :numeric => "numeric", # PG::Numeric
+        :decimal => "decimal", # PG::Numeric - is alias for numeric
 
-      :string     => "varchar",
-      :char       => "char",
-      :bool       => "boolean",
-      :text       => "text",
-      :var_string => "varchar",
-      :varchar    => "varchar",
-      :blchar     => "blchar", # String
+        :string     => "varchar",
+        :char       => "char",
+        :bool       => "boolean",
+        :text       => "text",
+        :var_string => "varchar",
+        :varchar    => "varchar",
+        :blchar     => "blchar", # String
 
-      :uuid => "uuid", # String
+        :uuid => "uuid", # String
 
-      :timestamp   => "timestamp",
-      :timestamptz => "timestamptz", # Time
-      :date_time   => "datetime",
+        :timestamp   => "timestamp",
+        :timestamptz => "timestamptz", # Time
+        :date_time   => "datetime",
 
-      :blob  => "blob",
-      :bytea => "bytea",
+        :blob  => "blob",
+        :bytea => "bytea",
 
-      :json  => "json",  # JSON
-      :jsonb => "jsonb", # JSON
-      :xml   => "xml",   # String
+        :json  => "json",  # JSON
+        :jsonb => "jsonb", # JSON
+        :xml   => "xml",   # String
 
-      :point   => "point",
-      :lseg    => "lseg",
-      :path    => "path",
-      :box     => "box",
-      :polygon => "polygon",
-      :line    => "line",
-      :circle  => "circle",
-    }
+        :point   => "point",
+        :lseg    => "lseg",
+        :path    => "path",
+        :box     => "box",
+        :polygon => "polygon",
+        :line    => "line",
+        :circle  => "circle",
+      }
 
-    DEFAULT_SIZES = {
-      :string     => 254,
-      :var_string => 254,
-    }
+      DEFAULT_SIZES = {
+        :string     => 254,
+        :var_string => 254,
+      }
 
-    TABLE_LOCK_TYPES = {
-      "as"      => "ACCESS SHARE",
-      "rs"      => "ROW SHARE",
-      "re"      => "ROW EXCLUSIVE",
-      "sue"     => "SHARE UPDATE EXCLUSIVE",
-      "s"       => "SHARE",
-      "sre"     => "SHARE ROW EXCLUSIVE",
-      "e"       => "EXCLUSIVE",
-      "ae"      => "ACCESS EXCLUSIVE",
-      "default" => "SHARE", # "s"
-    }
+      TABLE_LOCK_TYPES = {
+        "as"      => "ACCESS SHARE",
+        "rs"      => "ROW SHARE",
+        "re"      => "ROW EXCLUSIVE",
+        "sue"     => "SHARE UPDATE EXCLUSIVE",
+        "s"       => "SHARE",
+        "sre"     => "SHARE ROW EXCLUSIVE",
+        "e"       => "EXCLUSIVE",
+        "ae"      => "ACCESS EXCLUSIVE",
+        "default" => "SHARE", # "s"
+      }
 
-    class Postgres < Base
       def sql_generator
         SQLGenerator
+      end
+
+      def migration_processor
+        @migration_processor ||= MigrationProcessor.new(self)
       end
 
       def prepare
@@ -90,19 +97,17 @@ module Jennifer
       end
 
       def translate_type(name)
-        Adapter::TYPE_TRANSLATIONS[name]
+        TYPE_TRANSLATIONS[name]
       rescue e : KeyError
         raise BaseException.new("Unknown data alias #{name}")
       end
 
       def default_type_size(name)
-        Adapter::DEFAULT_SIZES[name]?
+        DEFAULT_SIZES[name]?
       end
 
       def refresh_materialized_view(name)
-        exec <<-SQL
-          REFRESH MATERIALIZED VIEW #{name}
-        SQL
+        exec "REFRESH MATERIALIZED VIEW #{name}"
       end
 
       def table_column_count(table)
@@ -176,9 +181,7 @@ module Jennifer
 
       # TODO: sanitize query
       def define_enum(name, values)
-        exec <<-SQL
-          CREATE TYPE #{name} AS ENUM(#{values.as(Array).map { |e| "'#{e}'" }.join(", ")})
-        SQL
+        exec "CREATE TYPE #{name} AS ENUM(#{values.as(Array).map { |e| "'#{e}'" }.join(", ")})"
       end
 
       def drop_enum(name)
@@ -191,19 +194,20 @@ module Jennifer
 
       # =========== overrides
 
-      def add_index(table, name, options)
+      def add_index(table, name, fields : Array, type : Symbol? = nil, order : Hash? = nil, length : Hash? = nil)
         query = String.build do |s|
           s << "CREATE "
 
-          s << index_type_translate(options[:type]) if options[:type]?
+          s << index_type_translate(type) if type
+
           s << "INDEX " << name << " ON " << table
           # TODO: add using option to migration
           # s << " USING " << options[:using] if options.has_key?(:using)
           s << " ("
-          options[:fields].as(Array).each_with_index do |f, i|
+          fields.each_with_index do |f, i|
             s << "," if i != 0
             s << f
-            s << " " << options[:order].as(Hash)[f].to_s.upcase if options[:order]? && options[:order].as(Hash)[f]?
+            s << " " << order[f].to_s.upcase if order && order[f]?
           end
           s << ")"
           # TODO: add partial support to migration
@@ -211,6 +215,27 @@ module Jennifer
         end
         exec query
       end
+
+      # def add_index(table, name, options : Hash(Symbol, Array(Symbol) | Hash(Symbol, Symbol) | Nil))
+      #   query = String.build do |s|
+      #     s << "CREATE "
+
+      #     s << index_type_translate(options[:type]) if options[:type]?
+      #     s << "INDEX " << name << " ON " << table
+      #     # TODO: add using option to migration
+      #     # s << " USING " << options[:using] if options.has_key?(:using)
+      #     s << " ("
+      #     options[:fields].as(Array).each_with_index do |f, i|
+      #       s << "," if i != 0
+      #       s << f
+      #       s << " " << options[:order].as(Hash)[f].to_s.upcase if options[:order]? && options[:order].as(Hash)[f]?
+      #     end
+      #     s << ")"
+      #     # TODO: add partial support to migration
+      #     # s << " " << options[:partial] if options.has_key?(:partial)
+      #   end
+      #   exec query
+      # end
 
       def change_column(table, old_name, new_name, opts)
         column_name_part = " ALTER COLUMN #{old_name} "
@@ -353,17 +378,10 @@ module Jennifer
       end
     end
   end
-
-  macro after_load_hook
-    require "./jennifer/adapter/postgres/criteria"
-    require "./jennifer/adapter/postgres/numeric"
-    require "./jennifer/adapter/postgres/migration/base"
-    require "./jennifer/adapter/postgres/migration/table_builder/*"
-  end
 end
 
-require "./postgres/result_set"
-require "./postgres/field"
-require "./postgres/exec_result"
+require "./postgres/criteria"
+require "./postgres/numeric"
+require "./postgres/migration/table_builder/*"
 
-::Jennifer::Adapter.register_adapter("postgres", ::Jennifer::Adapter::Postgres)
+::Jennifer::Adapter.register_adapter("postgres", ::Jennifer::Postgres::Adapter)

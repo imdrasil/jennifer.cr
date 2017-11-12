@@ -1,8 +1,9 @@
 require "../spec_helper"
+
 mysql_only do
-  describe Jennifer::Adapter::Mysql do
-    described_class = Jennifer::Adapter::Mysql
-    adapter = Jennifer::Adapter.adapter.as(Jennifer::Adapter::Mysql)
+  describe Jennifer::Mysql::Adapter do
+    described_class = Jennifer::Mysql::Adapter
+    adapter = Jennifer::Adapter.adapter.as(Jennifer::Mysql::Adapter)
 
     describe "#index_exists?" do
       it "returns true if table has index with given name" do

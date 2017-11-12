@@ -1,4 +1,5 @@
 require "db"
+require "ifrit"
 require "./shared/*"
 require "./transactions"
 require "./result_parsers"
@@ -223,24 +224,42 @@ module Jennifer
         exec "ALTER TABLE #{old_name.to_s} RENAME #{new_name.to_s}"
       end
 
-      def add_index(table : String | Symbol, name : String | Symbol, options)
+      def add_index(table : String | Symbol, name : String | Symbol, fields : Array, type : Symbol? = nil, order : Hash? = nil, length : Hash? = nil)
         query = String.build do |s|
           s << "CREATE "
 
-          s << index_type_translate(options[:type]) if options[:type]?
+          s << index_type_translate(type) if type
 
           s << "INDEX " << name << " ON " << table << "("
-          fields = options.as(Hash)[:fields].as(Array)
           fields.each_with_index do |f, i|
             s << "," if i != 0
             s << f
-            s << "(" << options[:length].as(Hash)[f] << ")" if options[:length]? && options[:length].as(Hash)[f]?
-            s << " " << options[:order].as(Hash)[f].to_s.upcase if options[:order]? && options[:order].as(Hash)[f]?
+            s << "(" << length[f] << ")" if length && length[f]?
+            s << " " << order[f].to_s.upcase if order && order[f]?
           end
           s << ")"
         end
         exec query
       end
+
+      # def add_index(table, name, options : Hash(Symbol, Symbol | Array(Symbol) | Hash(Symbol, Symbol) | Hash(Symbol, Int32) | Nil))
+      #   query = String.build do |s|
+      #     s << "CREATE "
+
+      #     s << index_type_translate(options[:type]) if options[:type]?
+
+      #     s << "INDEX " << name << " ON " << table << "("
+      #     fields = options.as(Hash)[:fields].as(Array)
+      #     fields.each_with_index do |f, i|
+      #       s << "," if i != 0
+      #       s << f
+      #       s << "(" << options[:length].as(Hash)[f] << ")" if options[:length]? && options[:length].as(Hash)[f]?
+      #       s << " " << options[:order].as(Hash)[f].to_s.upcase if options[:order]? && options[:order].as(Hash)[f]?
+      #     end
+      #     s << ")"
+      #   end
+      #   exec query
+      # end
 
       def drop_index(table : String | Symbol, name : String | Symbol)
         exec "DROP INDEX #{name} ON #{table}"

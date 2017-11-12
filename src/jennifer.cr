@@ -22,10 +22,20 @@ require "./jennifer/model/*"
 
 require "./jennifer/view/base"
 
-require "./jennifer/migration/table_builder/*"
 require "./jennifer/migration/*"
 
 module Jennifer
+  alias Query = QueryBuilder::Query
+  {% if Jennifer.constant("AFTER_LOAD_SCRIPT") == nil %}
+    AFTER_LOAD_SCRIPT = [] of String
+  {% end %}
+
+  macro after_load_hook
+    {% for script in AFTER_LOAD_SCRIPT %}
+      {{script.id}}
+    {% end %}
+  end
+
   class StubRelation < ::Jennifer::Relation::IRelation
     def insert(a, b)
       raise "stubed relation"

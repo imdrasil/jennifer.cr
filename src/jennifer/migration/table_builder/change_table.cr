@@ -65,15 +65,15 @@ module Jennifer
         end
 
         def process
-          @drop_columns.each { |c| adapter.drop_column(@name, c) }
-          @fields.each { |n, opts| adapter.add_column(@name, n, opts) }
+          @drop_columns.each { |c| migration_processor.drop_column(@name, c) }
+          @fields.each { |n, opts| migration_processor.add_column(@name, n, opts) }
           @changed_columns.each do |n, opts|
-            adapter.change_column(@name, n, opts[:new_name].as(String | Symbol), opts)
+            migration_processor.change_column(@name, n, opts[:new_name].as(String | Symbol), opts)
           end
           @indexes.each(&.process)
           @drop_index.each(&.process)
 
-          adapter.rename_table(@name, @new_table_name) unless @new_table_name.empty?
+          migration_processor.rename_table(@name, @new_table_name) unless @new_table_name.empty?
         end
       end
     end

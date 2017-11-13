@@ -9,7 +9,7 @@ module Jennifer
 
         extend Ifrit
 
-        delegate table_exists?, index_exists?, column_exists?, to: adapter
+        delegate migration_processor, table_exists?, index_exists?, column_exists?, to: adapter
 
         getter fields, adapter : Adapter::Base
 

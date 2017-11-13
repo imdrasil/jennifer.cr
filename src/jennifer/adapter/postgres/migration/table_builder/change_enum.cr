@@ -19,21 +19,21 @@ module Jennifer
 
           def remove_values
             new_values = [] of String
-            @adapter.enum_values(@name).map { |e| new_values << e[0] }
+            adapter.enum_values(@name).map { |e| new_values << e[0] }
             new_values -= @options[:remove_values]
             if @effected_tables.empty?
-              @adapter.drop_enum(@name)
-              @adapter.define_enum(@name, new_values)
+              migration_processor.drop_enum(@name)
+              migration_processor.define_enum(@name, new_values)
             else
               temp_name = "#{@name}_temp"
-              @adapter.define_enum(temp_name, new_values)
+              migration_processor.define_enum(temp_name, new_values)
               @effected_tables.each do |row|
                 @adapter.exec <<-SQL
                   ALTER TABLE #{row[0]} 
                   ALTER COLUMN #{row[1]} TYPE #{temp_name} 
                   USING (#{row[1]}::text::#{temp_name})
                 SQL
-                @adapter.drop_enum(@name)
+                migration_processor.drop_enum(@name)
                 rename(temp_name, @name)
               end
             end
@@ -41,7 +41,7 @@ module Jennifer
 
           def add_values
             typed_array_cast(@options[:add_values].as(Array), String).each do |field|
-              @adapter.exec "ALTER TYPE #{@name} ADD VALUE '#{field}'"
+              adapter.exec "ALTER TYPE #{@name} ADD VALUE '#{field}'"
             end
           end
 
@@ -60,7 +60,7 @@ module Jennifer
           end
 
           def rename(old_name, new_name)
-            @adapter.exec "ALTER TYPE #{old_name} RENAME TO #{new_name}"
+            adapter.exec "ALTER TYPE #{old_name} RENAME TO #{new_name}"
           end
 
           private def _effected_tables

@@ -6,6 +6,10 @@ module Jennifer
           def adapter
             @adapter.as(Postgres::Adapter)
           end
+
+          def migration_processor
+            @adapter.migration_processor.as(MigrationProcessor)
+          end
         end
       end
     end

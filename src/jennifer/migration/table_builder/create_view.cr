@@ -11,7 +11,7 @@ module Jennifer
         # TODO: move query generating to SqlGenerator class and make
         # table builder classes to call executions by themselves
         def process
-          adapter.create_view(@name, @query)
+          migration_processor.create_view(@name, @query)
         end
       end
     end

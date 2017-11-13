@@ -213,124 +213,10 @@ module Jennifer
       # migration ========================
 
       def ready_to_migrate!
-        return if table_exists?(Migration::Version.table_name)
-        tb = Migration::TableBuilder::CreateTable.new(self, Migration::Base.table_name)
-        tb.integer(:id, {:primary => true, :auto_increment => true})
-          .string(:version, {:size => 17})
-        create_table(tb)
-      end
-
-      def rename_table(old_name : String | Symbol, new_name : String | Symbol)
-        exec "ALTER TABLE #{old_name.to_s} RENAME #{new_name.to_s}"
-      end
-
-      def add_index(table : String | Symbol, name : String | Symbol, fields : Array, type : Symbol? = nil, order : Hash? = nil, length : Hash? = nil)
-        query = String.build do |s|
-          s << "CREATE "
-
-          s << index_type_translate(type) if type
-
-          s << "INDEX " << name << " ON " << table << "("
-          fields.each_with_index do |f, i|
-            s << "," if i != 0
-            s << f
-            s << "(" << length[f] << ")" if length && length[f]?
-            s << " " << order[f].to_s.upcase if order && order[f]?
-          end
-          s << ")"
+        return if table_exists?(Migration::Base::TABLE_NAME)
+        migration_processor.build_create_table(Migration::Base::TABLE_NAME) do |t|
+          t.string(:version, {:size => 17})
         end
-        exec query
-      end
-
-      # def add_index(table, name, options : Hash(Symbol, Symbol | Array(Symbol) | Hash(Symbol, Symbol) | Hash(Symbol, Int32) | Nil))
-      #   query = String.build do |s|
-      #     s << "CREATE "
-
-      #     s << index_type_translate(options[:type]) if options[:type]?
-
-      #     s << "INDEX " << name << " ON " << table << "("
-      #     fields = options.as(Hash)[:fields].as(Array)
-      #     fields.each_with_index do |f, i|
-      #       s << "," if i != 0
-      #       s << f
-      #       s << "(" << options[:length].as(Hash)[f] << ")" if options[:length]? && options[:length].as(Hash)[f]?
-      #       s << " " << options[:order].as(Hash)[f].to_s.upcase if options[:order]? && options[:order].as(Hash)[f]?
-      #     end
-      #     s << ")"
-      #   end
-      #   exec query
-      # end
-
-      def drop_index(table : String | Symbol, name : String | Symbol)
-        exec "DROP INDEX #{name} ON #{table}"
-      end
-
-      def drop_column(table : String | Symbol, name : String | Symbol)
-        exec "ALTER TABLE #{table} DROP COLUMN #{name}"
-      end
-
-      def add_column(table : String | Symbol, name : String | Symbol, opts)
-        query = String.build do |s|
-          s << "ALTER TABLE " << table << " ADD COLUMN "
-          column_definition(name, opts, s)
-        end
-
-        exec query
-      end
-
-      def change_column(table : String | Symbol, old_name : String | Symbol, new_name : String | Symbol, opts)
-        query = String.build do |s|
-          s << "ALTER TABLE " << table << " CHANGE COLUMN " << old_name << " "
-          column_definition(new_name, opts, s)
-        end
-
-        exec query
-      end
-
-      def drop_table(builder : Migration::TableBuilder::DropTable)
-        exec "DROP TABLE #{builder.name}"
-      end
-
-      def create_table(builder : Migration::TableBuilder::CreateTable)
-        buffer = String.build do |s|
-          s << "CREATE TABLE " << builder.name << " ("
-          builder.fields.each_with_index do |(name, options), i|
-            s << ", " if i != 0
-            column_definition(name, options, s)
-          end
-          s << ")"
-        end
-        exec buffer
-      end
-
-      def create_enum(name : String | Symbol, options)
-        raise BaseException.new("Current adapter doesn't support this method.")
-      end
-
-      def drop_enum(name : String | Symbol, options)
-        raise BaseException.new("Current adapter doesn't support this method.")
-      end
-
-      def change_enum(name : String | Symbol, options)
-        raise BaseException.new("Current adapter doesn't support this method.")
-      end
-
-      def create_view(name : String | Symbol, query, silent : Bool = true)
-        buff = String.build do |s|
-          s << "CREATE "
-          s << "OR REPLACE " if silent
-          s << "VIEW " << name << " AS " << sql_generator.select(query)
-        end
-        exec buff
-      end
-
-      def drop_view(name : String | Symbol, silent : Bool = true)
-        buff = String.build do |s|
-          s << "DROP VIEW "
-          s << "IF EXISTS " if silent
-          s << name
-        end
-        exec buff
       end
 
       def query_array(_query : String, klass : T.class, field_count : Int32 = 1) forall T
@@ -365,47 +251,6 @@ module Jennifer
       end
 
       # private ===========================
-      # NOTE: adding here type will bring a lot of small issues around
-
-      private def index_type_translate(name)
-        case name
-        when :unique, :uniq
-          "UNIQUE "
-        when :fulltext
-          "FULLTEXT "
-        when :spatial
-          "SPATIAL "
-        when nil
-          " "
-        else
-          raise ArgumentError.new("Unknown index type: #{name}")
-        end
-      end
-
-      private def column_definition(name, options, io)
-        type = options[:serial]? ? "serial" : (options[:sql_type]? || translate_type(options[:type].as(Symbol)))
-        size = options[:size]? || default_type_size(options[:type])
-        io << name << " " << type
-        io << "(#{size})" if size
-        if options[:type] == :enum
-          io << " ("
-          options[:values].as(Array).each_with_index do |e, i|
-            io << ", " if i != 0
-            io << "'#{e.as(String | Symbol)}'"
-          end
-          io << ") "
-        end
-        if options.has_key?(:null)
-          if options[:null]
-            io << " NULL"
-          else
-            io << " NOT NULL"
-          end
-        end
-        io << " PRIMARY KEY" if options[:primary]?
-        io << " DEFAULT #{self.class.t(options[:default])}" if options[:default]?
-        io << " AUTO_INCREMENT" if options[:auto_increment]?
-      end
 
       private def regular_query_message(time : Time::Span, query : String, args : Array)
         ms = time.nanoseconds / 1000

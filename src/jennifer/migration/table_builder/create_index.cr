@@ -10,7 +10,7 @@ module Jennifer
         end
 
         def process
-          adapter.add_index(@name, @index_name, _fields, @type, orders, @lengths)
+          migration_processor.add_index(@name, @index_name, _fields, @type, orders, @lengths)
         end
       end
     end

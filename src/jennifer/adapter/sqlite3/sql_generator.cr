@@ -1,8 +1,8 @@
+require "../base_sql_generator"
+
 module Jennifer
-  module Adapter
-    class Sqlite3
-      class SQLGenerator < BaseSQLGenerator
-      end
+  module Sqlite3
+    class SQLGenerator < Jennifer::Adapter::BaseSQLGenerator
     end
   end
 end

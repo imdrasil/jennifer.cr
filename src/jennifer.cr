@@ -25,7 +25,6 @@ require "./jennifer/view/base"
 require "./jennifer/migration/*"
 
 module Jennifer
-  alias Query = QueryBuilder::Query
   {% if Jennifer.constant("AFTER_LOAD_SCRIPT") == nil %}
     AFTER_LOAD_SCRIPT = [] of String
   {% end %}

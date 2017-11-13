@@ -23,9 +23,10 @@ module Jennifer
         end
       {% end %}
 
+      getter table : String = ""
+
       @having : Condition | LogicOperator?
       @limit : Int32?
-      @table : String = ""
       @distinct : Bool = false
       @offset : Int32?
       @raw_select : String?

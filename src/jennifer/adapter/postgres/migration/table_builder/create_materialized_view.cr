@@ -6,13 +6,12 @@ module Jennifer
         class CreateMaterializedView < Base
            @query : QueryBuilder::Query | String
 
-          def initialize(name, @query)
-            super(name)
+          def initialize(adapter, name, @query)
+            super(adapter, name)
           end
 
           def process
-            buff = generate_query
-            adapter.exec buff
+            adapter.exec(generate_query)
           end
 
           private def generate_query
@@ -25,7 +24,8 @@ module Jennifer
                   "CREATE MATERIALIZED VIEW " <<
                   @name <<
                   " AS " <<
-                  Adapter::SqlGenerator.select(@query.as(QueryBuilder::Query))
+                  adapter.sql_generator.select(@query.as(QueryBuilder::Query))
+              end
             end
           end
         end

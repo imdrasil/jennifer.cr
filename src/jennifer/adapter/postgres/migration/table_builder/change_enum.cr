@@ -18,8 +18,7 @@ module Jennifer
           end
 
           def remove_values
-            new_values = [] of String
-            adapter.enum_values(@name).map { |e| new_values << e[0] }
+            new_values = adapter.enum_values(@name)
             new_values -= @options[:remove_values]
             if @effected_tables.empty?
               migration_processor.drop_enum(@name)

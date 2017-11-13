@@ -9,7 +9,7 @@ addons:
 env:
   - DB=mysql DB_USER=root DB_PASSWORD=""
   - DB=postgres DB_USER=postgres DB_PASSWORD=""
+  - DB=postgres DB_USER=postgres DB_PASSWORD="" PAIR=1
+  - DB=mysql DB_USER=root DB_PASSWORD="" PAIR=1
 before_script:
-  - sh -c "if [ '$DB' = 'postgres' ]; then psql -c 'create database jennifer_test;' -U postgres; fi"
-  - sh -c "if [ '$DB' = 'mysql' ]; then bash .travis.install-mysql-5.7.sh; crystal ./examples/run.cr -- db:create; fi"
-  - crystal ./examples/run.cr -- db:migrate
+  - bash .travis.setup.sh

@@ -32,7 +32,7 @@ end
 
 def clean_db
   postgres_only do
-    Jennifer::Adapter.adapter.refresh_materialized_view(FemaleContact.table_name)
+    Jennifer::Adapter.adapter.as(Jennifer::Postgres::Adapter).refresh_materialized_view(FemaleContact.table_name)
   end
   Jennifer::Model::Base.models.select { |t| t.has_table? }.each(&.all.delete)
 end

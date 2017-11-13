@@ -237,7 +237,7 @@ describe Jennifer::Adapter::Base do
 
   describe "::escape_string" do
     it "returns proper escape string" do
-      described_class.escape_string(5).should eq(Jennifer::Adapter::SqlGenerator.escape_string(5))
+      described_class.escape_string(5).should eq("%s, %s, %s, %s, %s")
     end
   end
 

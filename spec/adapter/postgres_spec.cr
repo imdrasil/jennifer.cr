@@ -5,18 +5,6 @@ postgres_only do
     described_class = Jennifer::Postgres::Adapter
     adapter = Jennifer::Adapter.adapter.as(Jennifer::Postgres::Adapter)
 
-    describe "#translate_type" do
-      it "returns sql type associated with given synonim" do
-        adapter.translate_type(:string).should eq("varchar")
-      end
-    end
-
-    describe "#default_type_size" do
-      it "returns default type size for given alias" do
-        adapter.default_type_size(:string).should eq(254)
-      end
-    end
-
     describe "#parse_query" do
       it "replaces %s by dollar-and-numbers" do
         adapter.parse_query("some %s query %s", ["a", "b"]).should eq("some $1 query $2")

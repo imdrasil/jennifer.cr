@@ -186,14 +186,23 @@ to your `spec_helper.cr`. NB. you could simply use regular deleting or truncatio
 
 > Before developing any feature please create an issue where you describe your idea.
 
-Before development create the db user (see `/spec/config.cr` file) by running
+Before development create the db user (see `/spec/config.cr` file) by running:
 ```shell
-$ crystal example/migrate.cr -- db:setup
+# Postgres
+$ crystal examples/run.cr -- db:setup
+
+# Mysql
+$ DB=mysql crystal examples/run.cr -- db:setup
 ```
 
 PostgreSQL is used by default, but MySql is also supported while running tests by using:
 ```shell
 $ DB=mysql crystal spec
+```
+
+In case you need to set the database user or password, use:
+```shell
+$ DB_USER=user DB_PASSWORD=pass crystal spec
 ```
 
 Also you can override used user name and password using `DB_USER` and `DB_PASSWORD` env variables.
@@ -212,14 +221,13 @@ NB. It also depends on then choosen adapter (postgres by default).
 
 - [active_record.cr](https://github.com/waterlink/active_record.cr) - small simple AR realization
 
-- [crecto](https://github.com/vladfaust/core.cr) - based on Phoenix's ecto lib and follows the repository pattern; 
+- [crecto](https://github.com/vladfaust/core.cr) - based on Phoenix's ecto lib and follows the repository pattern;
 
 - [granite-orm](https://github.com/amberframework/granite-orm) - light weight orm focusing on mapping fields from request to your objects
 
 - [topaz](https://github.com/topaz-crystal/topaz) - inspired by AR ORM with migration mechanism
 
 - [micrate](https://github.com/juanedi/micrate) - standalone migration tool for crystal
-
 
 ## Contributing
 

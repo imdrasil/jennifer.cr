@@ -90,7 +90,7 @@ module Jennifer
       end
 
       macro mapping(properties, strict = true)
-        macro def self.children_classes
+        def self.children_classes
           {% begin %}
             {% if @type.all_subclasses.size > 0 %}
               [{{ @type.all_subclasses.join(", ").id }}]

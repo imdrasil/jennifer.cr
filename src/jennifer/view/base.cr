@@ -85,7 +85,7 @@ module Jennifer
 
       abstract def attribute(name)
 
-      macro def self.views
+      def self.views
         {% begin %}
           {% if @type.all_subclasses.size > 1 %}
             [{{@type.all_subclasses.join(", ").id}}] - [Jennifer::View::Materialized]

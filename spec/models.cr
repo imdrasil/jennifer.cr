@@ -138,6 +138,8 @@ class FacebookProfile < Profile
     uid: String
   )
 
+  validates_length :uid, is: 4
+
   has_and_belongs_to_many :facebook_contacts, Contact, foreign: :profile_id
 end
 
@@ -234,14 +236,20 @@ class ContactWithDependencies < Jennifer::Model::Base
   table_name "contacts"
 
   mapping({
-    id:   {type: Int32, primary: true},
-    name: String,
+    id:          {type: Int32, primary: true},
+    name:        {type: String, null: true},
+    description: {type: String, null: true},
+    age:         {type: Int32, default: 10},
+    gender:      {type: String, default: "male", null: true},
   }, false)
 
   has_many :addresses, Address, dependent: :delete, foreign: :contact_id
   has_many :facebook_profiles, FacebookProfile, dependent: :nullify, foreign: :contact_id
   has_many :passports, Passport, dependent: :destroy, foreign: :contact_id
   has_many :twitter_profiles, TwitterProfile, dependent: :restrict_with_exception, foreign: :contact_id
+
+  validates_length :name, minimum: 2
+  validates_length :description, minimum: 2, allow_blank: true
 end
 
 class ContactWithCustomField < Jennifer::Model::Base
@@ -250,6 +258,16 @@ class ContactWithCustomField < Jennifer::Model::Base
     id:   {type: Int32, primary: true},
     name: String,
   }, false)
+end
+
+class ContactWithInValidation < Jennifer::Model::Base
+  table_name "contacts"
+  mapping({
+    id:   {type: Int32, primary: true},
+    name: String?,
+  }, false)
+
+  validates_length :name, in: 2..10
 end
 
 class ContactWithNillableName < Jennifer::Model::Base

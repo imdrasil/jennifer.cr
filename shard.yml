@@ -20,7 +20,7 @@ development_dependencies:
 dependencies:
   sam:
     github: imdrasil/sam.cr
-    version: "0.2.1"
+    version: "~> 0.2.4"
   inflector:
     github: phoffer/inflector.cr
     version: "~> 0.1.8"
@@ -29,3 +29,4 @@ dependencies:
     version: "~> 1.1.0"
   ifrit:
     github: imdrasil/ifrit
+    version: "~> 0.1.1"

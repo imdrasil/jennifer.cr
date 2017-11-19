@@ -4,9 +4,9 @@ describe Jennifer::Model::STIMapping do
   describe "#initialize" do
     context "ResultSet" do
       it "properly loads from db" do
-        f = c = Factory.create_facebook_profile(uid: "111", login: "my_login")
+        f = c = Factory.create_facebook_profile(uid: "1111", login: "my_login")
         res = FacebookProfile.find!(f.id)
-        res.uid.should eq("111")
+        res.uid.should eq("1111")
         res.login.should eq("my_login")
       end
     end

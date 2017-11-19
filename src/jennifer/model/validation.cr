@@ -1,7 +1,10 @@
+require "./validation_messages"
+
 module Jennifer
   module Model
     module Validation
       include Accord
+      include ValidationMessages
 
       def validate(skip = false)
       end
@@ -30,32 +33,46 @@ module Jennifer
         end
       end
 
-      macro validates_inclucion(field, value)
+      macro _not_nil_validation(field, allow_blank)
+        begin
+          {% if allow_blank %}
+            return if @{{field.id}}.nil?
+          {% else %}
+            return errors.add({{field}}, not_blank_message) if @{{field.id}}.nil?
+          {% end %}
+          @{{field.id}}.not_nil!
+        end
+      end
+
+      macro validates_inclucion(field, value, allow_blank = false)
         validates_with_method(%validate_method)
 
         def %validate_method
-          unless ({{value}}).includes?(@{{field.id}})
-            errors.add({{field}}, "should be in #{{{value}}} but is #{@{{field.id}}}")
+          value = _not_nil_validation({{field}}, {{allow_blank}})
+          unless ({{value}}).includes?(value)
+            errors.add({{field}}, must_be_message({{value}}, value))
           end
         end
       end
 
-      macro validates_exclusion(field, value)
+      macro validates_exclusion(field, value, allow_blank = false)
         validates_with_method(%validate_method)
 
         def %validate_method
-          if ({{value}}).includes?(@{{field.id}})
-            errors.add(:{{field.id}}, "should not be in #{{{value}}} but is #{@{{field.id}}}")
+          value = _not_nil_validation({{field}}, {{allow_blank}})
+          if ({{value}}).includes?(value)
+            errors.add(:{{field.id}}, must_not_be_message({{value}}, value))
           end
         end
       end
 
-      macro validates_format(field, value)
+      macro validates_format(field, value, allow_blank = false)
         validates_with_method(%validate_method)
 
         def %validate_method
-          unless {{value}} =~ @{{field.id}}.not_nil!
-            errors.add({{field}}, "should be like #{{{value}}} but is #{@{{field.id}}}")
+          value = _not_nil_validation({{field}}, {{allow_blank}})
+          unless {{value}} =~ value
+            errors.add({{field}}, must_be_like_message({{value}}, value))
           end
         end
       end
@@ -64,24 +81,25 @@ module Jennifer
         validates_with_method(%validate_method)
 
         def %validate_method
-          size = @{{field.id}}.not_nil!.size
+          value = _not_nil_validation({{field}}, {{options[:allow_blank] || false}})
+          size = value.not_nil!.size
           {% if options[:in] %}
             unless ({{options[:in]}}).includes?(size)
-              errors.add({{field}}, "should be in #{{{options[:in]}}} but is #{@{{field.id}}}")
+              errors.add({{field}}, length_in_message({{options[:in]}}, size))
             end
           {% elsif options[:is] %}
             if {{options[:is]}} != size
-              errors.add({{field}}, "should be #{{{options[:is]}}} but is #{@{{field.id}}}")
+              errors.add({{field}}, length_is_message({{options[:is]}}, size))
             end
           {% else %}
             {% if options[:minimum] %}
               if {{options[:minimum]}} > size
-                errors.add({{field}}, "should be gte #{{{options[:minimum]}}} but is #{@{{field.id}}}")
+                errors.add({{field}}, length_min_message({{options[:minimum]}}, size))
               end
             {% end %}
             {% if options[:maximum] %}
               if {{options[:maximum]}} < size
-                errors.add({{field}}, "should be lte #{{{options[:maximum]}}} but is #{@{{field.id}}}")
+                errors.add({{field}}, length_max_message({{options[:maximum]}}, size))
               end
             {% end %}
           {% end %}
@@ -94,7 +112,7 @@ module Jennifer
         def %validate_method
           value = @{{field.id}}
           if {{@type}}.where { _{{field.id}} == value }.exists?
-            errors.add({{field}}, "should be unique")
+            errors.add({{field}}, must_be_unique_message(value))
           end
         end
       end
@@ -106,7 +124,7 @@ module Jennifer
         def %validate_method
           value = @{{field.id}}
           if value.nil?
-            errors.add({{field}}, "Should not be nil.")
+            errors.add({{field}}, not_blank_message)
           end
         end
       end

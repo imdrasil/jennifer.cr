@@ -91,7 +91,7 @@ end
 
 class FacebookProfileFactory < ProfileFactory
   describe_class FacebookProfile
-  attr :uid, "123"
+  attr :uid, "1234"
   attr :type, FacebookProfile.to_s
 end
 

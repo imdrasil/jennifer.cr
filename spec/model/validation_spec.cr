@@ -86,23 +86,65 @@ describe Jennifer::Model::Validation do
     end
 
     context "maximum" do
-      it "pass valid names" do
-        a = Factory.build_contact(name: "123456789012345")
-        a.validate!
-        a.valid?.should be_true
+      context "doesn't allow blank" do
+        it "adds error message" do
+          c = ContactWithDependencies.new({:name => nil, :description => "asdasd"})
+          c.validate!
+          c.valid?.should be_false
+          c.errors[:name].empty?.should_not be_true
+        end
       end
 
-      it "doesn't pass invalid names" do
-        a = Factory.build_contact(name: "1234567890123456")
-        a.validate!
-        a.valid?.should be_false
+      context "allows blank" do
+        it "doesn't add error message" do
+          c = ContactWithDependencies.new({:name => "asd", :description => nil})
+          c.validate!
+          c.valid?.should be_true
+        end
+
+        it "validates if presence" do
+          c = ContactWithDependencies.new({:name => "asd", :description => "a"})
+          c.validate!
+          c.valid?.should be_false
+          c.description = "sd"
+          c.validate!
+          c.valid?.should be_true
+        end
       end
     end
 
-    pending "in" do
+    context "in" do
+      context "doesn't allow blank" do
+        it "adds error message" do
+          c = ContactWithInValidation.new({:name => nil})
+          c.validate!
+          c.valid?.should be_false
+          c.errors[:name].empty?.should_not be_true
+        end
+
+        it "validates if presence" do
+          c = ContactWithInValidation.new({:name => "a"})
+          c.validate!
+          c.valid?.should be_false
+          c.name = "sd"
+          c.validate!
+          c.valid?.should be_true
+        end
+      end
     end
 
-    pending "is" do
+    context "is" do
+      it "adds error if invalid" do
+        p = Factory.create_facebook_profile(login: "asd", uid: "12")
+        p.validate!
+        p.valid?.should be_false
+      end
+
+      it "does nothing if valid" do
+        p = Factory.create_facebook_profile(login: "asd", uid: "1234")
+        p.validate!
+        p.valid?.should be_true
+      end
     end
   end
 

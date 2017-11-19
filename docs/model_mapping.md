@@ -110,9 +110,9 @@ end
 | `:getter` | if getter should be created (default - `true`) |
 | `:setter` | if setter should be created (default - `true`) |
 
-If you don't want to define all the table fields - pass seond argument to mapping as `false`.
+If you don't want to define all the table fields - pass `false` as second argument.
 
-It defines next methods:
+`%mapping` defines next methods:
 
 | method | args | description |
 | --- | --- | --- |
@@ -146,7 +146,10 @@ It defines next methods:
 | `#set_attribute` | `String \| Symbol`, `DB::Any` | sets attribute by given name |
 | `#attribute` | `String \| Symbol` | returns attribute value by it's name |
 
-Automatically model is associated with table with underscored pluralized class name, but special name can be defined using `::table_name` method in own body before using any relation (`::singular_table_name` - for singular variant).
+All allowed types are listed on the [Migration](/migration.md) page.
+
+
+Automatically model is associated with table with underscored pluralized name of it's class, but special name can be defined using `::table_name` method in own body before using any relation (`::singular_table_name` - for singular variant).
 
 **Important restriction** - model with no primary field is not allowed for now.
 

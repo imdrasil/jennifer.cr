@@ -33,11 +33,11 @@ describe Jennifer::Model::Base do
 
   describe "::primary_field_type" do
     it "returns type of custom primary field" do
-      Passport.primary_field_type.should eq(String)
+      Passport.primary_field_type.should eq(String?)
     end
 
     it "returns type of default primary field name" do
-      Contact.primary_field_type.should eq(Int32)
+      Contact.primary_field_type.should eq(Int32?)
     end
   end
 

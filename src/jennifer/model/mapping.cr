@@ -1,3 +1,6 @@
+alias Primary32 = Int32
+alias Primary64 = Int64
+
 module Jennifer
   module Model
     module Mapping
@@ -56,7 +59,7 @@ module Jennifer
             end
 
             def self.primary_field_type
-              {{value[:type]}}
+              {{value[:parsed_type].id}}
             end
 
             {% if primary_auto_incrementable %}
@@ -119,22 +122,50 @@ module Jennifer
           FIELD_NAMES
         end
 
-        {% add_default_constructor = true %}
-        {% primary_auto_incrementable = false %}
-        {% primary = nil %}
+        {%
+          primary = nil
+          primary_auto_incrementable = false
+          add_default_constructor = true
+          nillable_regexp = /(::Nil)|( Nil)/
+          json_regexp = /JSON::Any/
+          primary_32 = "Primary32"
+          primary_64 = "Primary64"
+          autoincrementable_str_types = ["Int32", "Int64", primary_32, primary_64]
+        %}
 
         # generates hash with options
         {% for key, value in properties %}
           {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
             {% properties[key] = {type: value} %}
           {% end %}
-          {% if properties[key][:primary] %}
-            {% primary = key %}
-            {% primary_type = properties[key][:type] %}
-            {% primary_auto_incrementable = ["Int32", "Int64"].includes?(properties[key][:type].stringify) %}
+          {%
+            _type = properties[key][:type]
+            _s_type = properties[key][:stringified_type] = properties[key][:type].stringify
+          %}
+          {% if _s_type == primary_32 %}
+            {%
+              properties[key][:primary] = true
+            %}
+          {% elsif _s_type == primary_64 %}
+            {%
+              properties[key][:primary] = true
+            %}
           {% end %}
-          {% t_string = properties[key][:type].stringify %}
-          {% properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? t_string + "?" : t_string %}
+          {% if properties[key][:primary] %}
+            {%
+              primary = key
+              primary_type = properties[key][:type]
+              primary_auto_incrementable = autoincrementable_str_types.includes?(_s_type)
+            %}
+          {% end %}
+          {% if _s_type =~ nillable_regexp %}
+            {%
+              properties[key][:null] = true
+              properties[key][:parsed_type] = _s_type
+            %}
+          {% else %}
+            {% properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? _type.stringify + "?" : _type.stringify %}
+          {% end %}
           {% add_default_constructor = add_default_constructor && (properties[key][:primary] || properties[key][:null] || properties[key].keys.includes?(:default)) %}
         {% end %}
 
@@ -301,6 +332,7 @@ module Jennifer
         #end
 
         {% if add_default_constructor %}
+          WITH_DEFAULT_CONSTRUCTOR = true
           # Default constructor without any fields
           def initialize
             {% for key, value in properties %}
@@ -325,6 +357,8 @@ module Jennifer
             o.__after_initialize_callback
             o
           end
+        {% else %}
+          WITH_DEFAULT_CONSTRUCTOR = false
         {% end %}
 
         def save!(skip_validation = false)
@@ -490,7 +524,7 @@ module Jennifer
           {% for key, value in properties %}
             {% unless value[:primary] %}
               if @{{key.id}}_changed
-                args << {% if value[:type].stringify == "JSON::Any" %}
+                args << {% if value[:stringified_type] =~ json_regexp %}
                           @{{key.id}}.to_json
                         {% else %}
                           @{{key.id}}
@@ -508,7 +542,7 @@ module Jennifer
           fields = [] of String
           {% for key, value in properties %}
             {% unless value[:primary] && primary_auto_incrementable %}
-              args << {% if value[:type].stringify == "JSON::Any" %}
+              args << {% if value[:stringified_type] =~ json_regexp %}
                         (@{{key.id}} ? @{{key.id}}.to_json : nil)
                       {% else %}
                         @{{key.id}}

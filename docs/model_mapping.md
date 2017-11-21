@@ -5,13 +5,13 @@ Several model examples
 class Contact < Jennifer::Model::Base
   with_timestamps
   mapping(
-    id: {type: Int32, primary: true},
+    id: Primary32, # same as {type: Int32, primary: true}
     name: String,
-    gender: {type: String, default: "male", null: true},
+    gender: {type: String?, default: "male"},
     age: {type: Int32, default: 10},
-    description: {type: String, null: true},
-    created_at: {type: Time, null: true},
-    updated_at: {type: Time, null: true}
+    description: String?,
+    created_at: Time?,
+    updated_at: Time | Nil
   )
 
   has_many :addresses, Address
@@ -41,8 +41,8 @@ class Address < Jennifer::Model::Base
     id: {type: Int32, primary: true},
     main: Bool,
     street: String,
-    contact_id: {type: Int32, null: true},
-    details: {type: JSON::Any, null: true}
+    contact_id: Int32?,
+    details: JSON::Any?
   )
   validates_format :street, /st\.|street/
 
@@ -63,7 +63,7 @@ end
 
 class Profile < Jennifer::Model::Base
   mapping(
-    id: {type: Int32, primary: true},
+    id: Primary32,
     login: String,
     contact_id: Int32?,
     type: String
@@ -88,7 +88,7 @@ end
 
 class Country < Jennifer::Model::Base
   mapping(
-    id: {type: Int32, primary: true},
+    id: Primary32,
     name: String
   )
 
@@ -110,13 +110,21 @@ end
 | `:getter` | if getter should be created (default - `true`) |
 | `:setter` | if setter should be created (default - `true`) |
 
+To make some field nillable tou can use any of next options:
+
+- pass `null: true` option to the named tuple
+- use `?` in type declaration (e.g. `some_field: String?` and `some_filed: {type: String?}`)
+- use union with `Nil` in the type declaration (e.g. `some_field: String | Nil` and `some_filed: {type: String | Nil}`)
+
+Also for there is a shortcut for defining `Int32` and `Int64` primary keys
+
 If you don't want to define all the table fields - pass `false` as second argument.
 
 `%mapping` defines next methods:
 
 | method | args | description |
 | --- | --- | --- |
-| `#initialize` | Hash(String \| Symbol, DB::Any), NamedTuple, MySql::ResultSet | constructors |
+| `#initialize` | `Hash(String \| Symbol, DB::Any), NamedTuple, MySql::ResultSet` | constructors |
 | `::field_count`| | number of fields |
 | `::field_names`| | all fields names |
 | `#{{field_name}}` | | getter |
@@ -146,7 +154,7 @@ If you don't want to define all the table fields - pass `false` as second argume
 | `#set_attribute` | `String \| Symbol`, `DB::Any` | sets attribute by given name |
 | `#attribute` | `String \| Symbol` | returns attribute value by it's name |
 
-All allowed types are listed on the [Migration](/migration.md) page.
+All allowed types are listed on the [Migration](https://imdrasil.github.io/jennifer.cr/docs/migration) page.
 
 
 Automatically model is associated with table with underscored pluralized name of it's class, but special name can be defined using `::table_name` method in own body before using any relation (`::singular_table_name` - for singular variant).

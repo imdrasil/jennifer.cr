@@ -1,4 +1,4 @@
-# Jennifer [![Build Status](https://travis-ci.org/imdrasil/jennifer.cr.svg)](https://travis-ci.org/imdrasil/jennifer.cr) [![Latest Release](https://img.shields.io/github/release/imdrasil/jennifer.cr.svg)](https://github.com/imdrasil/jennifer.cr/releases) [![Docs](https://img.shields.io/badge/docs-available-brightgreen.svg)](https://imdrasil.github.io/site/jennifer.cr/docs/)
+# Jennifer [![Build Status](https://travis-ci.org/imdrasil/jennifer.cr.svg)](https://travis-ci.org/imdrasil/jennifer.cr) [![Latest Release](https://img.shields.io/github/release/imdrasil/jennifer.cr.svg)](https://github.com/imdrasil/jennifer.cr/releases) [![Docs](https://img.shields.io/badge/docs-available-brightgreen.svg)](https://imdrasil.github.io/jennifer.cr/docs/)
 
 Another ActiveRecord pattern implementation for Crystal with a great query DSL and migration mechanism.
 
@@ -16,7 +16,7 @@ dependencies:
 
 ## Usage
 
-Jennifer allows you to maintain everything for your models - from db migrations and field mapping to callbacks and building queries. For detailed information see the [guide](https://imdrasil.github.io/site/jennifer.cr/docs/) or [api documentation](https://imdrasil.github.io/site/jennifer.cr/versions).
+Jennifer allows you to maintain everything for your models - from db migrations and field mapping to callbacks and building queries. For detailed information see the [guide](https://imdrasil.github.io/jennifer.cr/docs/) or [api documentation](https://imdrasil.github.io/jennifer.cr/versions).
 
 #### Migration
 
@@ -64,13 +64,13 @@ Several model examples
 class Contact < Jennifer::Model::Base
   with_timestamps
   mapping(
-    id: {type: Int32, primary: true},
+    id: Primary32,
     name: String,
-    gender: {type: String, default: "male", null: true},
+    gender: {type: String?, default: "male"},
     age: {type: Int32, default: 10},
-    description: {type: String, null: true},
-    created_at: {type: Time, null: true},
-    updated_at: {type: Time, null: true}
+    description: String?,
+    created_at: Time?,
+    updated_at: Time?
   )
 
   has_many :facebook_profiles, FacebookProfile
@@ -96,7 +96,7 @@ end
 class Passport < Jennifer::Model::Base
   mapping(
     enn: {type: String, primary: true},
-    contact_id: {type: Int32, null: true}
+    contact_id: Int32?
   )
 
   validates_with [EnnValidator]
@@ -105,7 +105,7 @@ end
 
 class Profile < Jennifer::Model::Base
   mapping(
-    id: {type: Int32, primary: true},
+    id: Primary32,
     login: String,
     contact_id: Int32?,
     type: String
@@ -124,7 +124,7 @@ end
 
 class Country < Jennifer::Model::Base
   mapping(
-    id: {type: Int32, primary: true},
+    id: Primary32,
     name: String
   )
 
@@ -151,18 +151,6 @@ Much more about the query DSL can be found on the wiki [[page|Query-DSL]]
 ### Important restrictions
 
 - sqlite3 has many limitations so its support won't be added any time soon
-
-### Similar shards
-
-- [active_record.cr](https://github.com/waterlink/active_record.cr) - small simple AR realization
-
-- [crecto](https://github.com/vladfaust/core.cr) - based on Phoenix's ecto lib and follows the repository pattern; 
-
-- [granite-orm](https://github.com/amberframework/granite-orm) - light weight orm focusing on mapping fields from request to your objects
-
-- [topaz](https://github.com/topaz-crystal/topaz) - inspired by AR ORM with migration mechanism
-
-- [micrate](https://github.com/juanedi/micrate) - standalone migration tool for crystal
 
 ### Versioning
 
@@ -219,6 +207,18 @@ NB. It also depends on then choosen adapter (postgres by default).
 
 
 The wiki pages also have a lot of usefull information. But from version 0.3.4 no new information will be added there untill it is moved to separate `.md` pages to allow contributing.
+
+## Similar shards
+
+- [active_record.cr](https://github.com/waterlink/active_record.cr) - small simple AR realization
+
+- [crecto](https://github.com/vladfaust/core.cr) - based on Phoenix's ecto lib and follows the repository pattern; 
+
+- [granite-orm](https://github.com/amberframework/granite-orm) - light weight orm focusing on mapping fields from request to your objects
+
+- [topaz](https://github.com/topaz-crystal/topaz) - inspired by AR ORM with migration mechanism
+
+- [micrate](https://github.com/juanedi/micrate) - standalone migration tool for crystal
 
 
 ## Contributing

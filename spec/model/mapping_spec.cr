@@ -127,6 +127,14 @@ describe Jennifer::Model::Mapping do
   end
 
   describe "%mapping" do
+    it "define default constructor if all fields are nilable or have default values" do
+      Passport::WITH_DEFAULT_CONSTRUCTOR.should be_true
+    end
+
+    it "defines no defulat constructor if at least one field is not nillable and has no default" do
+      Contact::WITH_DEFAULT_CONSTRUCTOR.should be_false
+    end
+
     describe "#initialize" do
       context "from result set" do
         pending "properly creates object" do
@@ -156,22 +164,46 @@ describe Jennifer::Model::Mapping do
 
     describe "::field_count" do
       it "returns correct number of model fields" do
-        postgres_only do
-          Contact.field_count.should eq(9)
-        end
-        mysql_only do
-          Contact.field_count.should eq(8)
-        end
+        proper_count =
+          postgres_only { 9 }
+        mysql_only { 8 }
+        Contact.field_count.should eq(proper_count)
       end
     end
 
     context "data types" do
-      describe "JSON" do
+      describe Primary32 do
+        it "makes field nilable" do
+          Contact.primary_field_type.should eq(Int32?)
+        end
+      end
+
+      describe Primary64 do
+        pending "add" do
+        end
+      end
+
+      describe JSON::Any do
         it "properly loads json field" do
+          # This checks nillable JSON as well
           c = Factory.create_address(street: "a st.", details: JSON.parse(%(["a", "b", 1])))
           c = Address.find!(c.id)
           c.details.should be_a(JSON::Any)
           c.details![2].as_i.should eq(1)
+        end
+      end
+
+      context "nilable field" do
+        context "passed with ?" do
+          it "properly sets field as nilable" do
+            typeof(FemaleContact.new.name).should eq(String?)
+          end
+        end
+
+        context "passed as union" do
+          it "properly sets field class as nilable" do
+            typeof(Factory.build_contact.created_at).should eq(Time?)
+          end
         end
       end
 

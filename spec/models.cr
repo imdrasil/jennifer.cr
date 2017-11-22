@@ -291,7 +291,7 @@ end
 
 class MaleContact < Jennifer::View::Base
   mapping({
-    id:     {type: Int32, primary: true},
+    id:     Primary32,
     name:   String,
     gender: String,
     age:    Int32,
@@ -306,14 +306,14 @@ class FakeContactView < Jennifer::View::Base
   view_name "male_contacs"
 
   mapping({
-    id: {type: Int32, primary: true},
+    id: Primary32,
   }, false)
 end
 
 class StrinctBrokenMaleContact < Jennifer::View::Base
   view_name "male_contacts"
   mapping({
-    id:   {type: Int32, primary: true},
+    id:   Primary32,
     name: String,
   })
 end
@@ -321,7 +321,7 @@ end
 class StrictMaleContactWithExtraField < Jennifer::View::Base
   view_name "male_contacts"
   mapping({
-    id:            {type: Int32, primary: true},
+    id:            Primary32,
     missing_field: String,
   })
 end
@@ -329,7 +329,7 @@ end
 class MaleContactWithDescription < Jennifer::View::Base
   view_name "male_contacts"
   mapping({
-    id:          {type: Int32, primary: true},
+    id:          Primary32,
     description: String,
   }, false)
 end

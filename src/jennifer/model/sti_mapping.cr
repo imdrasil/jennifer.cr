@@ -48,17 +48,14 @@ module Jennifer
           {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
             {% properties[key] = {type: value} %}
           {% end %}
-          {%
-            _type = properties[key][:type]
-            _s_type = properties[key][:stringified_type] = _type.stringify
-          %}
-          {% if _s_type =~ nillable_regexp %}
+          {% properties[key][:stringified_type] = properties[key][:type].stringify %}
+          {% if properties[key][:stringified_type] =~ nillable_regexp %}
             {%
               properties[key][:null] = true
-              properties[key][:parsed_type] = _s_type
+              properties[key][:parsed_type] = properties[key][:stringified_type]
             %}
           {% else %}
-            {% properties[key][:parsed_type] = properties[key][:null] ? _type.stringify + "?" : _type.stringify %}
+            {% properties[key][:parsed_type] = properties[key][:null] ? properties[key][:stringified_type] + "?" : properties[key][:stringified_type] %}
           {% end %}
           {% add_default_constructor = add_default_constructor && (properties[key][:null] || properties[key].keys.includes?(:default)) %}
         {% end %}
@@ -122,14 +119,10 @@ module Jennifer
         end
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))
-          # TODO: check why we are doing this
+          # TODO: try to make the "type" field to be customizable
           values["type"] = "{{@type.id}}"
           super
-          {% left_side = [] of String %}
-          {% for key in properties.keys %}
-            {% left_side << "@#{key.id}" %}
-          {% end %}
-          {{left_side.join(", ").id}} = _sti_extract_attributes(values)
+          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _sti_extract_attributes(values)
         end
 
         def initialize(values : Hash | NamedTuple, @new_record)

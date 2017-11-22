@@ -138,33 +138,24 @@ module Jennifer
           {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
             {% properties[key] = {type: value} %}
           {% end %}
-          {%
-            _type = properties[key][:type]
-            _s_type = properties[key][:stringified_type] = properties[key][:type].stringify
-          %}
-          {% if _s_type == primary_32 %}
-            {%
-              properties[key][:primary] = true
-            %}
-          {% elsif _s_type == primary_64 %}
-            {%
-              properties[key][:primary] = true
-            %}
+          {% properties[key][:stringified_type] = properties[key][:type].stringify %}
+          {% if properties[key][:stringified_type] == primary_32 || properties[key][:stringified_type] == primary_64 %}
+            {% properties[key][:primary] = true %}
           {% end %}
           {% if properties[key][:primary] %}
             {%
               primary = key
               primary_type = properties[key][:type]
-              primary_auto_incrementable = autoincrementable_str_types.includes?(_s_type)
+              primary_auto_incrementable = autoincrementable_str_types.includes?(properties[key][:stringified_type])
             %}
           {% end %}
-          {% if _s_type =~ nillable_regexp %}
+          {% if properties[key][:stringified_type] =~ nillable_regexp %}
             {%
               properties[key][:null] = true
-              properties[key][:parsed_type] = _s_type
+              properties[key][:parsed_type] = properties[key][:stringified_type]
             %}
           {% else %}
-            {% properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? _type.stringify + "?" : _type.stringify %}
+            {% properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? properties[key][:stringified_type] + "?" : properties[key][:stringified_type] %}
           {% end %}
           {% add_default_constructor = add_default_constructor && (properties[key][:primary] || properties[key][:null] || properties[key].keys.includes?(:default)) %}
         {% end %}
@@ -187,11 +178,7 @@ module Jennifer
         # Creates object from `DB::ResultSet`
         def initialize(%pull : DB::ResultSet)
           @new_record = false
-          {% left_side = [] of String %}
-          {% for key in properties.keys %}
-            {% left_side << "@#{key.id}" %}
-          {% end %}
-          {{left_side.join(", ").id}} = _extract_attributes(%pull)
+          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(%pull)
         end
 
         # Extracts arguments due to mapping from *pull* and returns tuple for
@@ -308,11 +295,7 @@ module Jennifer
         end
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))
-          {% left_side = [] of String %}
-          {% for key in properties.keys %}
-            {% left_side << "@#{key.id}" %}
-          {% end %}
-          {{left_side.join(", ").id}} = _extract_attributes(values)
+          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
         def initialize(values : Hash | NamedTuple, @new_record)
@@ -320,15 +303,6 @@ module Jennifer
         end
 
         #def attributes=(values : Hash)
-        # {% for key, value in properties %}
-        #    if !values[:{{key.id}}]?.nil?
-        #      %var{key.id} = values[:{{key.id}}]
-        #    elsif !values["{{key.id}}"]?.nil?
-        #      %var{key.id} = values["{{key.id}}"]
-        #    else
-        #      %found{key.id} = false
-        #    end
-        #  {% end %}
         #end
 
         {% if add_default_constructor %}
@@ -409,11 +383,7 @@ module Jennifer
           raise ::Jennifer::RecordNotFound.new("It is not persisted yet") if new_record?
           this = self
           self.class.where { this.class.primary == this.primary }.each_result_set do |rs|
-            {% left_side = [] of String %}
-            {% for key in properties.keys %}
-              {% left_side << "@#{key.id}" %}
-            {% end %}
-            {{left_side.join(", ").id}} = _extract_attributes(rs)
+            {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(rs)
           end
           __refresh_changes
           __refresh_relation_retrieves

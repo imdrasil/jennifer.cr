@@ -17,14 +17,18 @@ describe Jennifer::View::Base do
 
   describe "::primary_field_type" do
     it "returns type of primary field" do
-      MaleContact.primary_field_type.should eq(Int32)
+      MaleContact.primary_field_type.should eq(Int32?)
     end
   end
 
   describe "::table_name" do
+    pending "add" do
+    end
   end
 
   describe "::c" do
+    pending "add" do
+    end
   end
 
   describe "%scope" do

@@ -50,13 +50,13 @@ module Jennifer
 
       def self.create
         r = Adapter.adapter_class.create_database
-        puts "DB created!"
+        puts "DB is created!"
         r
       end
 
       def self.drop
-        puts Adapter.adapter_class.drop_database
-        puts "DB droped"
+        Adapter.adapter_class.drop_database
+        puts "DB is dropped!"
       end
 
       def self.rollback(options : Hash(Symbol, DBAny))

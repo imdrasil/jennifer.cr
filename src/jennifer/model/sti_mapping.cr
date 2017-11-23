@@ -36,20 +36,28 @@ module Jennifer
           super + FIELD_NAMES
         end
 
-        # generating hash with options
+        # NOTE: next section is a copy-paste from mapping.cr (with removing any parsing of primary option)
+        {%
+          add_default_constructor = @type.superclass.constant("WITH_DEFAULT_CONSTRUCTOR")
+          nillable_regexp = /(::Nil)|( Nil)/
+          json_regexp = /JSON::Any/
+        %}
+
+        # generates hash with options
         {% for key, value in properties %}
           {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
             {% properties[key] = {type: value} %}
+          {% end %}
+          {% properties[key][:stringified_type] = properties[key][:type].stringify %}
+          {% if properties[key][:stringified_type] =~ nillable_regexp %}
+            {%
+              properties[key][:null] = true
+              properties[key][:parsed_type] = properties[key][:stringified_type]
+            %}
           {% else %}
-            {% properties[key][:type] = properties[key][:type] %}
+            {% properties[key][:parsed_type] = properties[key][:null] ? properties[key][:stringified_type] + "?" : properties[key][:stringified_type] %}
           {% end %}
-          {% if properties[key][:primary] %}
-            {% primary = key %}
-            {% primary_type = properties[key][:type] %}
-            {% primary_auto_incrementable = ["Int32", "Int64"].includes?(properties[key][:type].stringify) %}
-          {% end %}
-          {% t_string = properties[key][:type].stringify %}
-          {% properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? t_string + "?" : t_string %}
+          {% add_default_constructor = add_default_constructor && (properties[key][:null] || properties[key].keys.includes?(:default)) %}
         {% end %}
 
         __field_declaration({{properties}}, false)
@@ -111,23 +119,24 @@ module Jennifer
         end
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))
-          # TODO: check why we are doing this
+          # TODO: try to make the "type" field to be customizable
           values["type"] = "{{@type.id}}"
           super
-          {% left_side = [] of String %}
-          {% for key in properties.keys %}
-            {% left_side << "@#{key.id}" %}
-          {% end %}
-          {{left_side.join(", ").id}} = _sti_extract_attributes(values)
+          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _sti_extract_attributes(values)
         end
 
         def initialize(values : Hash | NamedTuple, @new_record)
           initialize(values)
         end
 
-        def initialize
-          initialize({} of String => ::Jennifer::DBAny)
-        end
+        {% if add_default_constructor %}
+          WITH_DEFAULT_CONSTRUCTOR = true
+          def initialize
+            initialize({} of String => ::Jennifer::DBAny)
+          end
+        {% else %}
+          WITH_DEFAULT_CONSTRUCTOR = false
+        {% end %}
 
         def changed?
           super ||
@@ -177,7 +186,7 @@ module Jennifer
                 local = value.as({{value[:parsed_type].id}})
                 @{{key.id}} = local
               else
-                raise ::Jennifer::BaseException.new("rong type for #{name} : #{value.class}")
+                raise ::Jennifer::BaseException.new("Wrong type for #{name} : #{value.class}")
               end
             {% end %}
             end
@@ -194,7 +203,7 @@ module Jennifer
                 if value.is_a?({{value[:parsed_type].id}})
                   self.{{key.id}} = value.as({{value[:parsed_type].id}})
                 else
-                  raise ::Jennifer::BaseException.new("rong type for #{name} : #{value.class}")
+                  raise ::Jennifer::BaseException.new("Wrong type for #{name} : #{value.class}")
                 end
             {% end %}
           {% end %}
@@ -220,8 +229,8 @@ module Jennifer
         def attributes_hash
           hash = super
           {% for key, value in properties %}
-            {% if !value[:null] || value[:primary] %}
-              hash.delete(:{{key}}) if hash[:{{key}}]?.nil?
+            {% if !value[:null] %}
+              hash.delete(:{{key.id}}) unless hash.has_key?(:{{key.id}})
             {% end %}
           {% end %}
           hash
@@ -232,16 +241,14 @@ module Jennifer
           args = res[:args]
           fields = res[:fields]
           {% for key, value in properties %}
-            {% unless value[:primary] %}
-              if @{{key.id}}_changed
-                args << {% if value[:type].stringify == "JSON::Any" %}
-                          @{{key.id}}.to_json
-                        {% else %}
-                          @{{key.id}}
-                        {% end %}
-                fields << "{{key.id}}"
-              end
-            {% end %}
+            if @{{key.id}}_changed
+              args << {% if value[:stringified_type] =~ json_regexp %}
+                        @{{key.id}}.to_json
+                      {% else %}
+                        @{{key.id}}
+                      {% end %}
+              fields << "{{key.id}}"
+            end
           {% end %}
           {args: args, fields: fields}
         end
@@ -251,14 +258,12 @@ module Jennifer
           args = res[:args]
           fields = res[:fields]
           {% for key, value in properties %}
-            {% unless value[:primary] && primary_auto_incrementable %}
-              args << {% if value[:type].stringify == "JSON::Any" %}
-                        (@{{key.id}} ? @{{key.id}}.to_json : nil)
-                      {% else %}
-                        @{{key.id}}
-                      {% end %}
-              fields << {{key.stringify}}
-            {% end %}
+            args << {% if value[:stringified_type] =~ json_regexp %}
+                      (@{{key.id}} ? @{{key.id}}.to_json : nil)
+                    {% else %}
+                      @{{key.id}}
+                    {% end %}
+            fields << {{key.stringify}}
           {% end %}
 
           { args: args, fields: fields }

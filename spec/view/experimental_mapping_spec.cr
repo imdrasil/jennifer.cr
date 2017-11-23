@@ -70,7 +70,14 @@ describe Jennifer::View::ExperimentalMapping do
   describe "%mapping" do
     describe "#initialize" do
       context "from result set" do
-        pending "properly creates object" do
+        it "properly creates object" do
+          Factory.create_contact(gender: "male")
+          count = 0
+          MaleContact.all.each_result_set do |rs|
+            MaleContact.build(rs)
+            count += 1
+          end
+          count.should eq(1)
         end
       end
 
@@ -136,6 +143,12 @@ describe Jennifer::View::ExperimentalMapping do
           c.name.should eq("b")
         end
       end
+
+      describe "::_{{attribute}}" do
+        c = MaleContact._name
+        it { c.table.should eq(MaleContact.view_name) }
+        it { c.field.should eq("name") }
+      end
     end
 
     describe "criteria attribute class shortcut" do
@@ -165,13 +178,43 @@ describe Jennifer::View::ExperimentalMapping do
     end
 
     describe "#to_h" do
-      pending "creates hash with symbol keys" do
+      it "creates hash with symbol keys" do
+        Factory.create_contact(age: 19, gender: "male")
+        MaleContact.all.first!.to_h[:age].should eq(19)
       end
     end
 
-    describe "#attribute_hash" do
-      pending "creates hash with attributes" do
+    describe "#to_str_h" do
+      it "creates hash with string keys" do
+        Factory.create_contact(age: 19, gender: "male")
+        MaleContact.all.first!.to_str_h["age"].should eq(19)
       end
+    end
+
+    describe "#attribute" do
+      it "returns attribute value by given name" do
+        c = MaleContact.build(Factory.build_contact(name: "Jessy").to_h)
+
+        c.attribute("name").should eq("Jessy")
+        c.attribute(:name).should eq("Jessy")
+      end
+    end
+
+    describe "#attributes_hash" do
+      pending "makes to_h and removes all nil values" do
+      end
+    end
+  end
+
+  describe "::strict_mapping?" do
+    it "returns false if mapping doesn't describe all db view fields" do
+      MaleContact.strict_mapping?.should eq(false)
+    end
+  end
+
+  describe "::field_names" do
+    it "returns array of defined fields" do
+      MaleContact.field_names.should eq(%w(id name gender age))
     end
   end
 end

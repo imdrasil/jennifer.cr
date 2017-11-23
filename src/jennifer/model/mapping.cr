@@ -1,3 +1,6 @@
+alias Primary32 = Int32
+alias Primary64 = Int64
+
 module Jennifer
   module Model
     module Mapping
@@ -56,7 +59,7 @@ module Jennifer
             end
 
             def self.primary_field_type
-              {{value[:type]}}
+              {{value[:parsed_type].id}}
             end
 
             {% if primary_auto_incrementable %}
@@ -119,22 +122,41 @@ module Jennifer
           FIELD_NAMES
         end
 
-        {% add_default_constructor = true %}
-        {% primary_auto_incrementable = false %}
-        {% primary = nil %}
+        {%
+          primary = nil
+          primary_auto_incrementable = false
+          add_default_constructor = true
+          nillable_regexp = /(::Nil)|( Nil)/
+          json_regexp = /JSON::Any/
+          primary_32 = "Primary32"
+          primary_64 = "Primary64"
+          autoincrementable_str_types = ["Int32", "Int64", primary_32, primary_64]
+        %}
 
         # generates hash with options
         {% for key, value in properties %}
           {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
             {% properties[key] = {type: value} %}
           {% end %}
-          {% if properties[key][:primary] %}
-            {% primary = key %}
-            {% primary_type = properties[key][:type] %}
-            {% primary_auto_incrementable = ["Int32", "Int64"].includes?(properties[key][:type].stringify) %}
+          {% properties[key][:stringified_type] = properties[key][:type].stringify %}
+          {% if properties[key][:stringified_type] == primary_32 || properties[key][:stringified_type] == primary_64 %}
+            {% properties[key][:primary] = true %}
           {% end %}
-          {% t_string = properties[key][:type].stringify %}
-          {% properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? t_string + "?" : t_string %}
+          {% if properties[key][:primary] %}
+            {%
+              primary = key
+              primary_type = properties[key][:type]
+              primary_auto_incrementable = autoincrementable_str_types.includes?(properties[key][:stringified_type])
+            %}
+          {% end %}
+          {% if properties[key][:stringified_type] =~ nillable_regexp %}
+            {%
+              properties[key][:null] = true
+              properties[key][:parsed_type] = properties[key][:stringified_type]
+            %}
+          {% else %}
+            {% properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? properties[key][:stringified_type] + "?" : properties[key][:stringified_type] %}
+          {% end %}
           {% add_default_constructor = add_default_constructor && (properties[key][:primary] || properties[key][:null] || properties[key].keys.includes?(:default)) %}
         {% end %}
 
@@ -156,11 +178,7 @@ module Jennifer
         # Creates object from `DB::ResultSet`
         def initialize(%pull : DB::ResultSet)
           @new_record = false
-          {% left_side = [] of String %}
-          {% for key in properties.keys %}
-            {% left_side << "@#{key.id}" %}
-          {% end %}
-          {{left_side.join(", ").id}} = _extract_attributes(%pull)
+          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(%pull)
         end
 
         # Extracts arguments due to mapping from *pull* and returns tuple for
@@ -277,11 +295,7 @@ module Jennifer
         end
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))
-          {% left_side = [] of String %}
-          {% for key in properties.keys %}
-            {% left_side << "@#{key.id}" %}
-          {% end %}
-          {{left_side.join(", ").id}} = _extract_attributes(values)
+          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
         def initialize(values : Hash | NamedTuple, @new_record)
@@ -289,18 +303,10 @@ module Jennifer
         end
 
         #def attributes=(values : Hash)
-        # {% for key, value in properties %}
-        #    if !values[:{{key.id}}]?.nil?
-        #      %var{key.id} = values[:{{key.id}}]
-        #    elsif !values["{{key.id}}"]?.nil?
-        #      %var{key.id} = values["{{key.id}}"]
-        #    else
-        #      %found{key.id} = false
-        #    end
-        #  {% end %}
         #end
 
         {% if add_default_constructor %}
+          WITH_DEFAULT_CONSTRUCTOR = true
           # Default constructor without any fields
           def initialize
             {% for key, value in properties %}
@@ -325,6 +331,8 @@ module Jennifer
             o.__after_initialize_callback
             o
           end
+        {% else %}
+          WITH_DEFAULT_CONSTRUCTOR = false
         {% end %}
 
         def save!(skip_validation = false)
@@ -375,11 +383,7 @@ module Jennifer
           raise ::Jennifer::RecordNotFound.new("It is not persisted yet") if new_record?
           this = self
           self.class.where { this.class.primary == this.primary }.each_result_set do |rs|
-            {% left_side = [] of String %}
-            {% for key in properties.keys %}
-              {% left_side << "@#{key.id}" %}
-            {% end %}
-            {{left_side.join(", ").id}} = _extract_attributes(rs)
+            {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(rs)
           end
           __refresh_changes
           __refresh_relation_retrieves
@@ -490,7 +494,7 @@ module Jennifer
           {% for key, value in properties %}
             {% unless value[:primary] %}
               if @{{key.id}}_changed
-                args << {% if value[:type].stringify == "JSON::Any" %}
+                args << {% if value[:stringified_type] =~ json_regexp %}
                           @{{key.id}}.to_json
                         {% else %}
                           @{{key.id}}
@@ -508,7 +512,7 @@ module Jennifer
           fields = [] of String
           {% for key, value in properties %}
             {% unless value[:primary] && primary_auto_incrementable %}
-              args << {% if value[:type].stringify == "JSON::Any" %}
+              args << {% if value[:stringified_type] =~ json_regexp %}
                         (@{{key.id}} ? @{{key.id}}.to_json : nil)
                       {% else %}
                         @{{key.id}}

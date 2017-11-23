@@ -1,6 +1,32 @@
 require "../spec_helper"
 
 describe Jennifer::Model::STIMapping do
+  describe "%mapping" do
+    context "types" do
+      context "nillable" do
+        context "using ? without named tuple" do
+          it "parses type as nillable" do
+            typeof(Factory.build_facebook_profile.uid).should eq(String?)
+          end
+        end
+
+        context "using :null option" do
+          it "parses type as nilable" do
+            typeof(Factory.build_twitter_profile.email).should eq(String?)
+          end
+        end
+      end
+    end
+
+    pending "defines default constructor if all fields are nilable or have default values and superclass has default constructor" do
+      TwitterProfile::WITH_DEFAULT_CONSTRUCTOR.should be_true
+    end
+
+    it "doesn't define default constructor if all fields are nilable or have default values" do
+      TwitterProfile::WITH_DEFAULT_CONSTRUCTOR.should be_false
+    end
+  end
+
   describe "#initialize" do
     context "ResultSet" do
       it "properly loads from db" do

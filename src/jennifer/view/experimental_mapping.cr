@@ -42,30 +42,22 @@ module Jennifer
             end
 
             def self.primary_field_type
-              {{value["type"].id}}
+              {{value["parsed_type"].id}}
             end
           {% end %}
         {% end %}
       end
 
       macro __instance_methods
-        {% strict = true %}
+        {% strict = STRICT_MAPPNIG %}
 
         # Creates object from `DB::ResultSet`
         def initialize(%pull : DB::ResultSet)
-          {% left_side = [] of String %}
-          {% for key in FIELDS.keys %}
-            {% left_side << "@#{key.id}" %}
-          {% end %}
-          {{left_side.join(", ").id}} = _extract_attributes(%pull)
+          {{FIELDS.keys.map { |f| "@#{f.id}" }.join(", ").id}} = _extract_attributes(%pull)
         end
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))
-          {% left_side = [] of String %}
-          {% for key in FIELDS.keys %}
-            {% left_side << "@#{key.id}" %}
-          {% end %}
-          {{left_side.join(", ").id}} = _extract_attributes(values)
+          {{FIELDS.keys.map { |f| "@#{f.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
         # Accepts symbol hash or named tuple, stringify it and calls
@@ -285,8 +277,14 @@ module Jennifer
           FIELDS.keys
         end
 
-        {% primary_auto_incrementable = false %}
-        {% primary = nil %}
+        {%
+          primary = nil
+          nillable_regexp = /(::Nil)|( Nil)/
+          json_regexp = /JSON::Any/
+          primary_32 = "Primary32"
+          primary_64 = "Primary64"
+          autoincrementable_str_types = ["Int32", "Int64", primary_32, primary_64]
+        %}
 
         # generates hash with options
         {% for key, opt in properties %}
@@ -297,26 +295,36 @@ module Jennifer
           {% else %}
             {% FIELDS[_key] = {} of String => String %}
             {% for attr, value in opt %}
-              {% FIELDS[_key][attr.id.stringify] = properties[key][attr].stringify %}
+              {% FIELDS[_key][attr.id.stringify] = value.stringify %}
             {% end %}
+          {% end %}
+          {% stringified_type = properties[key][:stringified_type] = properties[key][:type].stringify %}
+          {% if stringified_type == primary_32 || stringified_type == primary_64 %}
+            {%
+              properties[key][:primary] = true
+              FIELDS[_key]["primary"] = "true"
+            %}
           {% end %}
           {% if properties[key][:primary] %}
             {% primary = key %}
           {% end %}
-          {% t_string = properties[key][:type].stringify %}
-          {% properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? t_string + "?" : t_string %}
-          {% FIELDS[_key]["parsed_type"] = properties[key][:parsed_type] %}
+          {% if stringified_type =~ nillable_regexp %}
+            {%
+              properties[key][:null] = true
+              FIELDS[_key]["parsed_type"] = properties[key][:parsed_type] = stringified_type
+            %}
+          {% else %}
+            {%
+              properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? stringified_type + "?" : stringified_type
+              FIELDS[_key]["parsed_type"] = properties[key][:parsed_type]
+            %}
+          {% end %}
         {% end %}
 
-        # TODO: find way to allow model definition without any primary field
+        # TODO: find way to allow view definition without any primary field
         {% if primary == nil %}
           {% raise "Model #{@type} has no defined primary field. For now model without primary field is not allowed" %}
         {% end %}
-
-        # Returns if primary field is autoincrementable
-        def self.primary_auto_incrementable?
-          {{primary_auto_incrementable}}
-        end
       end
 
       macro mapping(**properties)

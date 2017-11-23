@@ -25,26 +25,26 @@ class Contact < ApplicationRecord
   with_timestamps
   {% if env("DB") == "postgres" || env("DB") == nil %}
     mapping(
-      id:          {type: Int32, primary: true},
+      id:          Primary32,
       name:        String,
-      ballance:    {type: PG::Numeric, null: true},
+      ballance:    PG::Numeric?,
       age:         {type: Int32, default: 10},
-      gender:      {type: String, default: "male", null: true},
-      description: {type: String, null: true},
-      created_at:  {type: Time, null: true},
-      updated_at:  {type: Time, null: true},
-      tags: {type: Array(Int32)? },
+      gender:      {type: String?, default: "male"},
+      description: String?,
+      created_at:  Time | Nil,
+      updated_at:  Time?,
+      tags: Array(Int32)?,
     )
   {% else %}
     mapping(
-      id:          {type: Int32, primary: true},
+      id:          Primary32,
       name:        String,
-      ballance:    {type: Float64, null: true},
+      ballance:    Float64?,
       age:         {type: Int32, default: 10},
-      gender:      {type: String, default: "male", null: true},
-      description: {type: String, null: true},
-      created_at:  {type: Time, null: true},
-      updated_at:  {type: Time, null: true},
+      gender:      {type: String?, default: "male"},
+      description: String?,
+      created_at:  Time | Nil,
+      updated_at:  Time?,
     )
   {% end %}
 
@@ -78,8 +78,8 @@ class Address < Jennifer::Model::Base
     id: {type: Int32, primary: true},
     main: Bool,
     street: String,
-    contact_id: {type: Int32, null: true},
-    details: {type: JSON::Any, null: true}
+    contact_id: Int32?,
+    details: JSON::Any?
   )
   validates_format :street, /st\.|street/
 
@@ -103,7 +103,7 @@ end
 class Passport < Jennifer::Model::Base
   mapping(
     enn: {type: String, primary: true},
-    contact_id: {type: Int32, null: true}
+    contact_id: Int32?
   )
 
   validates_with [EnnValidator]
@@ -124,7 +124,7 @@ end
 
 class Profile < ApplicationRecord
   mapping(
-    id: {type: Int32, primary: true},
+    id: Primary32,
     login: String,
     contact_id: Int32?,
     type: String
@@ -135,7 +135,7 @@ end
 
 class FacebookProfile < Profile
   sti_mapping(
-    uid: String
+    uid: String? # for testing purposes
   )
 
   validates_length :uid, is: 4
@@ -145,14 +145,14 @@ end
 
 class TwitterProfile < Profile
   sti_mapping(
-    email: String
+    email: {type: String, null: true} # for testing purposes
   )
 end
 
 class Country < Jennifer::Model::Base
   mapping(
-    id: {type: Int32, primary: true},
-    name: {type: String, null: true}
+    id: Primary32,
+    name: String?
   )
 
   validates_exclusion :name, ["asd", "qwe"]
@@ -201,7 +201,7 @@ end
 
 class OneFieldModel < Jennifer::Model::Base
   mapping(
-    id: {type: Int32, primary: true}
+    id: Primary32
   )
 end
 
@@ -209,7 +209,7 @@ class OneFieldModelWithExtraArgument < Jennifer::Model::Base
   table_name "one_field_models"
 
   mapping(
-    id: {type: Int32, primary: true},
+    id: Primary32,
     missing_field: String
   )
 end
@@ -218,8 +218,8 @@ class ContactWithNotAllFields < Jennifer::Model::Base
   table_name "contacts"
 
   mapping(
-    id: {type: Int32, primary: true},
-    name: {type: String, null: true},
+    id: Primary32,
+    name: String?,
   )
 end
 
@@ -227,8 +227,8 @@ class ContactWithNotStrictMapping < Jennifer::Model::Base
   table_name "contacts"
 
   mapping({
-    id:   {type: Int32, primary: true},
-    name: {type: String, null: true},
+    id:   Primary32,
+    name: String?,
   }, false)
 end
 
@@ -236,11 +236,11 @@ class ContactWithDependencies < Jennifer::Model::Base
   table_name "contacts"
 
   mapping({
-    id:          {type: Int32, primary: true},
-    name:        {type: String, null: true},
-    description: {type: String, null: true},
+    id:          Primary32,
+    name:        String?,
+    description: String?,
     age:         {type: Int32, default: 10},
-    gender:      {type: String, default: "male", null: true},
+    gender:      {type: String?, default: "male"},
   }, false)
 
   has_many :addresses, Address, dependent: :delete, foreign: :contact_id
@@ -255,7 +255,7 @@ end
 class ContactWithCustomField < Jennifer::Model::Base
   table_name "contacts"
   mapping({
-    id:   {type: Int32, primary: true},
+    id:   Primary32,
     name: String,
   }, false)
 end
@@ -263,7 +263,7 @@ end
 class ContactWithInValidation < Jennifer::Model::Base
   table_name "contacts"
   mapping({
-    id:   {type: Int32, primary: true},
+    id:   Primary32,
     name: String?,
   }, false)
 
@@ -273,15 +273,15 @@ end
 class ContactWithNillableName < Jennifer::Model::Base
   table_name "contacts"
   mapping({
-    id:   {type: Int32, primary: true},
-    name: {type: String, null: true},
+    id:   Primary32,
+    name: String?,
   }, false)
 end
 
 class FemaleContact < Jennifer::Model::Base
   mapping({
-    id:   {type: Int32, primary: true},
-    name: {type: String, null: true},
+    id:   Primary32,
+    name: String?,
   }, false)
 end
 
@@ -291,7 +291,7 @@ end
 
 class MaleContact < Jennifer::View::Base
   mapping({
-    id:     {type: Int32, primary: true},
+    id:     Primary32,
     name:   String,
     gender: String,
     age:    Int32,
@@ -306,14 +306,14 @@ class FakeContactView < Jennifer::View::Base
   view_name "male_contacs"
 
   mapping({
-    id: {type: Int32, primary: true},
+    id: Primary32,
   }, false)
 end
 
 class StrinctBrokenMaleContact < Jennifer::View::Base
   view_name "male_contacts"
   mapping({
-    id:   {type: Int32, primary: true},
+    id:   Primary32,
     name: String,
   })
 end
@@ -321,7 +321,7 @@ end
 class StrictMaleContactWithExtraField < Jennifer::View::Base
   view_name "male_contacts"
   mapping({
-    id:            {type: Int32, primary: true},
+    id:            Primary32,
     missing_field: String,
   })
 end
@@ -329,7 +329,7 @@ end
 class MaleContactWithDescription < Jennifer::View::Base
   view_name "male_contacts"
   mapping({
-    id:          {type: Int32, primary: true},
+    id:          Primary32,
     description: String,
   }, false)
 end

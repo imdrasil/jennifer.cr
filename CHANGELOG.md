@@ -1,3 +1,55 @@
+# 0.4.2 (24-11-2017)
+
+**SqlGenerator**
+
+* rename `#trancate` to `#truncate`
+
+**Migration**
+
+* rename `TableBuilder::DropInde` to `TableBuilder::DropIndex`
+
+* remove printing out redundand execution information during db drop and create
+
+* remove `Migration::Base::TABLE_NAME` constant
+
+* allow to pass `QueryBuilder::Query` as source to the `CreateMaterializedView` (postgres only)
+
+**Model**
+
+* move `Base#build` method witout arguments to `Mapping` module under the `%mapping`
+
+* added `validates_presence_of` validation macros
+
+* fixed callback invokation from parent classes
+
+* add `allow_blank` key to `validates_inclusion`, `validates_exclusion`, `validates_format`
+
+* add `ValidationMessages` module which includes methods generating validation error messages
+
+* add `Primary32` and `Primary64` shortcuts for `Int32` and `Int64` primary field declarations for model and view
+
+* allow use nil usions instead of `null: true` named tuple option
+
+**QueryBuilder**
+
+* `#count` method is moved from `Executables` module to the `Aggregations` one
+
+* changed method signature of `#find_in_batches`
+
+* add `#find_each` - works same way as `#find_in_batches` but yields each record instead of array
+
+* add `#ordered?` method to `Ordering` module
+
+* switch `Criteria#hash` to use `object_id` as seed
+
+* add `Query#eal?`
+
+* add `Query#clone` and all related methods
+
+* add `Query#except` - creates clone except given clauses
+
+* make `IModelQuery` class as new superclass of `ModelQuery(T)`; move all methods no depending on `T` to the new class
+
 # 0.4.1 (20-10-2017)
 
 **Config**

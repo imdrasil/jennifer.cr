@@ -195,6 +195,8 @@ PostgreSQL is used by default, but MySql is also supported while running tests b
 $ DB=mysql crystal spec
 ```
 
+Also you can override used user name and password using `DB_USER` and `DB_PASSWORD` env variables.
+
 ## Documentation
 
 Self documentation is not fully support yet but docs can be compiled using this shell script:

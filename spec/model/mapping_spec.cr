@@ -164,10 +164,15 @@ describe Jennifer::Model::Mapping do
 
     describe "::field_count" do
       it "returns correct number of model fields" do
-        proper_count =
-          postgres_only { 9 }
-        mysql_only { 8 }
-        Contact.field_count.should eq(proper_count)
+        postgres_only do
+          proper_count = 9
+          Contact.field_count.should eq(proper_count)
+        end
+
+        mysql_only do
+          proper_count = 8
+          Contact.field_count.should eq(proper_count)
+        end
       end
     end
 

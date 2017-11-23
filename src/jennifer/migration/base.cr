@@ -1,8 +1,6 @@
 module Jennifer
   module Migration
     abstract class Base
-      TABLE_NAME = "migration_versions"
-
       delegate create_data_type, to: Adapter.adapter
       delegate table_exists?, index_exists?, column_exists?, view_exists?, to: Adapter.adapter
 
@@ -13,7 +11,7 @@ module Jennifer
         to_s[-17..-1]
       end
 
-      def create_table(name, id = true)
+      def create_table(name, id : Bool = true)
         tb = TableBuilder::CreateTable.new(name)
         tb.integer(:id, {:primary => true, :auto_increment => true}) if id
         yield tb
@@ -46,17 +44,17 @@ module Jennifer
         TableBuilder::DropTable.new(name).process
       end
 
-      def change_table(name)
+      def change_table(name : String | Symbol)
         tb = TableBuilder::ChangeTable.new(name)
         yield tb
         tb.process
       end
 
-      def create_view(name, source)
+      def create_view(name : String | Symbol, source)
         TableBuilder::CreateView.new(name.to_s, source).process
       end
 
-      def drop_view(name)
+      def drop_view(name : String | Symbol)
         TableBuilder::DropView.new(name.to_s).process
       end
 

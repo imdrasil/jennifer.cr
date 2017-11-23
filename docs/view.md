@@ -62,7 +62,7 @@ class AddMaterializedView20170829000433679 < Jennifer::Migration::Base
   def up
     create_materialized_view(
       VIEW_NAME,
-      "SELECT * FROM contacts WHERE gender = 'female'"
+      Contact.all.where { _gender == sql("'female'") }
     )
   end
 
@@ -71,7 +71,9 @@ class AddMaterializedView20170829000433679 < Jennifer::Migration::Base
   end
 end
 ```
-For now view request should be string based. Any column you want to extract should be listed in the `SELECT` clause of the request.
+As for non materialized view here all arguments should be escaped explicitly as well.
+
+> Until 0.5.0 source could be represented as stringgified raw sql, but this will be removed.
 
 For defining materialized view `Jennfer::Model::Base` superclass should be used. So example of defining created before materialized view looks like:
 

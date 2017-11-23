@@ -54,7 +54,7 @@ module Jennifer
         raise BadQuery.new(e.message, _query, args)
       end
 
-      def scalar(_query, args = [] of DB::Any)
+      def scalar(_query, args : Array(DB::Any) = [] of DB::Any)
         time = Time.now.ticks
         res = with_connection { |conn| conn.scalar(_query, args) }
         time = Time.now.ticks - time
@@ -134,7 +134,7 @@ module Jennifer
         raise e
       end
 
-      def self.join_table_name(table1, table2)
+      def self.join_table_name(table1 : String | Symbol, table2 : String | Symbol)
         [table1.to_s, table2.to_s].sort.join("_")
       end
 
@@ -157,7 +157,7 @@ module Jennifer
         end
       end
 
-      def self.extract_arguments(hash)
+      def self.extract_arguments(hash : Hash)
         args = [] of DBAny
         fields = [] of String
         hash.each do |key, value|
@@ -171,7 +171,7 @@ module Jennifer
         escape_string(arr.size)
       end
 
-      def self.escape_string(size = 1)
+      def self.escape_string(size : Int32 = 1)
         SqlGenerator.escape_string(size)
       end
 
@@ -183,7 +183,7 @@ module Jennifer
 
       def self.create_database
         db_connection do |db|
-          puts db.exec "CREATE DATABASE #{Config.db}"
+          db.exec "CREATE DATABASE #{Config.db}"
         end
       end
 
@@ -196,32 +196,33 @@ module Jennifer
       end
 
       # filter out value; should be refactored
+      def self.t(field : Nil)
+        "NULL"
+      end
+
+      def self.t(field : String)
+        "'" + field + "'"
+      end
+
       def self.t(field)
-        case field
-        when Nil
-          "NULL"
-        when String
-          "'" + field + "'"
-        else
-          field
-        end
+        field
       end
 
       # migration ========================
 
       def ready_to_migrate!
-        return if table_exists?(Migration::Base::TABLE_NAME)
-        tb = Migration::TableBuilder::CreateTable.new(Migration::Base::TABLE_NAME)
+        return if table_exists?(Migration::Version.table_name)
+        tb = Migration::TableBuilder::CreateTable.new(Migration::Version.table_name)
         tb.integer(:id, {:primary => true, :auto_increment => true})
           .string(:version, {:size => 17})
         create_table(tb)
       end
 
-      def rename_table(old_name, new_name)
+      def rename_table(old_name : String | Symbol, new_name : String | Symbol)
         exec "ALTER TABLE #{old_name.to_s} RENAME #{new_name.to_s}"
       end
 
-      def add_index(table, name, options)
+      def add_index(table : String | Symbol, name : String | Symbol, options)
         query = String.build do |s|
           s << "CREATE "
 
@@ -240,15 +241,15 @@ module Jennifer
         exec query
       end
 
-      def drop_index(table, name)
+      def drop_index(table : String | Symbol, name : String | Symbol)
         exec "DROP INDEX #{name} ON #{table}"
       end
 
-      def drop_column(table, name)
+      def drop_column(table : String | Symbol, name : String | Symbol)
         exec "ALTER TABLE #{table} DROP COLUMN #{name}"
       end
 
-      def add_column(table, name, opts)
+      def add_column(table : String | Symbol, name : String | Symbol, opts)
         query = String.build do |s|
           s << "ALTER TABLE " << table << " ADD COLUMN "
           column_definition(name, opts, s)
@@ -257,7 +258,7 @@ module Jennifer
         exec query
       end
 
-      def change_column(table, old_name, new_name, opts)
+      def change_column(table : String | Symbol, old_name : String | Symbol, new_name : String | Symbol, opts)
         query = String.build do |s|
           s << "ALTER TABLE " << table << " CHANGE COLUMN " << old_name << " "
           column_definition(new_name, opts, s)
@@ -282,29 +283,28 @@ module Jennifer
         exec buffer
       end
 
-      def create_enum(name, options)
+      def create_enum(name : String | Symbol, options)
         raise BaseException.new("Current adapter doesn't support this method.")
       end
 
-      def drop_enum(name, options)
+      def drop_enum(name : String | Symbol, options)
         raise BaseException.new("Current adapter doesn't support this method.")
       end
 
-      def change_enum(name, options)
+      def change_enum(name : String | Symbol, options)
         raise BaseException.new("Current adapter doesn't support this method.")
       end
 
-      def create_view(name, query, silent = true)
+      def create_view(name : String | Symbol, query, silent : Bool = true)
         buff = String.build do |s|
           s << "CREATE "
           s << "OR REPLACE " if silent
           s << "VIEW " << name << " AS " << SqlGenerator.select(query)
         end
-        args = query.select_args
-        exec parse_query(buff, args), args
+        exec buff
       end
 
-      def drop_view(name, silent = true)
+      def drop_view(name : String | Symbol, silent : Bool = true)
         buff = String.build do |s|
           s << "DROP VIEW "
           s << "IF EXISTS " if silent

@@ -68,7 +68,7 @@ module Jennifer
           @drop_columns.each { |c| Adapter.adapter.drop_column(@name, c) }
           @fields.each { |n, opts| Adapter.adapter.add_column(@name, n, opts) }
           @changed_columns.each do |n, opts|
-            Adapter.adapter.change_column(@name, n, opts[:new_name], opts)
+            Adapter.adapter.change_column(@name, n, opts[:new_name].as(String | Symbol), opts)
           end
           @indexes.each(&.process)
           @drop_index.each(&.process)

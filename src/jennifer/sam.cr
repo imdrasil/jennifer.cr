@@ -26,12 +26,12 @@ Sam.namespace "db" do
 
   desc "Drops database"
   task "drop" do |t, args|
-    puts Jennifer::Migration::Runner.drop
+    Jennifer::Migration::Runner.drop
   end
 
   desc "Creates database"
   task "create" do |t, args|
-    puts Jennifer::Migration::Runner.create
+    Jennifer::Migration::Runner.create
   end
 
   desc "Runs db:create and db:migrate"

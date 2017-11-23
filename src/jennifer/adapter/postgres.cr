@@ -113,7 +113,7 @@ module Jennifer
             .join("pg_namespace") { _oid == _pg_class__relnamespace }
             .where do
             (_attnum > 0) &
-              (_pg_namespace__nspname == Config.schema) &
+              (_pg_namespace__nspname == config.schema) &
               (_pg_class__relname == table) &
               _attisdropped.not
           end.count
@@ -125,7 +125,7 @@ module Jennifer
       def material_view_exists?(name)
         Query["pg_class"].join("pg_namespace") { _oid == _pg_class__relnamespace }.where do
           (_relkind == "m") &
-            (_pg_namespace__nspname == Config.schema) &
+            (_pg_namespace__nspname == config.schema) &
             (_relname == name)
         end.exists?
       end
@@ -145,7 +145,7 @@ module Jennifer
       def index_exists?(table, name)
         Query["pg_class"]
           .join("pg_namespace") { _oid == _pg_class__relnamespace }
-          .where { (_pg_class__relname == name) & (_pg_namespace__nspname == Config.schema) }
+          .where { (_pg_class__relname == name) & (_pg_namespace__nspname == config.schema) }
           .exists?
       end
 
@@ -305,9 +305,9 @@ module Jennifer
         io << " ARRAY" if options[:array]?
       end
 
-      def self.create_database
-        opts = [Config.db, "-O", Config.user, "-h", Config.host, "-U", Config.user]
-        Process.run("PGPASSWORD=#{Config.password} createdb \"${@}\"", opts, shell: true).inspect
+      def create_database
+        opts = [config.db, "-O", config.user, "-h", config.host, "-U", config.user]
+        Process.run("PGPASSWORD=#{config.password} createdb \"${@}\"", opts, shell: true).inspect
       end
 
       private def index_type_translate(name)
@@ -321,26 +321,26 @@ module Jennifer
         end
       end
 
-      def self.drop_database
+      def drop_database
         io = IO::Memory.new
-        opts = [Config.db, "-h", Config.host, "-U", Config.user]
-        s = Process.run("PGPASSWORD=#{Config.password} dropdb \"${@}\"", opts, shell: true, output: io, error: io)
+        opts = [config.db, "-h", config.host, "-U", config.user]
+        s = Process.run("PGPASSWORD=#{config.password} dropdb \"${@}\"", opts, shell: true, output: io, error: io)
         if s.exit_code != 0
           raise io.to_s
         end
       end
 
-      def self.generate_schema
+      def generate_schema
         io = IO::Memory.new
-        opts = ["-U", Config.user, "-d", Config.db, "-h", Config.host, "-s"]
-        s = Process.run("PGPASSWORD=#{Config.password} pg_dump \"${@}\"", opts, shell: true, output: io)
-        File.write(Config.structure_path, io.to_s)
+        opts = ["-U", config.user, "-d", config.db, "-h", config.host, "-s"]
+        s = Process.run("PGPASSWORD=#{config.password} pg_dump \"${@}\"", opts, shell: true, output: io)
+        File.write(config.structure_path, io.to_s)
       end
 
-      def self.load_schema
+      def load_schema
         io = IO::Memory.new
-        opts = ["-U", Config.user, "-d", Config.db, "-h", Config.host, "-a", "-f", Config.structure_path]
-        s = Process.run("PGPASSWORD=#{Config.password} psql \"${@}\"", opts, shell: true, output: io)
+        opts = ["-U", config.user, "-d", config.db, "-h", config.host, "-a", "-f", config.structure_path]
+        s = Process.run("PGPASSWORD=#{config.password} psql \"${@}\"", opts, shell: true, output: io)
         raise "Cant load schema: exit code #{s.exit_code}" if s.exit_code != 0
       end
     end

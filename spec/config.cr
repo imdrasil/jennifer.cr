@@ -25,24 +25,34 @@ require "../src/jennifer"
 def set_default_configuration
   Jennifer::Config.reset_config
   Jennifer::Config.configure do |conf|
-    # conf.logger.level = Logger::DEBUG
-    conf.logger.level = Logger::ERROR
-    conf.host = "localhost"
-    conf.adapter = Spec.adapter
-    conf.migration_files_path = "./examples/migrations"
-    conf.db = "jennifer_test"
+    apply_config(conf)
+  end
+  Jennifer::Config.configure(:other_config) do |conf|
+    apply_config(conf)
+  end
+end
 
-    case Spec.adapter
-    when "mysql"
-      conf.user = ENV["DB_USER"]? || "root"
-      conf.password = ""
-    when "postgres"
-      conf.user = ENV["DB_USER"]? || "developer"
-      conf.password = ENV["DB_PASSWORD"]? || "1qazxsw2"
-    when "sqlite3"
-      conf.host = "./spec/fixtures"
-      conf.db = "jennifer_test.db"
-    end
+def apply_config(conf)
+  # conf.logger.level = Logger::DEBUG
+  conf.logger.level = Logger::ERROR
+  conf.host = "localhost"
+  conf.adapter = Spec.adapter
+  conf.migration_files_path = "./examples/migrations"
+  conf.db = "jennifer_test"
+
+  case Spec.adapter
+  when "mysql"
+    conf.user = ENV["DB_USER"]? || "root"
+    conf.password = ""
+    conf.adapter = "mysql"
+  when "postgres"
+    conf.user = ENV["DB_USER"]? || "developer"
+    conf.password = ENV["DB_PASSWORD"]? || "1qazxsw2"
+    conf.adapter = "postgres"
+  when "sqlite3"
+    conf.host = "./spec/fixtures"
+    conf.db = "jennifer_test.db"
+    conf.adapter = "sqlite"
   end
 end
 

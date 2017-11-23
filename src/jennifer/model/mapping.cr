@@ -106,7 +106,7 @@ module Jennifer
         @@strict_mapping : Bool?
 
         def self.strict_mapping?
-          @@strict_mapping ||= ::Jennifer::Adapter.adapter.table_column_count(table_name) == field_count
+          @@strict_mapping ||= adapter.table_column_count(table_name) == field_count
         end
 
         # Returns field count
@@ -333,7 +333,7 @@ module Jennifer
         end
 
         def save(skip_validation = false) : Bool
-          unless ::Jennifer::Adapter.adapter.under_transaction?
+          unless {{@type}}.adapter.under_transaction?
             {{@type}}.transaction do
               save_without_transaction(skip_validation)
             end || false
@@ -354,7 +354,7 @@ module Jennifer
           response =
             if new_record?
               return false unless __before_create_callback
-              res = ::Jennifer::Adapter.adapter.insert(self)
+              res = {{@type}}.adapter.insert(self)
               {% if primary && primary_auto_incrementable %}
                 if primary.nil? && res.last_insert_id > -1
                   init_primary_field(res.last_insert_id.to_i)
@@ -364,7 +364,7 @@ module Jennifer
               __after_create_callback
               res
             else
-              ::Jennifer::Adapter.adapter.update(self)
+              {{@type}}.adapter.update(self)
             end
           __after_save_callback
           response.rows_affected == 1
@@ -440,7 +440,7 @@ module Jennifer
 
           _primary = self.class.primary
           _primary_value = primary
-          ::Jennifer::Adapter.adapter.update(self.class.all.where { _primary == _primary_value }, values)
+          {{@type}}.adapter.update(self.class.all.where { _primary == _primary_value }, values)
         end
 
         # Sets *name* field with *value*

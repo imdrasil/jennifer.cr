@@ -16,13 +16,16 @@ module Jennifer
 
       getter db
 
-      def initialize
-        @db = DB.open(Base.connection_string(:db))
+      def initialize(@config_key : String | Symbol = :default)
+        @db = DB.open(config.connection_string(:db))
       end
 
-      def self.build
-        a = new
-        a
+      def config
+        Jennifer::Config.get_instance(@config_key)
+      end
+
+      def self.build(config_key = :default)
+        new config_key
       end
 
       def prepare
@@ -33,7 +36,7 @@ module Jennifer
         time = Time.now.ticks
         res = with_connection { |conn| conn.exec(_query, args) }
         time = Time.now.ticks - time
-        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
+        config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
         res
       rescue e : BaseException
         BadQuery.prepend_information(e, _query, args)
@@ -45,7 +48,7 @@ module Jennifer
       def query(_query, args = [] of DB::Any)
         time = Time.now.ticks
         res = with_connection { |conn| conn.query(_query, args) { |rs| time = Time.now.ticks - time; yield rs } }
-        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
+        config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
         res
       rescue e : BaseException
         BadQuery.prepend_information(e, _query, args)
@@ -58,7 +61,7 @@ module Jennifer
         time = Time.now.ticks
         res = with_connection { |conn| conn.scalar(_query, args) }
         time = Time.now.ticks - time
-        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
+        config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
         res
       rescue e : BaseException
         BadQuery.prepend_information(e, _query, args)
@@ -125,8 +128,8 @@ module Jennifer
         nil
       end
 
-      def self.db_connection
-        DB.open(connection_string) do |db|
+      def db_connection
+        DB.open(config.connection_string(:db)) do |db|
           yield(db)
         end
       rescue e
@@ -136,25 +139,6 @@ module Jennifer
 
       def self.join_table_name(table1, table2)
         [table1.to_s, table2.to_s].sort.join("_")
-      end
-
-      def self.connection_string(*options)
-        auth_part = Config.user
-        auth_part += ":#{Config.password}" if Config.password && !Config.password.empty?
-
-        host_part = Config.host
-        host_part += Config.port.to_s if Config.port && Config.port > 0
-
-        String.build do |s|
-          s << Config.adapter << "://" << auth_part << "@" << host_part
-          s << "/" << Config.db if options.includes?(:db)
-          s << "?"
-          [
-            {% for arg in Config::CONNECTION_URI_PARAMS %}
-              "{{arg.id}}=#{Config.{{arg.id}}}"
-            {% end %},
-          ].join(",", s)
-        end
       end
 
       def self.extract_arguments(hash)
@@ -175,23 +159,23 @@ module Jennifer
         SqlGenerator.escape_string(size)
       end
 
-      def self.drop_database
+      def drop_database
         db_connection do |db|
-          db.exec "DROP DATABASE #{Config.db}"
+          db.exec "DROP DATABASE #{config.db}"
         end
       end
 
-      def self.create_database
+      def create_database
         db_connection do |db|
-          puts db.exec "CREATE DATABASE #{Config.db}"
+          puts db.exec "CREATE DATABASE #{config.db}"
         end
       end
 
-      def self.generate_schema
+      def generate_schema
         raise "Not implemented"
       end
 
-      def self.load_schema
+      def load_schema
         raise "Not implemented"
       end
 

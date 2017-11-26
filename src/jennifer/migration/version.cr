@@ -3,7 +3,7 @@ module Jennifer
     class Version < Model::Base
       table_name "migration_versions"
       mapping(
-        id: {type: Int32, primary: true},
+        id: Primary32,
         version: String
       )
 

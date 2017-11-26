@@ -1,6 +1,12 @@
 CallStack.skip(__FILE__)
 
 module Jennifer
+  class AbstractMethod < Exception
+    def initialize(method, klass)
+      @message = "Abstrcat method '#{method}' of '#{klass}' was invoked but it is not implemented yet."
+    end
+  end
+
   class BaseException < Exception
     setter message
 

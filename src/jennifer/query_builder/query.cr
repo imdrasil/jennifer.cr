@@ -337,4 +337,6 @@ module Jennifer
       end
     end
   end
+
+  alias Query = QueryBuilder::Query
 end

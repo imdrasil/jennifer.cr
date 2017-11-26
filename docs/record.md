@@ -7,7 +7,8 @@ There are 2 types of query classes:
 First one gets db result set and converts it to the hash which is wraped by `Jennifer::Record` structure. This structure allows get field using a method call:
 
 ```crystal
-record = Jennifer::QueryBuilder::Query["contacts"].where { _name.like("Jho%") }.to_a[0]
+# Jennifer::QueryBuilder::Query is aliassed as Jennifer::Query
+record = Jennifer::Query["contacts"].where { _name.like("Jho%") }.to_a[0]
 
 record["name"] 						# Jennifer::DBAny
 record.attribute("name") 		 	# Jennifer::DBAny

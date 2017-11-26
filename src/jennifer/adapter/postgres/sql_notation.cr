@@ -75,7 +75,7 @@ module Jennifer
           when :take
             "->"
           else
-            raise "Wrong json path type"
+            raise ArgumentError.new("Wrong json path type")
           end
         "#{path.identifier}#{operator}#{quote(path.path)}"
       end

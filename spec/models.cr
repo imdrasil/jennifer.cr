@@ -278,16 +278,16 @@ class ContactWithNillableName < Jennifer::Model::Base
   }, false)
 end
 
-class FemaleContact < Jennifer::Model::Base
+# ===========
+# views
+# ===========
+
+class FemaleContact < Jennifer::View::Base
   mapping({
     id:   Primary32,
     name: String?,
   }, false)
 end
-
-# ===========
-# views
-# ===========
 
 class MaleContact < Jennifer::View::Base
   mapping({

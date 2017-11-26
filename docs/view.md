@@ -51,9 +51,9 @@ All regular model mapping functionality are also available for views (except any
 
 ## Materialized
 
-> Materialized view is partially supported only by postgre adapter. MySQL doesn't provide support of materiazed view at all - only via simulating using regualr table.
+> Materialized view is partially supported only by postgre adapter. MySQL doesn't provide support of materiazed view at all. This could be simulated only by using common table.
 
-Regular migration for adding materialized view looks like this:
+Common migration for adding materialized view looks like this:
 
 ```crystal
 class AddMaterializedView20170829000433679 < Jennifer::Migration::Base
@@ -75,7 +75,7 @@ As for non materialized view here all arguments should be escaped explicitly as 
 
 > Until 0.5.0 source could be represented as stringgified raw sql, but this will be removed.
 
-For defining materialized view `Jennfer::Model::Base` superclass should be used. So example of defining created before materialized view looks like:
+For defining materialized view `Jennfer::View::Base` superclass is used as well. So example of defining created before materialized view looks like:
 
 ```crystal
 class FemaleContact < Jennifer::Model::Base
@@ -85,10 +85,6 @@ class FemaleContact < Jennifer::Model::Base
   }, false)
 end
 ```
-
-Because of using `Model::Base` you are able to use some functionality of model (except deleting, creating and updating entities).
-
-All features of `%mapping` is supported as well.
 
 To refresh content of materialized view use:
 

@@ -42,7 +42,7 @@
 
 * switch `Criteria#hash` to use `object_id` as seed
 
-* add `Query#eal?`
+* add `Query#eql?`
 
 * add `Query#clone` and all related methods
 

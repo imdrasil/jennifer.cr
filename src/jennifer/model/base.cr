@@ -141,11 +141,11 @@ module Jennifer
       abstract def set_attribute(name, value)
 
       def self.relations
-        raise "Not Implemented"
+        raise AbstractMethod.new(:relations, {{@type}})
       end
 
       def self.relation(name)
-        raise "Not Implemented"
+        raise AbstractMethod.new(:relation, {{@type}})
       end
 
       macro def self.models

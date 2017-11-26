@@ -154,7 +154,7 @@ Much more about the query DSL can be found on the wiki [[page|Query-DSL]]
 
 ### Versioning
 
-Now that Jennifer is under heavy development, there could be many breaking changes. So please check the release notes (which will be added to each release starting from 0.3.4) to check if any of the changes may prevent you from using it. Also, until this library reaches a beta version, the next version rules will be followed:
+Now that Jennifer is under heavy development, there could be many breaking changes. So please check the release notes to check if any of the changes may prevent you from using it. Also, until this library reaches a beta version, the next version rules will be followed:
 
 - all bugfixies, new minor features or (sometimes) ones that don't break the existing API will be added as a patch number (e.g. 0.3.**4**);
 
@@ -167,6 +167,7 @@ If there is a branch for the next release - it will be removed 1 month after the
 ### Test
 
 The fastest way to rollback all changes in the DB after test case is by using a transaction. So add:
+
 ```crystal
 Spec.before_each do
   Jennifer::Adapter.adapter.begin_transaction
@@ -206,9 +207,6 @@ $ ./generate-docs.sh
 ```
 
 NB. It also depends on then choosen adapter (postgres by default).
-
-
-The wiki pages also have a lot of usefull information. But from version 0.3.4 no new information will be added there untill it is moved to separate `.md` pages to allow contributing.
 
 ## Similar shards
 

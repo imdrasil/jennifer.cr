@@ -201,7 +201,7 @@ describe Jennifer::Model::Mapping do
       context "nilable field" do
         context "passed with ?" do
           it "properly sets field as nilable" do
-            typeof(FemaleContact.new.name).should eq(String?)
+            typeof(ContactWithNillableName.new.name).should eq(String?)
           end
         end
 

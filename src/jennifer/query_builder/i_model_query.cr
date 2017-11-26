@@ -5,11 +5,14 @@ module Jennifer
     abstract class IModelQuery < Query
       @preload_relations = [] of String
 
-      abstract def model_class
+      # NOTE: improperly detects source of #abstract_class if run sam with only Version model
+      def model_class
+        raise AbstractMethod.new(:model_class, {{@type}})
+      end
 
       # NOTE: can't be abstract because is already implemented by super class
       def clone
-        raise "Can't clone abstract"
+        raise AbstractMethod.new(:clone, {{@type}})
       end
 
       protected def preload_relations

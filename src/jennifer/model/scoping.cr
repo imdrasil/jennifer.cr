@@ -6,7 +6,7 @@ module Jennifer
 
         class Jennifer::QueryBuilder::ModelQuery(T)
           def {{name.id}}({{ block.args.splat }})
-            # NOTE: this is woraround for responds_to?
+            # NOTE: this is workaround for #responds_to?
             klass = T
             if klass.responds_to?(:{{name.id}})
               klass.{{name.id}}(self, {{block.args.splat}})

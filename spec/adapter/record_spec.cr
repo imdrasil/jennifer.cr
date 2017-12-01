@@ -24,13 +24,15 @@ describe Jennifer::Record do
 
     context "from result set" do
       it "properly loads all fields" do
-        record = get_record
+        executed = false
         Factory.create_contact(name: "Jennifer", age: 20)
         Contact.all.each_result_set do |rs|
           record = described_class.new(rs)
           record.name.should eq("Jennifer")
           record.age.should eq(20)
+          executed = true
         end
+        executed.should be_true
       end
     end
   end

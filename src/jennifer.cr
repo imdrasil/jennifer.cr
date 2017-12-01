@@ -3,6 +3,8 @@ require "inflector/string"
 require "accord"
 require "ifrit/converter"
 
+require "./jennifer/macros"
+
 require "./jennifer/exceptions"
 require "./jennifer/adapter"
 require "./jennifer/adapter/record"

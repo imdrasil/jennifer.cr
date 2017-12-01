@@ -18,19 +18,19 @@ module Jennifer
           @{{key.id}} : {{value[:parsed_type].id}}
           @{{key.id}}_changed = false
 
-          {% if value[:setter] == nil || value[:setter] %}
+          {% if value[:setter] != false %}
             def {{key.id}}=(_{{key.id}} : {{value[:parsed_type].id}})
               @{{key.id}}_changed = true if _{{key.id}} != @{{key.id}}
               @{{key.id}} = _{{key.id}}
             end
           {% end %}
 
-          {% if value[:getter] == nil || value[:getter] %}
+          {% if value[:getter] != false %}
             def {{key.id}}
               @{{key.id}}
             end
 
-            {% if value[:null] == nil || value[:null] %}
+            {% if value[:null] != false %}
               def {{key.id}}!
                 @{{key.id}}.not_nil!
               end
@@ -100,37 +100,16 @@ module Jennifer
           {% end %}
         end
 
-        FIELD_NAMES = [
-          {% for key, v in properties %}
-            "{{key.id}}",
-          {% end %}
-        ]
-
         @@strict_mapping : Bool?
 
         def self.strict_mapping?
           @@strict_mapping ||= ::Jennifer::Adapter.adapter.table_column_count(table_name) == field_count
         end
 
-        # Returns field count
-        def self.field_count
-          {{properties.size}}
-        end
-
-        # Returns array of field names
-        def self.field_names
-          FIELD_NAMES
-        end
-
         {%
           primary = nil
           primary_auto_incrementable = false
           add_default_constructor = true
-          nillable_regexp = /(::Nil)|( Nil)/
-          json_regexp = /JSON::Any/
-          primary_32 = "Primary32"
-          primary_64 = "Primary64"
-          autoincrementable_str_types = ["Int32", "Int64", primary_32, primary_64]
         %}
 
         # generates hash with options
@@ -139,17 +118,19 @@ module Jennifer
             {% properties[key] = {type: value} %}
           {% end %}
           {% properties[key][:stringified_type] = properties[key][:type].stringify %}
-          {% if properties[key][:stringified_type] == primary_32 || properties[key][:stringified_type] == primary_64 %}
-            {% properties[key][:primary] = true %}
+          {% if properties[key][:stringified_type] == Jennifer::Macros::PRIMARY_32 || properties[key][:stringified_type] == Jennifer::Macros::PRIMARY_64 %}
+            {%
+              properties[key][:primary] = true
+            %}
           {% end %}
           {% if properties[key][:primary] %}
             {%
               primary = key
               primary_type = properties[key][:type]
-              primary_auto_incrementable = autoincrementable_str_types.includes?(properties[key][:stringified_type])
+              primary_auto_incrementable = Jennifer::Macros::AUTOINCREMENTABLE_STR_TYPES.includes?(properties[key][:stringified_type])
             %}
           {% end %}
-          {% if properties[key][:stringified_type] =~ nillable_regexp %}
+          {% if properties[key][:stringified_type] =~ Jennifer::Macros::NILLABLE_REGEXP %}
             {%
               properties[key][:null] = true
               properties[key][:parsed_type] = properties[key][:stringified_type]
@@ -170,6 +151,27 @@ module Jennifer
         # Returns if primary field is autoincrementable
         def self.primary_auto_incrementable?
           {{primary_auto_incrementable}}
+        end
+
+        # Returns field count
+        def self.field_count
+          {{properties.size}}
+        end
+
+        COLUMNS_METADATA = {{properties}}
+
+        # Returns array of field names
+        def self.field_names
+          [
+            {% for key in properties.keys %}
+              "{{key.id}}",
+            {% end %}
+          ]
+        end
+
+        # Returns named tuple of column metadata
+        def self.columns_tuple
+          COLUMNS_METADATA
         end
 
         @new_record = true
@@ -335,12 +337,12 @@ module Jennifer
           WITH_DEFAULT_CONSTRUCTOR = false
         {% end %}
 
-        def save!(skip_validation = false)
+        def save!(skip_validation : Bool = false)
           raise Jennifer::RecordInvalid.new(errors) unless save(skip_validation)
           true
         end
 
-        def save(skip_validation = false) : Bool
+        def save(skip_validation : Bool = false) : Bool
           unless ::Jennifer::Adapter.adapter.under_transaction?
             {{@type}}.transaction do
               save_without_transaction(skip_validation)
@@ -351,7 +353,7 @@ module Jennifer
         end
 
         # Saves all changes to db without invoking transaction; if validation not passed - returns `false`
-        def save_without_transaction(skip_validation = false) : Bool
+        def save_without_transaction(skip_validation : Bool = false) : Bool
           unless skip_validation
             return false unless __before_validation_callback
             validate!
@@ -448,7 +450,7 @@ module Jennifer
         end
 
         # Sets *name* field with *value*
-        def set_attribute(name, value : Jennifer::DBAny)
+        def set_attribute(name : String | Symbol, value : Jennifer::DBAny)
           case name.to_s
           {% for key, value in properties %}
             {% if value[:setter] == nil ? true : value[:setter] %}
@@ -467,7 +469,7 @@ module Jennifer
 
         # Returns field by given name. If object has no such field - will raise `BaseException`.
         # To avoid raising exception set `raise_exception` to `false`.
-        def attribute(name : String | Symbol, raise_exception = true)
+        def attribute(name : String | Symbol, raise_exception : Bool = true)
           case name.to_s
           {% for key, value in properties %}
           when "{{key.id}}"
@@ -494,7 +496,7 @@ module Jennifer
           {% for key, value in properties %}
             {% unless value[:primary] %}
               if @{{key.id}}_changed
-                args << {% if value[:stringified_type] =~ json_regexp %}
+                args << {% if value[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
                           @{{key.id}}.to_json
                         {% else %}
                           @{{key.id}}
@@ -512,7 +514,7 @@ module Jennifer
           fields = [] of String
           {% for key, value in properties %}
             {% unless value[:primary] && primary_auto_incrementable %}
-              args << {% if value[:stringified_type] =~ json_regexp %}
+              args << {% if value[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
                         (@{{key.id}} ? @{{key.id}}.to_json : nil)
                       {% else %}
                         @{{key.id}}

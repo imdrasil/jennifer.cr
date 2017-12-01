@@ -3,61 +3,59 @@ module Jennifer
     module ExperimentalMapping
       # Generates getter and setters
       macro __field_declaration
-        {% for key, value in FIELDS %}
-          @{{key.id}} : {{value["parsed_type"].id}}
+        {% for key, value in COLUMNS_METADATA %}
+          @{{key.id}} : {{value[:parsed_type].id}}
 
-          {% if value["setter"] == nil || value["setter"] == "true" %}
-            def {{key.id}}=(_{{key.id}} : {{value["parsed_type"].id}})
+          {% if value[:setter] != false %}
+            def {{key.id}}=(_{{key.id}} : {{value[:parsed_type].id}})
               @{{key.id}} = _{{key.id}}
             end
           {% end %}
 
-          {% if value["getter"] == nil || value["getter"] == "true" %}
+          {% if value[:getter] != false %}
             def {{key.id}}
               @{{key.id}}
             end
 
-            {% if value["null"] == nil || value["null"] == "true" %}
+            {% if value[:null] != false %}
               def {{key.id}}!
                 @{{key.id}}.not_nil!
               end
             {% end %}
           {% end %}
 
-          def self._{{key.id}}
-            c({{key}})
+          def self._{{key}}
+            c({{key.stringify}})
           end
 
-          {% if value["primary"] == "true" %}
+          {% if value[:primary] %}
             def primary
               @{{key.id}}
             end
 
             def self.primary
-              c({{key}})
+              c({{key.stringify}})
             end
 
             def self.primary_field_name
-              {{key}}
+              {{key.stringify}}
             end
 
             def self.primary_field_type
-              {{value["parsed_type"].id}}
+              {{value[:parsed_type].id}}
             end
           {% end %}
         {% end %}
       end
 
       macro __instance_methods
-        {% strict = STRICT_MAPPNIG %}
-
         # Creates object from `DB::ResultSet`
         def initialize(%pull : DB::ResultSet)
-          {{FIELDS.keys.map { |f| "@#{f.id}" }.join(", ").id}} = _extract_attributes(%pull)
+          {{COLUMNS_METADATA.keys.map { |f| "@#{f.id}" }.join(", ").id}} = _extract_attributes(%pull)
         end
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))
-          {{FIELDS.keys.map { |f| "@#{f.id}" }.join(", ").id}} = _extract_attributes(values)
+          {{COLUMNS_METADATA.keys.map { |f| "@#{f.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
         # Accepts symbol hash or named tuple, stringify it and calls
@@ -76,20 +74,20 @@ module Jennifer
         # NOTE: don't use it manually - there is some dependencies on caller such as reading tesult set to the end
         #  if eception was raised
         def _extract_attributes(pull : DB::ResultSet)
-          {% for key in FIELDS.keys %}
+          {% for key in COLUMNS_METADATA.keys %}
             %var{key.id} = nil
             %found{key.id} = false
           {% end %}
-          own_attributes = {{ FIELDS.size }}
+          own_attributes = {{COLUMNS_METADATA.size}}
           pull.each_column do |column|
             break if own_attributes == 0
             case column
-            {% for key, value in FIELDS %}
-              when {{value["column_name"] ? value["column_name"].id : key.id.stringify}}
+            {% for key, value in COLUMNS_METADATA %}
+              when {{value[:column_name] ? value[:column_name].id : key.id.stringify}}
                 own_attributes -= 1
                 %found{key.id} = true
                 begin
-                  %var{key.id} = pull.read({{value["parsed_type"].id}})
+                  %var{key.id} = pull.read({{value[:parsed_type].id}})
                 rescue e : Exception
                   raise ::Jennifer::DataTypeMismatch.new(column, {{@type}}, e) if ::Jennifer::DataTypeMismatch.match?(e)
                   raise e
@@ -105,17 +103,17 @@ module Jennifer
           end
           pull.read_to_end
           {% if STRICT_MAPPNIG %}
-            {% for key in FIELDS.keys %}
+            {% for key in COLUMNS_METADATA.keys %}
               unless %found{key.id}
                 raise ::Jennifer::BaseException.new("Column #{{{@type}}}##{{{key.id.stringify}}} hasn't been found in the result set.")
               end
             {% end %}
           {% end %}
-          {% if FIELDS.size > 1 %}
+          {% if COLUMNS_METADATA.size > 1 %}
             {
-            {% for key, value in FIELDS %}
+            {% for key, value in COLUMNS_METADATA %}
               begin
-                %var{key.id}.as({{value["parsed_type"].id}})
+                %var{key.id}.as({{value[:parsed_type].id}})
               rescue e : Exception
                 raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
                 raise e
@@ -123,9 +121,9 @@ module Jennifer
             {% end %}
             }
           {% else %}
-            {% key = FIELDS.keys[0] %}
+            {% key = COLUMNS_METADATA.keys[0] %}
             begin
-              %var{key}.as({{FIELDS[key]["parsed_type"].id}})
+              %var{key}.as({{COLUMNS_METADATA[key][:parsed_type].id}})
             rescue e : Exception
               raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
               raise e
@@ -135,13 +133,13 @@ module Jennifer
 
         # Extracts attributes from gien hash to the tuple. If hash has no some field - will not raise any error.
         def _extract_attributes(values : Hash(String, ::Jennifer::DBAny))
-          {% for key in FIELDS.keys %}
+          {% for key in COLUMNS_METADATA.keys %}
             %var{key.id} = nil
             %found{key.id} = true
           {% end %}
 
-          {% for key, value in FIELDS %}
-            {% _key = value["column_name"] ? value["column_name"] : key.id.stringify %}
+          {% for key, value in COLUMNS_METADATA %}
+            {% _key = value[:column_name] ? value[:column_name] : key.id.stringify %}
             if !values[{{_key}}]?.nil?
               %var{key.id} = values[{{_key}}]
             else
@@ -149,16 +147,16 @@ module Jennifer
             end
           {% end %}
 
-          {% for key, value in FIELDS %}
+          {% for key, value in COLUMNS_METADATA %}
             begin
-              {% if value["null"] == "true" %}
-                {% if value["default"] != nil %}
+              {% if value[:null] %}
+                {% if value[:default] != nil %}
                   %casted_var{key.id} = %found{key.id} ? Jennifer::Model::Mapping.__bool_convert(%var{key.id}, {{value["parsed_type"].id}}) : {{value["default"].id}}
                 {% else %}
-                  %casted_var{key.id} = %var{key.id}.as({{value["parsed_type"].id}})
+                  %casted_var{key.id} = %var{key.id}.as({{value[:parsed_type].id}})
                 {% end %}
               {% elsif value["default"] != nil %}
-                %casted_var{key.id} = %var{key.id}.is_a?(Nil) ? {{value["default"]}} : Jennifer::Model::Mapping.__bool_convert(%var{key.id}, {{value["parsed_type"].id}})
+                %casted_var{key.id} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : Jennifer::Model::Mapping.__bool_convert(%var{key.id}, {{value["parsed_type"].id}})
               {% else %}
                 %casted_var{key.id} = Jennifer::Model::Mapping.__bool_convert(%var{key.id}, {{value["parsed_type"].id}})
               {% end %}
@@ -168,14 +166,14 @@ module Jennifer
             end
           {% end %}
 
-          {% if FIELDS.size > 1 %}
+          {% if COLUMNS_METADATA.size > 1 %}
             {
-            {% for key, value in FIELDS %}
+            {% for key, value in COLUMNS_METADATA %}
               %casted_var{key.id},
             {% end %}
             }
           {% else %}
-            {% key = FIELDS.keys[0] %}
+            {% key = COLUMNS_METADATA.keys[0] %}
             %casted_var{key}
           {% end %}
         end
@@ -184,7 +182,7 @@ module Jennifer
         def reload
           this = self
           self.class.all.where { this.class.primary == this.primary }.each_result_set do |rs|
-            {{FIELDS.keys.map { |f| "@#{f.id}" }.join(", ").id}} = _extract_attributes(rs)
+            {{COLUMNS_METADATA.keys.map { |f| "@#{f.id}" }.join(", ").id}} = _extract_attributes(rs)
           end
           self
         end
@@ -192,7 +190,7 @@ module Jennifer
         # Returns hash with all attributes and symbol keys
         def to_h
           {
-            {% for key in FIELDS.keys %}
+            {% for key in COLUMNS_METADATA.keys %}
               :{{key.id}} => @{{key.id}},
             {% end %}
           }
@@ -201,8 +199,8 @@ module Jennifer
         # Returns hash with all attributes and string keys
         def to_str_h
           {
-            {% for key in FIELDS.keys %}
-              {{key}} => @{{key.id}},
+            {% for key in COLUMNS_METADATA.keys %}
+              {{key.stringify}} => @{{key.id}},
             {% end %}
           }
         end
@@ -211,8 +209,8 @@ module Jennifer
         # To avoid raising exception set `raise_exception` to `false`.
         def attribute(name : String | Symbol, raise_exception = true)
           case name.to_s
-          {% for key, value in FIELDS.keys %}
-          when {{key}}
+          {% for key, value in COLUMNS_METADATA.keys %}
+          when {{key.stringify}}
             @{{key.id}}
           {% end %}
           else
@@ -222,9 +220,9 @@ module Jennifer
 
         def attributes_hash
           hash = to_h
-          {% for key, value in FIELDS %}
-            {% if !value["null"] || value["primary"] %}
-              hash.delete(:{{key.id}}) if hash[:{{key.id}}]?.nil?
+          {% for key, value in COLUMNS_METADATA %}
+            {% if !value[:null] || value[:primary] %}
+              hash.delete({{key}}) unless hash.has_key?({{key}})
             {% end %}
           {% end %}
           hash
@@ -243,22 +241,6 @@ module Jennifer
       end
 
       macro mapping(properties, strict = true)
-        macro def self.children_classes
-          {% begin %}
-            {% if @type.all_subclasses.size > 0 %}
-              [{{ @type.all_subclasses.join(", ").id }}]
-            {% else %}
-              [] of ::Jennifer::View::Base.class
-            {% end %}
-          {% end %}
-        end
-
-        FIELD_NAMES = [
-          {% for key, v in properties %}
-            "{{key.id}}",
-          {% end %}
-        ]
-
         STRICT_MAPPNIG = {{strict}}
 
         @@strict_mapping : Bool?
@@ -274,17 +256,10 @@ module Jennifer
 
         # Returns array of field names
         def self.field_names
-          FIELDS.keys
+          COLUMNS_METADATA.keys.to_a.map(&.to_s)
         end
 
-        {%
-          primary = nil
-          nillable_regexp = /(::Nil)|( Nil)/
-          json_regexp = /JSON::Any/
-          primary_32 = "Primary32"
-          primary_64 = "Primary64"
-          autoincrementable_str_types = ["Int32", "Int64", primary_32, primary_64]
-        %}
+        {% primary = nil %}
 
         # generates hash with options
         {% for key, opt in properties %}
@@ -298,8 +273,9 @@ module Jennifer
               {% FIELDS[_key][attr.id.stringify] = value.stringify %}
             {% end %}
           {% end %}
+
           {% stringified_type = properties[key][:stringified_type] = properties[key][:type].stringify %}
-          {% if stringified_type == primary_32 || stringified_type == primary_64 %}
+          {% if stringified_type == Jennifer::Macros::PRIMARY_32 || stringified_type == Jennifer::Macros::PRIMARY_64 %}
             {%
               properties[key][:primary] = true
               FIELDS[_key]["primary"] = "true"
@@ -308,7 +284,7 @@ module Jennifer
           {% if properties[key][:primary] %}
             {% primary = key %}
           {% end %}
-          {% if stringified_type =~ nillable_regexp %}
+          {% if stringified_type =~ Jennifer::Macros::NILLABLE_REGEXP %}
             {%
               properties[key][:null] = true
               FIELDS[_key]["parsed_type"] = properties[key][:parsed_type] = stringified_type
@@ -325,6 +301,13 @@ module Jennifer
         {% if primary == nil %}
           {% raise "Model #{@type} has no defined primary field. For now model without primary field is not allowed" %}
         {% end %}
+
+        COLUMNS_METADATA = {{properties}}
+
+        # Returns named tuple of column metadata
+        def self.columns_tuple
+          COLUMNS_METADATA
+        end
       end
 
       macro mapping(**properties)

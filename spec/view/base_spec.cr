@@ -21,13 +21,33 @@ describe Jennifer::View::Base do
     end
   end
 
-  describe "::table_name" do
-    pending "add" do
+  describe "::view_name" do
+    it "loads from class name automatically" do
+      FemaleContact.view_name.should eq("female_contacts")
+    end
+
+    it "returns specified name" do
+      StrinctBrokenMaleContact.view_name.should eq("male_contacts")
     end
   end
 
   describe "::c" do
-    pending "add" do
+    describe "::c" do
+      it "creates criteria with given name" do
+        c = FemaleContact.c("some_field")
+        c.is_a?(Jennifer::QueryBuilder::Criteria)
+        c.field.should eq("some_field")
+        c.table.should eq("female_contacts")
+        c.relation.should be_nil
+      end
+
+      it "creates criteria with given name and relation" do
+        c = FemaleContact.c("some_field", "some_relation")
+        c.is_a?(Jennifer::QueryBuilder::Criteria)
+        c.field.should eq("some_field")
+        c.table.should eq("female_contacts")
+        c.relation.should eq("some_relation")
+      end
     end
   end
 
@@ -95,11 +115,6 @@ describe Jennifer::View::Base do
   end
 
   describe "::relations" do
-    pending "add" do
-    end
-  end
-
-  describe "#delete" do
     pending "add" do
     end
   end

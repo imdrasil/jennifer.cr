@@ -100,9 +100,7 @@ module Jennifer
 
         macro finished
           def __after_initialize_callback
-            \{% for method in AFTER_INITIALIZE_CALLBACKS %}
-              \{{method.id}}
-            \{% end %}
+            \{{AFTER_INITIALIZE_CALLBACKS.join("\n").id}}
           rescue ::Jennifer::Skip
           end
         end
@@ -111,11 +109,7 @@ module Jennifer
       macro def self.views
         {% begin %}
           {% if @type.all_subclasses.size > 0 %}
-            [
-              {% for view in @type.all_subclasses %}
-                {{view.id}},
-              {% end %}
-            ]
+            [{{@type.all_subclasses.join(", ").id}}]
           {% else %}
             [] of Jennifer::View::Base.class
           {% end %}

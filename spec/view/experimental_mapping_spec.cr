@@ -68,13 +68,39 @@ describe Jennifer::View::ExperimentalMapping do
   end
 
   describe "%mapping" do
+    describe "::columns_tuple" do
+      it "returns named tuple mith column metedata" do
+        metadata = MaleContact.columns_tuple
+        metadata.is_a?(NamedTuple).should be_true
+        metadata[:id].is_a?(NamedTuple).should be_true
+        metadata[:id][:type].should eq(Int32)
+        metadata[:id][:parsed_type].should eq("Primary32?")
+      end
+    end
+
+    context "columns metadata" do
+      it "sets constant" do
+        MaleContact::COLUMNS_METADATA.is_a?(NamedTuple).should be_true
+      end
+
+      it "sets primary to true for Primary32 type" do
+        MaleContact::COLUMNS_METADATA[:id][:primary].should be_true
+      end
+
+      it "sets primary for Primary64" do
+        StrictMaleContactWithExtraField::COLUMNS_METADATA[:id][:primary].should be_true
+      end
+    end
+
     describe "#initialize" do
       context "from result set" do
         it "properly creates object" do
-          Factory.create_contact(gender: "male")
+          Factory.create_contact(gender: "male", name: "John")
           count = 0
           MaleContact.all.each_result_set do |rs|
-            MaleContact.build(rs)
+            record = MaleContact.build(rs)
+            record.gender.should eq("male")
+            record.name.should eq("John")
             count += 1
           end
           count.should eq(1)

@@ -106,8 +106,13 @@ module Jennifer
       end
 
       def self.create
-        a = {} of String => DBAny
-        o = build(a)
+        o = build({} of String => DBAny)
+        o.save
+        o
+      end
+
+      def self.create(**opts)
+        o = build(**opts)
         o.save
         o
       end
@@ -119,7 +124,13 @@ module Jennifer
       end
 
       def self.create!
-        o = build({} of Symbol => Supportable)
+        o = build({} of Symbol => DBAny)
+        o.save!
+        o
+      end
+
+      def self.create!(**opts)
+        o = build(**opts)
         o.save!
         o
       end

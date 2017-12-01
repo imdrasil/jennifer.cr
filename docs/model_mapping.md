@@ -159,9 +159,11 @@ All allowed types are listed on the [Migration](https://imdrasil.github.io/jenni
 
 Automatically model is associated with table with underscored pluralized name of it's class, but special name can be defined using `::table_name` method in own body before using any relation (`::singular_table_name` - for singular variant).
 
+All defined mapping properties are accessible via `COLUMNS_METADA` constant and `::columns_tuple` method.
+
 **Important restriction** - model with no primary field is not allowed for now.
 
-You can inherite from one basic abstract class:
+It may be usefull to have one parent class for your model - just make it abstract and everything will work well:
 
 ```crystal
 abstract class ApplicationRecord < Jennifer::Model::Base

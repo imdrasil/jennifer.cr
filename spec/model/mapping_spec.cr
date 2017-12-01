@@ -127,6 +127,30 @@ describe Jennifer::Model::Mapping do
   end
 
   describe "%mapping" do
+    describe "::columns_tuple" do
+      it "returns named tuple mith column metedata" do
+        metadata = Contact.columns_tuple
+        metadata.is_a?(NamedTuple).should be_true
+        metadata[:id].is_a?(NamedTuple).should be_true
+        metadata[:id][:type].should eq(Int32)
+        metadata[:id][:parsed_type].should eq("Primary32?")
+      end
+    end
+
+    context "columns metadata" do
+      it "sets constant" do
+        Contact::COLUMNS_METADATA.is_a?(NamedTuple).should be_true
+      end
+
+      it "sets primary to true for Primary32 type" do
+        Contact::COLUMNS_METADATA[:id][:primary].should be_true
+      end
+
+      it "sets primary for Primary64" do
+        ContactWithInValidation::COLUMNS_METADATA[:id][:primary].should be_true
+      end
+    end
+
     it "define default constructor if all fields are nilable or have default values" do
       Passport::WITH_DEFAULT_CONSTRUCTOR.should be_true
     end
@@ -137,20 +161,53 @@ describe Jennifer::Model::Mapping do
 
     describe "#initialize" do
       context "from result set" do
-        pending "properly creates object" do
+        it "properly creates object" do
+          executed = false
+          Factory.create_contact(name: "Jennifer", age: 20)
+          Contact.all.each_result_set do |rs|
+            record = Contact.new(rs)
+            record.name.should eq("Jennifer")
+            record.age.should eq(20)
+            executed = true
+          end
+          executed.should be_true
         end
       end
 
       context "from hash" do
-        it "properly creates object" do
-          Contact.build({"name" => "Deepthi", "age" => 18, "gender" => "female"})
-          Contact.build({:name => "Deepthi", :age => 18, :gender => "female"})
+        context "with string keys" do
+          it "properly creates object" do
+            contact = Contact.new({"name" => "Deepthi", "age" => 18, "gender" => "female"})
+            contact.name.should eq("Deepthi")
+            contact.age.should eq(18)
+            contact.gender.should eq("female")
+          end
+        end
+
+        context "with symbol keys" do
+          it "properly creates object" do
+            contact = Contact.new({:name => "Deepthi", :age => 18, :gender => "female"})
+            contact.name.should eq("Deepthi")
+            contact.age.should eq(18)
+            contact.gender.should eq("female")
+          end
         end
       end
 
       context "from named tuple" do
         it "properly creates object" do
-          Contact.build({name: "Deepthi", age: 18, gender: "female"})
+          contact = Contact.new({name: "Deepthi", age: 18, gender: "female"})
+          contact.name.should eq("Deepthi")
+          contact.age.should eq(18)
+          contact.gender.should eq("female")
+        end
+      end
+
+      context "without arguments" do
+        it "creates object with nil or default values" do
+          country = Country.new
+          country.id.should be_nil
+          country.name.should be_nil
         end
       end
 
@@ -184,7 +241,8 @@ describe Jennifer::Model::Mapping do
       end
 
       describe Primary64 do
-        pending "add" do
+        it "makes field nillable" do
+          ContactWithInValidation.primary_field_type.should eq(Int64?)
         end
       end
 

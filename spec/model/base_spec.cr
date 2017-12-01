@@ -68,13 +68,114 @@ describe Jennifer::Model::Base do
   end
 
   describe "::create" do
-    context "from hash" do
-      pending "properly creates object" do
+    it "doesn't raise exception if object is invalid" do
+      country = Country.create
+      country.validate!
+      country.valid?.should be_false
+      country.id.should be_nil
+    end
+
+    context "without arguments" do
+      it "builds new object without any exception" do
+        c = ContactWithNotStrictMapping.create
+        c.id.should_not be_nil
+        c.name.should be_nil
       end
     end
 
-    context "from tuple" do
-      pending "properly creates object" do
+    context "from hash" do
+      context "with string keys" do
+        it "properly creates object" do
+          contact = Contact.create({"name" => "Deepthi", "age" => 18, "gender" => "female"})
+          contact.id.should_not be_nil
+          contact.name.should eq("Deepthi")
+          contact.age.should eq(18)
+          contact.gender.should eq("female")
+        end
+      end
+
+      context "with symbol keys" do
+        it "properly creates object" do
+          contact = Contact.create({:name => "Deepthi", :age => 18, :gender => "female"})
+          contact.id.should_not be_nil
+          contact.name.should eq("Deepthi")
+          contact.age.should eq(18)
+          contact.gender.should eq("female")
+        end
+      end
+    end
+
+    context "from named tuple" do
+      it "properly creates object" do
+        contact = Contact.create({name: "Deepthi", age: 18, gender: "female"})
+        contact.id.should_not be_nil
+        contact.name.should eq("Deepthi")
+        contact.age.should eq(18)
+        contact.gender.should eq("female")
+      end
+
+      it "allows splatted named tuple as well" do
+        contact = Contact.create(name: "Deepthi", age: 18, gender: "female")
+        contact.id.should_not be_nil
+        contact.name.should eq("Deepthi")
+        contact.age.should eq(18)
+        contact.gender.should eq("female")
+      end
+    end
+  end
+
+  describe "::create!" do
+    it "raises exception if object is invalid" do
+      expect_raises(Jennifer::RecordInvalid) do
+        Country.create!
+      end
+    end
+
+    context "without arguments" do
+      it "builds new object without any exception" do
+        c = ContactWithNotStrictMapping.create!
+        c.id.should_not be_nil
+        c.name.should be_nil
+      end
+    end
+
+    context "from hash" do
+      context "with string keys" do
+        it "properly creates object" do
+          contact = Contact.create!({"name" => "Deepthi", "age" => 18, "gender" => "female"})
+          contact.id.should_not be_nil
+          contact.name.should eq("Deepthi")
+          contact.age.should eq(18)
+          contact.gender.should eq("female")
+        end
+      end
+
+      context "with symbol keys" do
+        it "properly creates object" do
+          contact = Contact.create!({:name => "Deepthi", :age => 18, :gender => "female"})
+          contact.id.should_not be_nil
+          contact.name.should eq("Deepthi")
+          contact.age.should eq(18)
+          contact.gender.should eq("female")
+        end
+      end
+    end
+
+    context "from named tuple" do
+      it "properly creates object" do
+        contact = Contact.create!({name: "Deepthi", age: 18, gender: "female"})
+        contact.id.should_not be_nil
+        contact.name.should eq("Deepthi")
+        contact.age.should eq(18)
+        contact.gender.should eq("female")
+      end
+
+      it "allows splatted named tuple as well" do
+        contact = Contact.create!(name: "Deepthi", age: 18, gender: "female")
+        contact.id.should_not be_nil
+        contact.name.should eq("Deepthi")
+        contact.age.should eq(18)
+        contact.gender.should eq("female")
       end
     end
   end
@@ -88,16 +189,40 @@ describe Jennifer::Model::Base do
       end
     end
 
-    pending "with splatted named tuple" do
+    context "from hash" do
+      context "with string keys" do
+        it "properly creates object" do
+          contact = Contact.build({"name" => "Deepthi", "age" => 18, "gender" => "female"})
+          contact.name.should eq("Deepthi")
+          contact.age.should eq(18)
+          contact.gender.should eq("female")
+        end
+      end
+
+      context "with symbol keys" do
+        it "properly creates object" do
+          contact = Contact.build({:name => "Deepthi", :age => 18, :gender => "female"})
+          contact.name.should eq("Deepthi")
+          contact.age.should eq(18)
+          contact.gender.should eq("female")
+        end
+      end
     end
 
-    pending "with named tuple" do
-    end
+    context "from named tuple" do
+      it "properly creates object" do
+        contact = Contact.build({name: "Deepthi", age: 18, gender: "female"})
+        contact.name.should eq("Deepthi")
+        contact.age.should eq(18)
+        contact.gender.should eq("female")
+      end
 
-    pending "with symbol based hash" do
-    end
-
-    pending "with string based hash" do
+      it "allows splatted named tuple as well" do
+        contact = Contact.build(name: "Deepthi", age: 18, gender: "female")
+        contact.name.should eq("Deepthi")
+        contact.age.should eq(18)
+        contact.gender.should eq("female")
+      end
     end
   end
 
@@ -145,12 +270,30 @@ describe Jennifer::Model::Base do
   end
 
   describe "::table_name" do
-    pending "add" do
+    it "loads from class name automatically" do
+      Contact.table_name.should eq("contacts")
+    end
+
+    it "returns specified name" do
+      ContactWithNotAllFields.table_name.should eq("contacts")
     end
   end
 
   describe "::c" do
-    pending "add" do
+    it "creates criteria with given name" do
+      c = Contact.c("some_field")
+      c.is_a?(Jennifer::QueryBuilder::Criteria)
+      c.field.should eq("some_field")
+      c.table.should eq("contacts")
+      c.relation.should be_nil
+    end
+
+    it "creates criteria with given name and relation" do
+      c = Contact.c("some_field", "some_relation")
+      c.is_a?(Jennifer::QueryBuilder::Criteria)
+      c.field.should eq("some_field")
+      c.table.should eq("contacts")
+      c.relation.should eq("some_relation")
     end
   end
 
@@ -223,17 +366,40 @@ describe Jennifer::Model::Base do
   end
 
   describe "::relations" do
-    pending "add" do
+    it "returns hash of relation objects" do
+      rels = Contact.relations
+      rels.is_a?(Hash).should be_true
+      rels.empty?.should be_false
     end
   end
 
   describe "#destroy" do
-    pending "add" do
+    it "deletes from db" do
+      contact = Factory.create_contact
+      contact.destroy
+      Contact.all.exists?.should be_false
+    end
+
+    it "invokes destroy callbacks" do
+      address = Factory.create_address
+      count = Address.destroy_counter
+      address.destroy
+      (Address.destroy_counter - count).should eq(1)
     end
   end
 
   describe "#delete" do
-    pending "add" do
+    it "deletes from db by given ids" do
+      contact = Factory.create_contact
+      contact.delete
+      Contact.all.exists?.should be_false
+    end
+
+    it "doen't invoke destroy callbacks" do
+      address = Factory.create_address
+      count = Address.destroy_counter
+      address.delete
+      Address.destroy_counter.should eq(count)
     end
   end
 
@@ -294,6 +460,13 @@ describe Jennifer::Model::Base do
       Contact.destroy(c[0..1])
       Contact.all.count.should eq(1)
     end
+
+    it "invokes destroy callbacks" do
+      address = Factory.create_address
+      count = Address.destroy_counter
+      Address.destroy([address.id])
+      (Address.destroy_counter - count).should eq(1)
+    end
   end
 
   describe "::delete" do
@@ -302,6 +475,13 @@ describe Jennifer::Model::Base do
       3.times { |i| c << Factory.create_contact.id }
       Contact.delete(c[0..1])
       Contact.all.count.should eq(1)
+    end
+
+    it "doen't invoke destroy callbacks" do
+      address = Factory.create_address
+      count = Address.destroy_counter
+      Address.delete([address.id])
+      Address.destroy_counter.should eq(count)
     end
   end
 

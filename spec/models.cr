@@ -21,6 +21,10 @@ abstract class ApplicationRecord < Jennifer::Model::Base
   end
 end
 
+# ===========
+# models
+# ===========
+
 class Contact < ApplicationRecord
   with_timestamps
   {% if env("DB") == "postgres" || env("DB") == nil %}
@@ -263,7 +267,7 @@ end
 class ContactWithInValidation < Jennifer::Model::Base
   table_name "contacts"
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     name: String?,
   }, false)
 
@@ -321,7 +325,7 @@ end
 class StrictMaleContactWithExtraField < Jennifer::View::Base
   view_name "male_contacts"
   mapping({
-    id:            Primary32,
+    id:            Primary64,
     missing_field: String,
   })
 end

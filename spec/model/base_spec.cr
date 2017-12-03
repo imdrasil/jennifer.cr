@@ -16,8 +16,7 @@ describe Jennifer::Model::Base do
   describe "::primary" do
     it "return criteria with primary key" do
       c = Passport.primary
-      c.table.should eq("passports")
-      c.field.should eq("enn")
+      match_fields(c, table: "passports", field: "enn")
     end
   end
 
@@ -88,9 +87,7 @@ describe Jennifer::Model::Base do
         it "properly creates object" do
           contact = Contact.create({"name" => "Deepthi", "age" => 18, "gender" => "female"})
           contact.id.should_not be_nil
-          contact.name.should eq("Deepthi")
-          contact.age.should eq(18)
-          contact.gender.should eq("female")
+          match_fields(contact, name: "Deepthi", age: 18, gender: "female")
         end
       end
 
@@ -98,9 +95,7 @@ describe Jennifer::Model::Base do
         it "properly creates object" do
           contact = Contact.create({:name => "Deepthi", :age => 18, :gender => "female"})
           contact.id.should_not be_nil
-          contact.name.should eq("Deepthi")
-          contact.age.should eq(18)
-          contact.gender.should eq("female")
+          match_fields(contact, name: "Deepthi", age: 18, gender: "female")
         end
       end
     end
@@ -109,17 +104,13 @@ describe Jennifer::Model::Base do
       it "properly creates object" do
         contact = Contact.create({name: "Deepthi", age: 18, gender: "female"})
         contact.id.should_not be_nil
-        contact.name.should eq("Deepthi")
-        contact.age.should eq(18)
-        contact.gender.should eq("female")
+        match_fields(contact, name: "Deepthi", age: 18, gender: "female")
       end
 
       it "allows splatted named tuple as well" do
         contact = Contact.create(name: "Deepthi", age: 18, gender: "female")
         contact.id.should_not be_nil
-        contact.name.should eq("Deepthi")
-        contact.age.should eq(18)
-        contact.gender.should eq("female")
+        match_fields(contact, name: "Deepthi", age: 18, gender: "female")
       end
     end
   end
@@ -144,9 +135,7 @@ describe Jennifer::Model::Base do
         it "properly creates object" do
           contact = Contact.create!({"name" => "Deepthi", "age" => 18, "gender" => "female"})
           contact.id.should_not be_nil
-          contact.name.should eq("Deepthi")
-          contact.age.should eq(18)
-          contact.gender.should eq("female")
+          match_fields(contact, name: "Deepthi", age: 18, gender: "female")
         end
       end
 
@@ -154,9 +143,7 @@ describe Jennifer::Model::Base do
         it "properly creates object" do
           contact = Contact.create!({:name => "Deepthi", :age => 18, :gender => "female"})
           contact.id.should_not be_nil
-          contact.name.should eq("Deepthi")
-          contact.age.should eq(18)
-          contact.gender.should eq("female")
+          match_fields(contact, name: "Deepthi", age: 18, gender: "female")
         end
       end
     end
@@ -165,17 +152,13 @@ describe Jennifer::Model::Base do
       it "properly creates object" do
         contact = Contact.create!({name: "Deepthi", age: 18, gender: "female"})
         contact.id.should_not be_nil
-        contact.name.should eq("Deepthi")
-        contact.age.should eq(18)
-        contact.gender.should eq("female")
+        match_fields(contact, name: "Deepthi", age: 18, gender: "female")
       end
 
       it "allows splatted named tuple as well" do
         contact = Contact.create!(name: "Deepthi", age: 18, gender: "female")
         contact.id.should_not be_nil
-        contact.name.should eq("Deepthi")
-        contact.age.should eq(18)
-        contact.gender.should eq("female")
+        match_fields(contact, name: "Deepthi", age: 18, gender: "female")
       end
     end
   end
@@ -193,18 +176,14 @@ describe Jennifer::Model::Base do
       context "with string keys" do
         it "properly creates object" do
           contact = Contact.build({"name" => "Deepthi", "age" => 18, "gender" => "female"})
-          contact.name.should eq("Deepthi")
-          contact.age.should eq(18)
-          contact.gender.should eq("female")
+          match_fields(contact, name: "Deepthi", age: 18, gender: "female")
         end
       end
 
       context "with symbol keys" do
         it "properly creates object" do
           contact = Contact.build({:name => "Deepthi", :age => 18, :gender => "female"})
-          contact.name.should eq("Deepthi")
-          contact.age.should eq(18)
-          contact.gender.should eq("female")
+          match_fields(contact, name: "Deepthi", age: 18, gender: "female")
         end
       end
     end
@@ -212,22 +191,22 @@ describe Jennifer::Model::Base do
     context "from named tuple" do
       it "properly creates object" do
         contact = Contact.build({name: "Deepthi", age: 18, gender: "female"})
-        contact.name.should eq("Deepthi")
-        contact.age.should eq(18)
-        contact.gender.should eq("female")
+        match_fields(contact, name: "Deepthi", age: 18, gender: "female")
       end
 
       it "allows splatted named tuple as well" do
         contact = Contact.build(name: "Deepthi", age: 18, gender: "female")
-        contact.name.should eq("Deepthi")
-        contact.age.should eq(18)
-        contact.gender.should eq("female")
+        match_fields(contact, name: "Deepthi", age: 18, gender: "female")
       end
     end
   end
 
   describe "#save" do
-    pending "saves new object to db" do
+    it "saves new object to db" do
+      count = Contact.all.count
+      contact = Factory.build_contact
+      contact.save
+      Contact.all.count.should eq(count + 1)
     end
 
     context "updates existing object in db" do
@@ -291,9 +270,7 @@ describe Jennifer::Model::Base do
     it "creates criteria with given name and relation" do
       c = Contact.c("some_field", "some_relation")
       c.is_a?(Jennifer::QueryBuilder::Criteria)
-      c.field.should eq("some_field")
-      c.table.should eq("contacts")
-      c.relation.should eq("some_relation")
+      match_fields(c, field: "some_field", table: "contacts", relation: "some_relation")
     end
   end
 
@@ -360,11 +337,6 @@ describe Jennifer::Model::Base do
     end
   end
 
-  describe "#set_relation" do
-    pending "add" do
-    end
-  end
-
   describe "::relations" do
     it "returns hash of relation objects" do
       rels = Contact.relations
@@ -406,23 +378,34 @@ describe Jennifer::Model::Base do
   describe "#lock!" do
     it "lock current record" do
       Factory.create_contact.lock!
+      query_log.last.should match(/FOR UPDATE/)
     end
 
-    # TODO: find how to test this - now everything is a transaction in test env
-    pending "raises exception if transaction is not started" do
+    it "raises exception if transaction is not started" do
+      void_transaction do
+        Factory.create_contact.lock!
+      end
     end
   end
 
   describe "#with_lock" do
-    # TODO: find how to properly test this one
     it "starts transaction" do
-      expect_raises(DivisionByZero) do
-        Factory.create_contact.with_lock do
-          Factory.create_contact
-          1 / 0
+      void_transaction do
+        expect_raises(DivisionByZero) do
+          Factory.create_contact.with_lock do
+            Factory.create_contact
+            Contact.all.count.should eq(2)
+            1 / 0
+          end
         end
+        Contact.all.count.should eq(1)
       end
-      Contact.all.count.should eq(1)
+    end
+
+    it "locks for update" do
+      Factory.create_contact.with_lock do
+        query_log.last.should match(/FOR UPDATE/)
+      end
     end
   end
 

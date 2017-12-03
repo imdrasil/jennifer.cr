@@ -199,9 +199,11 @@ describe Jennifer::Model::RelationDefinition do
         Address.relation("contact").condition_clause.as_sql.should eq("contacts.id = addresses.contact_id")
       end
 
-      pending "when desclaration has additional block" do
+      context "when desclaration has additional block" do
         it "sets correct query part" do
-          Address.relation("main_address").condition_clause.as_sql.should match(/addresses\.contact_id = contacts\.id AND addresses\.main/)
+          query = JohnPassport.relation("contact").condition_clause
+          query.as_sql.should match(/contacts\.id = passports\.contact_id AND contacts\.name = %s/)
+          query.sql_args.should eq(db_array("John"))
         end
       end
     end
@@ -352,8 +354,10 @@ describe Jennifer::Model::RelationDefinition do
 
   describe "%has_and_belongs_many" do
     context "query" do
-      pending "sets correct query part" do
-        Contact.relation("countries").condition_clause.as_sql.should eq("addresses.contact_id = contacts.id")
+      it "sets correct query part" do
+        query = ContactWithDependencies.relation("u_countries")
+        query.condition_clause.as_sql.should eq("countries.contact_id = contacts.id AND countries.name LIKE %s")
+        query.condition_clause.sql_args.should eq(db_array("U%"))
       end
     end
 

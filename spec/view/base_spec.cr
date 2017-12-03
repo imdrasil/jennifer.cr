@@ -109,13 +109,9 @@ describe Jennifer::View::Base do
     end
   end
 
-  describe "#set_relation" do
-    pending "add" do
-    end
-  end
-
   describe "::relations" do
     pending "add" do
+      # NOTE: now views don't support relations
     end
   end
 

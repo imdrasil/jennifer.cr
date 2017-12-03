@@ -70,14 +70,14 @@ module Jennifer
         res
       end
 
-      # NOTICE: designed for test usage
+      # NOTE: designed for test usage
       def begin_transaction
         raise ::Jennifer::BaseException.new("Couldn't manually begin non top level transaction") if current_transaction
         Config.logger.debug("TRANSACTION START")
         lock_connection(@db.checkout.begin_transaction)
       end
 
-      # NOTICE: designed for test usage
+      # NOTE: designed for test usage
       def rollback_transaction
         t = current_transaction
         raise ::Jennifer::BaseException.new("No transaction to rollback") unless t

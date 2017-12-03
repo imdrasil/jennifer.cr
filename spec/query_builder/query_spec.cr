@@ -135,10 +135,13 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#where" do
     it "allows to pass criteria and sets it via AND" do
-      q1 = Factory.build_query
-      c = Factory.build_criteria(field: "f1") & Factory.build_criteria(field: "f2")
-      q1.where { c("f1") & c("f2") }
+      q1 = Factory.build_query.where { c("f1") & c("f2") }
       q1.tree.to_s.should match(/tests\.f1 AND tests\.f2/)
+    end
+
+    it "generates proper request for given raw sql as condition part with arguments" do
+      q1 = Query["contacts"].where { (_name == "John") & sql("age > %s", [12]) }
+      q1.tree.to_s.should eq("contacts.name = %s AND (age > %s)")
     end
   end
 

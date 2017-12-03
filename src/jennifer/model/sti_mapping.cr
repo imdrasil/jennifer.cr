@@ -22,26 +22,8 @@ module Jennifer
           raise "You can't specify table name using STI on subclasses"
         end
 
-        FIELD_NAMES = [
-          {% for key, v in properties %}
-            "{{key.id}}",
-          {% end %}
-        ]
-
-        def self.field_count
-          super + {{properties.size}}
-        end
-
-        def self.field_names
-          super + FIELD_NAMES
-        end
-
         # NOTE: next section is a copy-paste from mapping.cr (with removing any parsing of primary option)
-        {%
-          add_default_constructor = @type.superclass.constant("WITH_DEFAULT_CONSTRUCTOR")
-          nillable_regexp = /(::Nil)|( Nil)/
-          json_regexp = /JSON::Any/
-        %}
+        {% add_default_constructor = @type.superclass.constant("WITH_DEFAULT_CONSTRUCTOR") %}
 
         # generates hash with options
         {% for key, value in properties %}
@@ -49,7 +31,7 @@ module Jennifer
             {% properties[key] = {type: value} %}
           {% end %}
           {% properties[key][:stringified_type] = properties[key][:type].stringify %}
-          {% if properties[key][:stringified_type] =~ nillable_regexp %}
+          {% if properties[key][:stringified_type] =~ Jennifer::Macros::NILLABLE_REGEXP %}
             {%
               properties[key][:null] = true
               properties[key][:parsed_type] = properties[key][:stringified_type]
@@ -61,8 +43,6 @@ module Jennifer
         {% end %}
 
         __field_declaration({{properties}}, false)
-
-        @new_record = true
 
         def _sti_extract_attributes(values : Hash(String, ::Jennifer::DBAny))
           {% for key, value in properties %}
@@ -119,9 +99,9 @@ module Jennifer
         end
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))
-          # TODO: try to make the "type" field to be customizable
+          # TODO: try to make the "type" field customizable
           values["type"] = "{{@type.id}}"
-          super
+          super(values)
           {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _sti_extract_attributes(values)
         end
 
@@ -131,6 +111,7 @@ module Jennifer
 
         {% if add_default_constructor %}
           WITH_DEFAULT_CONSTRUCTOR = true
+
           def initialize
             initialize({} of String => ::Jennifer::DBAny)
           end
@@ -140,7 +121,7 @@ module Jennifer
 
         def changed?
           super ||
-          {% for key, value in properties %}
+          {% for key in properties.keys %}
             @{{key.id}}_changed ||
           {% end %}
           false
@@ -148,7 +129,7 @@ module Jennifer
 
         def to_h
           hash = super
-          {% for key, value in properties %}
+          {% for key in properties.keys %}
             hash[:{{key.id}}] = @{{key.id}}
           {% end %}
           hash
@@ -156,7 +137,7 @@ module Jennifer
 
         def to_str_h
           hash = super
-          {% for key, value in properties %}
+          {% for key in properties.keys %}
             hash[{{key.stringify}}] = @{{key.id}}
           {% end %}
           hash
@@ -198,7 +179,7 @@ module Jennifer
         def set_attribute(name, value)
           case name.to_s
           {% for key, value in properties %}
-            {% if value[:setter] == nil ? true : value[:setter] %}
+            {% if value[:setter] != false %}
               when "{{key.id}}"
                 if value.is_a?({{value[:parsed_type].id}})
                   self.{{key.id}} = value.as({{value[:parsed_type].id}})
@@ -226,23 +207,13 @@ module Jennifer
           end
         end
 
-        def attributes_hash
-          hash = super
-          {% for key, value in properties %}
-            {% if !value[:null] %}
-              hash.delete(:{{key.id}}) unless hash.has_key?(:{{key.id}})
-            {% end %}
-          {% end %}
-          hash
-        end
-
         def arguments_to_save
           res = super
           args = res[:args]
           fields = res[:fields]
           {% for key, value in properties %}
             if @{{key.id}}_changed
-              args << {% if value[:stringified_type] =~ json_regexp %}
+              args << {% if value[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
                         @{{key.id}}.to_json
                       {% else %}
                         @{{key.id}}
@@ -258,7 +229,7 @@ module Jennifer
           args = res[:args]
           fields = res[:fields]
           {% for key, value in properties %}
-            args << {% if value[:stringified_type] =~ json_regexp %}
+            args << {% if value[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
                       (@{{key.id}} ? @{{key.id}}.to_json : nil)
                     {% else %}
                       @{{key.id}}
@@ -274,10 +245,34 @@ module Jennifer
         end
 
         private def __refresh_changes
-          {% for key, value in properties %}
+          {% for key in properties.keys %}
             @{{key.id}}_changed = false
           {% end %}
           super
+        end
+
+        {% all_properties = properties %}
+        {% for key, value in @type.superclass.constant("COLUMNS_METADATA") %}
+          {% all_properties[key] = value %}
+        {% end %}
+
+        COLUMNS_METADATA = {{all_properties}}
+        PRIMARY_AUTO_INCREMENTABLE = {{@type.superclass.constant("PRIMARY_AUTO_INCREMENTABLE")}}
+
+        def self.columns_tuple
+          COLUMNS_METADATA
+        end
+
+        def self.field_count
+          {{all_properties.size}}
+        end
+
+        def self.field_names
+          [
+            {% for key in all_properties.keys %}
+              "{{key.id}}",
+            {% end %}
+          ]
         end
       end
 

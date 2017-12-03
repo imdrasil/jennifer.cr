@@ -17,8 +17,10 @@ describe Jennifer::QueryBuilder::RawSql do
     end
   end
 
-  describe "#sql_params" do
-    pending "add check" do
+  describe "#sql_args" do
+    it "returns given argument array" do
+      args = described_class.new("age > %s", [12]).sql_args
+      args.should eq(db_array(12))
     end
   end
 end

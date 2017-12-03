@@ -85,7 +85,7 @@ end
 
 class ProfileFactory < Factory::Jennifer::Base
   attr :login, "some_login"
-  attr :type, FacebookProfile.to_s
+  attr :type, Profile.to_s
   attr :contact_id, nil, Int32?
 end
 

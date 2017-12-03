@@ -80,29 +80,13 @@ def clean_db
 end
 
 macro void_transaction
-  Jennifer::Adapter.adapter.rollback_transaction
-  {{yield}}
-  clean_db
-  Jennifer::Adapter.adapter.begin_transaction
-end
-
-def match_array(expect, target)
-  (expect - target).size.should eq(0)
-rescue e
-  puts "Actual array: #{expect}"
-  puts "Expected: #{target}"
-  raise e
-end
-
-def match_each(source, target)
-  source.size.should eq(target.size)
-  source.each do |e|
-    target.includes?(e).should be_true
+  begin
+    Jennifer::Adapter.adapter.rollback_transaction
+    {{yield}}
+  ensure
+    clean_db
+    Jennifer::Adapter.adapter.begin_transaction
   end
-rescue e
-  puts "Actual array: #{source}"
-  puts "Expected: #{target}"
-  raise e
 end
 
 def select_clause(query)
@@ -131,4 +115,38 @@ def read_to_end(rs)
       rs.read
     end
   end
+end
+
+# Matchers ======================
+
+def match_array(expect, target)
+  (expect - target).size.should eq(0)
+  (target - expect).size.should eq(0)
+rescue e
+  puts "Actual array: #{expect}"
+  puts "Expected: #{target}"
+  raise e
+end
+
+def match_each(source, target)
+  source.size.should eq(target.size)
+  source.each do |e|
+    target.includes?(e).should be_true
+  end
+rescue e
+  puts "Actual array: #{source}"
+  puts "Expected: #{target}"
+  raise e
+end
+
+macro match_fields(object, fields)
+  {% for field, value in fields %}
+    {{object}}.{{field.id}}.should eq({{value}})
+  {% end %}
+end
+
+macro match_fields(object, **fields)
+  {% for field, value in fields %}
+    {{object}}.{{field.id}}.should eq({{value}})
+  {% end %}
 end

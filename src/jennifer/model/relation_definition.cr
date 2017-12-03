@@ -149,7 +149,7 @@ module Jennifer
         macro has_and_belongs_to_many(name, klass, request = nil, foreign = nil, primary = nil, join_table = nil, association_foreign = nil)
           @@relations["\{{name.id}}"] =
             ::Jennifer::Relation::ManyToMany(\{{klass}}, \{{@type}}).new("\{{name.id}}", \{{foreign}}, \{{primary}},
-              \{{klass}}.all\{{ (request ? ".exec #{request} ," : "").id }}, \{{join_table}}, \{{association_foreign}})
+              \{{klass}}.all\{% if request %}.exec \{{request}} \{% end %}, \{{join_table}}, \{{association_foreign}})
 
           \{% RELATION_NAMES << "#{name.id}" %}
 

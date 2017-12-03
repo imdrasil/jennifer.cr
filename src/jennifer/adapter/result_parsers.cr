@@ -11,7 +11,7 @@ module Jennifer
         a
       end
 
-      def result_to_array_by_names(rs, names)
+      def result_to_array_by_names(rs, names : Array)
         buf = {} of String => DBAny
         names.each { |n| buf[n] = nil }
         count = names.size
@@ -27,6 +27,7 @@ module Jennifer
           end
           break if count == 0
         end
+        # NOTE: all fields are already sorted in a request
         buf.values
       end
 

@@ -52,7 +52,18 @@ describe Jennifer::QueryBuilder::Executables do
   end
 
   describe "#last!" do
-    pending "add" do
+    it "returns last record" do
+      c1 = Factory.create_contact(age: 15)
+      c2 = Factory.create_contact(age: 15)
+
+      r = Contact.all.last!
+      r.id.should eq(c2.id)
+    end
+
+    it "raises error if there is no such records" do
+      expect_raises(Jennifer::RecordNotFound) do
+        Contact.all.last!
+      end
     end
   end
 
@@ -78,9 +89,6 @@ describe Jennifer::QueryBuilder::Executables do
         Factory.create_contact(name: "a", age: 13)
         res = Contact.all.select("COUNT(id) + 1 as test").pluck(:test)
         res[0].should eq(2)
-      end
-
-      pending "properly works with #with" do
       end
     end
 

@@ -218,10 +218,11 @@ module Jennifer
           end
         end
 
+        # NOTE: This is deprecated method - it will be removed in 0.5.0. Use #to_h instead
         def attributes_hash
           hash = to_h
           {% for key, value in COLUMNS_METADATA %}
-            {% if !value[:null] || value[:primary] %}
+            {% if value[:primary] %}
               hash.delete({{key}}) unless hash.has_key?({{key}})
             {% end %}
           {% end %}

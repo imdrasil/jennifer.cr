@@ -119,13 +119,6 @@ describe Jennifer::View::ExperimentalMapping do
           MaleContact.build({name: "Deepthi", age: 18, gender: "female"})
         end
       end
-
-      context "model has only id field" do
-        pending "creates succesfully without arguments" do
-          # id = OneFieldModel.create.id
-          # OneFieldModel.find!(id).id.should eq(id)
-        end
-      end
     end
 
     describe "::field_count" do
@@ -223,11 +216,6 @@ describe Jennifer::View::ExperimentalMapping do
 
         c.attribute("name").should eq("Jessy")
         c.attribute(:name).should eq("Jessy")
-      end
-    end
-
-    describe "#attributes_hash" do
-      pending "makes to_h and removes all nil values" do
       end
     end
   end

@@ -130,10 +130,10 @@ module Jennifer
       end
 
       # Renders SELECT and FROM parts
-      def self.select_clause(io : String::Builder, query, exact_fields = [] of String)
+      def self.select_clause(io : String::Builder, query, exact_fields : Array = [] of String)
         io << "SELECT "
         io << "DISTINCT " if query._distinct
-        unless query._raw_select
+        if !query._raw_select
           table = query._table
           if !exact_fields.empty?
             exact_fields.join(", ", io) { |f| io << "#{table}.#{f}" }
@@ -206,7 +206,7 @@ module Jennifer
 
       def self.operator_to_sql(operator : Symbol)
         case operator
-        when :like
+        when :like, :ilike
           "LIKE"
         when :not_like
           "NOT LIKE"

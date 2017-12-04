@@ -17,13 +17,13 @@ module Jennifer
         @@view_name ||= to_s.underscore.pluralize
       end
 
+      def self.view_name(value : String)
+        @@view_name = value
+      end
+
       # NOTE: for query generating
       def self.table_name
         view_name
-      end
-
-      def self.view_name(value : String)
-        @@view_name = value
       end
 
       def self.build(pull : DB::ResultSet)
@@ -67,6 +67,10 @@ module Jennifer
         ::Jennifer::QueryBuilder::Criteria.new(name, table_name, relation)
       end
 
+      def self.adapter
+        Adapter.adapter
+      end
+
       def append_relation(name : String, hash)
         raise Jennifer::UnknownRelation.new(self.class, name)
       end
@@ -75,7 +79,21 @@ module Jennifer
         raise Jennifer::UnknownRelation.new(self.class, name)
       end
 
+      def __after_initialize_callback
+        true
+      end
+
       abstract def attribute(name)
+
+      macro def self.views
+        {% begin %}
+          {% if @type.all_subclasses.size > 1 %}
+            [{{@type.all_subclasses.join(", ").id}}] - [Jennifer::View::Materialized]
+          {% else %}
+            [] of Jennifer::View::Base.class
+          {% end %}
+        {% end %}
+      end
 
       macro inherited
         AFTER_INITIALIZE_CALLBACKS = [] of String
@@ -95,26 +113,21 @@ module Jennifer
         # NOTE: override regular behavior - used fields count instead of
         # quering db
         def self.actual_table_field_count
-          FIELDS.size
+          COLUMNS_METADATA.size
         end
 
         macro finished
           def __after_initialize_callback
+            return false unless super
             \{{AFTER_INITIALIZE_CALLBACKS.join("\n").id}}
+            true
           rescue ::Jennifer::Skip
+            false
           end
         end
-      end
-
-      macro def self.views
-        {% begin %}
-          {% if @type.all_subclasses.size > 0 %}
-            [{{@type.all_subclasses.join(", ").id}}]
-          {% else %}
-            [] of Jennifer::View::Base.class
-          {% end %}
-        {% end %}
       end
     end
   end
 end
+
+require "./materialized"

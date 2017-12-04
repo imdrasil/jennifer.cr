@@ -183,6 +183,53 @@ module Jennifer
           {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(%pull)
         end
 
+        # Accepts symbol hash or named tuple, stringify it and calls
+        # TODO: check how converting affects performance
+        def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
+          initialize(stringify_hash(values, Jennifer::DBAny))
+        end
+
+        def initialize(values : Hash(String, ::Jennifer::DBAny))
+          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
+        end
+
+        def initialize(values : Hash | NamedTuple, @new_record)
+          initialize(values)
+        end
+
+        #def attributes=(values : Hash)
+        #end
+
+        {% if add_default_constructor %}
+          WITH_DEFAULT_CONSTRUCTOR = true
+          # Default constructor without any fields
+          def initialize
+            {% for key, value in properties %}
+              @{{key.id}} =
+                {% if value[:null] %}
+                  {% if value[:default] != nil %}
+                    {{value[:default]}}
+                  {% else %}
+                    nil
+                  {% end %}
+                {% elsif value[:default] != nil %}
+                  {{value[:default]}}
+                {% else %}
+                  nil
+                {% end %}
+            {% end %}
+          end
+
+          # Default builder method
+          def self.build
+            o = new
+            o.__after_initialize_callback
+            o
+          end
+        {% else %}
+          WITH_DEFAULT_CONSTRUCTOR = false
+        {% end %}
+
         # Extracts arguments due to mapping from *pull* and returns tuple for
         # fields assignment. It stands on that fact result set has all defined fields in a raw
         # TODO: think about moving it to class scope
@@ -290,53 +337,6 @@ module Jennifer
           {% end %}
         end
 
-        # Accepts symbol hash or named tuple, stringify it and calls
-        # TODO: check how converting affects performance
-        def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-          initialize(stringify_hash(values, Jennifer::DBAny))
-        end
-
-        def initialize(values : Hash(String, ::Jennifer::DBAny))
-          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
-        end
-
-        def initialize(values : Hash | NamedTuple, @new_record)
-          initialize(values)
-        end
-
-        #def attributes=(values : Hash)
-        #end
-
-        {% if add_default_constructor %}
-          WITH_DEFAULT_CONSTRUCTOR = true
-          # Default constructor without any fields
-          def initialize
-            {% for key, value in properties %}
-              @{{key.id}} =
-                {% if value[:null] %}
-                  {% if value[:default] != nil %}
-                    {{value[:default]}}
-                  {% else %}
-                    nil
-                  {% end %}
-                {% elsif value[:default] != nil %}
-                  {{value[:default]}}
-                {% else %}
-                  nil
-                {% end %}
-            {% end %}
-          end
-
-          # Default builder method
-          def self.build
-            o = new
-            o.__after_initialize_callback
-            o
-          end
-        {% else %}
-          WITH_DEFAULT_CONSTRUCTOR = false
-        {% end %}
-
         def save!(skip_validation : Bool = false)
           raise Jennifer::RecordInvalid.new(errors) unless save(skip_validation)
           true
@@ -404,7 +404,7 @@ module Jennifer
         # Returns hash with all attributes and symbol keys
         def to_h
           {
-            {% for key, value in properties %}
+            {% for key in properties.keys %}
               :{{key.id}} => @{{key.id}},
             {% end %}
           }
@@ -413,7 +413,7 @@ module Jennifer
         # Returns hash with all attributes and string keys
         def to_str_h
           {
-            {% for key, value in properties %}
+            {% for key in properties.keys %}
               {{key.stringify}} => @{{key.id}},
             {% end %}
           }
@@ -480,11 +480,12 @@ module Jennifer
           end
         end
 
+        # NOTE: This is deprecated method - it will be removed in 0.5.0. Use #to_h instead
         def attributes_hash
           hash = to_h
           {% for key, value in properties %}
-            {% if !value[:null] || value[:primary] %}
-              hash.delete(:{{key}}) if hash[:{{key}}]?.nil?
+            {% if value[:primary] %}
+              hash.delete(:{{key}}) unless hash[:{{key.id}}]?.nil?
             {% end %}
           {% end %}
           hash

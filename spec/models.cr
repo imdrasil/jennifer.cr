@@ -11,6 +11,22 @@ struct WithArgumentQuery < Jennifer::QueryBuilder::QueryObject
   end
 end
 
+class EnnValidator < Accord::Validator
+  def initialize(context : Passport)
+    @context = context
+  end
+
+  def call(errors : Accord::ErrorList)
+    if @context.enn!.size < 4 && @context.enn![0].downcase == 'a'
+      errors.add(:enn, "Invalid enn")
+    end
+  end
+end
+
+# ===========
+# models
+# ===========
+
 abstract class ApplicationRecord < Jennifer::Model::Base
   getter super_class_callback_called = false
 
@@ -20,10 +36,6 @@ abstract class ApplicationRecord < Jennifer::Model::Base
     @super_class_callback_called = true
   end
 end
-
-# ===========
-# models
-# ===========
 
 class Contact < ApplicationRecord
   with_timestamps
@@ -191,22 +203,23 @@ class Country < Jennifer::Model::Base
   end
 end
 
-class EnnValidator < Accord::Validator
-  def initialize(context : Passport)
-    @context = context
-  end
-
-  def call(errors : Accord::ErrorList)
-    if @context.enn!.size < 4 && @context.enn![0].downcase == 'a'
-      errors.add(:enn, "Invalid enn")
-    end
-  end
-end
-
 class OneFieldModel < Jennifer::Model::Base
   mapping(
     id: Primary32
   )
+end
+
+# mutated models ============
+
+class JohnPassport < Jennifer::Model::Base
+  table_name "passports"
+
+  mapping(
+    enn: {type: String, primary: true},
+    contact_id: Int32?
+  )
+
+  belongs_to :contact, Contact, {where { _name == "John" }}
 end
 
 class OneFieldModelWithExtraArgument < Jennifer::Model::Base
@@ -251,6 +264,7 @@ class ContactWithDependencies < Jennifer::Model::Base
   has_many :facebook_profiles, FacebookProfile, dependent: :nullify, foreign: :contact_id
   has_many :passports, Passport, dependent: :destroy, foreign: :contact_id
   has_many :twitter_profiles, TwitterProfile, dependent: :restrict_with_exception, foreign: :contact_id
+  has_and_belongs_to_many :u_countries, Country, {where { _name.like("U%") }}, foreign: :contact_id
 
   validates_length :name, minimum: 2
   validates_length :description, minimum: 2, allow_blank: true
@@ -286,7 +300,7 @@ end
 # views
 # ===========
 
-class FemaleContact < Jennifer::View::Base
+class FemaleContact < Jennifer::View::Materialized
   mapping({
     id:   Primary32,
     name: String?,

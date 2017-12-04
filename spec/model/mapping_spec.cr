@@ -500,13 +500,37 @@ describe Jennifer::Model::Mapping do
       end
     end
 
-    describe "#to_h" do
-      pending "creates hash with symbol keys" do
+    describe "#arguments_to_insert" do
+      it "returns named tuple with :args and :fields keys" do
+        r = Factory.build_profile.arguments_to_insert
+        r.is_a?(NamedTuple).should be_true
+        r.keys.should eq({:args, :fields})
+      end
+
+      it "returns tuple with all fields" do
+        r = Factory.build_profile.arguments_to_insert
+        match_array(r[:fields], %w(login contact_id type))
+      end
+
+      it "returns tuple with all values" do
+        r = Factory.build_profile.arguments_to_insert
+        match_array(r[:args], db_array("some_login", nil, "Profile"))
       end
     end
 
-    describe "#attribute_hash" do
-      pending "creates hash with attributes" do
+    describe "#to_h" do
+      it "creates hash with symbol keys" do
+        contact = Factory.build_contact(name: "Abdul").to_h
+        contact.is_a?(Hash).should be_true
+        contact[:name].should eq("Abdul")
+      end
+    end
+
+    describe "#to_str_h" do
+      it "creates hash with string keys" do
+        contact = Factory.build_contact(name: "Abdul").to_str_h
+        contact.is_a?(Hash).should be_true
+        contact["name"].should eq("Abdul")
       end
     end
   end

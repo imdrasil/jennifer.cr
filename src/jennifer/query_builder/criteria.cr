@@ -50,7 +50,7 @@ module Jennifer
         take(key)
       end
 
-      {% for op in [:<, :>, :<=, :>=, :+, :-, :*, :/, :regexp, :not_regexp, :like, :not_like] %}
+      {% for op in %i(< > <= >= + - * / regexp not_regexp like not_like ilike) %}
         def {{op.id}}(value : Rightable)
           Condition.new(self, {{op}}, value)
         end
@@ -65,6 +65,7 @@ module Jennifer
       end
 
       def ==(value : Rightable)
+        # NOTE: here crystal improperly resolves override methods with Nilargument
         if !value.nil?
           Condition.new(self, :==, value)
         else
@@ -76,7 +77,12 @@ module Jennifer
         self.!=(value.to_s)
       end
 
+      def !=(value : Nil)
+        not(value)
+      end
+
       def !=(value : Rightable)
+        # NOTE: here crystal improperly resolves override methods with Nilargument
         if !value.nil?
           Condition.new(self, :!=, value)
         else
@@ -93,7 +99,7 @@ module Jennifer
       end
 
       def not(value : Symbol | Bool | Nil)
-        Condition.new(self, :not, translate(value))
+        Condition.new(self, :is_not, translate(value))
       end
 
       def not

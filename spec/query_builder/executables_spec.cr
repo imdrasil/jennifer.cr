@@ -52,7 +52,18 @@ describe Jennifer::QueryBuilder::Executables do
   end
 
   describe "#last!" do
-    pending "add" do
+    it "returns last record" do
+      c1 = Factory.create_contact(age: 15)
+      c2 = Factory.create_contact(age: 15)
+
+      r = Contact.all.last!
+      r.id.should eq(c2.id)
+    end
+
+    it "raises error if there is no such records" do
+      expect_raises(Jennifer::RecordNotFound) do
+        Contact.all.last!
+      end
     end
   end
 
@@ -78,9 +89,6 @@ describe Jennifer::QueryBuilder::Executables do
         Factory.create_contact(name: "a", age: 13)
         res = Contact.all.select("COUNT(id) + 1 as test").pluck(:test)
         res[0].should eq(2)
-      end
-
-      pending "properly works with #with" do
       end
     end
 
@@ -119,7 +127,10 @@ describe Jennifer::QueryBuilder::Executables do
   end
 
   describe "#modify" do
-    pending "add" do
+    it "performs provided operations" do
+      c = Factory.create_contact(age: 13)
+      Contact.all.modify({:age => {value: 2, operator: :+}})
+      c.reload.age.should eq(15)
     end
   end
 
@@ -174,7 +185,11 @@ describe Jennifer::QueryBuilder::Executables do
   end
 
   describe "#db_results" do
-    pending "add" do
+    it "returns array of hashes" do
+      id = Factory.create_contact.id
+      res = Contact.all.db_results
+      res.is_a?(Array).should be_true
+      res[0]["id"].should eq(id)
     end
   end
 
@@ -185,7 +200,17 @@ describe Jennifer::QueryBuilder::Executables do
   end
 
   describe "#ids" do
-    pending "add" do
+    it "returns array of ids" do
+      id = Factory.create_contact.id
+      ids = Contact.all.ids
+      ids.should be_a(Array(Int32))
+      ids.should eq([id])
+    end
+
+    it "raises BadQuery if there is no id field" do
+      expect_raises(Jennifer::BadQuery) do
+        Passport.all.ids
+      end
     end
   end
 

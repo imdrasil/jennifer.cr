@@ -62,6 +62,8 @@ module Jennifer
           "<@"
         when :overlap
           "&&"
+        when :ilike
+          "ILIKE"
         else
           operator.to_s
         end

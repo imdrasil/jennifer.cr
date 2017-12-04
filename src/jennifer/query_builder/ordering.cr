@@ -2,7 +2,11 @@ module Jennifer
   module QueryBuilder
     module Ordering
       def order(**opts)
-        order(opts.to_h)
+        opts.each do |k, v|
+          key = @expression.c(k.to_s)
+          @order[key] = v.to_s
+        end
+        self
       end
 
       def order(opts : Hash(String, String | Symbol))

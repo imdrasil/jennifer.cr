@@ -65,7 +65,15 @@ describe Jennifer::QueryBuilder::ModelQuery do
       end
     end
 
-    pending "with aliases" do
+    it "properly loads several relations from the same table" do
+      c = Factory.create_contact
+      a = Factory.create_address(contact_id: c.id, main: false)
+      main_address = Factory.create_address(contact_id: c.id, main: true)
+      count = query_count
+      res = Contact.all.eager_load(:addresses, :main_address).to_a
+      res[0].addresses.size.should eq(2)
+      res[0].main_address!.id.should eq(main_address.id)
+      query_count.should eq(count + 1)
     end
 
     it "stops reloading relation from db if there is no records" do
@@ -96,7 +104,11 @@ describe Jennifer::QueryBuilder::ModelQuery do
   end
 
   describe "#destroy" do
-    pending "add" do
+    it "invokes destroy of all model objects" do
+      Factory.create_address(2)
+      count = Address.destroy_counter
+      Address.all.destroy
+      Address.destroy_counter.should eq(count + 2)
     end
   end
 

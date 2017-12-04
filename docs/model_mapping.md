@@ -149,7 +149,6 @@ If you don't want to define all the table fields - pass `false` as second argume
 | `#to_h` | | returns hash with all attributes |
 | `#to_str_h` | | same as `#to_h` but with String keys |
 | `#attribute` | `String \| Symbol` | returns attribute value by it's name |
-| `#attributes_hash` | | returns `to_h` with deleted `nil` entries |
 | `#changed?` | | check if any field was changed |
 | `#set_attribute` | `String \| Symbol`, `DB::Any` | sets attribute by given name |
 | `#attribute` | `String \| Symbol` | returns attribute value by it's name |

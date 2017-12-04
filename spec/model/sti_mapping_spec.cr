@@ -1,7 +1,30 @@
 require "../spec_helper"
 
 describe Jennifer::Model::STIMapping do
-  describe "%mapping" do
+  describe "%sti_mapping" do
+    context "columns metadata" do
+      it "sets constant" do
+        FacebookProfile::COLUMNS_METADATA.is_a?(NamedTuple).should be_true
+      end
+
+      it "copies data from superclass" do
+        id = FacebookProfile::COLUMNS_METADATA[:id]
+        id.is_a?(NamedTuple).should be_true
+        id[:type].should eq(Int32)
+        id[:parsed_type].should eq("Primary32?")
+      end
+    end
+
+    describe "::columns_tuple" do
+      it "returns named tuple mith column metedata" do
+        metadata = FacebookProfile.columns_tuple
+        metadata.is_a?(NamedTuple).should be_true
+        metadata[:uid].is_a?(NamedTuple).should be_true
+        metadata[:uid][:type].should eq(String?)
+        metadata[:uid][:parsed_type].should eq("::Union(String, ::Nil)")
+      end
+    end
+
     context "types" do
       context "nillable" do
         context "using ? without named tuple" do
@@ -98,18 +121,51 @@ describe Jennifer::Model::STIMapping do
     end
   end
 
-  describe "#attributes_hash" do
-    pending "returns all fields" do
-    end
-  end
-
   describe "#arguments_to_save" do
-    pending "returns all arguments" do
+    it "returns named tuple with correct keys" do
+      r = Factory.build_twitter_profile.arguments_to_save
+      r.is_a?(NamedTuple).should be_true
+      r.keys.should eq({:args, :fields})
+    end
+
+    it "returns tuple with empty arguments if no field was changed" do
+      r = Factory.build_twitter_profile.arguments_to_save
+      r[:args].empty?.should be_true
+      r[:fields].empty?.should be_true
+    end
+
+    it "returns tuple with changed parent argument" do
+      c = Factory.build_twitter_profile
+      c.login = "some new login"
+      r = c.arguments_to_save
+      r[:args].should eq(db_array("some new login"))
+      r[:fields].should eq(db_array("login"))
+    end
+
+    it "returns tuple with changed own argument" do
+      c = Factory.build_twitter_profile
+      c.email = "some new email"
+      r = c.arguments_to_save
+      r[:args].should eq(db_array("some new email"))
+      r[:fields].should eq(db_array("email"))
     end
   end
 
   describe "#arguments_to_insert" do
-    pending "returns all arguments" do
+    it "returns named tuple with :args and :fields keys" do
+      r = Factory.build_twitter_profile.arguments_to_insert
+      r.is_a?(NamedTuple).should be_true
+      r.keys.should eq({:args, :fields})
+    end
+
+    it "returns tuple with all fields" do
+      r = Factory.build_twitter_profile.arguments_to_insert
+      match_array(r[:fields], %w(login contact_id type email))
+    end
+
+    it "returns tuple with all values" do
+      r = Factory.build_twitter_profile.arguments_to_insert
+      match_array(r[:args], db_array("some_login", nil, "TwitterProfile", "some_email@example.com"))
     end
   end
 end

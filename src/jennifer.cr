@@ -22,7 +22,6 @@ require "./jennifer/relation/*"
 require "./jennifer/model/*"
 
 require "./jennifer/view/base"
-require "./jennifer/view/experimental_mapping"
 
 require "./jennifer/migration/table_builder/*"
 require "./jennifer/migration/*"

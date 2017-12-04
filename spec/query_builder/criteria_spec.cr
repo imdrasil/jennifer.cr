@@ -23,22 +23,86 @@ describe Jennifer::QueryBuilder::Criteria do
     end
   end
 
-  describe "#is_nil" do
-    pending "fill it" do
+  describe "#is" do
+    it "creates is condition" do
+      cond = Factory.build_criteria.is(nil)
+      cond.operator.should eq(:is)
     end
 
-    it "works via == as well" do
+    context "value is nil" do
+      it "creates is condition" do
+        c = Factory.build_criteria
+        cond = c.is(nil)
+        cond.as_sql.should eq("tests.f1 IS NULL")
+        cond.sql_args.empty?.should be_true
+      end
+    end
+
+    context "value is true" do
+      it "creates is condition" do
+        cond = Factory.build_criteria.is(true)
+        cond.as_sql.should eq("tests.f1 IS TRUE")
+        cond.sql_args.empty?.should be_true
+      end
+    end
+
+    context "value is false" do
+      it "creates is condition" do
+        c = Factory.build_criteria
+        cond = c.is(false)
+        cond.as_sql.should eq("tests.f1 IS FALSE")
+        cond.sql_args.empty?.should be_true
+      end
+    end
+
+    it "works via == and nil as well" do
       c = Factory.build_criteria(field: "f1") == nil
       c.as_sql.should eq("tests.f1 IS NULL")
       c.sql_args.empty?.should be_true
     end
   end
 
-  describe "#not_nil" do
-    pending "fill it" do
+  describe "#not" do
+    it "creates not condition" do
+      cond = Factory.build_criteria.not(nil)
+      cond.operator.should eq(:is_not)
     end
 
-    pending "via != as well" do
+    context "value is nil" do
+      it "creates is condition" do
+        cond = Factory.build_criteria.not(nil)
+        cond.as_sql.should eq("tests.f1 IS NOT NULL")
+        cond.sql_args.empty?.should be_true
+      end
+    end
+
+    context "value is true" do
+      it "creates is condition" do
+        cond = Factory.build_criteria.not(true)
+        cond.as_sql.should eq("tests.f1 IS NOT TRUE")
+        cond.sql_args.empty?.should be_true
+      end
+    end
+
+    context "value is false" do
+      it "creates is condition" do
+        cond = Factory.build_criteria.not(false)
+        cond.as_sql.should eq("tests.f1 IS NOT FALSE")
+        cond.sql_args.empty?.should be_true
+      end
+    end
+
+    context "without arguments" do
+      it "creates inversed condition" do
+        cond = Factory.build_criteria.not
+        cond.as_sql.should eq("NOT (tests.f1)")
+      end
+    end
+
+    it "works via != and nil as well" do
+      c = Factory.build_criteria(field: "f1") != nil
+      c.as_sql.should eq("tests.f1 IS NOT NULL")
+      c.sql_args.empty?.should be_true
     end
   end
 

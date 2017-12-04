@@ -3,6 +3,7 @@ require "../spec_helper"
 postgres_only do
   describe Jennifer::Adapter::Postgres do
     adapter = Jennifer::Adapter.adapter
+
     describe "#parse_query" do
       it "replaces %s by dollar-and-numbers" do
         adapter.parse_query("some %s query %s", ["a", "b"]).should eq("some $1 query $2")
@@ -11,10 +12,10 @@ postgres_only do
 
     describe "index manipulation" do
       age_index_options = {
-        :type => nil,
-        :fields => [:age],
-        :order => {} of Symbol => Symbol,
-        :lengths => {} of Symbol => Symbol
+        :type    => nil,
+        :fields  => [:age],
+        :order   => {} of Symbol => Symbol,
+        :lengths => {} of Symbol => Symbol,
       }
       index_name = "contacts_age_index"
 
@@ -51,16 +52,29 @@ postgres_only do
     end
 
     describe "#change_column" do
+      pending "add" do
+      end
     end
 
     # Now those methods are tested by another cases
     describe "#exists?" do
+      it "returns true if record exists" do
+        Factory.create_contact
+        adapter.exists?(Contact.all).should be_true
+      end
+
+      it "returns false if record doesn't exist" do
+        adapter.exists?(Contact.all).should be_false
+      end
     end
 
     describe "#insert" do
+      it "stores given object to the db" do
+        c = Factory.build_contact
+        adapter.insert(c).last_insert_id.should_not eq(-1)
+        Contact.all.first!
+      end
     end
-
-
 
     describe "#material_view_exists?" do
       it "returns true if exists" do

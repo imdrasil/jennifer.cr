@@ -191,20 +191,20 @@ module Jennifer
         @destroyed
       end
 
-      # Deletes object from DB without calling callbacks
+      # Deletes object from DB without calling callbacks.
       def delete
         return if new_record? || errors.any?
         this = self
         self.class.all.where { this.class.primary == this.primary }.delete
       end
 
-      # Lock current object in DB
+      # Lock current object in DB.
       def lock!(type : String | Bool = true)
         this = self
         self.class.all.where { this.class.primary == this.primary }.lock(type).to_a
       end
 
-      # Starts transaction and locks current object
+      # Starts transaction and locks current object.
       def with_lock(type : String | Bool = true)
         self.class.transaction do |t|
           self.lock!(type)

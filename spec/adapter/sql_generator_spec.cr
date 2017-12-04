@@ -1,9 +1,5 @@
 require "../spec_helper"
 
-def sb
-  String.build { |io| yield io }
-end
-
 describe Jennifer::Adapter::SqlGenerator do
   adapter = Jennifer::Adapter.adapter
   described_class = Jennifer::Adapter::SqlGenerator
@@ -91,7 +87,12 @@ describe Jennifer::Adapter::SqlGenerator do
   end
 
   describe "::group_clause" do
-    pending "correctly generates sql" do
+    it "adds nothing if query has grouping" do
+      sb { |io| described_class.group_clause(io, Contact.all) }.should_not match(/GROUP/)
+    end
+
+    it "correctly generates sql" do
+      sb { |io| described_class.group_clause(io, Contact.all.group(:age)) }.should match(/GROUP BY contacts.age/)
     end
   end
 
@@ -210,6 +211,30 @@ describe Jennifer::Adapter::SqlGenerator do
           described_class.json_path(s).should eq("tests.f1->'a'")
         end
       end
+    end
+  end
+
+  describe "::parse_query" do
+    postgres_only do
+      it "replase placeholders with dollar numbers" do
+        described_class.parse_query("asd %s qwe %s", 2).should eq("asd $1 qwe $2")
+      end
+    end
+
+    mysql_only do
+      it "replace placeholders with question marks" do
+        described_class.parse_query("asd %s qwe %s", 2).should eq("asd ? qwe ?")
+      end
+    end
+  end
+
+  describe "::escape_string" do
+    it "returns prepared placeholder string" do
+      described_class.escape_string(3).should eq("%s, %s, %s")
+    end
+
+    it "returns generated placeholder string" do
+      described_class.escape_string(4).should eq("%s, %s, %s, %s")
     end
   end
 end

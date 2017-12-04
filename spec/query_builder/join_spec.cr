@@ -36,7 +36,10 @@ describe Jennifer::QueryBuilder::Join do
     end
 
     context "invalid join type" do
-      pending "raises exception" do
+      it "raises argument error" do
+        expect_raises(ArgumentError, "Bad join type: unknown") do
+          Factory.build_join(type: :unknown).as_sql
+        end
       end
     end
   end
@@ -95,7 +98,10 @@ describe Jennifer::QueryBuilder::LateralJoin do
     end
 
     context "invalid join type" do
-      pending "raises exception" do
+      it "raises argument error" do
+        expect_raises(ArgumentError, "Bad join type: unknown") do
+          lateral_join(type: :unknown).as_sql
+        end
       end
     end
   end

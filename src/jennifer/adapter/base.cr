@@ -67,7 +67,7 @@ module Jennifer
         raise BadQuery.new(e.message, _query, args)
       end
 
-      def parse_query(q : String, args)
+      def parse_query(q : String, args : Array)
         SqlGenerator.parse_query(q, args.size)
       end
 
@@ -338,6 +338,10 @@ module Jennifer
       abstract def default_type_size(name)
       abstract def table_column_count(table)
       abstract def with_table_lock(table : String, type : String = "default", &block)
+
+      def refresh_materialized_view(name)
+        raise AbstractMethod.new(:refresh_materialized_view, self.class)
+      end
 
       # private ===========================
       # NOTE: adding here type will bring a lot of small issues around

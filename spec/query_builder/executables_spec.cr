@@ -127,7 +127,10 @@ describe Jennifer::QueryBuilder::Executables do
   end
 
   describe "#modify" do
-    pending "add" do
+    it "performs provided operations" do
+      c = Factory.create_contact(age: 13)
+      Contact.all.modify({:age => {value: 2, operator: :+}})
+      c.reload.age.should eq(15)
     end
   end
 
@@ -182,7 +185,11 @@ describe Jennifer::QueryBuilder::Executables do
   end
 
   describe "#db_results" do
-    pending "add" do
+    it "returns array of hashes" do
+      id = Factory.create_contact.id
+      res = Contact.all.db_results
+      res.is_a?(Array).should be_true
+      res[0]["id"].should eq(id)
     end
   end
 
@@ -193,7 +200,17 @@ describe Jennifer::QueryBuilder::Executables do
   end
 
   describe "#ids" do
-    pending "add" do
+    it "returns array of ids" do
+      id = Factory.create_contact.id
+      ids = Contact.all.ids
+      ids.should be_a(Array(Int32))
+      ids.should eq([id])
+    end
+
+    it "raises BadQuery if there is no id field" do
+      expect_raises(Jennifer::BadQuery) do
+        Passport.all.ids
+      end
     end
   end
 

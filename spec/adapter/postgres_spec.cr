@@ -58,12 +58,21 @@ postgres_only do
 
     # Now those methods are tested by another cases
     describe "#exists?" do
-      pending "add" do
+      it "returns true if record exists" do
+        Factory.create_contact
+        adapter.exists?(Contact.all).should be_true
+      end
+
+      it "returns false if record doesn't exist" do
+        adapter.exists?(Contact.all).should be_false
       end
     end
 
     describe "#insert" do
-      pending "add" do
+      it "stores given object to the db" do
+        c = Factory.build_contact
+        adapter.insert(c).last_insert_id.should_not eq(-1)
+        Contact.all.first!
       end
     end
 

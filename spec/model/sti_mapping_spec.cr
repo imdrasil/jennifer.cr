@@ -1,7 +1,30 @@
 require "../spec_helper"
 
 describe Jennifer::Model::STIMapping do
-  describe "%mapping" do
+  describe "%sti_mapping" do
+    context "columns metadata" do
+      it "sets constant" do
+        FacebookProfile::COLUMNS_METADATA.is_a?(NamedTuple).should be_true
+      end
+
+      it "copies data from superclass" do
+        id = FacebookProfile::COLUMNS_METADATA[:id]
+        id.is_a?(NamedTuple).should be_true
+        id[:type].should eq(Int32)
+        id[:parsed_type].should eq("Primary32?")
+      end
+    end
+
+    describe "::columns_tuple" do
+      it "returns named tuple mith column metedata" do
+        metadata = FacebookProfile.columns_tuple
+        metadata.is_a?(NamedTuple).should be_true
+        metadata[:uid].is_a?(NamedTuple).should be_true
+        metadata[:uid][:type].should eq(String?)
+        metadata[:uid][:parsed_type].should eq("::Union(String, ::Nil)")
+      end
+    end
+
     context "types" do
       context "nillable" do
         context "using ? without named tuple" do

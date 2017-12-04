@@ -129,7 +129,7 @@ module Jennifer
 
       # works only if there is id field and it is covertable to Int32
       def ids
-        pluck(:id).map(&.to_i)
+        pluck(:id).map(&.as(Int32))
       end
 
       def each

@@ -117,6 +117,10 @@ def read_to_end(rs)
   end
 end
 
+def sb
+  String.build { |io| yield io }
+end
+
 # Matchers ======================
 
 def match_array(expect, target)

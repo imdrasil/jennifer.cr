@@ -2,6 +2,7 @@ require "../spec_helper"
 
 describe Jennifer::Adapter::Base do
   adapter = Jennifer::Adapter.adapter
+  described_class = Jennifer::Adapter::Base
 
   describe Jennifer::BadQuery do
     describe "query" do
@@ -163,8 +164,11 @@ describe Jennifer::Adapter::Base do
     end
   end
 
-  describe "::parse_query" do
-    pending "add" do
+  describe "#parse_query" do
+    it "returns string without %s placeholders" do
+      res = adapter.parse_query("asd %s asd", [2])
+      res.should be_a(String)
+      res.should_not match(/%s/)
     end
   end
 end

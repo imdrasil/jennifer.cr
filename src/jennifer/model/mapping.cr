@@ -380,11 +380,11 @@ module Jennifer
           response.rows_affected == 1
         end
 
-        # Reloads all fields from db
+        # Reloads all fields from db.
         def reload
           raise ::Jennifer::RecordNotFound.new("It is not persisted yet") if new_record?
           this = self
-          self.class.where { this.class.primary == this.primary }.each_result_set do |rs|
+          self.class.all.where { this.class.primary == this.primary }.limit(1).each_result_set do |rs|
             {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(rs)
           end
           __refresh_changes
@@ -393,7 +393,7 @@ module Jennifer
         end
 
         # Returns if any field was changed. If field again got first value - `true` anyway
-        # will be returned
+        # will be returned.
         def changed?
           {% for key, value in properties %}
             @{{key.id}}_changed ||
@@ -401,7 +401,7 @@ module Jennifer
           false
         end
 
-        # Returns hash with all attributes and symbol keys
+        # Returns hash with all attributes and symbol keys.
         def to_h
           {
             {% for key in properties.keys %}
@@ -435,6 +435,7 @@ module Jennifer
               if value.is_a?({{value[:parsed_type].id}})
                 local = value.as({{value[:parsed_type].id}})
                 @{{key.id}} = local
+                @{{key.id}}_changed = true
               else
                 raise ::Jennifer::BaseException.new("Wrong type for #{name} : #{value.class}")
               end
@@ -444,9 +445,8 @@ module Jennifer
             end
           end
 
-          _primary = self.class.primary
-          _primary_value = primary
-          ::Jennifer::Adapter.adapter.update(self.class.all.where { _primary == _primary_value }, values)
+          ::Jennifer::Adapter.adapter.update(self)
+          __refresh_changes
         end
 
         # Sets *name* field with *value*
@@ -534,6 +534,11 @@ module Jennifer
 
         private def __check_if_changed
           raise Jennifer::Skip.new unless changed? || new_record?
+        end
+
+        private def init_attributes(values : Hash)
+          super
+          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
       end
 

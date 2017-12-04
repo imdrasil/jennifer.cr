@@ -147,6 +147,9 @@ module Jennifer
         raise Jennifer::UnknownRelation.new(self.class, name)
       end
 
+      private def init_attributes(values : Hash)
+      end
+
       abstract def primary
       abstract def attribute(name)
       abstract def set_attribute(name, value)

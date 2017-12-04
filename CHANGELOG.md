@@ -1,3 +1,42 @@
+# 0.4.3 (2-01-2018)
+
+* All macro methods were rewritten to new 0.24.1 crystal syntax
+
+**Adapter**
+
+* removed `Jennifer::Adapter::TICKS_PER_MICROSECOND`
+* fixes `Jennifer::Adapter::Mysql#table_column_count` bug
+
+**Model**
+
+* add `Primary32` and `Primary64` shortcuts for primary key mapping (view mapping respects this as well)
+* add `::create!` & `::create` with splatted named tuple arguments
+* now relation retrieveness is updated for any superclass relations as well
+* a relation will be retrieved from db for only persisted record
+* move `Jennifer::Mode::build` method to `%mapping` macro
+* allow retrieving and building sti records using base class
+* fix `#reload` method for sti record
+* optimize building sti record from hash 
+
+**QueryBuilder**
+
+* fix `Criteria#not`
+* add `Criteria#ilike`
+
+**View**
+
+* introduce `View::Materialized` superclass for materialized views
+* add `COLUMNS_METADATA` constant
+* add `::columns_tuple` which retrns `COLUMNS_METADATA`
+* remove `::children_classes`
+* make `after_initialize` callback respect inheritance
+* add `::adapter`
+
+**Exceptions**
+
+* add `AbstractMethod` exception which represents expectation of overriding current method by parents (is usefull when method can't be real abstract one)
+* add `UnknownSTIType`
+
 # 0.4.2 (24-11-2017)
 
 **SqlGenerator**

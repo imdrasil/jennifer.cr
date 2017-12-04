@@ -48,6 +48,7 @@ And operator-like methods:
 | `regexp` | `REGEXP`, `~` (accepts `String`) |
 | `not_regexp` |`NOT REGEXP` |
 | `like` | `LIKE` |
+| `ilike` | `ILIKE` for pg and `LIKE` for mysql | 
 | `not_like` | `NOT LIKE` |
 | `is` | `IS` and provided value |
 | `not` | `NOT` and provided value (or as unary operator if no one is given) |
@@ -70,13 +71,13 @@ For mysql both `take` and `path` methods behave in the same way.
 
 Thera are 2 supported cases:
 
- * 
- ```SQL
- WHERE field_name->"$.selector"
- ```
- could be specified using
+* 
+```SQL
+WHERE field_name->"$.selector"
+```
+could be specified using
 
- ```crystal
+```crystal
 where { _field_name["$.selector"]}
 ```
 
@@ -111,7 +112,7 @@ Query will be inserted "as is". Usage of `#sql` allows to use nested plain reque
 - all regexp methods accepts string representation of regexp
 - use parenthesis for binary operators (`&` and `|`)
 - `nil` given to `!=` and `==` will be transformed to `IS NOT NULL` and `IS NULL`
-- `is` and `not` operator accepts next values: `:nil`, `nil`, `:unknown`, `true`, `false`
+- `is` and `not` operator accepts next values: `nil`, `:unknown`, `true`, `false`
 
 At the end - several examples:
 

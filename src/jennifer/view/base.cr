@@ -79,7 +79,21 @@ module Jennifer
         raise Jennifer::UnknownRelation.new(self.class, name)
       end
 
+      def __after_initialize_callback
+        true
+      end
+
       abstract def attribute(name)
+
+      macro def self.views
+        {% begin %}
+          {% if @type.all_subclasses.size > 1 %}
+            [{{@type.all_subclasses.join(", ").id}}] - [Jennifer::View::Materialized]
+          {% else %}
+            [] of Jennifer::View::Base.class
+          {% end %}
+        {% end %}
+      end
 
       macro inherited
         AFTER_INITIALIZE_CALLBACKS = [] of String
@@ -104,21 +118,16 @@ module Jennifer
 
         macro finished
           def __after_initialize_callback
+            return false unless super
             \{{AFTER_INITIALIZE_CALLBACKS.join("\n").id}}
+            true
           rescue ::Jennifer::Skip
+            false
           end
         end
-      end
-
-      macro def self.views
-        {% begin %}
-          {% if @type.all_subclasses.size > 1 %}
-            [{{@type.all_subclasses.join(", ").id}}]
-          {% else %}
-            [] of Jennifer::View::Base.class
-          {% end %}
-        {% end %}
       end
     end
   end
 end
+
+require "./materialized"

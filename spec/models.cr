@@ -300,7 +300,7 @@ end
 # views
 # ===========
 
-class FemaleContact < Jennifer::View::Base
+class FemaleContact < Jennifer::View::Materialized
   mapping({
     id:   Primary32,
     name: String?,

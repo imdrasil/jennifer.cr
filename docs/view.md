@@ -1,6 +1,6 @@
 # Views
 
-> For now any type of view should have defined primary key as well as model
+> For now any type of view should have defined primary key as well as model.
 
 ## Non Materialized
 
@@ -73,14 +73,14 @@ class AddMaterializedView20170829000433679 < Jennifer::Migration::Base
   end
 end
 ```
-As for non materialized view here all arguments should be escaped explicitly as well.
+As for non materialized view all arguments should be escaped explicitly as well.
 
 > Until 0.5.0 source could be represented as stringgified raw sql, but this will be removed.
 
-For defining materialized view `Jennfer::View::Base` superclass is used as well. So example of defining created before materialized view looks like:
+Example of defining created before materialized view looks like:
 
 ```crystal
-class FemaleContact < Jennifer::Model::Base
+class FemaleContact < Jennifer::Model::Materialized
   mapping({
     id:   Primary32,
     name: String?,
@@ -91,5 +91,5 @@ end
 To refresh content of materialized view use:
 
 ```crystal
-Jennifer::Adapter.adapter.refresh_materialized_view("materialized_view_name")
+FemaleContact.refresh
 ```

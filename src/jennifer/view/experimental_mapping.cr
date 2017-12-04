@@ -71,7 +71,7 @@ module Jennifer
         # Extracts arguments due to mapping from *pull* and returns tuple for
         # fields assignment. It stands on that fact result set has all defined fields in a raw
         # TODO: think about moving it to class scope
-        # NOTE: don't use it manually - there is some dependencies on caller such as reading tesult set to the end
+        # NOTE: don't use it manually - there is some dependencies on caller such as reading result set to the end
         #  if eception was raised
         def _extract_attributes(pull : DB::ResultSet)
           {% for key in COLUMNS_METADATA.keys %}
@@ -235,8 +235,10 @@ module Jennifer
           FIELDS = {} of String => Hash(String, String)
 
           macro finished
-            __field_declaration
-            __instance_methods
+            \\{% if @type.constant("COLUMNS_METADATA") %}
+              __field_declaration
+              __instance_methods
+            \\{% end %}
           end
         end
       end

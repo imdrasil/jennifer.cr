@@ -200,6 +200,31 @@ module Jennifer
         #def attributes=(values : Hash)
         #end
 
+        def self.build(pull : DB::ResultSet)
+          \{% begin %}
+            \{% klasses = @type.all_subclasses.select { |s| s.constant("STI") == true } %}
+            \{% if !klasses.empty? %}
+              hash = ::Jennifer::Adapter.adapter.result_to_hash(pull)
+              o =
+                case hash["type"]
+                when "", nil, "\{{@type}}"
+                  new(hash, false)
+                \{% for klass in klasses %}
+                when "\{{klass}}"
+                  \{{klass}}.new(hash, false)
+                \{% end %}
+                else
+                  raise ::Jennifer::UnknownSTIType.new(self, hash["type"])
+                end
+            \{% else %}
+              o = new(pull)
+            \{% end %}
+
+            o.__after_initialize_callback
+            o
+          \{% end %}
+        end
+
         {% if add_default_constructor %}
           WITH_DEFAULT_CONSTRUCTOR = true
           # Default constructor without any fields

@@ -2,6 +2,8 @@ module Jennifer
   module Model
     module STIMapping
       macro sti_mapping(properties)
+        STI = true
+
         def self.sti_condition
           c("type") == {{@type.id.stringify}}
         end

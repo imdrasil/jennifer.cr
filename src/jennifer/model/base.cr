@@ -61,12 +61,6 @@ module Jennifer
         context.star
       end
 
-      def self.build(pull : DB::ResultSet)
-        o = new(pull)
-        o.__after_initialize_callback
-        o
-      end
-
       def self.build(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
         o = new(values)
         o.__after_initialize_callback

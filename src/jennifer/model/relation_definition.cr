@@ -380,7 +380,7 @@ module Jennifer
 
         macro def set_inverse_of(name : String, object)
           \{% begin %}
-            \{% relations = @type.constant("RELATION_NAMES") %}
+            \{% relations = RELATION_NAMES %}
             \{% if relations.size > 0 %}
               case name
               \{% for rel in relations %}
@@ -397,12 +397,12 @@ module Jennifer
 
         macro def append_relation(name : String, hash)
           \{% begin %}
-            \{% relations = @type.constant("RELATION_NAMES") %}
+            \{% relations = RELATION_NAMES %}
             \{% if relations.size > 0 %}
               case name
               \{% for rel in relations %}
-                when \{{rel}}
-                  append_\{{rel.id}}(hash)
+              when \{{rel}}
+                append_\{{rel.id}}(hash)
               \{% end %}
               else
                 super(name, hash)
@@ -413,7 +413,7 @@ module Jennifer
 
         macro def relation_retrieved(name : String)
           \{% begin %}
-            \{% relations = @type.constant("RELATION_NAMES") %}
+            \{% relations = RELATION_NAMES %}
             \{% if relations.size > 0 %}
               case name
               \{% for rel in relations %}
@@ -430,7 +430,7 @@ module Jennifer
 
         macro def __refresh_relation_retrieves
           \{% begin %}
-            \{% relations = @type.constant("RELATION_NAMES") %}
+            \{% relations = RELATION_NAMES %}
             \{% for rel in relations %}
               @__\{{rel.id}}_retrieved = false
             \{% end %}

@@ -149,15 +149,17 @@ module Jennifer
           s << Config.adapter << "://" << auth_part << "@" << host_part
           s << "/" << Config.db if options.includes?(:db)
           s << "?"
+          {% begin %}
           [
             {% for arg in Config::CONNECTION_URI_PARAMS %}
-              "{{arg.id}}=#{Config.{{arg.id}}}"
-            {% end %},
-          ].join(",", s)
+              "{{arg.id}}=#{Config.{{arg.id}}}",
+            {% end %}
+          ].join("&", s)
+          {% end %}
         end
       end
 
-      def self.extract_arguments(hash : Hash)
+      def self.extract_arguments(hash : Hash) : NamedTuple(args: Array(Jennifer::DBAny), fields: Array(String))
         args = [] of DBAny
         fields = [] of String
         hash.each do |key, value|

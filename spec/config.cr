@@ -1,5 +1,39 @@
+require "logger"
+
+class ArrayLogger < Logger
+  property silent : Bool
+  getter container = [] of {sev: String, msg: String}
+
+  def initialize(@io : IO?, @silent = true)
+    @level = Severity::INFO
+    @formatter = DEFAULT_FORMATTER
+    @progname = ""
+    @closed = false
+    @mutex = Mutex.new
+    @formatter = Formatter.new do |_, _, _, msg, io|
+      io << msg
+    end
+  end
+
+  def clear
+    @container.clear
+  end
+
+  private def write(severity, datetime, progname, message)
+    progname_to_s = progname.to_s
+    message_to_s = message.to_s
+    @mutex.synchronize do
+      new_message = String.build do |io|
+        formatter.call(severity, datetime, progname_to_s, message_to_s, io)
+      end
+      @container << {sev: severity.to_s, msg: new_message}
+    end
+  end
+end
+
 module Spec
   @@adapter = ""
+  @@logger : ArrayLogger?
 
   def self.adapter
     @@adapter
@@ -7,6 +41,10 @@ module Spec
 
   def self.adapter=(v)
     @@adapter = v
+  end
+
+  def self.logger
+    @@logger ||= ArrayLogger.new(STDOUT)
   end
 end
 
@@ -25,8 +63,9 @@ require "../src/jennifer"
 def set_default_configuration
   Jennifer::Config.reset_config
   Jennifer::Config.configure do |conf|
-    # conf.logger.level = Logger::DEBUG
-    conf.logger.level = Logger::ERROR
+    conf.logger = Spec.logger
+    conf.logger.level = Logger::DEBUG
+    # conf.logger.level = Logger::ERROR
     conf.host = "localhost"
     conf.adapter = Spec.adapter
     conf.migration_files_path = "./examples/migrations"

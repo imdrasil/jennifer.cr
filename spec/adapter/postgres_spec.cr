@@ -2,7 +2,20 @@ require "../spec_helper"
 
 postgres_only do
   describe Jennifer::Adapter::Postgres do
-    adapter = Jennifer::Adapter.adapter
+    described_class = Jennifer::Adapter::Postgres
+    adapter = Jennifer::Adapter.adapter.as(Jennifer::Adapter::Postgres)
+
+    describe "#translate_type" do
+      it "returns sql type associated with given synonim" do
+        adapter.translate_type(:string).should eq("varchar")
+      end
+    end
+
+    describe "#default_type_size" do
+      it "returns default type size for given alias" do
+        adapter.default_type_size(:string).should eq(254)
+      end
+    end
 
     describe "#parse_query" do
       it "replaces %s by dollar-and-numbers" do
@@ -92,16 +105,6 @@ postgres_only do
           adapter.table_column_count("female_contacts").should eq(9)
         end
       end
-
-      context "given table name" do
-        it "returns amount of table fields" do
-          adapter.table_column_count("addresses").should eq(5)
-        end
-      end
-
-      it "returns -1 if name is not a table or MV" do
-        adapter.table_column_count("asdasd").should eq(-1)
-      end
     end
 
     describe "#refresh_materialized_view" do
@@ -111,6 +114,48 @@ postgres_only do
         FemaleContact.all.count.should eq(0)
         adapter.refresh_materialized_view(FemaleContact.table_name)
         FemaleContact.all.count.should eq(1)
+      end
+    end
+
+    describe "#data_type_exists?" do
+      it "returns true if given datatype exists" do
+        adapter.data_type_exists?("gender_enum").should eq(true)
+      end
+
+      it "returns false if given datatype doesn't exists" do
+        adapter.data_type_exists?("gender").should eq(false)
+      end
+    end
+
+    describe "#enum_values" do
+      it "returns values of given enum" do
+        adapter.enum_values("gender_enum").should eq(%w(male female))
+      end
+
+      it "raises base exception if there is no given datatype" do
+        expect_raises(Jennifer::BaseException) do
+          adapter.enum_values("gender")
+        end
+      end
+    end
+
+    describe "#with_table_lock" do
+      table = "contacts"
+
+      it "starts table lock with given type" do
+        adapter.with_table_lock(table, "as") { }
+        query_log.any? { |entry| entry =~ /LOCK TABLE \w* IN ACCESS SHARE/ }.should be_true
+      end
+
+      it "starts table lock with given type" do
+        adapter.with_table_lock(table) { }
+        query_log.any? { |entry| entry =~ /LOCK TABLE \w* IN SHARE/ }.should be_true
+      end
+
+      it "raise BaseException if given invalid lock type" do
+        expect_raises(Jennifer::BaseException) do
+          adapter.with_table_lock(table, "gghhhh") { }
+        end
       end
     end
   end

@@ -18,9 +18,7 @@ module Jennifer
         end
 
         def remove_values
-          new_values = [] of String
-          @adapter.enum_values(@name).each { |e| new_values << e[0] }
-          new_values -= @options[:remove_values]
+          new_values = @adapter.enum_values(@name) - @options[:remove_values]
           data_name = @name.dup
           effected_tables =
             Query["information_schema.columns"]
@@ -28,21 +26,14 @@ module Jennifer
               .where { (c("udt_name") == data_name) & (c("table_catalog") == Config.db) }
               .pluck(:table_name, :column_name)
           if effected_tables.empty?
-            @adapter.drop_enum(@name)
-            @adapter.define_enum(@name, new_values)
+            recreate_enum(new_values)
           else
-            temp_name = "#{@name}_temp"
-            @adapter.define_enum(temp_name, new_values)
-            effected_tables.each do |row|
-              @adapter.exec <<-SQL
-                ALTER TABLE #{row[0]} 
-                ALTER COLUMN #{row[1]} TYPE #{temp_name} 
-                USING (#{row[1]}::text::#{temp_name})
-              SQL
-              @adapter.drop_enum(@name)
-              rename(temp_name, @name)
-            end
+            change_enum_with_related_tables(effected_tables, new_values)
           end
+        end
+
+        def rename(old_name, new_name)
+          @adapter.exec "ALTER TYPE #{old_name} RENAME TO #{new_name}"
         end
 
         def add_values
@@ -66,8 +57,23 @@ module Jennifer
           end
         end
 
-        def rename(old_name, new_name)
-          @adapter.exec "ALTER TYPE #{old_name} RENAME TO #{new_name}"
+        private def recreate_enum(values)
+          @adapter.drop_enum(@name)
+          @adapter.define_enum(@name, values)
+        end
+
+        private def change_enum_with_related_tables(effected_tables, values)
+          temp_name = "#{@name}_temp"
+          @adapter.define_enum(temp_name, values)
+          effected_tables.each do |row|
+            @adapter.exec <<-SQL
+            ALTER TABLE #{row[0]} 
+            ALTER COLUMN #{row[1]} TYPE #{temp_name} 
+            USING (#{row[1]}::text::#{temp_name})
+          SQL
+            @adapter.drop_enum(@name)
+            rename(temp_name, @name)
+          end
         end
       end
     end

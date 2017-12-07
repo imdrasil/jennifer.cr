@@ -82,7 +82,7 @@ describe Jennifer::Model::STIMapping do
     end
   end
 
-  describe "#all" do
+  describe "::all" do
     it "generates correct query" do
       q = FacebookProfile.all
       q.as_sql.should eq("profiles.type = %s")
@@ -92,20 +92,68 @@ describe Jennifer::Model::STIMapping do
 
   describe "#to_h" do
     it "sets all fields" do
-      r = c = Factory.create_facebook_profile(uid: "111", login: "my_login").to_h
+      r = c = Factory.build_facebook_profile(uid: "1111", login: "my_login").to_h
       r.has_key?(:id).should be_true
       r[:login].should eq("my_login")
       r[:type].should eq("FacebookProfile")
-      r[:uid].should eq("111")
+      r[:uid].should eq("1111")
     end
   end
 
   describe "#to_str_h" do
     it "sets all fields" do
-      r = Factory.build_facebook_profile(uid: "111", login: "my_login").to_str_h
+      r = Factory.build_facebook_profile(uid: "1111", login: "my_login").to_str_h
       r["login"].should eq("my_login")
       r["type"].should eq("FacebookProfile")
-      r["uid"].should eq("111")
+      r["uid"].should eq("1111")
+    end
+  end
+
+  describe "#update_column" do
+    it "properly updates given attribute" do
+      p = Factory.create_facebook_profile(uid: "1111")
+      p.update_column(:uid, "2222")
+      p.uid.should eq("2222")
+      p.reload.uid.should eq("2222")
+    end
+  end
+
+  describe "#update_columns" do
+    context "updating attributes described in child model" do
+      it "properly updates them" do
+        p = Factory.create_facebook_profile(uid: "1111")
+        p.update_columns({:uid => "2222"})
+        p.uid.should eq("2222")
+        p.reload.uid.should eq("2222")
+      end
+    end
+
+    context "updating attributes described in parent model" do
+      it "properly updates them" do
+        p = Factory.create_facebook_profile(login: "111")
+        p.update_columns({:login => "222"})
+        p.login.should eq("222")
+        p.reload.login.should eq("222")
+      end
+    end
+
+    context "updating own and inherited attributes" do
+      it "properly updates them" do
+        p = Factory.create_facebook_profile(login: "111", uid: "2222")
+        p.update_columns({:login => "222", :uid => "3333"})
+        p.login.should eq("222")
+        p.uid.should eq("3333")
+        p.reload
+        p.login.should eq("222")
+        p.uid.should eq("3333")
+      end
+    end
+
+    it "raises exception if any given attribute is not exists" do
+      p = Factory.create_facebook_profile(login: "111")
+      expect_raises(Jennifer::BaseException) do
+        p.update_columns({:asd => "222"})
+      end
     end
   end
 
@@ -166,6 +214,16 @@ describe Jennifer::Model::STIMapping do
     it "returns tuple with all values" do
       r = Factory.build_twitter_profile.arguments_to_insert
       match_array(r[:args], db_array("some_login", nil, "TwitterProfile", "some_email@example.com"))
+    end
+  end
+
+  describe "#reload" do
+    it "properly reloads fields" do
+      p = Factory.create_facebook_profile(uid: "1111")
+      p1 = FacebookProfile.all.last!
+      p1.uid = "2222"
+      p1.save!
+      p.reload.uid.should eq("2222")
     end
   end
 end

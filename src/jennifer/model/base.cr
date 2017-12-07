@@ -61,12 +61,6 @@ module Jennifer
         context.star
       end
 
-      def self.build(pull : DB::ResultSet)
-        o = new(pull)
-        o.__after_initialize_callback
-        o
-      end
-
       def self.build(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
         o = new(values)
         o.__after_initialize_callback
@@ -145,6 +139,9 @@ module Jennifer
 
       def relation_retrieved(name : String)
         raise Jennifer::UnknownRelation.new(self.class, name)
+      end
+
+      private def init_attributes(values : Hash)
       end
 
       abstract def primary

@@ -60,9 +60,13 @@ module Jennifer
       end
 
       def table_column_count(table)
-        Query["information_schema.COLUMNS"].where do
-          (_table_name == table) & (_table_schema == Config.db)
-        end.count
+        if table_exists?(table)
+          Query["information_schema.COLUMNS"].where do
+            (_table_name == table) & (_table_schema == Config.db)
+          end.count
+        else
+          -1
+        end
       end
 
       def table_exists?(table)
@@ -88,19 +92,9 @@ module Jennifer
       end
 
       def view_exists?(name)
-        scalar "SELECT COUNT(*) FROM (SHOW FULL TABLES IN #{name} WHERE TABLE_TYPE LIKE '%VIEW%'"
-      end
-
-      def table_row_hash(rs)
-        h = {} of String => Hash(String, DBAny)
-        rs.columns.each do |col|
-          h[col.table] ||= {} of String => DBAny
-          h[col.table][col.name] = rs.read
-          if h[col.table][col.name].is_a?(Int8)
-            h[col.table][col.name] = h[col.table][col.name] == 1i8
-          end
-        end
-        h
+        Query["information_schema.TABLES"]
+          .where { (_table_schema == Config.db) & (_table_type == "VIEW") & (_table_name == name) }
+          .exists?
       end
 
       def with_table_lock(table : String, type : String = "default", &block)

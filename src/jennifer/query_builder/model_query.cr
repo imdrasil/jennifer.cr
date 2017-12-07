@@ -85,7 +85,7 @@ module Jennifer
                     break
                   else
                     existence[i][h[pfn].to_s] = true
-                    obj.append_relation(@relations[i], h)
+                    obj.as(T).append_relation(@relations[i], h)
                   end
                 end
               else

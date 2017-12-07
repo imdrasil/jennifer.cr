@@ -28,6 +28,18 @@ class TwitterProfile < Profile
 end
 ```
 
-Subclass extends superclass definition with new fields and use string fild `type` to indentify itself.
+Requirements:
 
-> Now `Profile.all` will return objects of `Profile` class not taking into account `type` field.
+- created table for STI should include **all** fields of all subclasses (that's why it is cold STI);
+- STI table have to have field named `type` of any string type which will be able to store class name of your models;
+- parent class should have definition for `type` field;
+
+> Currently type field is not configurable and hardcoded to name `type`.
+
+To extract from DB several subclasses in one request - just use parent class to query:
+
+```crystal
+Profile.all.where { _login.like("%eter%") }
+```
+
+Each retrieved object will respect values in `type` field and appropriate class object will be builded (including invoking of `after_initialize` callbacks).

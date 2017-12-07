@@ -124,4 +124,10 @@ module Jennifer
       exception.message =~ EXTRACT_WORDS_REG
     end
   end
+
+  class UnknownSTIType < BaseException
+    def initialize(parent_klass, type)
+      @message = "Unknown STI type \"#{type}\" for #{parent_klass}"
+    end
+  end
 end

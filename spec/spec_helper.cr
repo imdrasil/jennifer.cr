@@ -16,47 +16,6 @@ require "./config"
 require "./models.cr"
 require "./factories.cr"
 
-# This was added to track exact count of hitting DB
-abstract class DB::Connection
-  def scalar(query, *args)
-    Jennifer::Adapter.adapter_class.log_query(query)
-    build(query).scalar(*args)
-  end
-
-  def query(query, *args)
-    Jennifer::Adapter.adapter_class.log_query(query)
-    rs = query(query, *args)
-    yield rs ensure rs.close
-  end
-
-  def exec(query, *args)
-    Jennifer::Adapter.adapter_class.log_query(query)
-    build(query).exec(*args)
-  end
-end
-
-abstract class Jennifer::Adapter::Base
-  @@execution_counter = 0
-  @@queries = [] of String
-
-  def self.exec_count
-    @@execution_counter
-  end
-
-  def self.log_query(query)
-    @@execution_counter += 1
-    @@queries << query
-  end
-
-  def self.query_log
-    @@queries
-  end
-
-  def self.remove_queries
-    @@queries.clear
-  end
-end
-
 # Callbaks =======================
 
 Spec.before_each do
@@ -65,14 +24,13 @@ Spec.before_each do
 end
 
 Spec.after_each do
-  Jennifer::Adapter.adapter.class.remove_queries
   Jennifer::Adapter.adapter.rollback_transaction
+  Spec.logger.clear
 end
 
 # Helper methods ================
 
 def clean_db
-  Jennifer::Adapter.adapter.class.remove_queries
   postgres_only do
     Jennifer::Adapter.adapter.refresh_materialized_view(FemaleContact.table_name)
   end
@@ -82,6 +40,7 @@ end
 macro void_transaction
   begin
     Jennifer::Adapter.adapter.rollback_transaction
+    Spec.logger.clear
     {{yield}}
   ensure
     clean_db
@@ -102,11 +61,11 @@ def db_array(*element)
 end
 
 def query_count
-  Jennifer::Adapter.adapter_class.exec_count
+  Spec.logger.container.size
 end
 
 def query_log
-  Jennifer::Adapter.adapter_class.query_log
+  Spec.logger.container.map { |e| e[:msg] }
 end
 
 def read_to_end(rs)

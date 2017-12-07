@@ -149,12 +149,18 @@ module Jennifer
           .exists?
       end
 
+      def view_exists?(name)
+        Query["information_schema.views"]
+          .where { (_table_schema == Config.schema) & (_table_name == name) }
+          .exists?
+      end
+
       def data_type_exists?(name)
         Query["pg_type"].where { _typname == name }.exists?
       end
 
       def enum_values(name)
-        query_array("SELECT unnest(enum_range(NULL::#{name})::varchar[])", String)
+        query_array("SELECT unnest(enum_range(NULL::#{name})::varchar[])", String).map { |array| array[0] }
       end
 
       def with_table_lock(table : String, type : String = "default", &block)
@@ -305,11 +311,6 @@ module Jennifer
         io << " ARRAY" if options[:array]?
       end
 
-      def self.create_database
-        opts = [Config.db, "-O", Config.user, "-h", Config.host, "-U", Config.user]
-        Process.run("PGPASSWORD=#{Config.password} createdb \"${@}\"", opts, shell: true).inspect
-      end
-
       private def index_type_translate(name)
         case name
         when :unique, :uniq
@@ -319,6 +320,11 @@ module Jennifer
         else
           raise ArgumentError.new("Unknown index type: #{name}")
         end
+      end
+
+      def self.create_database
+        opts = [Config.db, "-O", Config.user, "-h", Config.host, "-U", Config.user]
+        Process.run("PGPASSWORD=#{Config.password} createdb \"${@}\"", opts, shell: true).inspect
       end
 
       def self.drop_database

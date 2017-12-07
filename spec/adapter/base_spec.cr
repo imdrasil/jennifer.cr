@@ -116,6 +116,14 @@ describe Jennifer::Adapter::Base do
     end
   end
 
+  describe "#truncate" do
+    it "clean up db" do
+      Factory.create_contact
+      adapter.truncate(Contact.table_name)
+      Contact.all.count.should eq(0)
+    end
+  end
+
   describe "#exists?" do
     it "returns true if record exists" do
       Factory.create_contact
@@ -158,9 +166,92 @@ describe Jennifer::Adapter::Base do
     end
   end
 
+  describe "#bulk_insert" do
+    it "do nothing if empty array was given" do
+      count = query_count
+      adapter.bulk_insert([] of Contact)
+      query_count.should eq(count)
+    end
+
+    it "inserts using table lock" do
+      void_transaction do
+        c = Factory.build_contact
+        adapter.bulk_insert([c])
+        query_log.any? { |entry| entry =~ /TRANSACTION/ }.should be_true
+        postgres_only do
+          query_log.any? { |entry| entry =~ /LOCK TABLE/ }.should be_true
+        end
+      end
+    end
+
+    it "avoid model validation" do
+      c = Factory.build_contact(age: 12)
+      c.validate!
+      c.valid?.should be_false
+      adapter.bulk_insert([c])
+      c = Contact.all.first!
+      c.validate!
+      c.valid?.should be_false
+    end
+  end
+
   describe "::join_table_name" do
     it "returns join table name in alphabetic order" do
       adapter.class.join_table_name("b", "a").should eq("a_b")
+    end
+  end
+
+  describe "::connection_string" do
+    config = Jennifer::Config
+
+    context "for db connection" do
+      it "generates proper connection string" do
+        Jennifer::Config.password = "qwe"
+        db_connection_string = "#{config.adapter}://#{config.user}:#{config.password}@#{config.host}/#{config.db}?" \
+                               "max_pool_size=5&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
+        adapter.class.connection_string(:db).should eq(db_connection_string)
+      end
+    end
+
+    context "for general connection" do
+      it "generates proper connection string" do
+        Jennifer::Config.password = "qwe"
+        connection_string = "#{config.adapter}://#{config.user}:#{config.password}@#{config.host}?" \
+                            "max_pool_size=5&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
+        adapter.class.connection_string.should eq(connection_string)
+      end
+    end
+  end
+
+  describe "::extract_arguments" do
+    res = described_class.extract_arguments({:asd => 1, "qwe" => "2"})
+
+    it "converts all field names to string" do
+      res[:fields].should eq(%w(asd qwe))
+    end
+
+    it "extracts all values to :args" do
+      res[:args].should eq(db_array(1, "2"))
+    end
+  end
+
+  describe "::escape_string" do
+    it "returns proper escape string" do
+      described_class.escape_string(5).should eq(Jennifer::Adapter::SqlGenerator.escape_string(5))
+    end
+  end
+
+  describe "#query_array" do
+    it "returns array of given type" do
+      Factory.create_contact
+      res = adapter.query_array("SELECT name FROM contacts", String)
+      typeof(res).should eq(Array(Array(String)))
+    end
+
+    it "retrieaves given amount of fields" do
+      Factory.create_contact
+      res = adapter.query_array("SELECT name, description FROM contacts", String?, 2)
+      res[0].should eq(["Deepthi", nil])
     end
   end
 
@@ -169,6 +260,28 @@ describe Jennifer::Adapter::Base do
       res = adapter.parse_query("asd %s asd", [2])
       res.should be_a(String)
       res.should_not match(/%s/)
+    end
+  end
+
+  describe "#table_column_count" do
+    context "given table name" do
+      it "returns amount of table fields" do
+        adapter.table_column_count("addresses").should eq(5)
+      end
+    end
+
+    it "returns -1 if name is not a table or MV" do
+      adapter.table_column_count("asdasd").should eq(-1)
+    end
+  end
+
+  describe "#view_exists?" do
+    it "returns true if given view exists" do
+      adapter.view_exists?("male_contacts").should be_true
+    end
+
+    it "returns false if given view doesn't exist" do
+      adapter.view_exists?("contacts").should be_false
     end
   end
 end

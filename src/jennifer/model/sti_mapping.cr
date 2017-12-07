@@ -2,6 +2,8 @@ module Jennifer
   module Model
     module STIMapping
       macro sti_mapping(properties)
+        STI = true
+
         def self.sti_condition
           c("type") == {{@type.id.stringify}}
         end
@@ -100,7 +102,7 @@ module Jennifer
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))
           # TODO: try to make the "type" field customizable
-          values["type"] = "{{@type.id}}"
+          values["type"] = "{{@type.id}}" if values["type"]?.nil?
           super(values)
           {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _sti_extract_attributes(values)
         end
@@ -118,6 +120,18 @@ module Jennifer
         {% else %}
           WITH_DEFAULT_CONSTRUCTOR = false
         {% end %}
+
+        def reload
+          raise ::Jennifer::RecordNotFound.new("It is not persisted yet") if new_record?
+          this = self
+          self.class.all.where { this.class.primary == this.primary }.limit(1).each_result_set do |rs|
+            values = ::Jennifer::Adapter.adapter.result_to_hash(rs)
+            init_attributes(values)
+          end
+          __refresh_changes
+          __refresh_relation_retrieves
+          self
+        end
 
         def changed?
           super ||
@@ -143,22 +157,8 @@ module Jennifer
           hash
         end
 
-        def update_column(name, value : Jennifer::DBAny)
-          case name.to_s
-          {% for key, value in properties %}
-          when "{{key.id}}"
-            if value.is_a?({{value[:parsed_type].id}})
-              local = value.as({{value[:parsed_type].id}})
-              @{{key.id}} = local
-            else
-              raise ::Jennifer::BaseException.new("rong type for #{name} : #{value.class}")
-            end
-          {% end %}
-          end
-          super
-        end
-
         def update_columns(values : Hash(String | Symbol, Jennifer::DBAny))
+          missing_values = {} of String | Symbol => Jennifer::DBAny
           values.each do |name, value|
             case name.to_s
             {% for key, value in properties %}
@@ -166,14 +166,16 @@ module Jennifer
               if value.is_a?({{value[:parsed_type].id}})
                 local = value.as({{value[:parsed_type].id}})
                 @{{key.id}} = local
+                @{{key.id}}_changed = true
               else
                 raise ::Jennifer::BaseException.new("Wrong type for #{name} : #{value.class}")
               end
             {% end %}
+            else
+              missing_values[name] = value
             end
           end
-
-          super
+          super(missing_values)
         end
 
         def set_attribute(name, value)
@@ -242,6 +244,11 @@ module Jennifer
 
         def self.all
           ::Jennifer::QueryBuilder::ModelQuery({{@type}}).build(table_name).where { _type == {{@type.stringify}} }
+        end
+
+        private def init_attributes(values : Hash)
+          super
+          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _sti_extract_attributes(values)
         end
 
         private def __refresh_changes

@@ -116,7 +116,7 @@ module Jennifer
 
         # returns array of related objects
         def {{name.id}}
-          if !@__{{name.id}}_retrieved && @{{name.id}}.empty?
+          if !@__{{name.id}}_retrieved && @{{name.id}}.empty? && !new_record?
             set_{{name.id}}_relation({{name.id}}_query.to_a.as(Array({{klass}})))
           end
           @{{name.id}}
@@ -208,7 +208,7 @@ module Jennifer
         end
 
         def {{name.id}}
-          if !@__{{name.id}}_retrieved && @{{name.id}}.empty?
+          if !@__{{name.id}}_retrieved && @{{name.id}}.empty? && !new_record?
             set_{{name.id}}_relation({{name.id}}_query.to_a.as(Array({{klass}})))
           end
           @{{name.id}}
@@ -266,7 +266,7 @@ module Jennifer
         end
 
         def {{name.id}}
-          if !@__{{name.id}}_retrieved && @{{name.id}}.nil?
+          if !@__{{name.id}}_retrieved && @{{name.id}}.nil? && !new_record?
             @__{{name.id}}_retrieved = true
             @{{name.id}} = {{name.id}}_reload
           end
@@ -340,7 +340,7 @@ module Jennifer
         end
 
         def {{name.id}}
-          if !@__{{name.id}}_retrieved && @{{name.id}}.nil?
+          if !@__{{name.id}}_retrieved && @{{name.id}}.nil? && !new_record?
             set_{{name.id}}_relation({{name.id}}_reload)
           end
           @{{name.id}}

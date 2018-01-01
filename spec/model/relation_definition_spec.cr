@@ -129,6 +129,15 @@ describe Jennifer::Model::RelationDefinition do
           query_count.should eq(count + 1)
         end
       end
+
+      context "new record" do
+        it "doesn't hit the db" do
+          c = Factory.build_contact
+          count = query_count
+          c.addresses
+          query_count.should eq(count)
+        end
+      end
     end
 
     describe "#add_/relation_name/" do
@@ -232,6 +241,15 @@ describe Jennifer::Model::RelationDefinition do
         a.contact
         query_count.should eq(count + 1)
       end
+
+      context "new record" do
+        it "doesn't hit the db" do
+          c = Factory.build_contact
+          count = query_count
+          c.addresses
+          query_count.should eq(count)
+        end
+      end
     end
 
     describe "#add_/relation_name/" do
@@ -316,6 +334,15 @@ describe Jennifer::Model::RelationDefinition do
           count = query_count
           c.main_address!.contact
           query_count.should eq(count + 1)
+        end
+      end
+
+      context "new record" do
+        it "doesn't hit the db" do
+          c = Factory.build_contact
+          count = query_count
+          c.addresses
+          query_count.should eq(count)
         end
       end
     end
@@ -407,6 +434,15 @@ describe Jennifer::Model::RelationDefinition do
         query_count.should eq(count + 1)
         c.countries
         query_count.should eq(count + 1)
+      end
+
+      context "new record" do
+        it "doesn't hit the db" do
+          c = Factory.build_contact
+          count = query_count
+          c.addresses
+          query_count.should eq(count)
+        end
       end
     end
 

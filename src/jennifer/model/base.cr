@@ -156,7 +156,7 @@ module Jennifer
         raise AbstractMethod.new(:relation, {{@type}})
       end
 
-      macro def self.models
+      def self.models
         {% begin %}
           [
             {% for model in @type.all_subclasses %}

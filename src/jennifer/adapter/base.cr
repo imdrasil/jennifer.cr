@@ -11,7 +11,6 @@ module Jennifer
       include ResultParsers
       include RequestMethods
 
-      TICKS_PER_MICROSECOND = 10
       @db : DB::Database
 
       getter db
@@ -30,10 +29,10 @@ module Jennifer
       end
 
       def exec(_query, args = [] of DB::Any)
-        time = Time.now.ticks
+        time = Time.monotonic
         res = with_connection { |conn| conn.exec(_query, args) }
-        time = Time.now.ticks - time
-        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
+        time = Time.monotonic - time
+        Config.logger.debug { regular_query_message(time, _query, args) }
         res
       rescue e : BaseException
         BadQuery.prepend_information(e, _query, args)
@@ -43,9 +42,9 @@ module Jennifer
       end
 
       def query(_query, args = [] of DB::Any)
-        time = Time.now.ticks
-        res = with_connection { |conn| conn.query(_query, args) { |rs| time = Time.now.ticks - time; yield rs } }
-        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
+        time = Time.monotonic
+        res = with_connection { |conn| conn.query(_query, args) { |rs| time = Time.monotonic - time; yield rs } }
+        Config.logger.debug { regular_query_message(time, _query, args) }
         res
       rescue e : BaseException
         BadQuery.prepend_information(e, _query, args)
@@ -55,10 +54,10 @@ module Jennifer
       end
 
       def scalar(_query, args : Array(DB::Any) = [] of DB::Any)
-        time = Time.now.ticks
+        time = Time.monotonic
         res = with_connection { |conn| conn.scalar(_query, args) }
-        time = Time.now.ticks - time
-        Config.logger.debug { regular_query_message(time / TICKS_PER_MICROSECOND, _query, args) }
+        time = Time.monotonic - time
+        Config.logger.debug { regular_query_message(time, _query, args) }
         res
       rescue e : BaseException
         BadQuery.prepend_information(e, _query, args)
@@ -388,11 +387,13 @@ module Jennifer
         io << " AUTO_INCREMENT" if options[:auto_increment]?
       end
 
-      private def regular_query_message(ms, query : String, args : Array)
+      private def regular_query_message(time : Time::Span, query : String, args : Array)
+        ms = time.nanoseconds / 1000
         args.empty? ? "#{ms} µs #{query}" : "#{ms} µs #{query} | #{args.inspect}"
       end
 
-      private def regular_query_message(ms, query : String, arg = nil)
+      private def regular_query_message(time : Time::Span, query : String, arg = nil)
+        ms = time.nanoseconds / 1000
         arg ? "#{ms} µs #{query} | #{arg}" : "#{ms} µs #{query}"
       end
     end

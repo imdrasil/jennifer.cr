@@ -94,7 +94,7 @@ module Jennifer
         migrations.map { |e| e.underscore.split("_").last }
       end
 
-      macro def self.migrations
+      def self.migrations
         {% begin %}
           {% if @type.all_subclasses.size > 0 %}
             [

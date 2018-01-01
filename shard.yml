@@ -4,19 +4,22 @@ version: 0.4.2
 authors:
   - Roman Kalnytskyi <moranibaca@gmail.com>
 
-crystal: 0.23.1
+crystal: 0.24.1
 
 license: MIT
 
 development_dependencies:
   mysql:
     github: crystal-lang/crystal-mysql
+    version: "~> 0.4"
   pg:
     github: will/crystal-pg
+    version: "~> 0.14.1"
   sqlite3:
     github: crystal-lang/crystal-sqlite3
   factory:
     github: imdrasil/factory
+    branch: master
 dependencies:
   sam:
     github: imdrasil/sam.cr

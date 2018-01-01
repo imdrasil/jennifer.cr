@@ -378,7 +378,7 @@ module Jennifer
       macro inherited_hook
         RELATION_NAMES = [] of String
 
-        macro def set_inverse_of(name : String, object)
+        def set_inverse_of(name : String, object)
           \{% begin %}
             \{% relations = RELATION_NAMES %}
             \{% if relations.size > 0 %}
@@ -395,7 +395,7 @@ module Jennifer
           \{% end %}
         end
 
-        macro def append_relation(name : String, hash)
+        def append_relation(name : String, hash)
           \{% begin %}
             \{% relations = RELATION_NAMES %}
             \{% if relations.size > 0 %}
@@ -411,7 +411,7 @@ module Jennifer
           \{% end %}
         end
 
-        macro def relation_retrieved(name : String)
+        def relation_retrieved(name : String)
           \{% begin %}
             \{% relations = RELATION_NAMES %}
             \{% if relations.size > 0 %}
@@ -428,7 +428,7 @@ module Jennifer
         end
 
 
-        macro def __refresh_relation_retrieves
+        def __refresh_relation_retrieves
           \{% begin %}
             \{% relations = RELATION_NAMES %}
             \{% for rel in relations %}

@@ -1,8 +1,8 @@
 # Jennifer Documentation
 
-* [Latest API Documentation](https://imdrasil.github.io/site/jennifer.cr/latest/)
+* [Latest API Documentation](https://imdrasil.github.io/jennifer.cr/latest/)
 
-* [Other API versions](https://imdrasil.github.io/site/jennifer.cr/versions)
+* [Other API versions](https://imdrasil.github.io/jennifer.cr/versions)
 
 ## Content
 

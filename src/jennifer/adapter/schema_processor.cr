@@ -2,7 +2,7 @@ require "../migration/table_builder/*"
 
 module Jennifer
   module Adapter
-    class MigrationProcessor
+    class SchemaProcessor
       macro unsupported_method(*names)
         {% for name in names %}
           def {{name.id}}(*args, **opts)
@@ -236,8 +236,8 @@ module Jennifer
     end
 
     class Base
-      def migration_processor
-        @migration_processor ||= MigrationProcessor.new(self)
+      def schema_processor
+        @schema_processor ||= SchemaProcessor.new(self)
       end
     end
   end

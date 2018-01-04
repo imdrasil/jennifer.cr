@@ -3,7 +3,7 @@ module Jennifer
     module TableBuilder
       class DropTable < Base
         def process
-          migration_processor.drop_table(self)
+          schema_processor.drop_table(self)
         end
       end
     end

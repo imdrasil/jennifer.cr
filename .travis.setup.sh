@@ -1,5 +1,4 @@
-set -e
-set -o pipefail
+set -exo pipefail
 
 if [ "$DB" == 'postgres' ] || [ "$PAIR" == '1' ]; then
     echo "==================================="

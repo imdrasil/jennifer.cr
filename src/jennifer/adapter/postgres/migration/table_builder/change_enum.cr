@@ -21,18 +21,18 @@ module Jennifer
             new_values = adapter.enum_values(@name)
             new_values -= @options[:remove_values]
             if @effected_tables.empty?
-              migration_processor.drop_enum(@name)
-              migration_processor.define_enum(@name, new_values)
+              schema_processor.drop_enum(@name)
+              schema_processor.define_enum(@name, new_values)
             else
               temp_name = "#{@name}_temp"
-              migration_processor.define_enum(temp_name, new_values)
+              schema_processor.define_enum(temp_name, new_values)
               @effected_tables.each do |row|
                 @adapter.exec <<-SQL
                   ALTER TABLE #{row[0]} 
                   ALTER COLUMN #{row[1]} TYPE #{temp_name} 
                   USING (#{row[1]}::text::#{temp_name})
                 SQL
-                migration_processor.drop_enum(@name)
+                schema_processor.drop_enum(@name)
                 rename(temp_name, @name)
               end
             end

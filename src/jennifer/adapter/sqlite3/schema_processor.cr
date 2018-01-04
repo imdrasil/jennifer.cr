@@ -1,8 +1,8 @@
-require "../migration_processor"
+require "../schema_processor"
 
 module Jennifer
   module Sqlite3
-    class MigrationProcessor < Adapter::MigrationProcessor
+    class SchemaProcessor < Adapter::SchemaProcessor
       # ============================
       # Schema manipulating methods
       # ============================

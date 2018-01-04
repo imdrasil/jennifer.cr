@@ -8,7 +8,7 @@ module Jennifer
           end
 
           def process
-            migration_processor.drop_enum(@name)
+            schema_processor.drop_enum(@name)
           end
         end
       end

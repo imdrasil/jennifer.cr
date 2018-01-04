@@ -3,7 +3,7 @@ module Jennifer
     module TableBuilder
       class DropView < Base
         def process
-          migration_processor.drop_view(@name)
+          schema_processor.drop_view(@name)
         end
       end
     end

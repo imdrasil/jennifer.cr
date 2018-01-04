@@ -7,7 +7,7 @@ module Jennifer
         end
 
         def process
-          migration_processor.drop_index(@name, @index_name)
+          schema_processor.drop_index(@name, @index_name)
         end
       end
     end

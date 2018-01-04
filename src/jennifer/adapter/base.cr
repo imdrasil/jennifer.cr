@@ -206,7 +206,7 @@ module Jennifer
 
       def ready_to_migrate!
         return if table_exists?(Migration::Base::TABLE_NAME)
-        migration_processor.build_create_table(Migration::Base::TABLE_NAME) do |t|
+        schema_processor.build_create_table(Migration::Base::TABLE_NAME) do |t|
           t.string(:version, {:size => 17})
         end
       end
@@ -225,7 +225,7 @@ module Jennifer
         result
       end
 
-      abstract def migration_processor
+      abstract def schema_processor
       abstract def sql_generator
       abstract def view_exists?(name, silent = true)
       abstract def update(obj)

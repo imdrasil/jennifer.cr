@@ -3,11 +3,10 @@ require "../adapter"
 require "./base"
 
 require "./postgres/result_set"
-require "./postgres/field"
 require "./postgres/exec_result"
 
 require "./postgres/sql_generator"
-require "./postgres/migration_processor"
+require "./postgres/schema_processor"
 
 module Jennifer
   module Postgres
@@ -77,8 +76,8 @@ module Jennifer
         SQLGenerator
       end
 
-      def migration_processor
-        @migration_processor ||= MigrationProcessor.new(self)
+      def schema_processor
+        @schema_processor ||= SchemaProcessor.new(self)
       end
 
       def prepare

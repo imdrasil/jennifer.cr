@@ -7,8 +7,8 @@ module Jennifer
             @adapter.as(Postgres::Adapter)
           end
 
-          def migration_processor
-            @adapter.migration_processor.as(MigrationProcessor)
+          def schema_processor
+            @adapter.schema_processor.as(SchemaProcessor)
           end
         end
       end

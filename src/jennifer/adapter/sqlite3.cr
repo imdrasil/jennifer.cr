@@ -1,7 +1,7 @@
 require "sqlite3"
 require "../adapter"
 require "./sqlite3/sql_notation"
-require "./sqlite3/migration_processor"
+require "./sqlite3/schema_processor"
 
 module Jennifer
   module Sqlite3
@@ -24,8 +24,8 @@ module Jennifer
         SQLGenerator
       end
 
-      def migration_processor
-        @migration_processor ||= MigrationProcessor.new(self)
+      def schema_processor
+        @schema_processor ||= SchemaProcessor.new(self)
       end
 
       def translate_type(name)

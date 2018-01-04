@@ -1,9 +1,9 @@
 require "../../spec_helper"
 
 postgres_only do
-  describe Jennifer::Postgres::MigrationProcessor do
+  describe Jennifer::Postgres::SchemaProcessor do
     adapter = Jennifer::Adapter.adapter
-    processor = adapter.migration_processor
+    processor = adapter.schema_processor
 
     context "index manipulation" do
       index_name = "contacts_age_index"

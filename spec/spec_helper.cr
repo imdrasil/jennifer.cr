@@ -81,6 +81,17 @@ def sb
   String.build { |io| yield io }
 end
 
+def db_specific(mysql, postgres)
+  case Spec.adapter
+  when "postgres"
+    postgres.call
+  when "mysql"
+    mysql.call
+  else
+    raise "Unknown adapter type"
+  end
+end
+
 # Matchers ======================
 
 def match_array(expect, target)

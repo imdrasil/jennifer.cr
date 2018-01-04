@@ -1,8 +1,8 @@
-require "../migration_processor"
+require "../schema_processor"
 
 module Jennifer
   module Postgres
-    class MigrationProcessor < Adapter::MigrationProcessor
+    class SchemaProcessor < Adapter::SchemaProcessor
       delegate data_type_exists?, to: adapter.as(Postgres)
 
       # ================

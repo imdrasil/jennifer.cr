@@ -42,7 +42,7 @@ module Jennifer
         puts e.backtrace.join("\n")
       ensure
         # TODO: generate schema for each adapter
-        default_adapter.generate_schema if performed
+        default_adapter.class.generate_schema if performed
       end
 
       def self.migrate
@@ -51,14 +51,13 @@ module Jennifer
 
       def self.create
         # TODO: allow to specify adapter
-        r = default_adapter.create_database
+        r = default_adapter_class.create_database
         puts "DB is created!"
-        r
       end
 
       def self.drop
         # TODO: allow to specify adapter
-        default_adapter.drop_database
+        default_adapter_class.drop_database
         puts "DB is dropped!"
       end
 
@@ -90,12 +89,12 @@ module Jennifer
         puts e.message
       ensure
         # TODO: generate schema for each adapter
-        default_adapter.generate_schema if processed
+        default_adapter_class.generate_schema if processed
       end
 
       def self.load_schema
         # TODO: load schema for each adapter
-        default_adapter.load_schema
+        default_adapter_class.load_schema
       end
 
       def self.generate(name)
@@ -110,6 +109,10 @@ module Jennifer
 
       def self.default_adapter
         Adapter.default_adapter
+      end
+
+      def self.default_adapter_class
+        Adapter.default_adapter_class
       end
     end
   end

@@ -3,7 +3,7 @@ module Jennifer
     module TableBuilder
       class CreateTable < Base
         def process
-          migration_processor.create_table(self)
+          schema_processor.create_table(self)
           @indexes.each(&.process)
         end
 

@@ -21,12 +21,12 @@ module Jennifer
 
       delegate create_data_type, to: adapter
       delegate table_exists?, index_exists?, column_exists?, view_exists?, to: adapter
-      delegate migration_processor, to: adapter
+      delegate schema_processor, to: adapter
 
       delegate create_table, create_join_table, drop_join_table, exec, drop_table,
         change_table, create_view, create_materialized_view, drop_materialized_view,
         drop_view, add_index, create_enum, drop_enum, change_enum,
-        to: migration_processor, prefix: "build_"
+        to: schema_processor, prefix: "build_"
 
       def adapter_class
         adapter.class
@@ -60,4 +60,4 @@ module Jennifer
   end
 end
 
-require "../adapter/migration_processor"
+require "../adapter/schema_processor"

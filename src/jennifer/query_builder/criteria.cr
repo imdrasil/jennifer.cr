@@ -16,7 +16,7 @@ module Jennifer
 
       # NOTE: workaround for passing criteria to the hash as a key - somewhy any Criteria is realized as same one
       def hash
-        as_sql.hash
+        "#{@field}#{@table}".hash
       end
 
       def set_relation(table : String, name : String)

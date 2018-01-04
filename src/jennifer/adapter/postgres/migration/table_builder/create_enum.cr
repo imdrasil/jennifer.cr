@@ -8,7 +8,7 @@ module Jennifer
           end
 
           def process
-            migration_processor.define_enum(@name, @values)
+            schema_processor.define_enum(@name, @values)
           end
         end
       end

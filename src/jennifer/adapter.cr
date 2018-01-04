@@ -60,6 +60,10 @@ module Jennifer
       adapter
     end
 
+    def self.default_adapter_class
+      adapter_class
+    end
+
     def self.adapter_class
       @@adapter_class ||= adapters[Config.adapter]
     end

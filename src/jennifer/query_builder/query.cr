@@ -123,11 +123,15 @@ module Jennifer
       end
 
       def to_sql
-        Adapter.adapter.sql_generator.select(self)
+        adapter.sql_generator.select(self)
       end
 
       def as_sql
-        @tree ? @tree.not_nil!.as_sql : ""
+        @tree ? @tree.not_nil!.as_sql(adapter.sql_generator) : ""
+      end
+
+      def as_sql(_generator)
+        @tree ? @tree.not_nil!.as_sql(adapter.sql_generator) : ""
       end
 
       def sql_args
@@ -335,6 +339,10 @@ module Jennifer
 
       private def _groups(name : String)
         @group[name] ||= [] of String
+      end
+
+      private def adapter
+        Adapter.default_adapter
       end
     end
   end

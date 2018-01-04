@@ -9,7 +9,7 @@ module Jennifer
       def initialize(@query)
       end
 
-      def as_sql
+      def as_sql(_generator)
         "ANY (#{@query.to_sql})"
       end
     end

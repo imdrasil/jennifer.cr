@@ -132,23 +132,4 @@ describe Jennifer::QueryBuilder::Condition do
       end
     end
   end
-
-  describe "#filter_out" do
-    context "is Criteria" do
-      it "renders sql of criteria" do
-        c1 = Factory.build_criteria.to_condition
-        c2 = Factory.build_criteria
-        c1.filter_out(c2).should eq(c2.as_sql)
-      end
-    end
-
-    context "anything else" do
-      it "renders placeholder" do
-        c1 = Factory.build_criteria.to_condition
-        c1.filter_out(1).should eq("%s")
-        c1.filter_out("s").should eq("%s")
-        c1.filter_out(false).should eq("%s")
-      end
-    end
-  end
 end

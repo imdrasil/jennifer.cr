@@ -16,7 +16,7 @@ module Jennifer
 
       # NOTE: workaround for passing criteria to the hash as a key - somewhy any Criteria is realized as same one
       def hash
-        object_id.hash
+        as_sql.hash
       end
 
       def set_relation(table : String, name : String)
@@ -95,11 +95,11 @@ module Jennifer
       end
 
       def is(value : Symbol | Bool | Nil)
-        Condition.new(self, :is, translate(value))
+        Condition.new(self, :is, value)
       end
 
       def not(value : Symbol | Bool | Nil)
-        Condition.new(self, :is_not, translate(value))
+        Condition.new(self, :is_not, value)
       end
 
       def not
@@ -127,7 +127,7 @@ module Jennifer
         as_sql
       end
 
-      def as_sql : String
+      def as_sql(_generator) : String
         @ident ||= identifier
       end
 
@@ -149,17 +149,6 @@ module Jennifer
 
       def to_condition
         Condition.new(self)
-      end
-
-      private def translate(value : Symbol | Bool | Nil)
-        case value
-        when nil, true, false
-          Adapter.adapter.sql_generator.quote(value)
-        when :unknown
-          "UNKNOWN"
-        when :nil
-          Adapter.adapter.sql_generator.quote(nil)
-        end
       end
     end
   end

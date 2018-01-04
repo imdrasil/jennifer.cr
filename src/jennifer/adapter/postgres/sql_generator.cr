@@ -10,7 +10,7 @@ module Jennifer
           unless opts[:fields].empty?
             s << "("
             opts[:fields].join(", ", s)
-            s << ") VALUES (" << Jennifer::Adapter.adapter_class.escape_string(opts[:fields].size) << ") "
+            s << ") VALUES (" << escape_string(opts[:fields].size) << ") "
           else
             s << " DEFAULT VALUES"
           end
@@ -25,17 +25,17 @@ module Jennifer
       # Generates update request depending on given query and hash options. Allows
       # joins inside of query.
       def self.update(query, options : Hash)
-        esc = Jennifer::Adapter.adapter_class.escape_string(1)
+        esc = escape_string(1)
         String.build do |s|
           s << "UPDATE " << query._table << " SET "
           options.map { |k, v| "#{k.to_s}= #{esc}" }.join(", ", s)
           s << "\n"
 
-          from_clause(s, query, query._joins![0].table_name) if query._joins
+          from_clause(s, query, query._joins![0].table_name(self)) if query._joins
           where_clause(s, query.tree)
           if query._joins
             where_clause(s, query._joins![0].on)
-            query._joins![1..-1].join(" ", s) { |e| s << e.as_sql }
+            query._joins![1..-1].join(" ", s) { |e| s << e.as_sql(self) }
           end
         end
       end

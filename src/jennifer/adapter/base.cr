@@ -169,14 +169,6 @@ module Jennifer
         {args: args, fields: fields}
       end
 
-      def self.arg_replacement(arr)
-        escape_string(arr.size)
-      end
-
-      def self.escape_string(size = 1)
-        Adapter.adapter.sql_generator.escape_string(size)
-      end
-
       def self.drop_database
         db_connection do |db|
           db.exec "DROP DATABASE #{Config.db}"
@@ -190,11 +182,11 @@ module Jennifer
       end
 
       def self.generate_schema
-        raise "Not implemented"
+        raise AbstractMethod.new("generate_schema", self)
       end
 
       def self.load_schema
-        raise "Not implemented"
+        raise AbstractMethod.new("load_schema", self)
       end
 
       # filter out value; should be refactored
@@ -233,6 +225,7 @@ module Jennifer
         result
       end
 
+      abstract def migration_processor
       abstract def sql_generator
       abstract def view_exists?(name, silent = true)
       abstract def update(obj)

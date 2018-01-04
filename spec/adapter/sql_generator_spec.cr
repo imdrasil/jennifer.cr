@@ -8,6 +8,23 @@ describe "Jennifer::Adapter::SQLGenerator" do
   adapter = Jennifer::Adapter.adapter
   described_class = Jennifer::Adapter.adapter.sql_generator
 
+  describe "::filter_out" do
+    context "is Criteria" do
+      it "renders sql of criteria" do
+        c2 = Factory.build_criteria
+        described_class.filter_out(c2).should eq(c2.as_sql)
+      end
+    end
+
+    context "anything else" do
+      it "renders placeholder" do
+        described_class.filter_out(1).should eq("%s")
+        described_class.filter_out("s").should eq("%s")
+        described_class.filter_out(false).should eq("%s")
+      end
+    end
+  end
+
   describe "::select_query" do
     s = Contact.where { _age == 1 }.join(Contact) { _age == Contact._age }.order(age: :desc).limit(1)
     select_query = described_class.select(s)

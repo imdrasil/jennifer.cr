@@ -12,6 +12,7 @@ class PQ::Field
 
   private def load_table_name : String
     value = ""
+    # TODO: decouple from adapter
     ::Jennifer::Adapter.adapter.query("select relname from pg_class where oid = $1", @col_oid) do |rs|
       rs.each do
         value = rs.read(String)

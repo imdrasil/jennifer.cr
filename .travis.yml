@@ -11,5 +11,4 @@ env:
   - DB=postgres DB_USER=postgres DB_PASSWORD=""
   - DB=postgres DB_USER=postgres DB_PASSWORD="" PAIR=1
   - DB=mysql DB_USER=root DB_PASSWORD="" PAIR=1
-before_script:
-  - bash .travis.setup.sh
+before_script: bash .travis.setup.sh

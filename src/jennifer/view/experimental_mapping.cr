@@ -249,7 +249,7 @@ module Jennifer
         @@strict_mapping : Bool?
 
         def self.strict_mapping?
-          @@strict_mapping ||= ::Jennifer::Adapter.adapter.table_column_count(table_name) == field_count
+          @@strict_mapping ||= adapter.table_column_count(table_name) == field_count
         end
 
         # Returns field count

@@ -22,28 +22,33 @@ module Jennifer
       end
 
       def as_sql
-        sql_string =
-          case @type
-          when :left
-            "LEFT JOIN "
-          when :right
-            "RIGHT JOIN "
-          when :inner
-            "JOIN "
-          when :full, :full_outer
-            "FULL OUTER JOIN "
-          else
-            raise ArgumentError.new("Bad join type: #{@type}.")
-          end
-
-        sql_string + "#{table_definition} ON #{@on.as_sql}\n"
+        as_sql(Adapter.default_adapter.sql_generator)
       end
 
-      def table_definition
-        @aliass ? "#{table_name} #{@aliass}" : table_name
+      def as_sql(generator)
+        type_definition + "#{table_definition(generator)} ON #{@on.as_sql(generator)}\n"
       end
 
-      def table_name : String
+      def type_definition
+        case @type
+        when :left
+          "LEFT JOIN "
+        when :right
+          "RIGHT JOIN "
+        when :inner
+          "JOIN "
+        when :full, :full_outer
+          "FULL OUTER JOIN "
+        else
+          raise ArgumentError.new("Bad join type: #{@type}.")
+        end
+      end
+
+      def table_definition(generator)
+        @aliass ? "#{table_name(generator)} #{@aliass}" : table_name(generator)
+      end
+
+      def table_name(generator) : String
         if @table.is_a?(String)
           @table.as(String)
         else
@@ -66,9 +71,8 @@ module Jennifer
     end
 
     class LateralJoin < Join
-      def as_sql
-        sql_string =
-          case @type
+      def type_definition
+        case @type
           when :left
             "LEFT JOIN "
           when :right
@@ -80,8 +84,6 @@ module Jennifer
           else
             raise ArgumentError.new("Bad join type: #{@type}.")
           end + "LATERAL "
-
-        sql_string + "#{table_definition} ON #{@on.as_sql}\n"
       end
     end
   end

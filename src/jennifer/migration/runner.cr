@@ -5,7 +5,7 @@ module Jennifer
 
       def self.migrate(count)
         performed = false
-        Adapter.adapter.ready_to_migrate!
+        default_adapter.ready_to_migrate!
         return if ::Jennifer::Migration::Base.migrations.empty?
         interpolation = {} of String => typeof(Base.migrations[0])
         Base.migrations.each { |m| interpolation[m.version] = m }
@@ -41,7 +41,8 @@ module Jennifer
         puts e.message
         puts e.backtrace.join("\n")
       ensure
-        Adapter.adapter_class.generate_schema if performed
+        # TODO: generate schema for each adapter
+        default_adapter.generate_schema if performed
       end
 
       def self.migrate
@@ -49,19 +50,21 @@ module Jennifer
       end
 
       def self.create
-        r = Adapter.adapter_class.create_database
+        # TODO: allow to specify adapter
+        r = default_adapter.create_database
         puts "DB is created!"
         r
       end
 
       def self.drop
-        Adapter.adapter_class.drop_database
+        # TODO: allow to specify adapter
+        default_adapter.drop_database
         puts "DB is dropped!"
       end
 
       def self.rollback(options : Hash(Symbol, DBAny))
         processed = true
-        Adapter.adapter.ready_to_migrate!
+        default_adapter.ready_to_migrate!
         return if ::Jennifer::Migration::Base.migrations.empty? || !Version.all.exists?
         interpolation = {} of String => typeof(Base.migrations[0])
         Base.migrations.each { |m| interpolation[m.version] = m }
@@ -86,11 +89,13 @@ module Jennifer
       rescue e
         puts e.message
       ensure
-        Adapter.adapter_class.generate_schema if processed
+        # TODO: generate schema for each adapter
+        default_adapter.generate_schema if processed
       end
 
       def self.load_schema
-        Adapter.adapter_class.load_schema
+        # TODO: load schema for each adapter
+        default_adapter.load_schema
       end
 
       def self.generate(name)
@@ -101,6 +106,10 @@ module Jennifer
         puts "Migration #{migration_name} was generated"
       rescue e
         puts e.message
+      end
+
+      def self.default_adapter
+        Adapter.default_adapter
       end
     end
   end

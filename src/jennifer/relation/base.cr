@@ -32,6 +32,10 @@ module Jennifer
         T
       end
 
+      def adapter
+        Q.adapter
+      end
+
       def condition_clause
         _foreign = foreign_field
         _primary = primary_field

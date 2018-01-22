@@ -29,7 +29,7 @@ module Jennifer
         ::Jennifer::Model::Base.models.each(&.actual_table_field_count)
       end
 
-      def exec(_query, args = [] of DB::Any)
+      def exec(_query, args : Array(DBAny) = [] of DBAny)
         time = Time.monotonic
         res = with_connection { |conn| conn.exec(_query, args) }
         time = Time.monotonic - time
@@ -42,7 +42,7 @@ module Jennifer
         raise BadQuery.new(e.message, _query, args)
       end
 
-      def query(_query, args = [] of DB::Any)
+      def query(_query, args : Array(DBAny) = [] of DBAny)
         time = Time.monotonic
         res = with_connection { |conn| conn.query(_query, args) { |rs| time = Time.monotonic - time; yield rs } }
         Config.logger.debug { regular_query_message(time, _query, args) }
@@ -54,7 +54,7 @@ module Jennifer
         raise BadQuery.new(e.message, _query, args)
       end
 
-      def scalar(_query, args : Array(DB::Any) = [] of DB::Any)
+      def scalar(_query, args : Array(DBAny) = [] of DBAny)
         time = Time.monotonic
         res = with_connection { |conn| conn.scalar(_query, args) }
         time = Time.monotonic - time

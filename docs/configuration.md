@@ -1,18 +1,19 @@
 # Configuration
 
 Put
+
 ```crystal
+require "jennifer"
 require "jennifer/adapter/mysql" # for mysql
 require "jennifer/adapter/postgres" # for postgres
-require "jennifer" 
 ```
 
-> Be attentive - adapter should be required before main staff. Only one adapter can be required at once.
+> Be attentive - adapter should be required **after** main staff. From `0.5.0` several adapters could be required at the same time.
 
 This should be done before you load your application configurations (or at least models). Now configuration could be loaded from yaml file:
 
 ```crystal
-Jennifer::Config.read("./spec/fixtures/database.yml", :development) 
+Jennifer::Config.read("./spec/fixtures/database.yml", :development)
 ```
 
 Second argument represents environment and just use it as namespace key grapping values from yml.

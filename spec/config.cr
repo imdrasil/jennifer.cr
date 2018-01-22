@@ -48,6 +48,8 @@ module Spec
   end
 end
 
+require "../src/jennifer"
+
 {% if env("DB") == "mysql" %}
   require "../src/jennifer/adapter/mysql"
   Spec.adapter = "mysql"
@@ -58,7 +60,15 @@ end
   require "../src/jennifer/adapter/postgres"
   Spec.adapter = "postgres"
 {% end %}
-require "../src/jennifer"
+
+{% if env("PAIR") == "1" %}
+  # Additionally loads opposite adapter
+  {% if env("DB") == "mysql" %}
+    require "../src/jennifer/adapter/postgres"
+  {% elsif env("DB") == "postgres" %}
+    require "../src/jennifer/adapter/mysql"
+  {% end %}
+{% end %}
 
 def set_default_configuration
   Jennifer::Config.reset_config

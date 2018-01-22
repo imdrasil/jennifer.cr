@@ -32,11 +32,12 @@ end
 
 def clean_db
   postgres_only do
-    Jennifer::Adapter.adapter.refresh_materialized_view(FemaleContact.table_name)
+    Jennifer::Adapter.adapter.as(Jennifer::Postgres::Adapter).refresh_materialized_view(FemaleContact.table_name)
   end
   Jennifer::Model::Base.models.select { |t| t.has_table? }.each(&.all.delete)
 end
 
+# Ends current transaction, yields and starts next one
 macro void_transaction
   begin
     Jennifer::Adapter.adapter.rollback_transaction
@@ -49,11 +50,11 @@ macro void_transaction
 end
 
 def select_clause(query)
-  String.build { |s| ::Jennifer::Adapter::SqlGenerator.select_clause(s, query) }
+  String.build { |s| ::Jennifer::Adapter.adapter.sql_generator.select_clause(s, query) }
 end
 
 def select_query(query)
-  ::Jennifer::Adapter::SqlGenerator.select(query)
+  ::Jennifer::Adapter.adapter.sql_generator.select(query)
 end
 
 def db_array(*element)
@@ -78,6 +79,17 @@ end
 
 def sb
   String.build { |io| yield io }
+end
+
+def db_specific(mysql, postgres)
+  case Spec.adapter
+  when "postgres"
+    postgres.call
+  when "mysql"
+    mysql.call
+  else
+    raise "Unknown adapter type"
+  end
 end
 
 # Matchers ======================

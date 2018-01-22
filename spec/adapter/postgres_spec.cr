@@ -1,21 +1,9 @@
 require "../spec_helper"
 
 postgres_only do
-  describe Jennifer::Adapter::Postgres do
-    described_class = Jennifer::Adapter::Postgres
-    adapter = Jennifer::Adapter.adapter.as(Jennifer::Adapter::Postgres)
-
-    describe "#translate_type" do
-      it "returns sql type associated with given synonim" do
-        adapter.translate_type(:string).should eq("varchar")
-      end
-    end
-
-    describe "#default_type_size" do
-      it "returns default type size for given alias" do
-        adapter.default_type_size(:string).should eq(254)
-      end
-    end
+  describe Jennifer::Postgres::Adapter do
+    described_class = Jennifer::Postgres::Adapter
+    adapter = Jennifer::Adapter.adapter.as(Jennifer::Postgres::Adapter)
 
     describe "#parse_query" do
       it "replaces %s by dollar-and-numbers" do
@@ -23,7 +11,7 @@ postgres_only do
       end
     end
 
-    describe "index manipulation" do
+    context "index manipulation" do
       age_index_options = {
         :type    => nil,
         :fields  => [:age],
@@ -32,7 +20,7 @@ postgres_only do
       }
       index_name = "contacts_age_index"
 
-      context "#index_exists?" do
+      describe "#index_exists?" do
         it "returns true if exists index with given name" do
           adapter.index_exists?("", "contacts_description_index").should be_true
         end
@@ -40,32 +28,6 @@ postgres_only do
         it "returns false if index is not exist" do
           adapter.index_exists?("", "contacts_description_index_test").should be_false
         end
-      end
-
-      context "#add_index" do
-        it "should add a covering index if no type is specified" do
-          delete_index_if_exists(adapter, index_name)
-
-          adapter.add_index("contacts", index_name, age_index_options)
-          adapter.index_exists?("", index_name).should be_true
-        end
-      end
-
-      context "#drop_index" do
-        it "should drop an index if it exists" do
-          delete_index_if_exists(adapter, index_name)
-
-          adapter.add_index("contacts", index_name, age_index_options)
-          adapter.index_exists?("", index_name).should be_true
-
-          adapter.drop_index("", index_name)
-          adapter.index_exists?("", index_name).should be_false
-        end
-      end
-    end
-
-    describe "#change_column" do
-      pending "add" do
       end
     end
 
@@ -159,8 +121,4 @@ postgres_only do
       end
     end
   end
-end
-
-def delete_index_if_exists(adapter, index)
-  adapter.drop_index("", index) if adapter.index_exists?("", index)
 end

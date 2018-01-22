@@ -103,7 +103,7 @@ module Jennifer
         @@strict_mapping : Bool?
 
         def self.strict_mapping?
-          @@strict_mapping ||= ::Jennifer::Adapter.adapter.table_column_count(table_name) == field_count
+          @@strict_mapping ||= adapter.table_column_count(table_name) == field_count
         end
 
         {%
@@ -204,7 +204,7 @@ module Jennifer
           \{% begin %}
             \{% klasses = @type.all_subclasses.select { |s| s.constant("STI") == true } %}
             \{% if !klasses.empty? %}
-              hash = ::Jennifer::Adapter.adapter.result_to_hash(pull)
+              hash = adapter.result_to_hash(pull)
               o =
                 case hash["type"]
                 when "", nil, "\{{@type}}"
@@ -368,7 +368,7 @@ module Jennifer
         end
 
         def save(skip_validation : Bool = false) : Bool
-          unless ::Jennifer::Adapter.adapter.under_transaction?
+          unless self.class.adapter.under_transaction?
             {{@type}}.transaction do
               save_without_transaction(skip_validation)
             end || false
@@ -389,7 +389,7 @@ module Jennifer
           response =
             if new_record?
               return false unless __before_create_callback
-              res = ::Jennifer::Adapter.adapter.insert(self)
+              res = self.class.adapter.insert(self)
               {% if primary && primary_auto_incrementable %}
                 if primary.nil? && res.last_insert_id > -1
                   init_primary_field(res.last_insert_id.to_i)
@@ -399,7 +399,7 @@ module Jennifer
               __after_create_callback
               res
             else
-              ::Jennifer::Adapter.adapter.update(self)
+              self.class.adapter.update(self)
             end
           __after_save_callback
           response.rows_affected == 1
@@ -470,7 +470,7 @@ module Jennifer
             end
           end
 
-          ::Jennifer::Adapter.adapter.update(self)
+          self.class.adapter.update(self)
           __refresh_changes
         end
 

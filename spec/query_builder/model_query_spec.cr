@@ -50,7 +50,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
       it "it generates proper request" do
         contact = Factory.create_contact
         query = Contact.all.eager_load(:main_address)
-        Jennifer::Adapter::SqlGenerator.select(query).should match(/addresses\.main/)
+        Jennifer::Adapter.adapter.sql_generator.select(query).should match(/addresses\.main/)
       end
     end
 
@@ -97,9 +97,9 @@ describe Jennifer::QueryBuilder::ModelQuery do
   describe "#relation" do
     # TODO: refactor this bad test - this should be tested under sql generating process
     it "makes join using relation scope" do
-      ::Jennifer::Adapter::SqlGenerator
-        .select(Contact.all.relation(:addresses))
-        .should match(/LEFT JOIN addresses ON addresses.contact_id = contacts.id/)
+      ::Jennifer::Adapter.adapter.sql_generator
+                                 .select(Contact.all.relation(:addresses))
+                                 .should match(/LEFT JOIN addresses ON addresses.contact_id = contacts.id/)
     end
   end
 

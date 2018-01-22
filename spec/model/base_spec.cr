@@ -277,7 +277,7 @@ describe Jennifer::Model::Base do
   describe "%scope" do
     context "with block" do
       it "executes in query context" do
-        ::Jennifer::Adapter::SqlGenerator.select(Contact.all.ordered).should match(/ORDER BY contacts\.name ASC/)
+        ::Jennifer::Adapter.adapter.sql_generator.select(Contact.all.ordered).should match(/ORDER BY contacts\.name ASC/)
       end
 
       context "without arguemnt" do
@@ -312,7 +312,7 @@ describe Jennifer::Model::Base do
 
     context "with query object class" do
       it "executes in class context" do
-        ::Jennifer::Adapter::SqlGenerator.select(Contact.johny).should match(/name =/)
+        ::Jennifer::Adapter.adapter.sql_generator.select(Contact.johny).should match(/name =/)
       end
 
       context "without arguemnt" do

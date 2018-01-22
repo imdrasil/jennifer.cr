@@ -12,8 +12,8 @@ module Jennifer
         initialize(criteria.field, criteria.table, criteria.relation)
       end
 
-      def as_sql
-        Adapter::SqlGenerator.json_path(self)
+      def as_sql(generator)
+        generator.json_path(self)
       end
     end
   end

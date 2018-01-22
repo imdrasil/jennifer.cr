@@ -4,6 +4,7 @@
 /bin/
 /.shards/
 .idea
+jennifer.code-workspace
 /spec/fixtures/*.db
 
 # Libraries don't need dependency lock

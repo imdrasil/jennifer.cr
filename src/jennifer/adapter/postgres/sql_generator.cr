@@ -1,14 +1,16 @@
+require "../base_sql_generator"
+
 module Jennifer
-  module Adapter
-    module SqlNotation
-      def insert(obj : Model::Base, with_primary_field = true)
+  module Postgres
+    class SQLGenerator < Adapter::BaseSQLGenerator
+      def self.insert(obj : Model::Base, with_primary_field = true)
         opts = obj.arguments_to_insert
         String.build do |s|
           s << "INSERT INTO " << obj.class.table_name
           unless opts[:fields].empty?
             s << "("
             opts[:fields].join(", ", s)
-            s << ") VALUES (" << Adapter.adapter_class.escape_string(opts[:fields].size) << ") "
+            s << ") VALUES (" << escape_string(opts[:fields].size) << ") "
           else
             s << " DEFAULT VALUES"
           end
@@ -22,25 +24,25 @@ module Jennifer
 
       # Generates update request depending on given query and hash options. Allows
       # joins inside of query.
-      def update(query, options : Hash)
-        esc = Adapter.adapter_class.escape_string(1)
+      def self.update(query, options : Hash)
+        esc = escape_string(1)
         String.build do |s|
           s << "UPDATE " << query._table << " SET "
           options.map { |k, v| "#{k.to_s}= #{esc}" }.join(", ", s)
           s << "\n"
 
-          from_clause(s, query, query._joins![0].table_name) if query._joins
+          from_clause(s, query, query._joins![0].table_name(self)) if query._joins
           where_clause(s, query.tree)
           if query._joins
             where_clause(s, query._joins![0].on)
-            query._joins![1..-1].join(" ", s) { |e| s << e.as_sql }
+            query._joins![1..-1].join(" ", s) { |e| s << e.as_sql(self) }
           end
         end
       end
 
       # =================== utils
 
-      def operator_to_sql(operator)
+      def self.operator_to_sql(operator)
         case operator
         when :like
           "LIKE"
@@ -62,14 +64,12 @@ module Jennifer
           "<@"
         when :overlap
           "&&"
-        when :ilike
-          "ILIKE"
         else
           operator.to_s
         end
       end
 
-      def json_path(path : QueryBuilder::JSONSelector)
+      def self.json_path(path : QueryBuilder::JSONSelector)
         operator =
           case path.type
           when :path
@@ -77,13 +77,13 @@ module Jennifer
           when :take
             "->"
           else
-            raise ArgumentError.new("Wrong json path type")
+            raise "Wrong json path type"
           end
         "#{path.identifier}#{operator}#{quote(path.path)}"
       end
 
       # for postgres column name
-      def escape(value : String)
+      def self.escape(value : String)
         case value
         when "NULL", "TRUE", "FALSE"
           value
@@ -93,23 +93,23 @@ module Jennifer
         end
       end
 
-      def escape(value : Nil)
+      def self.escape(value : Nil)
         quote(value)
       end
 
-      def escape(value : Bool)
+      def self.escape(value : Bool)
         quote(value)
       end
 
-      def escape(value : Int32 | Int16 | Float64 | Float32)
+      def self.escape(value : Int32 | Int16 | Float64 | Float32)
         quote(value)
       end
 
-      def quote(value : String)
+      def self.quote(value : String)
         "'#{value.gsub(/\\/, "\&\&").gsub(/'/, "''")}'"
       end
 
-      def parse_query(query, arg_count)
+      def self.parse_query(query, arg_count)
         arr = [] of String
         arg_count.times do |i|
           arr << "$#{i + 1}"

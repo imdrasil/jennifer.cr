@@ -235,12 +235,6 @@ describe Jennifer::Adapter::Base do
     end
   end
 
-  describe "::escape_string" do
-    it "returns proper escape string" do
-      described_class.escape_string(5).should eq(Jennifer::Adapter::SqlGenerator.escape_string(5))
-    end
-  end
-
   describe "#query_array" do
     it "returns array of given type" do
       Factory.create_contact

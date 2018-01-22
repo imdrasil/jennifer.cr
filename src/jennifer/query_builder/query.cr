@@ -23,9 +23,10 @@ module Jennifer
         end
       {% end %}
 
+      getter table : String = ""
+
       @having : Condition | LogicOperator?
       @limit : Int32?
-      @table : String = ""
       @distinct : Bool = false
       @offset : Int32?
       @raw_select : String?
@@ -122,11 +123,15 @@ module Jennifer
       end
 
       def to_sql
-        Adapter::SqlGenerator.select(self)
+        adapter.sql_generator.select(self)
       end
 
       def as_sql
-        @tree ? @tree.not_nil!.as_sql : ""
+        @tree ? @tree.not_nil!.as_sql(adapter.sql_generator) : ""
+      end
+
+      def as_sql(_generator)
+        @tree ? @tree.not_nil!.as_sql(adapter.sql_generator) : ""
       end
 
       def sql_args
@@ -334,6 +339,10 @@ module Jennifer
 
       private def _groups(name : String)
         @group[name] ||= [] of String
+      end
+
+      private def adapter
+        Adapter.default_adapter
       end
     end
   end

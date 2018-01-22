@@ -25,12 +25,12 @@ module Jennifer
       @@expression_builder : QueryBuilder::ExpressionBuilder?
 
       def self.has_table?
-        @@has_table ||= Jennifer::Adapter.adapter.table_exists?(table_name).as(Bool)
+        @@has_table ||= adapter.table_exists?(table_name).as(Bool)
       end
 
       # Represent actual amount of model's table column amount (is greped from db).
       def self.actual_table_field_count
-        @@actual_table_field_count ||= ::Jennifer::Adapter.adapter.table_column_count(table_name)
+        @@actual_table_field_count ||= adapter.table_column_count(table_name)
       end
 
       def self.table_name(value : String | Symbol)
@@ -160,7 +160,7 @@ module Jennifer
 
       # Deletes object from db and calls callbacks
       def destroy
-        unless ::Jennifer::Adapter.adapter.under_transaction?
+        unless self.class.adapter.under_transaction?
           {{@type}}.transaction do
             destroy_without_transaction
           end
@@ -199,7 +199,7 @@ module Jennifer
 
       # Starts transaction.
       def self.transaction
-        Adapter.adapter.transaction do |t|
+        adapter.transaction do |t|
           yield(t)
         end
       end
@@ -271,7 +271,7 @@ module Jennifer
 
       def self.search_by_sql(query : String, args = [] of Supportable)
         result = [] of self
-        ::Jennifer::Adapter.adapter.query(query, args) do |rs|
+        adapter.query(query, args) do |rs|
           rs.each do
             result << build(rs)
           end
@@ -280,7 +280,7 @@ module Jennifer
       end
 
       def self.import(collection : Array(self))
-        Adapter.adapter.bulk_insert(collection)
+        adapter.bulk_insert(collection)
       end
 
       macro inherited

@@ -12,8 +12,8 @@ module Jennifer
       def initialize(@condition)
       end
 
-      def as_sql
-        "(" + @condition.as_sql + ")"
+      def as_sql(generator)
+        "(" + @condition.as_sql(generator) + ")"
       end
     end
   end

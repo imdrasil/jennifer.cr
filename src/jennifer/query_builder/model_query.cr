@@ -28,7 +28,7 @@ module Jennifer
       def find_by_sql(query : String, args : Array(DBAny) = [] of DBAny)
         results = [] of T
         return results if @do_nothing
-        ::Jennifer::Adapter.adapter.query(query, args) do |rs|
+        adapter.query(query, args) do |rs|
           begin
             rs.each do
               results << T.build(rs)
@@ -47,7 +47,7 @@ module Jennifer
         add_aliases if @relation_used
         return to_a_with_relations unless @relations.empty?
         result = [] of T
-        ::Jennifer::Adapter.adapter.select(self) do |rs|
+        adapter.select(self) do |rs|
           rs.each do
             begin
               result << T.build(rs)
@@ -68,7 +68,7 @@ module Jennifer
 
         models = @relations.map { |e| T.relation(e).model_class }
         existence = @relations.map { |_| {} of String => Bool }
-        ::Jennifer::Adapter.adapter.select(self) do |rs|
+        adapter.select(self) do |rs|
           rs.each do
             begin
               h = build_hash(rs, T.actual_table_field_count)
@@ -101,6 +101,10 @@ module Jennifer
           collection.each(&.relation_retrieved(rel))
         end
         add_preloaded(collection)
+      end
+
+      private def adapter
+        T.adapter
       end
     end
   end

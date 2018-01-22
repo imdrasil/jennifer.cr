@@ -2,12 +2,12 @@ module Jennifer
   module Migration
     module TableBuilder
       class DropIndex < Base
-        def initialize(name, @index_name : String)
-          super(name)
+        def initialize(adapter, name, @index_name : String)
+          super(adapter, name)
         end
 
         def process
-          Adapter.adapter.drop_index(@name, @index_name)
+          schema_processor.drop_index(@name, @index_name)
         end
       end
     end

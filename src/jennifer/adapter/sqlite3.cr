@@ -1,14 +1,13 @@
 require "sqlite3"
 require "../adapter"
 require "./sqlite3/sql_notation"
+require "./sqlite3/schema_processor"
 
 module Jennifer
-  alias DBAny = DB::Any
+  module Sqlite3
+    class Adapter < Base
+      alias EnumType = String
 
-  module Adapter
-    alias EnumType = String
-
-    class Sqlite3 < Base
       TYPE_TRANSLATIONS = {
         :integer   => "integer",
         :bool      => "integer",
@@ -20,6 +19,14 @@ module Jennifer
         :json      => "text",
         :float     => "real",
       }
+
+      def sql_generator
+        SQLGenerator
+      end
+
+      def schema_processor
+        @schema_processor ||= SchemaProcessor.new(self)
+      end
 
       def translate_type(name)
         TYPE_TRANSLATIONS[name]
@@ -55,22 +62,6 @@ module Jennifer
         c == 1
       end
 
-      def rename_table(old_name, new_name)
-        exec "ALTER TABLE #{old_name.to_s} RENAME TO #{new_name.to_s}"
-      end
-
-      def drop_index(table, name)
-        exec "DROP INDEX #{name}"
-      end
-
-      def change_column(table, old_name, new_name, opts)
-        raise "ALTER COLUMN is not implemented yet. Take a look on this http://www.sqlite.org/faq.html#q11"
-      end
-
-      def drop_column(table, old_name, new_name, opts)
-        raise "DROP COLUMN is not implemented yet. Take a look on this http://www.sqlite.org/faq.html#q11"
-      end
-
       def self.table_row_hash(rs)
         raise "Not supported"
       end
@@ -96,31 +87,10 @@ module Jennifer
       private def self.db_path
         File.join(Config.host, Config.db)
       end
-
-      private def column_definition(name, options, io)
-        type = options[:sql_type]? || translate_type(options[:type].as(Symbol))
-        size = options[:size]? || default_type_size(options[:type])
-        io << name << " " << type
-        io << "(#{size})" if size
-        if options.key?(:null)
-          if options[:null]
-            io << " NULL"
-          else
-            io << " NOT NULL"
-          end
-        end
-        io << " PRIMARY KEY" if options[:primary]?
-        io << " DEFAULT #{self.class.t(options[:default])}" if options[:default]?
-        io << " AUTOINCREMENT" if options[:auto_increment]?
-      end
     end
-  end
-
-  macro after_load_hook
-
   end
 end
 
 require "./sqlite3/result_set"
 
-::Jennifer::Adapter.register_adapter("sqlite3", ::Jennifer::Adapter::Sqlite3)
+::Jennifer::Adapter.register_adapter("sqlite3", ::Jennifer::Sqlite3::Adapter)

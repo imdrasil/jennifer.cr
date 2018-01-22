@@ -3,11 +3,11 @@ module Jennifer
     module TableBuilder
       class CreateTable < Base
         def process
-          Adapter.adapter.create_table(self)
+          schema_processor.create_table(self)
           @indexes.each(&.process)
         end
 
-        {% for method in Jennifer::Adapter::TYPE_TRANSLATIONS.keys %}
+        {% for method in Jennifer::Adapter::TYPES %}
           def {{method.id}}(name, options = DB_OPTIONS.new)
             defaults = sym_hash({:type => {{method}}}, AAllowedTypes)
             @fields[name.to_s] = defaults.merge(options)

@@ -47,7 +47,7 @@ describe Jennifer::Adapter::Base do
 
     it "raises exception if query is broken" do
       expect_raises(Jennifer::BadQuery, /Original query was/) do
-        adapter.exec("insert into countries(name) set values(?)", "new")
+        adapter.exec("insert into countries(name) set values(?)", ["new"])
       end
     end
   end

@@ -198,7 +198,7 @@ module Jennifer
       def self.order_clause(io : String::Builder, query)
         return if !query._order || query._order.empty?
         io << "ORDER BY "
-        query._order.not_nil!.join(", ", io) { |(k, v)| io.print k.as_sql(self), " ", v.upcase }
+        query._order.join(", ", io) { |(k, v), _| io.print k.as_sql(self), " ", v.upcase }
         io << "\n"
       end
 

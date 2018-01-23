@@ -1,4 +1,5 @@
 require "./json_selector"
+require "./criteria_container"
 
 module Jennifer
   module QueryBuilder
@@ -14,10 +15,7 @@ module Jennifer
       def initialize(@field : String, @table : String, @relation = nil)
       end
 
-      # NOTE: workaround for passing criteria to the hash as a key - somewhy any Criteria is realized as same one
-      def hash
-        "#{@field}#{@table}".hash
-      end
+      def_hash @field, @table
 
       def set_relation(table : String, name : String)
         @relation = name if @relation.nil? && @table == table
@@ -65,7 +63,7 @@ module Jennifer
       end
 
       def ==(value : Rightable)
-        # NOTE: here crystal improperly resolves override methods with Nilargument
+        # NOTE: here crystal improperly resolves override methods with Nil argument
         if !value.nil?
           Condition.new(self, :==, value)
         else

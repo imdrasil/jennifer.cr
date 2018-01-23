@@ -27,6 +27,10 @@ module Jennifer
         @value_bucket.values
       end
 
+      def size
+        @value_bucket.size
+      end
+
       def []=(key : Criteria, value : String)
         internal_key = key_value(key)
 
@@ -54,11 +58,11 @@ module Jennifer
         @key_bucket.empty?
       end
 
-      def remove(key : Criteria)
+      def delete(key : Criteria)
         internal_key = key_value(key)
 
-        @value_bucket.remove(internal_key)
-        @key_bucket.remove(internal_key)
+        @value_bucket.delete(internal_key)
+        @key_bucket.delete(internal_key)
       end
 
       private def key_value(criteria : Criteria)

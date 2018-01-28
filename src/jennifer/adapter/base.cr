@@ -12,6 +12,9 @@ module Jennifer
       include ResultParsers
       include RequestMethods
 
+      alias ArgType = DBAny
+      alias ArgsType = Array(ArgType)
+
       @db : DB::Database
 
       getter db
@@ -29,7 +32,7 @@ module Jennifer
         ::Jennifer::Model::Base.models.each(&.actual_table_field_count)
       end
 
-      def exec(_query, args : Array(DBAny) = [] of DBAny)
+      def exec(_query, args : ArgsType = [] of DBAny)
         time = Time.monotonic
         res = with_connection { |conn| conn.exec(_query, args) }
         time = Time.monotonic - time
@@ -42,7 +45,7 @@ module Jennifer
         raise BadQuery.new(e.message, _query, args)
       end
 
-      def query(_query, args : Array(DBAny) = [] of DBAny)
+      def query(_query, args : ArgsType = [] of DBAny)
         time = Time.monotonic
         res = with_connection { |conn| conn.query(_query, args) { |rs| time = Time.monotonic - time; yield rs } }
         Config.logger.debug { regular_query_message(time, _query, args) }
@@ -54,7 +57,7 @@ module Jennifer
         raise BadQuery.new(e.message, _query, args)
       end
 
-      def scalar(_query, args : Array(DBAny) = [] of DBAny)
+      def scalar(_query, args : ArgsType = [] of DBAny)
         time = Time.monotonic
         res = with_connection { |conn| conn.scalar(_query, args) }
         time = Time.monotonic - time
@@ -67,14 +70,6 @@ module Jennifer
         raise BadQuery.new(e.message, _query, args)
       end
 
-      def parse_query(q : String, args)
-        sql_generator.parse_query(q, args.size)
-      end
-
-      def parse_query(q : String)
-        sql_generator.parse_query(q)
-      end
-
       def truncate(klass : Class)
         truncate(klass.table_name)
       end
@@ -85,17 +80,17 @@ module Jennifer
 
       def delete(query : QueryBuilder::Query)
         args = query.select_args
-        exec sql_generator.delete(query), args
+        exec *sql_generator.delete(query)
       end
 
       def exists?(query : QueryBuilder::Query)
         args = query.select_args
-        scalar(sql_generator.exists(query), args) == 1
+        scalar(*sql_generator.exists(query)) == 1
       end
 
       def count(query : QueryBuilder::Query)
         args = query.select_args
-        scalar(sql_generator.count(query), args).as(Int64).to_i
+        scalar(*sql_generator.count(query)).as(Int64).to_i
       end
 
       def bulk_insert(collection : Array(Model::Base))
@@ -106,7 +101,7 @@ module Jennifer
         parsed_query = parse_query(sql_generator.bulk_insert(klass.table_name, fields, collection.size), values)
 
         with_table_lock(klass.table_name) do
-          exec(parsed_query, values)
+          exec(*parsed_query)
           if klass.primary_auto_incrementable?
             klass.all.order({klass.primary => :desc}).limit(collection.size).pluck(:id).reverse_each.each_with_index do |id, i|
               collection[i].init_primary_field(id)
@@ -116,13 +111,21 @@ module Jennifer
         collection
       end
 
-      def bulk_insert(table : String, fields : Array(String), values : Array(Array(DBAny))) : Nil
+      def bulk_insert(table : String, fields : Array(String), values : Array(ArgsType)) : Nil
         return if values.empty?
         with_table_lock(table) do
           flat_values = values.flatten
-          exec(parse_query(sql_generator.bulk_insert(table, fields, values.size), flat_values), flat_values)
+          exec(*parse_query(sql_generator.bulk_insert(table, fields, values.size), flat_values))
         end
         nil
+      end
+
+      def parse_query(q : String, args : ArgsType)
+        sql_generator.parse_query(q, args)
+      end
+
+      def parse_query(q : String)
+        sql_generator.parse_query(q)
       end
 
       def self.db_connection
@@ -159,7 +162,7 @@ module Jennifer
         end
       end
 
-      def self.extract_arguments(hash : Hash) : NamedTuple(args: Array(Jennifer::DBAny), fields: Array(String))
+      def self.extract_arguments(hash : Hash) : NamedTuple(args: ArgsType, fields: Array(String))
         args = [] of DBAny
         fields = [] of String
         hash.each do |key, value|

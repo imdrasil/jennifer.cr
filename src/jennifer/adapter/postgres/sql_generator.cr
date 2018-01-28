@@ -108,12 +108,15 @@ module Jennifer
         "'#{value.gsub(/\\/, "\&\&").gsub(/'/, "''")}'"
       end
 
-      def self.parse_query(query, arg_count)
-        arr = [] of String
-        arg_count.times do |i|
+      def self.parse_query(query, args : Array(DBAny))
+        arr = Array(String).new(args.size)
+        args.each_with_index do |arg, i|
+          if arg.is_a?(Time)
+            args[i] = Config.local_time_zone.local_to_utc(arg.as(Time))
+          end
           arr << "$#{i + 1}"
         end
-        query % arr
+        {query % arr, args}
       end
     end
   end

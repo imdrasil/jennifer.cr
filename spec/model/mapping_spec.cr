@@ -280,6 +280,25 @@ describe Jennifer::Model::Mapping do
         end
       end
 
+      describe Time do
+        it "stores to db time converted to UTC" do
+          with_time_zone("Etc/GMT+1") do
+            contact = Factory.create_contact
+            Contact.all.update(created_at: Time.utc_now)
+            Contact.all.select { [_created_at] }.each_result_set do |rs|
+              rs.read(Time).should be_close(Time.utc_now + 1.hour, 2.seconds)
+            end
+          end
+        end
+
+        it "converts values from utc to local" do
+          contact = Factory.create_contact
+          with_time_zone("Etc/GMT+1") do
+            contact.reload.created_at!.should be_close(Time.utc_now - 1.hour, 2.seconds)
+          end
+        end
+      end
+
       context "nilable field" do
         context "passed with ?" do
           it "properly sets field as nilable" do

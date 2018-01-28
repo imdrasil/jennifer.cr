@@ -209,7 +209,9 @@ class OneFieldModel < Jennifer::Model::Base
   )
 end
 
-# mutated models ============
+# ===================
+# synthetic models 
+# ===================
 
 class JohnPassport < Jennifer::Model::Base
   table_name "passports"
@@ -313,6 +315,7 @@ class MaleContact < Jennifer::View::Base
     name:   String,
     gender: String,
     age:    Int32,
+    created_at: Time?
   }, false)
 
   scope :main { where { _age < 50 } }

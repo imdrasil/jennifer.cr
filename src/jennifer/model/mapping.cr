@@ -4,6 +4,7 @@ alias Primary64 = Int64
 module Jennifer
   module Model
     module Mapping
+      # :nodoc:
       macro __bool_convert(value, type)
         {% if type.stringify == "Bool" %}
           ({{value.id}}.is_a?(Int8) ? {{value.id}} == 1i8 : {{value.id}}.as({{type}}))
@@ -12,6 +13,7 @@ module Jennifer
         {% end %}
       end
 
+      # :nodoc:
       # Generates getter and setters
       macro __field_declaration(properties, primary_auto_incrementable)
         {% for key, value in properties %}
@@ -80,12 +82,12 @@ module Jennifer
 
         # Sets `created_at` tocurrent time
         def __update_created_at
-          @created_at = Time.now
+          @created_at = Jennifer::Config.local_time_zone.now
         end
 
         # Sets `updated_at` to current time
         def __update_updated_at
-          @updated_at = Time.now
+          @updated_at = Jennifer::Config.local_time_zone.now
         end
       end
 
@@ -119,9 +121,7 @@ module Jennifer
           {% end %}
           {% properties[key][:stringified_type] = properties[key][:type].stringify %}
           {% if properties[key][:stringified_type] == Jennifer::Macros::PRIMARY_32 || properties[key][:stringified_type] == Jennifer::Macros::PRIMARY_64 %}
-            {%
-              properties[key][:primary] = true
-            %}
+            {% properties[key][:primary] = true %}
           {% end %}
           {% if properties[key][:primary] %}
             {%
@@ -258,7 +258,7 @@ module Jennifer
         # Extracts arguments due to mapping from *pull* and returns tuple for
         # fields assignment. It stands on that fact result set has all defined fields in a raw
         # TODO: think about moving it to class scope
-        # NOTE: don't use it manually - there is some dependencies on caller such as reading tesult set to the end
+        # NOTE: don't use it manually - there is some dependencies on caller such as reading result set to the end
         # if eception was raised
         def _extract_attributes(pull : DB::ResultSet)
           requested_columns_count = self.class.actual_table_field_count
@@ -299,7 +299,8 @@ module Jennifer
             {
             {% for key, value in properties %}
               begin
-                %var{key.id}.as({{value[:parsed_type].id}})
+                res = %var{key.id}.as({{value[:parsed_type].id}})
+                !res.is_a?(Time) ? res : ::Jennifer::Config.local_time_zone.utc_to_local(res)
               rescue e : Exception
                 raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
                 raise e
@@ -344,6 +345,7 @@ module Jennifer
               {% else %}
                 %casted_var{key.id} = __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
               {% end %}
+              %casted_var{key.id} = !%casted_var{key.id}.is_a?(Time) ? %casted_var{key.id} : ::Jennifer::Config.local_time_zone.utc_to_local(%casted_var{key.id})
             rescue e : Exception
               raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
               raise e
@@ -536,7 +538,7 @@ module Jennifer
 
         def arguments_to_insert
           args = [] of ::Jennifer::DBAny
-          # TODO: think about moving this array to constant
+          # TODO: think about moving this array to constant; maybe use compiletime instead of runtime
           fields = [] of String
           {% for key, value in properties %}
             {% unless value[:primary] && primary_auto_incrementable %}

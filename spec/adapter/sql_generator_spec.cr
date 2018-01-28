@@ -238,13 +238,22 @@ describe "Jennifer::Adapter::SQLGenerator" do
   describe "::parse_query" do
     postgres_only do
       it "replase placeholders with dollar numbers" do
-        described_class.parse_query("asd %s qwe %s", 2).should eq("asd $1 qwe $2")
+        described_class.parse_query("asd %s qwe %s", [1, 2] of Jennifer::DBAny).should eq({"asd $1 qwe $2", [1, 2]})
       end
     end
 
     mysql_only do
       it "replace placeholders with question marks" do
-        described_class.parse_query("asd %s qwe %s", 2).should eq("asd ? qwe ?")
+        described_class.parse_query("asd %s qwe %s", [1, 2] of Jennifer::DBAny).should eq({"asd ? qwe ?", [1, 2]})
+      end
+    end
+
+    context "with given Time object" do
+      it do
+        with_time_zone("Etc/GMT+1") do
+          time = Time.utc_now
+          adapter.parse_query("%s", [time] of Jennifer::DBAny)[1][0].as(Time).should be_close(time + 1.hour, 1.second)
+        end
       end
     end
   end

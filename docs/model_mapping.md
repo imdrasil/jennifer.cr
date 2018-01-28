@@ -1,6 +1,7 @@
 # Mapping
 
 Several model examples
+
 ```crystal
 class Contact < Jennifer::Model::Base
   with_timestamps

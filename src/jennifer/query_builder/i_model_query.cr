@@ -28,7 +28,6 @@ module Jennifer
         if @select_fields.empty?
           buff = [] of Criteria
           buff << @expression.star
-
           if !@relations.empty?
             @relations.each do |r|
               table_name = @table_aliases[r]? || model_class.relation(r).table_name
@@ -195,7 +194,6 @@ module Jennifer
         arr.each do |name|
           entries[name] += 1
         end
-        result = [] of String
         entries.each { |k, v| result << k if v > 1 }
         result
       end

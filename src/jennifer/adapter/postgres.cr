@@ -180,14 +180,14 @@ module Jennifer
 
       def insert(obj : Model::Base)
         opts = obj.arguments_to_insert
-        query = parse_query(sql_generator.insert(obj, obj.class.primary_auto_incrementable?), opts[:args])
+        query_opts = parse_query(sql_generator.insert(obj, obj.class.primary_auto_incrementable?), opts[:args])
         id = -1i64
         affected = 0i64
         if obj.class.primary_auto_incrementable?
-          id = scalar(query, opts[:args]).as(Int32).to_i64
+          id = scalar(*query_opts).as(Int32).to_i64
           affected += 1 if id > 0
         else
-          affected = exec(query, opts[:args]).rows_affected
+          affected = exec(*query_opts).rows_affected
         end
 
         ExecResult.new(id, affected)
@@ -195,21 +195,17 @@ module Jennifer
 
       def self.bulk_insert(collection : Array(Model::Base))
         opts = collection.flat_map(&.arguments_to_insert[:args])
-        query = parse_query(sql_generator.bulk_insert(collection))
+        # TODO: unify parse_query
+        query_opts = parse_query(sql_generator.bulk_insert(collection))
         # TODO: change to checking for autoincrementability
         affected = exec(qyery, opts).rows_affected
-        if true
-          if affected == collection.size
-          else
-            raise ::Jennifer::BaseException.new("Bulk insert failed with #{collection.size - affected} records.")
-          end
+        if affected != collection.size
+          raise ::Jennifer::BaseException.new("Bulk insert failed with #{collection.size - affected} records.")
         end
       end
 
       def exists?(query)
-        args = query.select_args
-        body = sql_generator.exists(query)
-        scalar(body, args)
+        scalar(*sql_generator.exists(query))
       end
 
       def self.create_database

@@ -193,6 +193,15 @@ describe Jennifer::Adapter::Base do
       c.validate!
       c.valid?.should be_false
     end
+
+    it "properly sets object attributes" do
+      c = Factory.build_contact(name: "Syd", age: 150)
+      adapter.bulk_insert([c])
+      Contact.all.count.should eq(1)
+      c = Contact.all.first!
+      c.age.should eq(150)
+      c.name.should eq("Syd")
+    end
   end
 
   describe "::join_table_name" do
@@ -246,14 +255,6 @@ describe Jennifer::Adapter::Base do
       Factory.create_contact
       res = adapter.query_array("SELECT name, description FROM contacts", String?, 2)
       res[0].should eq(["Deepthi", nil])
-    end
-  end
-
-  describe "#parse_query" do
-    it "returns string without %s placeholders" do
-      res = adapter.parse_query("asd %s asd", [2])
-      res.should be_a(String)
-      res.should_not match(/%s/)
     end
   end
 

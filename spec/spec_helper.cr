@@ -77,6 +77,16 @@ def read_to_end(rs)
   end
 end
 
+def with_time_zone(zone_name : String)
+  old_zone = Jennifer::Config.local_time_zone_name
+  begin
+    Jennifer::Config.local_time_zone_name = zone_name
+    yield
+  ensure
+    Jennifer::Config.local_time_zone_name = old_zone
+  end
+end
+
 def sb
   String.build { |io| yield io }
 end

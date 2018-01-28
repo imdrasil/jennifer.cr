@@ -33,3 +33,6 @@ dependencies:
   ifrit:
     github: imdrasil/ifrit
     version: "~> 0.1.2"
+  time_zone:
+    github: imdrasil/time_zone
+    version: "~> 0.1"

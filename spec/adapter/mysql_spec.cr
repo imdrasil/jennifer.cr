@@ -26,5 +26,11 @@ mysql_only do
         adapter.default_type_size(:string).should eq(254)
       end
     end
+
+    describe "#parse_query" do
+      it "returns string without %s placeholders" do
+        adapter.parse_query("asd %s asd", [2] of Jennifer::DBAny).should eq({"asd ? asd", [2]})
+      end
+    end
   end
 end

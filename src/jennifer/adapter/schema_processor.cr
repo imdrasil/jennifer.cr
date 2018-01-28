@@ -176,7 +176,7 @@ module Jennifer
           s << "VIEW " << name << " AS " << adapter.sql_generator.select(query)
         end
         args = query.select_args
-        adapter.exec adapter.parse_query(buff, args), args
+        adapter.exec *adapter.parse_query(buff, args)
       end
 
       def drop_view(name, silent = true)

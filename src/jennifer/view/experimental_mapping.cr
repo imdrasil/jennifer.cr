@@ -72,7 +72,7 @@ module Jennifer
         # fields assignment. It stands on that fact result set has all defined fields in a raw
         # TODO: think about moving it to class scope
         # NOTE: don't use it manually - there is some dependencies on caller such as reading result set to the end
-        #  if eception was raised
+        # if eception was raised
         def _extract_attributes(pull : DB::ResultSet)
           {% for key in COLUMNS_METADATA.keys %}
             %var{key.id} = nil
@@ -113,7 +113,8 @@ module Jennifer
             {
             {% for key, value in COLUMNS_METADATA %}
               begin
-                %var{key.id}.as({{value[:parsed_type].id}})
+                res = %var{key.id}.as({{value[:parsed_type].id}})
+                !res.is_a?(Time) ? res : ::Jennifer::Config.local_time_zone.utc_to_local(res)
               rescue e : Exception
                 raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
                 raise e
@@ -160,6 +161,7 @@ module Jennifer
               {% else %}
                 %casted_var{key.id} = Jennifer::Model::Mapping.__bool_convert(%var{key.id}, {{value["parsed_type"].id}})
               {% end %}
+              %casted_var{key.id} = !%casted_var{key.id}.is_a?(Time) ? %casted_var{key.id} : ::Jennifer::Config.local_time_zone.utc_to_local(%casted_var{key.id})
             rescue e : Exception
               raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
               raise e

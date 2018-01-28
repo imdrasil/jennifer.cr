@@ -2,6 +2,7 @@ module Jennifer
   module Adapter
     class BaseSQLGenerator
       ARRAY_ESCAPE = "\\\\\\\\"
+      ARGUMENT_ESCAPE_STRING = "%s"
 
       # Generates insert query
       def self.insert(table, hash)
@@ -48,7 +49,7 @@ module Jennifer
             from_clause(s, query)
             body_section(s, query)
           end,
-          query.select_args_count
+          query.select_args
         )
       end
 
@@ -60,7 +61,7 @@ module Jennifer
             body_section(s, query)
             s << ")"
           end,
-          query.select_args_count
+          query.select_args
         )
       end
 
@@ -71,7 +72,7 @@ module Jennifer
             from_clause(s, query)
             body_section(s, query)
           end,
-          query.select_args_count
+          query.select_args
         )
       end
 
@@ -244,13 +245,13 @@ module Jennifer
       def self.escape_string(size : Int32 = 1)
         case size
         when 1
-          "%s"
+          ARGUMENT_ESCAPE_STRING
         when 2
-          "%s, %s"
+          "#{ARGUMENT_ESCAPE_STRING}, #{ARGUMENT_ESCAPE_STRING}"
         when 3
-          "%s, %s, %s"
+          "#{ARGUMENT_ESCAPE_STRING}, #{ARGUMENT_ESCAPE_STRING}, #{ARGUMENT_ESCAPE_STRING}"
         else
-          size.times.map { "%s" }.join(", ")
+          size.times.join(", ") { ARGUMENT_ESCAPE_STRING }
         end
       end
 
@@ -263,16 +264,13 @@ module Jennifer
       end
 
       # TODO: optimize array initializing
-      def self.parse_query(query : String, arg_count : Int32)
-        arr = [] of String
-        arg_count.times do
-          arr << "?"
+      def self.parse_query(query : String, args : Array(DBAny))
+        args.each_with_index do |arg, i|
+          if arg.is_a?(Time)
+            args[i] = Config.local_time_zone.local_to_utc(arg.as(Time))
+          end
         end
-        query % arr
-      end
-
-      def self.parse_query(query : String)
-        query
+        {query % Array.new(args.size, "?"), args}
       end
     end
   end

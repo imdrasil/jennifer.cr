@@ -68,6 +68,7 @@ All configs:
 | `retry_attempts` | 1 |
 | `checkout_timeout` | 5.0 |
 | `retry_delay` | 1.0 |
+| `local_time_zone_name` | default time zone name for `TimeZone` |
 
 > `port = -1` will provide connection URI without port mention
 

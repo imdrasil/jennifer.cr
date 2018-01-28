@@ -2,6 +2,7 @@ require "inflector"
 require "inflector/string"
 require "accord"
 require "ifrit/converter"
+require "time_zone"
 
 require "./jennifer/macros"
 

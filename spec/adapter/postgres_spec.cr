@@ -7,7 +7,7 @@ postgres_only do
 
     describe "#parse_query" do
       it "replaces %s by dollar-and-numbers" do
-        adapter.parse_query("some %s query %s", ["a", "b"]).should eq("some $1 query $2")
+        adapter.parse_query("some %s query %s", ["a", "b"] of Jennifer::DBAny).should eq({"some $1 query $2", %w(a b)})
       end
     end
 

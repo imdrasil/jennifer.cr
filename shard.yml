@@ -36,3 +36,6 @@ dependencies:
   time_zone:
     github: imdrasil/time_zone
     version: "~> 0.1"
+  i18n:
+    github: TechMagister/i18n.cr
+    commit: "be5d67671de6c578482d74605927234d6eab32e1"

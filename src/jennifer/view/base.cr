@@ -4,6 +4,7 @@ module Jennifer
   module View
     abstract class Base
       extend Ifrit
+      extend Model::Localization
       include ExperimentalMapping
       include Model::Scoping
 
@@ -21,7 +22,7 @@ module Jennifer
         @@view_name = value
       end
 
-      # NOTE: for query generating
+      # NOTE: is used for query generating
       def self.table_name
         view_name
       end
@@ -71,6 +72,10 @@ module Jennifer
         Adapter.adapter
       end
 
+      def self.i18n_scope
+        :views
+      end
+
       def append_relation(name : String, hash)
         raise Jennifer::UnknownRelation.new(self.class, name)
       end
@@ -114,6 +119,10 @@ module Jennifer
         # quering db
         def self.actual_table_field_count
           COLUMNS_METADATA.size
+        end
+
+        def self.superclass
+          {{@type.superclass}}
         end
 
         macro finished

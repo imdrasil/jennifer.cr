@@ -398,6 +398,22 @@ class MaleContact < Jennifer::View::Base
   scope :johny, JohnyQuery
 end
 
+# ==================
+# synthetic views
+# ==================
+
+class FakeFemaleContact < Jennifer::View::Base
+  view_name "female_contacs"
+
+  mapping({
+    id:     Primary32,
+    name:   String,
+    gender: String,
+    age:    Int32,
+    created_at: Time?
+  }, false)
+end
+
 class FakeContactView < Jennifer::View::Base
   view_name "male_contacs"
 

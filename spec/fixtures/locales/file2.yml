@@ -1,0 +1,17 @@
+---
+en:
+  jennifer:
+    attributes:
+      male_contact:
+        id: tId
+      female_contact:
+        id: tId
+      contact:
+        id: tId
+        name: tName
+        ballance: tBallance
+        age: yAge
+      profile:
+        login: tLogin
+      twitter_profile:
+        login: phone

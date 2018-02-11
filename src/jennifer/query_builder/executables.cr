@@ -63,6 +63,7 @@ module Jennifer
         adapter.modify(self, options)
       end
 
+      # TODO: load objects and perform all callbacks and validation
       def update(options : Hash)
         adapter.update(self, options)
       end

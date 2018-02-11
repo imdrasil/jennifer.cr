@@ -77,14 +77,6 @@ module Jennifer
         res
       end
 
-      # def subscribe_on_commit(record, action)
-      #   @locks[fiber_id].observe_commit(record, action)
-      # end
-
-      # def subscribe_on_rollback(record, action)
-      #   @locks[fiber_id].observe_rollback(record, action)
-      # end
-
       def subscribe_on_commit(block : -> Bool)
         @locks[fiber_id].observe_commit(block)
       end
@@ -93,15 +85,14 @@ module Jennifer
         @locks[fiber_id].observe_rollback(block)
       end
 
-      # Starts manual transaction for current fiber. Designed as test case isolation method.
+      # Starts manual transaction for current fiber. Designed as test case isolating method.
       def begin_transaction
         raise ::Jennifer::BaseException.new("Couldn't manually begin non top level transaction") if current_transaction
         Config.logger.debug("TRANSACTION START")
         lock_connection(@db.checkout.begin_transaction)
       end
 
-      # Closes manual transaction for current fiber. Will not process any commit or rollback callbacks on records.
-      # Designed as test case isolation method.
+      # Closes manual transaction for current fiber. Designed as test case isolating method.
       def rollback_transaction
         t = current_transaction
         raise ::Jennifer::BaseException.new("No transaction to rollback") unless t

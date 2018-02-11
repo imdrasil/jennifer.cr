@@ -146,7 +146,15 @@ class Profile < ApplicationRecord
     type: String
   )
 
+  getter commit_callback_called = false
+
   belongs_to :contact, Contact
+
+  after_commit :set_commit, on: :create
+
+  def set_commit
+    @commit_callback_called = true
+  end
 end
 
 class FacebookProfile < Profile
@@ -154,9 +162,17 @@ class FacebookProfile < Profile
     uid: String? # for testing purposes
   )
 
+  getter fb_commit_callback_called = false
+
   validates_length :uid, is: 4
 
   has_and_belongs_to_many :facebook_contacts, Contact, foreign: :profile_id
+
+  after_commit :fb_set_commit, on: :create
+
+  def fb_set_commit
+    @fb_commit_callback_called = true
+  end
 end
 
 class TwitterProfile < Profile
@@ -177,7 +193,8 @@ class Country < Jennifer::Model::Base
 
   has_and_belongs_to_many :contacts, Contact
 
-  {% for callback in %i(before_save after_save after_create before_create after_initialize before_destroy after_destroy) %}
+  {% for callback in %i(before_save after_save after_create before_create after_initialize 
+                        before_destroy after_destroy before_update after_update) %}
     getter {{callback.id}}_attr = false
 
     {{callback.id}} {{callback}}_check
@@ -188,6 +205,7 @@ class Country < Jennifer::Model::Base
   {% end %}
 
   before_create :test_skip
+  before_update :test_skip
 
   def test_skip
     if name == "not create"
@@ -221,7 +239,7 @@ class CountryWithTransactionCallbacks < ApplicationRecord
     name: String
   })
 
-  {% for action in [:create, :save, :destroy] %}
+  {% for action in [:create, :save, :destroy, :update] %}
     {% for type in [:commit, :rollback] %}
       {% name = "#{action.id}_#{type.id}_callback".id %}
 

@@ -9,6 +9,10 @@ module Jennifer
         true
       end
 
+      def __before_update_callback
+        true
+      end
+
       def __before_destroy_callback
         true
       end
@@ -22,6 +26,10 @@ module Jennifer
       end
 
       def __after_create_callback
+        true
+      end
+
+      def __after_update_callback
         true
       end
 
@@ -45,6 +53,10 @@ module Jennifer
         true
       end
 
+      def __after_update_commit_callback
+        true
+      end
+
       def __after_destroy_commit_callback
         true
       end
@@ -58,6 +70,10 @@ module Jennifer
       end
 
       def __after_destroy_rollback_callback
+        true
+      end
+
+      def __after_update_rollback_callback
         true
       end
 
@@ -82,6 +98,18 @@ module Jennifer
       macro after_create(*names)
         {% for name in names %}
           {% CALLBACKS[:create][:after] << name.id.stringify %}
+        {% end %}
+      end
+
+      macro before_update(*names)
+        {% for name in names %}
+          {% CALLBACKS[:update][:before] << name.id.stringify %}
+        {% end %}
+      end
+
+      macro after_update(*names)
+        {% for name in names %}
+          {% CALLBACKS[:update][:after] << name.id.stringify %}
         {% end %}
       end
 
@@ -116,7 +144,7 @@ module Jennifer
       end
 
       macro after_commit(*names, on)
-        {% unless [:create, :save, :destroy].includes?(on) %}
+        {% unless [:create, :save, :destroy, :update].includes?(on) %}
           {% raise "#{on} is invalid action for %after_commit callback." %}
         {% end %}
         {% for name in names %}
@@ -125,7 +153,7 @@ module Jennifer
       end
 
       macro after_rollback(*names, on)
-        {% unless [:create, :save, :destroy].includes?(on) %}
+        {% unless [:create, :save, :destroy, :update].includes?(on) %}
           {% raise "#{on} is invalid action for %after_rollback callback." %}
         {% end %}
         {% for name in names %}
@@ -142,6 +170,12 @@ module Jennifer
             rollback: [] of String
           },
           create: {
+            before: [] of String,
+            after: [] of String,
+            commit: [] of String,
+            rollback: [] of String
+          },
+          update: {
             before: [] of String,
             after: [] of String,
             commit: [] of String,
@@ -165,7 +199,7 @@ module Jennifer
 
       macro finished_hook
         \{% for type in [:before, :after] %}
-          \{% for action in [:save, :create, :destroy, :validation] %}
+          \{% for action in [:save, :create, :destroy, :validation, :update] %}
             \{% if !CALLBACKS[action][type].empty? %}
               def __\{{type.id}}_\{{action.id}}_callback
                 return false unless super
@@ -178,7 +212,7 @@ module Jennifer
           \{% end %}
         \{% end %}
 
-        \{% for action in ["save", "create", "destroy"] %}
+        \{% for action in ["save", "create", "destroy", "update"] %}
           \{% for type in ["commit", "rollback"] %}
             \{% constant_name = "HAS_#{action.upcase.id}_#{type.upcase.id}_CALLBACK" %}
             \{% if !CALLBACKS[action][type].empty? %}

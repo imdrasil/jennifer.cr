@@ -60,6 +60,40 @@ describe Jennifer::Model::Callback do
     end
   end
 
+  describe "before_update" do
+    it "is not invoked after record creating" do
+      c = Factory.create_country
+      c.before_update_attr.should be_false
+    end
+
+    it "is called before create" do
+      c = Factory.create_country
+      c.name = "zxc"
+      c.save
+      c.before_update_attr.should be_true
+    end
+
+    it "stops updating if before callback raises Skip exceptions" do
+      c = Factory.create_country(name: "zxc")
+      c.name = "not create"
+      c.save.should be_false
+    end
+  end
+
+  describe "after_update" do
+    it "is not invoked after record creating" do
+      c = Factory.create_country
+      c.after_update_attr.should be_false
+    end
+
+    it "is called after update" do
+      c = Factory.create_country
+      c.name = "new name zxc"
+      c.save
+      c.after_update_attr.should be_true
+    end
+  end
+
   describe "after_initialize" do
     it "is called after build" do
       c = CountryFactory.build
@@ -133,6 +167,22 @@ describe Jennifer::Model::Callback do
 
   describe "after_commit" do
     describe "create" do
+      context "when model uses STI" do
+        it "calls all relevant callbacks after top level commit" do
+          void_transaction do
+            fb = nil
+            FacebookProfile.transaction do
+              fb = Factory.create_facebook_profile(name: "name")
+              fb.commit_callback_called.should be_false
+              fb.fb_commit_callback_called.should be_false
+            end
+            fb = fb.not_nil!
+            fb.commit_callback_called.should be_true
+            fb.fb_commit_callback_called.should be_true
+          end
+        end
+      end
+
       it "calls callback after top level transaction is committed" do
         void_transaction do
           country = nil
@@ -191,11 +241,53 @@ describe Jennifer::Model::Callback do
           country = CountryWithTransactionCallbacks.all.first!
 
           CountryWithTransactionCallbacks.transaction do
-            country = CountryWithTransactionCallbacks.create(name: "name")
-            country.save_commit_callback.should be_false
+            country.name = "another name"
+            country.save
             raise DB::Rollback.new
           end
           country.not_nil!.save_commit_callback.should be_false
+        end
+      end
+    end
+
+    describe "update" do
+      context "when creating new record" do
+        it "doesn't calls callbacks after top level transaction is committed" do
+          void_transaction do
+            country = nil
+            CountryWithTransactionCallbacks.transaction do
+              country = CountryWithTransactionCallbacks.create(name: "name")
+            end
+            country.not_nil!.update_commit_callback.should be_false
+          end
+        end
+      end
+
+      it "calls callback after top level transaction is committed" do
+        void_transaction do
+          CountryWithTransactionCallbacks.create(name: "name")
+          country = CountryWithTransactionCallbacks.all.first!
+
+          CountryWithTransactionCallbacks.transaction do
+            country.name = "new_name"
+            country.save
+            country.update_commit_callback.should be_false
+          end
+          country.not_nil!.update_commit_callback.should be_true
+        end
+      end
+
+      it "is not called if transaction is rolled back" do
+        void_transaction do
+          CountryWithTransactionCallbacks.create(name: "name")
+          country = CountryWithTransactionCallbacks.all.first!
+
+          CountryWithTransactionCallbacks.transaction do
+            country.name = "another name"
+            country.save
+            raise DB::Rollback.new
+          end
+          country.not_nil!.update_commit_callback.should be_false
         end
       end
     end
@@ -248,6 +340,29 @@ describe Jennifer::Model::Callback do
             raise DB::Rollback.new
           end
           country.not_nil!.create_rollback_callback.should be_true
+        end
+      end
+    end
+
+    describe "update" do
+      it "doesn't call callback after top level transaction is committed" do
+        void_transaction do
+          country = CountryWithTransactionCallbacks.create(name: "name")
+          country.name = "new name"
+          country.save
+          country.not_nil!.update_rollback_callback.should be_false
+        end
+      end
+
+      it "called if transaction is rolled back" do
+        void_transaction do
+          country = CountryWithTransactionCallbacks.create(name: "name")
+          CountryWithTransactionCallbacks.transaction do
+            country.name = "new name"
+            country.save
+            raise DB::Rollback.new
+          end
+          country.not_nil!.update_rollback_callback.should be_true
         end
       end
     end

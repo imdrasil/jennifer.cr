@@ -1,38 +1,6 @@
-require "./observer/base"
-
 module Jennifer
   module Adapter
     class TransactionObserver
-      # property transaction : DB::Transaction
-      # @rolled_back = false
-      # @commit_observers = [] of Observer::Base
-      # @rollback_observers = [] of Observer::Base
-
-      # delegate connection, to: transaction
-
-      # def initialize(@transaction)
-      # end
-
-      # def rollback
-      #   @rolled_back = true
-      # end
-
-      # def observe_commit(record, action)
-      #   @commit_observers << Observer::Base.new(record, action)
-      # end
-
-      # def observe_rollback(record, action)
-      #   @rollback_observers << Observer::Base.new(record, action)
-      # end
-
-      # def update
-      #   unless @rolled_back
-      #     @commit_observers.each(&.dispatch_commit)
-      #   else
-      #     @rollback_observers.each(&.dispatch_rollback)
-      #   end
-      # end
-
       property transaction : DB::Transaction
       @rolled_back = false
       @commit_observers = [] of -> Bool

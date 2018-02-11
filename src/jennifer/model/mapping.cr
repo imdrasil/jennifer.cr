@@ -91,7 +91,7 @@ module Jennifer
         end
       end
 
-      macro mapping(properties, strict = true)
+      private macro single_mapping(properties, strict = true)
         def self.children_classes
           {% begin %}
             {% if @type.all_subclasses.size > 0 %}
@@ -183,7 +183,7 @@ module Jennifer
           {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(%pull)
         end
 
-        # Accepts symbol hash or named tuple, stringify it and calls
+        # Accepts symbol hash or named tuple, stringify it and calls constructor with string-based keys hash.
         # TODO: check how converting affects performance
         def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
           initialize(stringify_hash(values, Jennifer::DBAny))
@@ -197,8 +197,9 @@ module Jennifer
           initialize(values)
         end
 
-        #def attributes=(values : Hash)
-        #end
+        # TODO: think about next method
+        # def attributes=(values : Hash)
+        # end
 
         def self.build(pull : DB::ResultSet)
           \{% begin %}
@@ -259,7 +260,7 @@ module Jennifer
         # fields assignment. It stands on that fact result set has all defined fields in a raw
         # TODO: think about moving it to class scope
         # NOTE: don't use it manually - there is some dependencies on caller such as reading result set to the end
-        # if eception was raised
+        # if exception was raised
         def _extract_attributes(pull : DB::ResultSet)
           requested_columns_count = self.class.actual_table_field_count
           ::Jennifer::BaseException.assert_column_count(requested_columns_count, pull.column_count)
@@ -371,40 +372,43 @@ module Jennifer
 
         def save(skip_validation : Bool = false) : Bool
           unless self.class.adapter.under_transaction?
-            {{@type}}.transaction do
-              save_without_transaction(skip_validation)
+            self.class.transaction do
+              save_record_under_transaction(skip_validation)
             end || false
           else
-            save_without_transaction(skip_validation)
+            save_record_under_transaction(skip_validation)
           end
         end
 
         # Saves all changes to db without invoking transaction; if validation not passed - returns `false`
         def save_without_transaction(skip_validation : Bool = false) : Bool
-          unless skip_validation
-            return false unless __before_validation_callback
-            validate!
-            return false unless valid?
-            __after_validation_callback
-          end
+          return false unless skip_validation || validate_record
           return false unless __before_save_callback
           response =
             if new_record?
-              return false unless __before_create_callback
-              res = self.class.adapter.insert(self)
-              {% if primary && primary_auto_incrementable %}
-                if primary.nil? && res.last_insert_id > -1
-                  init_primary_field(res.last_insert_id.to_i)
-                end
-              {% end %}
-              @new_record = false if res.rows_affected != 0
-              __after_create_callback
-              res
+              store_record
             else
-              self.class.adapter.update(self)
+              update_record
             end
           __after_save_callback
-          response.rows_affected == 1
+          response
+        end
+
+        # Deletes object from db and calls callbacks
+        def destroy
+          result =
+            unless self.class.adapter.under_transaction?
+              self.class.transaction do
+                destroy_without_transaction
+              end
+            else
+              destroy_without_transaction
+            end
+          if result
+            self.class.adapter.subscribe_on_commit(->__after_destroy_commit_callback) if HAS_DESTROY_COMMIT_CALLBACK
+            self.class.adapter.subscribe_on_rollback(->__after_destroy_rollback_callback) if HAS_DESTROY_ROLLBACK_CALLBACK
+          end
+          result
         end
 
         # Reloads all fields from db.
@@ -507,17 +511,6 @@ module Jennifer
           end
         end
 
-        # NOTE: This is deprecated method - it will be removed in 0.5.0. Use #to_h instead
-        def attributes_hash
-          hash = to_h
-          {% for key, value in properties %}
-            {% if value[:primary] %}
-              hash.delete(:{{key}}) unless hash[:{{key.id}}]?.nil?
-            {% end %}
-          {% end %}
-          hash
-        end
-
         def arguments_to_save
           args = [] of ::Jennifer::DBAny
           fields = [] of String
@@ -567,6 +560,62 @@ module Jennifer
           super
           {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
+
+        private def store_record : Bool
+          return false unless __before_create_callback
+          res = self.class.adapter.insert(self)
+          {% if primary && primary_auto_incrementable %}
+            if primary.nil? && res.last_insert_id > -1
+              init_primary_field(res.last_insert_id.to_i)
+            end
+          {% end %}
+          raise ::Jennifer::BaseException.new("Record hasn't been stored to the db") if res.rows_affected == 0
+          @new_record = false
+          __after_create_callback
+          true
+        end
+
+        private def update_record : Bool
+          return false unless __before_update_callback
+          res = self.class.adapter.update(self)
+          __after_update_callback
+          res.rows_affected == 1
+        end
+
+        private def validate_record : Bool
+          return false unless __before_validation_callback
+          validate!
+          return false unless valid?
+          __after_validation_callback
+          true
+        end
+
+        private def save_record_under_transaction(skip_validation) : Bool
+          is_new_record = new_record?
+          return false unless save_without_transaction(skip_validation)
+          if is_new_record
+            self.class.adapter.subscribe_on_commit(->__after_create_commit_callback) if HAS_CREATE_COMMIT_CALLBACK
+            self.class.adapter.subscribe_on_rollback(->__after_create_rollback_callback) if HAS_CREATE_ROLLBACK_CALLBACK
+          else
+            self.class.adapter.subscribe_on_commit(->__after_update_commit_callback) if HAS_CREATE_COMMIT_CALLBACK
+            self.class.adapter.subscribe_on_rollback(->__after_update_rollback_callback) if HAS_CREATE_ROLLBACK_CALLBACK
+          end
+          self.class.adapter.subscribe_on_commit(->__after_save_commit_callback) if HAS_SAVE_COMMIT_CALLBACK
+          self.class.adapter.subscribe_on_rollback(->__after_save_rollback_callback) if HAS_SAVE_ROLLBACK_CALLBACK
+          true
+        end
+
+        macro inherited
+          MODEL = true
+        end
+      end
+
+      macro mapping(properties, strict = true)
+        {% if !@type.constant("MODEL") %}
+          single_mapping({{properties}}, {{strict}})
+        {% else %}
+          sti_mapping({{properties}})
+        {% end %}
       end
 
       macro mapping(**properties)

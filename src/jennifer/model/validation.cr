@@ -9,6 +9,20 @@ module Jennifer
       def validate(skip = false)
       end
 
+      # TODO: invoke validation callbacks
+      def validate!(skip = false)
+        errors.clear!
+        return if skip
+
+        # TODO: think about global validation
+        if self.responds_to?(:validate_global)
+          self.validate_global
+        end
+        if self.responds_to?(:validate)
+          self.validate
+        end
+      end
+
       macro validates_with_method(name)
         {% VALIDATION_METHODS << name.id.stringify %}
       end
@@ -111,7 +125,7 @@ module Jennifer
 
         def %validate_method
           value = @{{field.id}}
-          if {{@type}}.where { _{{field.id}} == value }.exists?
+          if self.class.where { _{{field.id}} == value }.exists?
             errors.add({{field}}, must_be_unique_message(value))
           end
         end

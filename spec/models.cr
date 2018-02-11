@@ -146,21 +146,37 @@ class Profile < ApplicationRecord
     type: String
   )
 
+  getter commit_callback_called = false
+
   belongs_to :contact, Contact
+
+  after_commit :set_commit, on: :create
+
+  def set_commit
+    @commit_callback_called = true
+  end
 end
 
 class FacebookProfile < Profile
-  sti_mapping(
+  mapping(
     uid: String? # for testing purposes
   )
+
+  getter fb_commit_callback_called = false
 
   validates_length :uid, is: 4
 
   has_and_belongs_to_many :facebook_contacts, Contact, foreign: :profile_id
+
+  after_commit :fb_set_commit, on: :create
+
+  def fb_set_commit
+    @fb_commit_callback_called = true
+  end
 end
 
 class TwitterProfile < Profile
-  sti_mapping(
+  mapping(
     email: {type: String, null: true} # for testing purposes
   )
 end
@@ -177,7 +193,8 @@ class Country < Jennifer::Model::Base
 
   has_and_belongs_to_many :contacts, Contact
 
-  {% for callback in %i(before_save after_save after_create before_create after_initialize before_destroy after_destroy) %}
+  {% for callback in %i(before_save after_save after_create before_create after_initialize 
+                        before_destroy after_destroy before_update after_update) %}
     getter {{callback.id}}_attr = false
 
     {{callback.id}} {{callback}}_check
@@ -188,6 +205,7 @@ class Country < Jennifer::Model::Base
   {% end %}
 
   before_create :test_skip
+  before_update :test_skip
 
   def test_skip
     if name == "not create"
@@ -212,6 +230,63 @@ end
 # ===================
 # synthetic models 
 # ===================
+
+class CountryWithTransactionCallbacks < ApplicationRecord
+  table_name "countries"
+
+  mapping({
+    id: Primary32,
+    name: String
+  })
+
+  {% for action in [:create, :save, :destroy, :update] %}
+    {% for type in [:commit, :rollback] %}
+      {% name = "#{action.id}_#{type.id}_callback".id %}
+
+      after_{{type.id}} :set_{{name}}, on: {{action}}
+
+      getter {{name}} = false
+
+      def set_{{name}}
+        @{{name}} = true
+      end
+    {% end %}
+  {% end %}
+end
+
+class CountryWithValidationCallbacks < ApplicationRecord
+  table_name "countries"
+
+  mapping({
+    id: Primary32,
+    name: String
+  })
+
+  before_validation :raise_skip, :before_validation_method
+  after_validation :after_validation_method
+
+  validates_with_method :validate_downcase
+
+  private def validate_downcase
+    errors.add(:name, "can't be downcased") if name =~ /[A-Z]/
+  end
+
+  private def before_validation_method
+    if name == "UPCASED"
+      self.name = name.downcase
+    end
+  end
+
+  private def after_validation_method
+    if name == "downcased"
+      self.name = name.upcase
+    end
+  end
+
+  private def raise_skip
+    raise Jennifer::Skip.new if name == "skip"
+  end
+end
 
 class JohnPassport < Jennifer::Model::Base
   table_name "passports"

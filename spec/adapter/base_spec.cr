@@ -66,43 +66,46 @@ describe Jennifer::Adapter::Base do
 
   describe "#transaction" do
     it "rollbacks if exception was raised" do
-      expect_raises(DivisionByZero) do
+      void_transaction do
+        expect_raises(DivisionByZero) do
+          adapter.transaction do |tx|
+            Factory.create_contact
+            1 / 0
+          end
+        end
+        Contact.all.count.should eq(0)
+      end
+    end
+
+    it "commit transaction otherwise" do
+      void_transaction do
         adapter.transaction do
           Factory.create_contact
-          1 / 0
         end
+        Contact.all.count.should eq(1)
       end
-      Contact.all.count.should eq(0)
     end
 
-    it "commit transaction otherwice" do
-      adapter.transaction do
-        Factory.create_contact
-      end
-      Contact.all.count.should eq(1)
-    end
-
+    # TODO: add several fibers and yields in them
     it "work with concurrent access" do
-      begin
-        ch = Channel(Nil).new
-        adapter.transaction do |t|
-          Factory.create_contact
-          raise DB::Rollback.new
-        end
-        spawn do
+      void_transaction do
+        begin
+          ch = Channel(Nil).new
           adapter.transaction do |t|
             Factory.create_contact
+            raise DB::Rollback.new
           end
-          ch.send(nil)
-        end
-        ch.receive
+          spawn do
+            adapter.transaction do |t|
+              Factory.create_contact
+            end
+            ch.send(nil)
+          end
+          ch.receive
 
-        adapter.with_manual_connection do |con|
-          con.scalar("select count(*) from contacts").should eq(1)
-        end
-      ensure
-        adapter.with_manual_connection do |con|
-          con.exec "DELETE FROM contacts"
+          adapter.with_manual_connection do |con|
+            con.scalar("select count(*) from contacts").should eq(1)
+          end
         end
       end
     end

@@ -1,6 +1,7 @@
 # STI
 
-Single table inheritance could be used in next way:
+To use single table inheritance just inherit from your parent model and use regular `%mapping` macro:
+
 ```crystal
 class Profile < Jennifer::Model::Base
   mapping(
@@ -14,7 +15,7 @@ class Profile < Jennifer::Model::Base
 end
 
 class FacebookProfile < Profile
-  sti_mapping(
+  mapping(
     uid: String
   )
 
@@ -22,7 +23,7 @@ class FacebookProfile < Profile
 end
 
 class TwitterProfile < Profile
-  sti_mapping(
+  mapping(
     email: String
   )
 end
@@ -31,10 +32,8 @@ end
 Requirements:
 
 - created table for STI should include **all** fields of all subclasses (that's why it is cold STI);
-- STI table have to have field named `type` of any string type which will be able to store class name of your models;
+- STI table has to have field named as `type` of any string type which will be able to store class name of child models;
 - parent class should have definition for `type` field;
-
-> Currently type field is not configurable and hardcoded to name `type`.
 
 To extract from DB several subclasses in one request - just use parent class to query:
 

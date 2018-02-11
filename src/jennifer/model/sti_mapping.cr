@@ -1,7 +1,8 @@
 module Jennifer
   module Model
     module STIMapping
-      macro sti_mapping(properties)
+      # Defines mapping using single table inheritance. Is automatically called by `%mapping` macro. 
+      private macro sti_mapping(properties)
         STI = true
 
         def self.sti_condition
@@ -281,10 +282,6 @@ module Jennifer
             {% end %}
           ]
         end
-      end
-
-      macro sti_mapping(**properties)
-        sti_mapping({{properties}})
       end
     end
   end

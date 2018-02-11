@@ -119,7 +119,7 @@ class Profile < Jennifer::Model::Base
 end
 
 class FacebookProfile < Profile
-  sti_mapping(
+  mapping(
     uid: String
   )
 

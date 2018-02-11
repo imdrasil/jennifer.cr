@@ -91,7 +91,7 @@ module Jennifer
         end
       end
 
-      macro mapping(properties, strict = true)
+      private macro single_mapping(properties, strict = true)
         def self.children_classes
           {% begin %}
             {% if @type.all_subclasses.size > 0 %}
@@ -197,8 +197,9 @@ module Jennifer
           initialize(values)
         end
 
-        #def attributes=(values : Hash)
-        #end
+        # TODO: think about next method
+        # def attributes=(values : Hash)
+        # end
 
         def self.build(pull : DB::ResultSet)
           \{% begin %}
@@ -259,7 +260,7 @@ module Jennifer
         # fields assignment. It stands on that fact result set has all defined fields in a raw
         # TODO: think about moving it to class scope
         # NOTE: don't use it manually - there is some dependencies on caller such as reading result set to the end
-        # if eception was raised
+        # if exception was raised
         def _extract_attributes(pull : DB::ResultSet)
           requested_columns_count = self.class.actual_table_field_count
           ::Jennifer::BaseException.assert_column_count(requested_columns_count, pull.column_count)
@@ -370,13 +371,18 @@ module Jennifer
         end
 
         def save(skip_validation : Bool = false) : Bool
-          unless self.class.adapter.under_transaction?
-            {{@type}}.transaction do
+          result = 
+            unless self.class.adapter.under_transaction?
+              {{@type}}.transaction do
+                save_without_transaction(skip_validation)
+              end || false
+            else
               save_without_transaction(skip_validation)
-            end || false
-          else
-            save_without_transaction(skip_validation)
-          end
+            end
+          return result unless result
+          # adapter.subscribe_on_commit() if HAS_COMMIT_CALLBACK
+          # adapter.subscribe_on_rollback if HAS_ROLLBACK_CALLBACK
+          result
         end
 
         # Saves all changes to db without invoking transaction; if validation not passed - returns `false`
@@ -399,12 +405,35 @@ module Jennifer
               {% end %}
               @new_record = false if res.rows_affected != 0
               __after_create_callback
+              self.class.adapter.subscribe_on_commit(->__after_create_commit_callback) if HAS_CREATE_COMMIT_CALLBACK
+              self.class.adapter.subscribe_on_rollback(->__after_create_rollback_callback) if HAS_CREATE_ROLLBACK_CALLBACK
               res
             else
               self.class.adapter.update(self)
             end
           __after_save_callback
+          self.class.adapter.subscribe_on_commit(->__after_save_commit_callback) if HAS_SAVE_COMMIT_CALLBACK
+          self.class.adapter.subscribe_on_rollback(->__after_save_rollback_callback) if HAS_SAVE_ROLLBACK_CALLBACK
           response.rows_affected == 1
+        end
+
+        # Deletes object from db and calls callbacks
+        def destroy
+          {% begin %}
+            result =
+              unless self.class.adapter.under_transaction?
+                self.class.transaction do
+                  destroy_without_transaction
+                end
+              else
+                destroy_without_transaction
+              end
+            if result
+              self.class.adapter.subscribe_on_commit(->__after_destroy_commit_callback) if HAS_DESTROY_COMMIT_CALLBACK
+              self.class.adapter.subscribe_on_rollback(->__after_destroy_rollback_callback) if HAS_DESTROY_ROLLBACK_CALLBACK
+            end
+            result
+          {% end %}
         end
 
         # Reloads all fields from db.
@@ -507,17 +536,6 @@ module Jennifer
           end
         end
 
-        # NOTE: This is deprecated method - it will be removed in 0.5.0. Use #to_h instead
-        def attributes_hash
-          hash = to_h
-          {% for key, value in properties %}
-            {% if value[:primary] %}
-              hash.delete(:{{key}}) unless hash[:{{key.id}}]?.nil?
-            {% end %}
-          {% end %}
-          hash
-        end
-
         def arguments_to_save
           args = [] of ::Jennifer::DBAny
           fields = [] of String
@@ -567,6 +585,18 @@ module Jennifer
           super
           {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
+
+        macro inherited
+          MODEL = true
+        end
+      end
+
+      macro mapping(properties, strict = true)
+        {% if !@type.constant("MODEL") %}
+          single_mapping({{properties}}, {{strict}})
+        {% else %}
+          sti_mapping({{properties}})
+        {% end %}
       end
 
       macro mapping(**properties)

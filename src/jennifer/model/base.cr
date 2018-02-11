@@ -158,23 +158,13 @@ module Jennifer
         hash.each { |k, v| set_attribute(k, v) }
       end
 
-      # Deletes object from db and calls callbacks
-      def destroy
-        unless self.class.adapter.under_transaction?
-          {{@type}}.transaction do
-            destroy_without_transaction
-          end
-        else
-          destroy_without_transaction
+      # Perform destroy without starting a transaction
+        def destroy_without_transaction
+          return false if new_record? || !__before_destroy_callback
+          @destroyed = true if delete
+          __after_destroy_callback if @destroyed  
+          @destroyed
         end
-      end
-
-      def destroy_without_transaction
-        return false if new_record? || !__before_destroy_callback
-        @destroyed = true if delete
-        __after_destroy_callback if @destroyed
-        @destroyed
-      end
 
       # Deletes object from DB without calling callbacks.
       def delete

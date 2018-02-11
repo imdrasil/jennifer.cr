@@ -150,7 +150,7 @@ class Profile < ApplicationRecord
 end
 
 class FacebookProfile < Profile
-  sti_mapping(
+  mapping(
     uid: String? # for testing purposes
   )
 
@@ -160,7 +160,7 @@ class FacebookProfile < Profile
 end
 
 class TwitterProfile < Profile
-  sti_mapping(
+  mapping(
     email: {type: String, null: true} # for testing purposes
   )
 end
@@ -212,6 +212,63 @@ end
 # ===================
 # synthetic models 
 # ===================
+
+class CountryWithTransactionCallbacks < ApplicationRecord
+  table_name "countries"
+
+  mapping({
+    id: Primary32,
+    name: String
+  })
+
+  {% for action in [:create, :save, :destroy] %}
+    {% for type in [:commit, :rollback] %}
+      {% name = "#{action.id}_#{type.id}_callback".id %}
+
+      after_{{type.id}} :set_{{name}}, on: {{action}}
+
+      getter {{name}} = false
+
+      def set_{{name}}
+        @{{name}} = true
+      end
+    {% end %}
+  {% end %}
+end
+
+class CountryWithValidationCallbacks < ApplicationRecord
+  table_name "countries"
+
+  mapping({
+    id: Primary32,
+    name: String
+  })
+
+  before_validation :raise_skip, :before_validation_method
+  after_validation :after_validation_method
+
+  validates_with_method :validate_downcase
+
+  private def validate_downcase
+    errors.add(:name, "can't be downcased") if name =~ /[A-Z]/
+  end
+
+  private def before_validation_method
+    if name == "UPCASED"
+      self.name = name.downcase
+    end
+  end
+
+  private def after_validation_method
+    if name == "downcased"
+      self.name = name.upcase
+    end
+  end
+
+  private def raise_skip
+    raise Jennifer::Skip.new if name == "skip"
+  end
+end
 
 class JohnPassport < Jennifer::Model::Base
   table_name "passports"

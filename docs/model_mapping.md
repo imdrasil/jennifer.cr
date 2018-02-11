@@ -74,7 +74,7 @@ class Profile < Jennifer::Model::Base
 end
 
 class FacebookProfile < Profile
-  sti_mapping(
+  mapping(
     uid: String
   )
 
@@ -82,7 +82,7 @@ class FacebookProfile < Profile
 end
 
 class TwitterProfile < Profile
-  sti_mapping(
+  mapping(
     email: String
   )
 end

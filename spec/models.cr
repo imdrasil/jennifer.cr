@@ -72,7 +72,9 @@ class Contact < ApplicationRecord
   has_one :passport, Passport
 
   validates_inclucion :age, 13..75
-  validates_length :name, minimum: 1, maximum: 15
+  validates_length :name, minimum: 1
+  # NOTE: only for testing purposes - this is a bad practice; prefer to use `in`
+  validates_length :name, maximum: 15
   validates_with_method :name_check
 
   scope :main { where { _age > 18 } }
@@ -370,6 +372,15 @@ class ContactWithNillableName < Jennifer::Model::Base
   mapping({
     id:   Primary32,
     name: String?,
+  }, false)
+end
+
+class AbstractContactModel < Jennifer::Model::Base
+  table_name "contacts"
+  mapping({
+    id:   Primary32,
+    name: String?,
+    age: Int32
   }, false)
 end
 

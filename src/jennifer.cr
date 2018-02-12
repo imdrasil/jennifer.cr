@@ -5,8 +5,6 @@ require "ifrit/converter"
 require "time_zone"
 require "i18n"
 
-require "./jennifer/translation"
-
 require "./jennifer/macros"
 
 require "./jennifer/exceptions"
@@ -78,4 +76,5 @@ struct JSON::Any
 end
 
 ::Jennifer.after_load_hook
-I18n.backend = Jennifer::Translation::MultifileYAML.new
+
+I18n.load_path << File.join(__DIR__, "jennifer/locale")

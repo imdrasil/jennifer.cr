@@ -1,10 +1,7 @@
-require "./validation_messages"
-
 module Jennifer
   module Model
     module Validation
       include Accord
-      include ValidationMessages
 
       def validate(skip = false)
       end
@@ -52,7 +49,7 @@ module Jennifer
           {% if allow_blank %}
             return if @{{field.id}}.nil?
           {% else %}
-            return errors.add({{field}}, not_blank_message) if @{{field.id}}.nil?
+            return errors.add({{field}}, self.class.human_error({{field}}, :blank)) if @{{field.id}}.nil?
           {% end %}
           @{{field.id}}.not_nil!
         end
@@ -64,7 +61,7 @@ module Jennifer
         def %validate_method
           value = _not_nil_validation({{field}}, {{allow_blank}})
           unless ({{value}}).includes?(value)
-            errors.add({{field}}, must_be_message({{value}}, value))
+            errors.add({{field}}, self.class.human_error({{field}}, :inclusion))
           end
         end
       end
@@ -75,7 +72,7 @@ module Jennifer
         def %validate_method
           value = _not_nil_validation({{field}}, {{allow_blank}})
           if ({{value}}).includes?(value)
-            errors.add(:{{field.id}}, must_not_be_message({{value}}, value))
+            errors.add(:{{field.id}}, self.class.human_error({{field}}, :exclusion))
           end
         end
       end
@@ -86,7 +83,7 @@ module Jennifer
         def %validate_method
           value = _not_nil_validation({{field}}, {{allow_blank}})
           unless {{value}} =~ value
-            errors.add({{field}}, must_be_like_message({{value}}, value))
+            errors.add({{field}}, self.class.human_error({{field}}, :invalid))
           end
         end
       end
@@ -98,24 +95,23 @@ module Jennifer
           value = _not_nil_validation({{field}}, {{options[:allow_blank] || false}})
           size = value.not_nil!.size
           {% if options[:in] %}
-            unless ({{options[:in]}}).includes?(size)
-              errors.add({{field}}, length_in_message({{options[:in]}}, size))
+            if ({{options[:in]}}).max < size
+              errors.add({{field}}, self.class.human_error({{field}}, :too_long, ({{options[:in]}}).max))
+            elsif ({{options[:in]}}).min > size
+              errors.add({{field}}, self.class.human_error({{field}}, :too_short, ({{options[:in]}}).min))
             end
           {% elsif options[:is] %}
             if {{options[:is]}} != size
-              errors.add({{field}}, length_is_message({{options[:is]}}, size))
+              errors.add({{field}}, self.class.human_error({{field}}, :wrong_length, {{options[:is]}}))
             end
-          {% else %}
-            {% if options[:minimum] %}
-              if {{options[:minimum]}} > size
-                errors.add({{field}}, length_min_message({{options[:minimum]}}, size))
-              end
-            {% end %}
-            {% if options[:maximum] %}
-              if {{options[:maximum]}} < size
-                errors.add({{field}}, length_max_message({{options[:maximum]}}, size))
-              end
-            {% end %}
+          {% elsif options[:minimum] %}
+            if {{options[:minimum]}} > size
+              errors.add({{field}}, self.class.human_error({{field}}, :too_short, {{options[:minimum]}}))
+            end
+          {% elsif options[:maximum] %}
+            if {{options[:maximum]}} < size
+              errors.add({{field}}, self.class.human_error({{field}}, :too_long, {{options[:maximum]}}))
+            end
           {% end %}
         end
       end
@@ -126,7 +122,7 @@ module Jennifer
         def %validate_method
           value = @{{field.id}}
           if self.class.where { _{{field.id}} == value }.exists?
-            errors.add({{field}}, must_be_unique_message(value))
+            errors.add({{field}}, self.class.human_error({{field}}, :taken))
           end
         end
       end
@@ -138,8 +134,56 @@ module Jennifer
         def %validate_method
           value = @{{field.id}}
           if value.nil?
-            errors.add({{field}}, not_blank_message)
+            errors.add({{field}}, self.class.human_error({{field}}, :presence))
           end
+        end
+      end
+
+      macro validates_numericality(field, **options)
+        validates_with_method(%validate_method)
+
+        def %validate_method
+          value = _not_nil_validation({{field}}, {{options[:allow_blank] || false}})
+          {% if options[:greater_than] %}
+            if {{options[:greater_than]}} >= value 
+              errors.add({{field}}, self.class.human_error({{field}}, :greater_than, { :value => {{options[:greater_than]}} }))
+            end
+          {% end %}
+          {% if options[:greater_than_or_equal_to] %}
+            if {{options[:greater_than_or_equal_to]}} > value
+              errors.add({{field}}, self.class.human_error({{field}}, :greater_than_or_equal_to, { :value => {{options[:greater_than_or_equal_to]}} }))
+            end
+          {% end %}
+          {% if options[:equal_to] %}
+            if {{options[:equal_to]}} != value
+              errors.add({{field}}, self.class.human_error({{field}}, :equal_to, { :value => {{options[:equal_to]}} }))
+            end
+          {% end %}
+          {% if options[:less_than] %}
+            if {{options[:less_than]}} <= value
+              errors.add({{field}}, self.class.human_error({{field}}, :less_than, { :value => {{options[:less_than]}} }))
+            end
+          {% end %}
+          {% if options[:less_than_or_equal_to] %}
+            if {{options[:less_than_or_equal_to]}} < value
+              errors.add({{field}}, self.class.human_error({{field}}, :less_than_or_equal_to, { :value => {{options[:less_than_or_equal_to]}} }))
+            end
+          {% end %}
+          {% if options[:other_than] %}
+            if {{options[:other_than]}} == value
+              errors.add({{field}}, self.class.human_error({{field}}, :other_than, { :value => {{options[:other_than]}} }))
+            end
+          {% end %}
+          {% if options[:odd] %}
+            if value.even?
+              errors.add({{field}}, self.class.human_error({{field}}, :odd))
+            end
+          {% end %}
+          {% if options[:even] %}
+            if value.odd?
+              errors.add({{field}}, self.class.human_error({{field}}, :even))
+            end
+          {% end %}
         end
       end
     end

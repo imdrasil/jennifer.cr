@@ -101,6 +101,6 @@ end
 
 set_default_configuration
 
-I18n.load_path += ["spec/fixtures/locales"]
+I18n.load_path += ["spec/fixtures/locales/**"]
 I18n.default_locale = "en"
 I18n.init

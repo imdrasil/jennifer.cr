@@ -1,7 +1,7 @@
 require "../spec_helper"
 
 # View and materialized view localization
-describe Jennifer::Model::Localization do
+describe Jennifer::Model::Translation do
   describe "View" do
     describe "::human_attribute_name" do
       context "when attributes has localication" do

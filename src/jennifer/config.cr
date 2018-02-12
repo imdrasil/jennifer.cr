@@ -6,7 +6,7 @@ module Jennifer
     CONNECTION_URI_PARAMS = [:max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts, :checkout_timeout, :retry_delay]
     STRING_FIELDS = {
       :user, :password, :db, :host, :adapter, :migration_files_path, :schema,
-      :structure_folder, :local_time_zone_name, :locale
+      :structure_folder, :local_time_zone_name
     }  
     INT_FIELDS    = {:port, :max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
     FLOAT_FIELDS  = {:checkout_timeout, :retry_delay}

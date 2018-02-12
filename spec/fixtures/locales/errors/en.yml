@@ -1,0 +1,16 @@
+jennifer:
+  errors:
+    messages:
+      global_error: global error
+    name:
+      global_error: name global error
+    facebook_profile:
+      child_error: model child error
+      attributes:
+        uid:
+          child_error: uid child error
+    profile:
+      parent_error: model parent error
+      attributes:
+        id:
+          parent_error: id parent error

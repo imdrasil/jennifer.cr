@@ -4,7 +4,7 @@ module Jennifer
   module View
     abstract class Base
       extend Ifrit
-      extend Model::Localization
+      extend Model::Translation
       include ExperimentalMapping
       include Model::Scoping
 

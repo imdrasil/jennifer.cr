@@ -38,4 +38,4 @@ dependencies:
     version: "~> 0.1"
   i18n:
     github: TechMagister/i18n.cr
-    commit: "be5d67671de6c578482d74605927234d6eab32e1"
+    commit: "fc96c6b12547c84da2e76495f9c970acda64976b"

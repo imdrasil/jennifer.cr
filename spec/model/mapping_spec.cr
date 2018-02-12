@@ -48,8 +48,8 @@ describe Jennifer::Model::Mapping do
       rescue ex : Jennifer::RecordInvalid
         ex.errors.size.should eq(3)
         raw_errors = ex.errors.@errors
-        validate_error(raw_errors[0], :age, "must be in 13..75 but is 12")
-        validate_error(raw_errors[1], :name, "must be less than or equal 15 but is 22")
+        validate_error(raw_errors[0], :age, "is not included in the list")
+        validate_error(raw_errors[1], :name, "is too long (maximum is 15 characters)")
         validate_error(raw_errors[2], :description, "Too large description")
       end
     end

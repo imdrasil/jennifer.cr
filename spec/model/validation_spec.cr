@@ -27,15 +27,81 @@ class GTNContact < Jennifer::Model::Base
   validates_numericality :age, greater_than: 20, allow_blank: true
 end
 
+class AcceptanceContact < ApplicationRecord
+  mapping({
+    id: Primary32,
+    name: String
+  }, false)
+
+  property terms_of_service = false
+  property eula : String?
+
+  validates_acceptance :terms_of_service
+  validates_acceptance :eula, accept: %w(true accept yes)
+end
+
+class ConfirmationContact < ApplicationRecord
+  mapping({
+    id: Primary32,
+    name: String?,
+    case_insensitive_name: String?
+  }, false)
+
+  property name_confirmation : String?, case_insensitive_name_confirmation : String?
+
+  validates_confirmation :name
+  validates_confirmation :case_insensitive_name, case_sensitive: false
+end
+
+class PresenceContact < ApplicationRecord
+  mapping({
+    id: Primary32,
+    name: String?,
+    address: String?
+  })
+
+  validates_presence :name
+  validates_absence :address
+end
+
+class ValidatorWithOptions < Jennifer::Validator
+  def validate(subject, field, message = nil)
+    if subject.attribute(field) == "invalid"
+      errors.add(field, message || "blank")
+    end
+  end
+end
+
+class CustomValidatorModel < ApplicationRecord
+  mapping({
+    id: Primary32,
+    name: String
+  })
+
+  validates_with ValidatorWithOptions, field: :name, message: "Custom Message"
+end
+
 describe Jennifer::Model::Validation do
   describe "%validates_with" do
-    it "accepts accord class validators" do
+    it "accepts class validators" do
       p = Factory.build_passport(enn: "abc")
       p.should_not be_valid
       p.enn = "bca"
       p.should be_valid
       p.save
       p.new_record?.should be_false
+    end
+
+    context "with extra options" do
+      it do
+        subject = CustomValidatorModel.build(name: "valid")
+        subject.should be_valid
+      end
+
+      it do
+        subject = CustomValidatorModel.build(name: "invalid")
+        subject.should validate(:name).with("Custom Message")
+      end
     end
   end
 
@@ -211,18 +277,34 @@ describe Jennifer::Model::Validation do
     end
   end
 
-  describe "%validates_presence_of" do
+  describe "%validates_presence" do
     context "when field is not nil" do
       it "pass validation" do
-        c = Country.build({:name => "New country"})
+        c = PresenceContact.build({:name => "New country"})
         c.should be_valid
       end
     end
 
     context "when field is nil" do
       it "doesn't pass validation" do
-        c = Country.build({} of String => String)
+        c = PresenceContact.build
         c.should validate(:name).with("can't be blank")
+      end
+    end
+  end
+
+  describe "%validates_absence" do
+    context "when field is not nil" do
+      it "pass validation" do
+        c = PresenceContact.build({:name => "New country"})
+        c.should be_valid
+      end
+    end
+
+    context "when field is nil" do
+      it "doesn't pass validation" do
+        c = PresenceContact.build({ :address => "asd" })
+        c.should validate(:address).with("must be blank")
       end
     end
   end
@@ -348,6 +430,46 @@ describe Jennifer::Model::Validation do
         c = SeveralValidationsContact.build(age: 21)
         c.should be_valid
       end
+    end
+  end
+
+  describe "%validates_acceptance" do
+    it "pass validation" do
+      c = AcceptanceContact.build({:name => "New country"})
+      c.terms_of_service = true
+      c.eula = "yes"
+      c.should be_valid
+    end
+
+    it "adds error message if doesn't satisfies validation" do
+      c = AcceptanceContact.build({:name => "New country"})
+      c.eula = "no"
+      c.should validate(:terms_of_service).with("must be accepted")
+      c.should validate(:eula).with("must be accepted")
+    end
+  end
+
+  describe "%validates_acceptance" do
+    context "with nil confirmations" do
+      it "pass validation" do
+        c = ConfirmationContact.build({:name => "name"})
+        c.should be_valid
+      end
+    end
+
+    it "pass validation" do
+      c = ConfirmationContact.build({:name => "name", :case_insensitive_name => "cin"})
+      c.name_confirmation = "name"
+      c.case_insensitive_name_confirmation = "CIN"
+      c.should be_valid
+    end
+
+    it "adds error message if doesn't satisfies validation" do
+      c = ConfirmationContact.build({:name => "name", :case_insensitive_name => "cin"})
+      c.name_confirmation = "Name"
+      c.case_insensitive_name_confirmation = "NIC"
+      c.should validate(:name).with("doesn't match Name")
+      c.should validate(:case_insensitive_name).with("doesn't match Case insensitive name")
     end
   end
 end

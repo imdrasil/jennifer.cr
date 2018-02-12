@@ -1,12 +1,3 @@
-# :nodoc:
-private macro _new_translate(*args, **opts)
-  {% if opts.empty? %}
-    return I18n.translate({{args.splat}}) if I18n.exists?({{args[0]}})
-  {% else %}
-    return I18n.translate({{args.splat}}, {{**opts}}) if I18n.exists?({{args[0]}}, count: {{opts[:count]}})
-  {% end %}
-end
-
 module Jennifer
   module Model
     # Includes localization methods.
@@ -62,15 +53,20 @@ module Jennifer
       end
 
       # Returns localized model name.
-      def human
+      def human(count = nil)
         prefix = "#{GLOBAL_SCOPE}.#{i18n_scope}."
 
-        _new_translate(prefix + i18n_key)
+        path = prefix + i18n_key
+        return I18n.translate(path, count: count) if I18n.exists?(path, count: count)
+
         lookup_ancestors do |ancestor|
-          _new_translate(prefix + ancestor.i18n_key)
+          path = prefix + ancestor.i18n_key
+          return I18n.translate(path) if I18n.exists?(path, count: count)
         end
 
-        Inflector.humanize(i18n_key)
+        name = Inflector.humanize(i18n_key)
+        name = Inflector.pluralize(name) if count && count > 1
+        name
       end
 
       def i18n_scope

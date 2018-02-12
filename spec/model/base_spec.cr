@@ -69,8 +69,7 @@ describe Jennifer::Model::Base do
   describe "::create" do
     it "doesn't raise exception if object is invalid" do
       country = Country.create
-      country.validate!
-      country.valid?.should be_false
+      country.should_not be_valid
       country.id.should be_nil
     end
 

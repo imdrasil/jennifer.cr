@@ -1,33 +1,29 @@
 module Jennifer
   module Model
     module Validation
-      include Accord
+      def errors
+        @errors ||= Accord::ErrorList.new
+      end
+
+      def valid?
+        validate!
+      end
+
+      def invalid?
+        errors.any?
+      end
 
       def validate(skip = false)
       end
 
-      # TODO: invoke validation callbacks
-      def validate!(skip = false)
+      def validate!(skip = false) : Bool
         errors.clear!
-        return if skip
-
-        # TODO: think about global validation
-        if self.responds_to?(:validate_global)
-          self.validate_global
-        end
-        if self.responds_to?(:validate)
-          self.validate
-        end
-      end
-
-      macro validates_with_method(name)
-        {% VALIDATION_METHODS << name.id.stringify %}
-      end
-
-      macro validates_with_method(*names)
-        {% for method in names %}
-          {% VALIDATION_METHODS << method.id.stringify %}
-        {% end %}
+        return false if skip
+        return false unless __before_validation_callback
+        validate
+        return false if invalid?
+        __after_validation_callback
+        true
       end
 
       macro inherited_hook
@@ -55,23 +51,45 @@ module Jennifer
         end
       end
 
-      macro validates_inclucion(field, value, allow_blank = false)
+      macro validates_with_method(name)
+        {% VALIDATION_METHODS << name.id.stringify %}
+      end
+
+      macro validates_with_method(*names)
+        {% for method in names %}
+          {% VALIDATION_METHODS << method.id.stringify %}
+        {% end %}
+      end
+
+      macro validates_with(klass, **options)
+        validates_with_method(%validate_method)
+
+        def %validate_method
+          {% if options %}  
+            {{klass}}.new(errors).validate(self, {{**options}})
+          {% else %}
+            {{klass}}.new(errors).validate(self)
+          {% end %}
+        end
+      end
+
+      macro validates_inclusion(field, in, allow_blank = false)
         validates_with_method(%validate_method)
 
         def %validate_method
           value = _not_nil_validation({{field}}, {{allow_blank}})
-          unless ({{value}}).includes?(value)
+          unless ({{in}}).includes?(value)
             errors.add({{field}}, self.class.human_error({{field}}, :inclusion))
           end
         end
       end
 
-      macro validates_exclusion(field, value, allow_blank = false)
+      macro validates_exclusion(field, in, allow_blank = false)
         validates_with_method(%validate_method)
 
         def %validate_method
           value = _not_nil_validation({{field}}, {{allow_blank}})
-          if ({{value}}).includes?(value)
+          if ({{in}}).includes?(value)
             errors.add(:{{field.id}}, self.class.human_error({{field}}, :exclusion))
           end
         end
@@ -116,6 +134,8 @@ module Jennifer
         end
       end
 
+      # TODO: add scope
+
       macro validates_uniqueness(field)
         validates_with_method(%validate_method)
 
@@ -127,14 +147,24 @@ module Jennifer
         end
       end
 
-      # Validates field to not be nil
-      macro validates_presence_of(field)
+      macro validates_presence(field)
         validates_with_method(%validate_method)
 
         def %validate_method
           value = @{{field.id}}
-          if value.nil?
-            errors.add({{field}}, self.class.human_error({{field}}, :presence))
+          if value.blank?
+            errors.add({{field}}, self.class.human_error({{field}}, :blank))
+          end
+        end
+      end
+
+      macro validates_absence(field)
+        validates_with_method(%validate_method)
+
+        def %validate_method
+          value = @{{field.id}}
+          if value.present?
+            errors.add({{field}}, self.class.human_error({{field}}, :present))
           end
         end
       end
@@ -184,6 +214,38 @@ module Jennifer
               errors.add({{field}}, self.class.human_error({{field}}, :even))
             end
           {% end %}
+        end
+      end
+
+      macro validates_acceptance(field, accept = nil)
+        validates_with_method(%validate_method)
+
+        def %validate_method
+          value = @{{field.id}}
+          {% condition = accept ? "!(#{accept}).includes?(value)" : "value != true && value != '1'" %}
+          if {{condition.id}}
+            errors.add({{field}}, self.class.human_error({{field}}, :accepted))
+          end
+        end
+      end
+
+      macro validates_confirmation(field, case_sensitive = true)
+        validates_with_method(%validate_method)
+
+        def %validate_method
+          return if @{{field.id}}_confirmation.nil?
+          value = _not_nil_validation({{field}}, false)
+          
+          if value.compare(@{{field.id}}_confirmation.not_nil!, !{{case_sensitive}}) != 0
+            errors.add(
+              {{field}}, 
+              self.class.human_error(
+                {{field}}, 
+                :confirmation, 
+                options: { :attribute => self.class.human_attribute_name(:{{field.id}}) }
+              )
+            )
+          end
         end
       end
     end

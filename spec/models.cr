@@ -11,13 +11,9 @@ struct WithArgumentQuery < Jennifer::QueryBuilder::QueryObject
   end
 end
 
-class EnnValidator < Accord::Validator
-  def initialize(context : Passport)
-    @context = context
-  end
-
-  def call(errors : Accord::ErrorList)
-    if @context.enn!.size < 4 && @context.enn![0].downcase == 'a'
+class EnnValidator < Jennifer::Validator
+  def validate(subject : Passport)
+    if subject.enn!.size < 4 && subject.enn![0].downcase == 'a'
       errors.add(:enn, "Invalid enn")
     end
   end
@@ -71,7 +67,7 @@ class Contact < ApplicationRecord
   has_one :main_address, Address, {where { _main }}, inverse_of: :contact
   has_one :passport, Passport
 
-  validates_inclucion :age, 13..75
+  validates_inclusion :age, 13..75
   validates_length :name, minimum: 1
   # NOTE: only for testing purposes - this is a bad practice; prefer to use `in`
   validates_length :name, maximum: 15
@@ -124,7 +120,7 @@ class Passport < Jennifer::Model::Base
     contact_id: Int32?
   )
 
-  validates_with [EnnValidator]
+  validates_with EnnValidator
   belongs_to :contact, Contact
 
   after_destroy :increment_destroy_counter
@@ -191,7 +187,7 @@ class Country < Jennifer::Model::Base
 
   validates_exclusion :name, ["asd", "qwe"]
   validates_uniqueness :name
-  validates_presence_of :name
+  validates_presence :name
 
   has_and_belongs_to_many :contacts, Contact
 

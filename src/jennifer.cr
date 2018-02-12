@@ -1,7 +1,10 @@
 require "inflector"
 require "inflector/string"
 require "accord"
+
 require "ifrit/converter"
+require "ifrit/core"
+
 require "time_zone"
 require "i18n"
 
@@ -22,6 +25,8 @@ require "./jennifer/relation/base"
 require "./jennifer/relation/*"
 
 require "./jennifer/model/base"
+
+require "./jennifer/validator"
 
 require "./jennifer/view/base"
 

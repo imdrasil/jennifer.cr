@@ -140,7 +140,6 @@ module Spec
   # :nodoc:
   struct BeValidExpectation
     def match(object)
-      object.validate!
       object.valid?
     end
 

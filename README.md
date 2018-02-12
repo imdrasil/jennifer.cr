@@ -103,7 +103,7 @@ class Passport < Jennifer::Model::Base
     contact_id: Int32?
   )
 
-  validates_with [EnnValidator]
+  validates_with EnnValidator
   belongs_to :contact, Contact
 end
 

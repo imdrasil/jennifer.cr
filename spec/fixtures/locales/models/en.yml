@@ -2,6 +2,9 @@
 jennifer:
   models:
     contact: tContact
+    passport:
+      one: Passport
+      other: Many Passports
   views:
     female_contact: tFemale contact
     male_contact: tMale contact

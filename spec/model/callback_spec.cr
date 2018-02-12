@@ -146,7 +146,7 @@ describe Jennifer::Model::Callback do
 
     it "is not called if record is invalid" do
       c = CountryWithValidationCallbacks.create(name: "cOuntry")
-      c.valid?.should be_false
+      c.errors.any?.should be_true
       c.name.should eq("cOuntry")
     end
   end
@@ -160,7 +160,6 @@ describe Jennifer::Model::Callback do
 
     it "stop creating record if skip was raised " do
       c = CountryWithValidationCallbacks.create(name: "skip")
-      c.valid?.should be_true
       c.new_record?.should be_true
     end
   end

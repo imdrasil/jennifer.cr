@@ -59,6 +59,8 @@ Here is a list with all the available callbacks, listed in the same order in whi
 
 The following methods trigger callbacks:
 
+- validate!
+- valid?
 - create
 - create!
 - destroy
@@ -73,8 +75,9 @@ The `after_initialize` callback is triggered each time record is initialized usi
 
 The following methods allows to skip some callbacks or process without them:
 
-- update
 - validate
+- invalid?
+- update
 - save(skip_validation: true)
 - destroy_without_transaction (no transaction callback will be triggered)
 - save_without_transaction (no transaction callback will be triggered)

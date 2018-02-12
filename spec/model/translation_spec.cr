@@ -20,6 +20,9 @@ describe Jennifer::Model::Translation do
   describe "::human" do
     it { Contact.human.should eq("tContact") }
     it { FacebookProfile.human.should eq("Facebook profile") }
+    it { Passport.human(1).should eq("Passport") }
+    it { Passport.human(2).should eq("Many Passports") }
+    it { Country.human(2).should eq("Countries") }
   end
 
   describe "::human_error" do

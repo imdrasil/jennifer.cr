@@ -58,7 +58,7 @@ class Passport < Jennifer::Model::Base
     contact_id: {type: Int32, null: true}
   )
 
-  validates_with [EnnValidator]
+  validates_with EnnValidator
   belongs_to :contact, Contact
 end
 

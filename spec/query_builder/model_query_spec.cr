@@ -112,6 +112,35 @@ describe Jennifer::QueryBuilder::ModelQuery do
     end
   end
 
+  describe "#patch" do
+    it "triggers validation" do
+      Factory.create_contact(age: 20)
+      Contact.all.patch(age: 12)
+      Contact.all.where { _age == 12 }.exists?.should be_false
+    end
+
+    it do
+      Factory.create_contact(age: 20)
+      Contact.all.patch(age: 30)
+      Contact.all.where { _age == 30 }.exists?.should be_true
+    end
+  end
+
+  describe "#patch!" do
+    it "raises exception if is invalid" do
+      Factory.create_contact(age: 20)
+      expect_raises(Jennifer::RecordInvalid) do
+        Contact.all.patch!(age: 12)
+      end
+    end
+
+    it do
+      Factory.create_contact(age: 20)
+      Contact.all.patch!(age: 30)
+      Contact.all.where { _age == 30 }.exists?.should be_true
+    end
+  end
+
   describe "#select_args" do
     it "returns array of join and condition args" do
       Contact.where { _id == 2 }.join(Address) { _name == "asd" }.select_args.should eq(db_array("asd", 2))

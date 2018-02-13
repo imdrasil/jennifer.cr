@@ -103,11 +103,11 @@ module Jennifer
         relation(name)
       end
 
-      # NOTE: Not implemented yet
-      def eager_load(rels : Array(String), aliases = [] of String?)
-        @relations << name.to_s
-        raise "Not implemented"
-      end
+      # TODO: add eager load with aliases
+      # def eager_load(rels : Array(String), aliases = [] of String?)
+      #   @relations << name.to_s
+      #   raise "Not implemented"
+      # end
 
       def relation(name, type = :left)
         model_class.relation(name.to_s).join_condition(self, type)
@@ -121,9 +121,27 @@ module Jennifer
         super(model_class.primary, batch_size, start, direction) { |record| yield record }
       end
 
-      # Loads all records and call `#destroy` on the each
+      # Triggers `#destroy` on the each matched object
       def destroy
-        to_a.each(&.destroy)
+        find_each(&.destroy)
+      end
+
+      # Triggers `#update` on the each matched object
+      def patch(options : Hash | NamedTuple)
+        find_each(&.update(options))
+      end
+
+      def patch(**opts)
+        patch(opts)
+      end
+
+      # Triggers `#update!` on the each matched object
+      def patch!(options : Hash | NamedTuple)
+        find_each(&.update!(options))
+      end
+
+      def patch!(**opts)
+        patch!(opts)
       end
 
       # ========= private ==============

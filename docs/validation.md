@@ -54,7 +54,6 @@ Not all methods which hit db perform validation. They are:
 - modify
 - increment
 - decrement
-- update
 
 > NOTE: `#invalid?` method will only check if `#errors` is empty.
 

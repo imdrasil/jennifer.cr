@@ -4,11 +4,13 @@ require "./validation"
 require "./callback"
 require "./relation_definition"
 require "./scoping"
+require "./translation"
 
 module Jennifer
   module Model
     abstract class Base
       extend Ifrit
+      extend Translation
       include Mapping
       include STIMapping
       include Validation

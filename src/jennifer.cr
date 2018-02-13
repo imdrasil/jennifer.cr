@@ -1,8 +1,12 @@
 require "inflector"
 require "inflector/string"
 require "accord"
+
 require "ifrit/converter"
+require "ifrit/core"
+
 require "time_zone"
+require "i18n"
 
 require "./jennifer/macros"
 
@@ -19,7 +23,10 @@ require "./jennifer/query_builder/*"
 require "./jennifer/adapter/base"
 require "./jennifer/relation/base"
 require "./jennifer/relation/*"
-require "./jennifer/model/*"
+
+require "./jennifer/model/base"
+
+require "./jennifer/validator"
 
 require "./jennifer/view/base"
 
@@ -74,3 +81,5 @@ struct JSON::Any
 end
 
 ::Jennifer.after_load_hook
+
+I18n.load_path << File.join(__DIR__, "jennifer/locale")

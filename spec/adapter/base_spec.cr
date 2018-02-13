@@ -189,12 +189,10 @@ describe Jennifer::Adapter::Base do
 
     it "avoid model validation" do
       c = Factory.build_contact(age: 12)
-      c.validate!
-      c.valid?.should be_false
+      c.should_not be_valid
       adapter.bulk_insert([c])
       c = Contact.all.first!
-      c.validate!
-      c.valid?.should be_false
+      c.should_not be_valid
     end
 
     it "properly sets object attributes" do

@@ -382,7 +382,7 @@ module Jennifer
 
         # Saves all changes to db without invoking transaction; if validation not passed - returns `false`
         def save_without_transaction(skip_validation : Bool = false) : Bool
-          return false unless skip_validation || validate_record
+          return false unless skip_validation || validate!
           return false unless __before_save_callback
           response =
             if new_record?
@@ -580,14 +580,6 @@ module Jennifer
           res = self.class.adapter.update(self)
           __after_update_callback
           res.rows_affected == 1
-        end
-
-        private def validate_record : Bool
-          return false unless __before_validation_callback
-          validate!
-          return false unless valid?
-          __after_validation_callback
-          true
         end
 
         private def save_record_under_transaction(skip_validation) : Bool

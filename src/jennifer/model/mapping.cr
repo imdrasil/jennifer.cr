@@ -197,10 +197,6 @@ module Jennifer
           initialize(values)
         end
 
-        # TODO: think about next method
-        # def attributes=(values : Hash)
-        # end
-
         def self.build(pull : DB::ResultSet)
           \{% begin %}
             \{% klasses = @type.all_subclasses.select { |s| s.constant("STI") == true } %}

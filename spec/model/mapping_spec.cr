@@ -487,7 +487,7 @@ describe Jennifer::Model::Mapping do
           c.name.should eq("123")
         end
 
-        it "raises exeption if value has wrong type" do
+        it "raises exception if value has wrong type" do
           c = Factory.build_contact
           expect_raises(::Jennifer::BaseException) do
             c.set_attribute(:name, 123)

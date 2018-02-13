@@ -156,17 +156,39 @@ module Jennifer
         {% end %}
       end
 
-      def update_attributes(hash : Hash)
+      def update(hash : Hash | NamedTuple)
+        update_attributes(hash)
+        save
+      end
+
+      def update(**opts)
+        update(opts)
+      end
+
+      def update!(hash : Hash | NamedTuple)
+        update_attributes(hash)
+        save!
+      end
+
+      def update!(**opts)
+        update!(opts)
+      end
+
+      def update_attributes(hash : Hash | NamedTuple)
         hash.each { |k, v| set_attribute(k, v) }
       end
 
+      def update_attributes(**opts)
+        update_attributes(opts)
+      end
+
       # Perform destroy without starting a transaction
-        def destroy_without_transaction
-          return false if new_record? || !__before_destroy_callback
-          @destroyed = true if delete
-          __after_destroy_callback if @destroyed  
-          @destroyed
-        end
+      def destroy_without_transaction
+        return false if new_record? || !__before_destroy_callback
+        @destroyed = true if delete
+        __after_destroy_callback if @destroyed  
+        @destroyed
+      end
 
       # Deletes object from DB without calling callbacks.
       def delete

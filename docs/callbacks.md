@@ -68,6 +68,8 @@ The following methods trigger callbacks:
 - save
 - save!
 - save_without_transaction
+- update
+- update!
 
 The `after_initialize` callback is triggered each time record is initialized using method `::build`.
 
@@ -77,7 +79,6 @@ The following methods allows to skip some callbacks or process without them:
 
 - validate
 - invalid?
-- update
 - save(skip_validation: true)
 - destroy_without_transaction (no transaction callback will be triggered)
 - save_without_transaction (no transaction callback will be triggered)

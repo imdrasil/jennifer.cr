@@ -1,14 +1,16 @@
+require "../base_sql_generator"
+
 module Jennifer
-  module Adapter
-    module SqlNotation
-      def insert(obj : Model::Base)
+  module Mysql
+    class SQLGenerator < Adapter::BaseSQLGenerator
+      def self.insert(obj : Model::Base)
         opts = obj.arguments_to_insert
         String.build do |s|
           s << "INSERT INTO " << obj.class.table_name
           unless opts[:fields].empty?
             s << "("
             opts[:fields].join(", ", s)
-            s << ") VALUES (" << Adapter.adapter_class.escape_string(opts[:fields].size) << ") "
+            s << ") VALUES (" << escape_string(opts[:fields].size) << ") "
           else
             s << " VALUES ()"
           end
@@ -17,8 +19,8 @@ module Jennifer
 
       # Generates update request depending on given query and hash options. Allows
       # joins inside of query.
-      def update(query, options : Hash)
-        esc = Adapter.adapter_class.escape_string(1)
+      def self.update(query, options : Hash)
+        esc = escape_string(1)
         String.build do |s|
           s << "UPDATE " << query.table
           s << "\n"
@@ -26,7 +28,7 @@ module Jennifer
 
           unless _joins.nil?
             where_clause(s, _joins[0].on)
-            _joins[1..-1].join(" ", s) { |e| s << e.as_sql }
+            _joins[1..-1].join(" ", s) { |e| s << e.as_sql(self) }
           end
           s << " SET "
           options.join(", ", s) { |(k, v)| s << k << " = " << esc }
@@ -35,7 +37,7 @@ module Jennifer
         end
       end
 
-      def json_path(path : QueryBuilder::JSONSelector)
+      def self.json_path(path : QueryBuilder::JSONSelector)
         value =
           if path.path.is_a?(Number)
             quote("$[#{path.path.to_s}]")
@@ -45,7 +47,7 @@ module Jennifer
         "#{path.identifier}->#{value}"
       end
 
-      def quote(value : String)
+      def self.quote(value : String)
         "\"#{value.gsub(/\\/, "\&\&").gsub(/"/, "\"\"")}\""
       end
     end

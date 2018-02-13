@@ -2,7 +2,7 @@ module Jennifer
   module QueryBuilder
     module Aggregations
       def count : Int32
-        ::Jennifer::Adapter.adapter.count(self)
+        adapter.count(self)
       end
 
       def max(field, klass : T.class) : T forall T

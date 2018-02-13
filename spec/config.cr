@@ -48,6 +48,8 @@ module Spec
   end
 end
 
+require "../src/jennifer"
+
 {% if env("DB") == "mysql" %}
   require "../src/jennifer/adapter/mysql"
   Spec.adapter = "mysql"
@@ -57,8 +59,20 @@ end
 {% else %}
   require "../src/jennifer/adapter/postgres"
   Spec.adapter = "postgres"
+
+  {% if env("LEGACY_INSERT") == "1" %}
+    require "../src/jennifer/adapter/postgres/legacy_insert"
+  {% end %}
 {% end %}
-require "../src/jennifer"
+
+{% if env("PAIR") == "1" %}
+  # Additionally loads opposite adapter
+  {% if env("DB") == "mysql" %}
+    require "../src/jennifer/adapter/postgres"
+  {% elsif env("DB") == "postgres" %}
+    require "../src/jennifer/adapter/mysql"
+  {% end %}
+{% end %}
 
 def set_default_configuration
   Jennifer::Config.reset_config
@@ -86,3 +100,7 @@ def set_default_configuration
 end
 
 set_default_configuration
+
+I18n.load_path += ["spec/fixtures/locales/**"]
+I18n.default_locale = "en"
+I18n.init

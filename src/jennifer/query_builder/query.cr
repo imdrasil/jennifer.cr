@@ -23,9 +23,10 @@ module Jennifer
         end
       {% end %}
 
+      getter table : String = ""
+
       @having : Condition | LogicOperator?
       @limit : Int32?
-      @table : String = ""
       @distinct : Bool = false
       @offset : Int32?
       @raw_select : String?
@@ -41,7 +42,7 @@ module Jennifer
       def initialize
         @do_nothing = false
         @expression = ExpressionBuilder.new(@table)
-        @order = {} of Criteria => String
+        @order = CriteriaContainer.new
         @relations = [] of String
         @groups = [] of Criteria
         @relation_used = false
@@ -58,7 +59,7 @@ module Jennifer
           @{{segment.id}} = other.@{{segment.id}}.clone unless except.includes?({{segment}})
         {% end %}
 
-        @order = except.includes?("order") ? {} of Criteria => String : other.@order.clone
+        @order = except.includes?("order") ? CriteriaContainer.new : other.@order.clone
         @joins = other.@joins.clone unless except.includes?("join")
         @unions = other.@unions.clone unless except.includes?("union")
         @groups = except.includes?("group") ? [] of Criteria : other.@groups.clone
@@ -122,11 +123,15 @@ module Jennifer
       end
 
       def to_sql
-        Adapter::SqlGenerator.select(self)
+        adapter.sql_generator.select(self)
       end
 
       def as_sql
-        @tree ? @tree.not_nil!.as_sql : ""
+        @tree ? @tree.not_nil!.as_sql(adapter.sql_generator) : ""
+      end
+
+      def as_sql(_generator)
+        @tree ? @tree.not_nil!.as_sql(adapter.sql_generator) : ""
       end
 
       def sql_args
@@ -334,6 +339,10 @@ module Jennifer
 
       private def _groups(name : String)
         @group[name] ||= [] of String
+      end
+
+      private def adapter
+        Adapter.default_adapter
       end
     end
   end

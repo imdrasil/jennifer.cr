@@ -47,7 +47,7 @@ describe Jennifer::Adapter::Base do
 
     it "raises exception if query is broken" do
       expect_raises(Jennifer::BadQuery, /Original query was/) do
-        adapter.exec("insert into countries(name) set values(?)", "new")
+        adapter.exec("insert into countries(name) set values(?)", ["new"])
       end
     end
   end
@@ -66,43 +66,46 @@ describe Jennifer::Adapter::Base do
 
   describe "#transaction" do
     it "rollbacks if exception was raised" do
-      expect_raises(DivisionByZero) do
+      void_transaction do
+        expect_raises(DivisionByZero) do
+          adapter.transaction do |tx|
+            Factory.create_contact
+            1 / 0
+          end
+        end
+        Contact.all.count.should eq(0)
+      end
+    end
+
+    it "commit transaction otherwise" do
+      void_transaction do
         adapter.transaction do
           Factory.create_contact
-          1 / 0
         end
+        Contact.all.count.should eq(1)
       end
-      Contact.all.count.should eq(0)
     end
 
-    it "commit transaction otherwice" do
-      adapter.transaction do
-        Factory.create_contact
-      end
-      Contact.all.count.should eq(1)
-    end
-
+    # TODO: add several fibers and yields in them
     it "work with concurrent access" do
-      begin
-        ch = Channel(Nil).new
-        adapter.transaction do |t|
-          Factory.create_contact
-          raise DB::Rollback.new
-        end
-        spawn do
+      void_transaction do
+        begin
+          ch = Channel(Nil).new
           adapter.transaction do |t|
             Factory.create_contact
+            raise DB::Rollback.new
           end
-          ch.send(nil)
-        end
-        ch.receive
+          spawn do
+            adapter.transaction do |t|
+              Factory.create_contact
+            end
+            ch.send(nil)
+          end
+          ch.receive
 
-        adapter.with_manual_connection do |con|
-          con.scalar("select count(*) from contacts").should eq(1)
-        end
-      ensure
-        adapter.with_manual_connection do |con|
-          con.exec "DELETE FROM contacts"
+          adapter.with_manual_connection do |con|
+            con.scalar("select count(*) from contacts").should eq(1)
+          end
         end
       end
     end
@@ -186,12 +189,19 @@ describe Jennifer::Adapter::Base do
 
     it "avoid model validation" do
       c = Factory.build_contact(age: 12)
-      c.validate!
-      c.valid?.should be_false
+      c.should_not be_valid
       adapter.bulk_insert([c])
       c = Contact.all.first!
-      c.validate!
-      c.valid?.should be_false
+      c.should_not be_valid
+    end
+
+    it "properly sets object attributes" do
+      c = Factory.build_contact(name: "Syd", age: 150)
+      adapter.bulk_insert([c])
+      Contact.all.count.should eq(1)
+      c = Contact.all.first!
+      c.age.should eq(150)
+      c.name.should eq("Syd")
     end
   end
 
@@ -235,12 +245,6 @@ describe Jennifer::Adapter::Base do
     end
   end
 
-  describe "::escape_string" do
-    it "returns proper escape string" do
-      described_class.escape_string(5).should eq(Jennifer::Adapter::SqlGenerator.escape_string(5))
-    end
-  end
-
   describe "#query_array" do
     it "returns array of given type" do
       Factory.create_contact
@@ -252,14 +256,6 @@ describe Jennifer::Adapter::Base do
       Factory.create_contact
       res = adapter.query_array("SELECT name, description FROM contacts", String?, 2)
       res[0].should eq(["Deepthi", nil])
-    end
-  end
-
-  describe "#parse_query" do
-    it "returns string without %s placeholders" do
-      res = adapter.parse_query("asd %s asd", [2])
-      res.should be_a(String)
-      res.should_not match(/%s/)
     end
   end
 

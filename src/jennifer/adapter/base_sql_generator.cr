@@ -1,14 +1,15 @@
 module Jennifer
   module Adapter
-    class BaseSqlGenerator
+    class BaseSQLGenerator
       ARRAY_ESCAPE = "\\\\\\\\"
+      ARGUMENT_ESCAPE_STRING = "%s"
 
       # Generates insert query
       def self.insert(table, hash)
         String.build do |s|
           s << "INSERT INTO " << table << "("
           hash.keys.join(", ", s)
-          s << ") VALUES (" << Adapter.adapter_class.escape_string(hash.size) << ")"
+          s << ") VALUES (" << escape_string(hash.size) << ")"
         end
       end
 
@@ -22,7 +23,7 @@ module Jennifer
         String.build do |s|
           s << "INSERT INTO " << table << "("
           field_names.join(", ", s) { |e| s << e }
-          escaped_row = "(" + Adapter.adapter_class.escape_string(field_names.size) + ")"
+          escaped_row = "(" + escape_string(field_names.size) + ")"
           s << ") VALUES "
           rows.times.join(", ", s) { s << escaped_row }
         end
@@ -48,7 +49,7 @@ module Jennifer
             from_clause(s, query)
             body_section(s, query)
           end,
-          query.select_args_count
+          query.select_args
         )
       end
 
@@ -60,7 +61,7 @@ module Jennifer
             body_section(s, query)
             s << ")"
           end,
-          query.select_args_count
+          query.select_args
         )
       end
 
@@ -71,7 +72,7 @@ module Jennifer
             from_clause(s, query)
             body_section(s, query)
           end,
-          query.select_args_count
+          query.select_args
         )
       end
 
@@ -85,7 +86,7 @@ module Jennifer
       end
 
       def self.update(query, options : Hash)
-        esc = Adapter.adapter_class.escape_string(1)
+        esc = escape_string(1)
         String.build do |s|
           s << "UPDATE " << query.table << " SET "
           options.map { |k, v| "#{k.to_s}= #{esc}" }.join(", ", s)
@@ -156,9 +157,9 @@ module Jennifer
             query._from
           else
             if query.is_a?(QueryBuilder::ModelQuery)
-              SqlGenerator.select(query._from.as(QueryBuilder::ModelQuery))
+              self.select(query._from.as(QueryBuilder::ModelQuery))
             else
-              SqlGenerator.select(query._from.as(QueryBuilder::Query))
+              self.select(query._from.as(QueryBuilder::Query))
             end
           end
         io << " ) "
@@ -167,18 +168,18 @@ module Jennifer
       def self.group_clause(io : String::Builder, query)
         return if !query._groups || query._groups.empty?
         io << "GROUP BY "
-        query._groups.not_nil!.each.join(", ", io) { |c| io << c.as_sql }
+        query._groups.not_nil!.each.join(", ", io) { |c| io << c.as_sql(self) }
         io << "\n"
       end
 
       def self.having_clause(io : String::Builder, query)
         return unless query._having
-        io << "HAVING " << query._having.not_nil!.as_sql << "\n"
+        io << "HAVING " << query._having.not_nil!.as_sql(self) << "\n"
       end
 
       def self.join_clause(io : String::Builder, query)
         return unless query._joins
-        query._joins.not_nil!.join(" ", io) { |j| io << j.as_sql }
+        query._joins.not_nil!.join(" ", io) { |j| io << j.as_sql(self) }
       end
 
       def self.where_clause(io : String::Builder, query : QueryBuilder::Query | QueryBuilder::ModelQuery)
@@ -187,7 +188,7 @@ module Jennifer
 
       def self.where_clause(io : String::Builder, tree)
         return unless tree
-        io << "WHERE " << tree.not_nil!.as_sql << "\n"
+        io << "WHERE " << tree.not_nil!.as_sql(self) << "\n"
       end
 
       def self.limit_clause(io : String::Builder, query)
@@ -198,7 +199,7 @@ module Jennifer
       def self.order_clause(io : String::Builder, query)
         return if !query._order || query._order.empty?
         io << "ORDER BY "
-        query._order.not_nil!.join(", ", io) { |(k, v)| io.print k.as_sql, " ", v.upcase }
+        query._order.join(", ", io) { |(k, v), _| io.print k.as_sql(self), " ", v.upcase }
         io << "\n"
       end
 
@@ -244,27 +245,32 @@ module Jennifer
       def self.escape_string(size : Int32 = 1)
         case size
         when 1
-          "%s"
+          ARGUMENT_ESCAPE_STRING
         when 2
-          "%s, %s"
+          "#{ARGUMENT_ESCAPE_STRING}, #{ARGUMENT_ESCAPE_STRING}"
         when 3
-          "%s, %s, %s"
+          "#{ARGUMENT_ESCAPE_STRING}, #{ARGUMENT_ESCAPE_STRING}, #{ARGUMENT_ESCAPE_STRING}"
         else
-          size.times.map { "%s" }.join(", ")
+          size.times.join(", ") { ARGUMENT_ESCAPE_STRING }
         end
+      end
+
+      def self.filter_out(arg : QueryBuilder::Criteria)
+        arg.as_sql(self)
+      end
+
+      def self.filter_out(arg)
+        escape_string(1)
       end
 
       # TODO: optimize array initializing
-      def self.parse_query(query : String, arg_count : Int32)
-        arr = [] of String
-        arg_count.times do
-          arr << "?"
+      def self.parse_query(query : String, args : Array(DBAny))
+        args.each_with_index do |arg, i|
+          if arg.is_a?(Time)
+            args[i] = Config.local_time_zone.local_to_utc(arg.as(Time))
+          end
         end
-        query % arr
-      end
-
-      def self.parse_query(query : String)
-        query
+        {query % Array.new(args.size, "?"), args}
       end
     end
   end

@@ -103,10 +103,11 @@ end
 
 class MaleContactFactory < Factory::Base
   postgres_only do
-    argument_type (Array(Int32) | Int32 | PG::Numeric | String?)
+    argument_type (Array(Int32) | Int32 | PG::Numeric | String? | Time)
   end
 
   attr :name, "Raphael"
   attr :age, 21
   attr :gender, "male"
+  attr :created_at, -> { Time.utc_now }
 end

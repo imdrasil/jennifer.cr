@@ -1,7 +1,5 @@
 class SQLite3::ResultSet
-  def column_index
-    @column_index
-  end
+  getter column_index
 
   def current_column
     columns[column_index]

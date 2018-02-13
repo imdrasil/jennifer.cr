@@ -32,11 +32,12 @@ end
 
 def clean_db
   postgres_only do
-    Jennifer::Adapter.adapter.refresh_materialized_view(FemaleContact.table_name)
+    Jennifer::Adapter.adapter.as(Jennifer::Postgres::Adapter).refresh_materialized_view(FemaleContact.table_name)
   end
   Jennifer::Model::Base.models.select { |t| t.has_table? }.each(&.all.delete)
 end
 
+# Ends current transaction, yields to the block, clear and starts next one
 macro void_transaction
   begin
     Jennifer::Adapter.adapter.rollback_transaction
@@ -49,11 +50,11 @@ macro void_transaction
 end
 
 def select_clause(query)
-  String.build { |s| ::Jennifer::Adapter::SqlGenerator.select_clause(s, query) }
+  String.build { |s| ::Jennifer::Adapter.adapter.sql_generator.select_clause(s, query) }
 end
 
 def select_query(query)
-  ::Jennifer::Adapter::SqlGenerator.select(query)
+  ::Jennifer::Adapter.adapter.sql_generator.select(query)
 end
 
 def db_array(*element)
@@ -76,8 +77,29 @@ def read_to_end(rs)
   end
 end
 
+def with_time_zone(zone_name : String)
+  old_zone = Jennifer::Config.local_time_zone_name
+  begin
+    Jennifer::Config.local_time_zone_name = zone_name
+    yield
+  ensure
+    Jennifer::Config.local_time_zone_name = old_zone
+  end
+end
+
 def sb
   String.build { |io| yield io }
+end
+
+def db_specific(mysql, postgres)
+  case Spec.adapter
+  when "postgres"
+    postgres.call
+  when "mysql"
+    mysql.call
+  else
+    raise "Unknown adapter type"
+  end
 end
 
 # Matchers ======================
@@ -112,4 +134,61 @@ macro match_fields(object, **fields)
   {% for field, value in fields %}
     {{object}}.{{field.id}}.should eq({{value}})
   {% end %}
+end
+
+module Spec
+  # :nodoc:
+  struct BeValidExpectation
+    def match(object)
+      object.valid?
+    end
+
+    def failure_message(object)
+      "Expected: #{object.inspect} to be valid"
+    end
+
+    def negative_failure_message(object)
+      "Expected: #{object.inspect} not to be valid"
+    end
+  end
+
+  struct AttributeValidationExpectation
+    @error_message : String?
+
+    def initialize(@attr : Symbol)
+    end
+
+    def with(msg)
+      @error_message = msg
+      self
+    end
+
+    def match(object)
+      raise ArgumentError.new("validation message should be specified.") if @error_message.nil?
+      _error_message = @error_message.not_nil!
+
+      object.validate!
+      object.errors[@attr].includes?(@error_message)
+    end
+
+    def failure_message(object)
+      "Expected: #{object.inspect} to have error message: "\
+      "'#{@error_message}', but got: '#{object.errors[@attr].inspect}'"
+    end
+
+    def negative_failure_message(object)
+      "Expected: #{object.inspect} not to have error message: "\
+      "'#{@error_message}', but got: '#{object.errors[@attr].inspect}'"
+    end
+  end
+  
+  module Expectations
+    def be_valid
+      BeValidExpectation.new
+    end
+
+    def validate(attr)
+      AttributeValidationExpectation.new(attr)
+    end
+  end
 end

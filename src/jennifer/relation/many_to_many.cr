@@ -9,11 +9,10 @@ module Jennifer
         @primary = primary.to_s if primary
         @join_query = query.tree
         @join_query.not_nil!.set_relation(T.table_name, @name) if @join_query
-        @join_table = ::Jennifer::Adapter.adapter_class.join_table_name(Q.table_name, T.table_name) unless @join_table
       end
 
       def join_table!
-        @join_table.not_nil!
+        @join_table ? @join_table.not_nil! : adapter.class.join_table_name(Q.table_name, T.table_name)
       end
 
       def insert(obj : Q, rel : Hash)
@@ -73,7 +72,7 @@ module Jennifer
       end
 
       private def add_join_table_record(obj, rel)
-        Adapter.adapter.insert(
+        adapter.insert(
           join_table!,
           {
             foreign_field           => obj.attribute(primary_field),

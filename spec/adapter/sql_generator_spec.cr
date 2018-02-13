@@ -1,8 +1,29 @@
 require "../spec_helper"
 
-describe Jennifer::Adapter::SqlGenerator do
+def sb
+  String.build { |io| yield io }
+end
+
+describe "Jennifer::Adapter::SQLGenerator" do
   adapter = Jennifer::Adapter.adapter
-  described_class = Jennifer::Adapter::SqlGenerator
+  described_class = Jennifer::Adapter.adapter.sql_generator
+
+  describe "::filter_out" do
+    context "is Criteria" do
+      it "renders sql of criteria" do
+        c2 = Factory.build_criteria
+        described_class.filter_out(c2).should eq(c2.as_sql)
+      end
+    end
+
+    context "anything else" do
+      it "renders placeholder" do
+        described_class.filter_out(1).should eq("%s")
+        described_class.filter_out("s").should eq("%s")
+        described_class.filter_out(false).should eq("%s")
+      end
+    end
+  end
 
   describe "::select_query" do
     s = Contact.where { _age == 1 }.join(Contact) { _age == Contact._age }.order(age: :desc).limit(1)
@@ -171,7 +192,7 @@ describe Jennifer::Adapter::SqlGenerator do
 
     it "adds next query to current one" do
       query = Jennifer::Query["contacts"].union(Jennifer::Query["users"])
-      sb { |s| described_class.union_clause(s, query) }.should match(Regex.new(Jennifer::Adapter::SqlGenerator.select(Jennifer::Query["users"])))
+      sb { |s| described_class.union_clause(s, query) }.should match(Regex.new(Jennifer::Adapter.adapter.sql_generator.select(Jennifer::Query["users"])))
     end
   end
 
@@ -217,13 +238,22 @@ describe Jennifer::Adapter::SqlGenerator do
   describe "::parse_query" do
     postgres_only do
       it "replase placeholders with dollar numbers" do
-        described_class.parse_query("asd %s qwe %s", 2).should eq("asd $1 qwe $2")
+        described_class.parse_query("asd %s qwe %s", [1, 2] of Jennifer::DBAny).should eq({"asd $1 qwe $2", [1, 2]})
       end
     end
 
     mysql_only do
       it "replace placeholders with question marks" do
-        described_class.parse_query("asd %s qwe %s", 2).should eq("asd ? qwe ?")
+        described_class.parse_query("asd %s qwe %s", [1, 2] of Jennifer::DBAny).should eq({"asd ? qwe ?", [1, 2]})
+      end
+    end
+
+    context "with given Time object" do
+      it do
+        with_time_zone("Etc/GMT+1") do
+          time = Time.utc_now
+          adapter.parse_query("%s", [time] of Jennifer::DBAny)[1][0].as(Time).should be_close(time + 1.hour, 1.second)
+        end
       end
     end
   end

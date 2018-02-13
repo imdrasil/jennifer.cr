@@ -4,4 +4,6 @@ abstract class DB::ResultSet
       read
     end
   end
+
+  abstract def current_column_name
 end

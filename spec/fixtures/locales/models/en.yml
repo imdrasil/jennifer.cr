@@ -1,0 +1,24 @@
+---
+jennifer:
+  models:
+    contact: tContact
+    passport:
+      one: Passport
+      other: Many Passports
+  views:
+    female_contact: tFemale contact
+    male_contact: tMale contact
+  attributes:
+    male_contact:
+      id: tId
+    female_contact:
+      id: tId
+    contact:
+      id: tId
+      name: tName
+      ballance: tBallance
+      age: yAge
+    profile:
+      login: tLogin
+    twitter_profile:
+      login: phone

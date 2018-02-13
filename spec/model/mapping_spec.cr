@@ -48,8 +48,8 @@ describe Jennifer::Model::Mapping do
       rescue ex : Jennifer::RecordInvalid
         ex.errors.size.should eq(3)
         raw_errors = ex.errors.@errors
-        validate_error(raw_errors[0], :age, "must be in 13..75 but is 12")
-        validate_error(raw_errors[1], :name, "must be less than or equal 15 but is 22")
+        validate_error(raw_errors[0], :age, "is not included in the list")
+        validate_error(raw_errors[1], :name, "is too long (maximum is 15 characters)")
         validate_error(raw_errors[2], :description, "Too large description")
       end
     end
@@ -280,6 +280,25 @@ describe Jennifer::Model::Mapping do
         end
       end
 
+      describe Time do
+        it "stores to db time converted to UTC" do
+          with_time_zone("Etc/GMT+1") do
+            contact = Factory.create_contact
+            Contact.all.update(created_at: Time.utc_now)
+            Contact.all.select { [_created_at] }.each_result_set do |rs|
+              rs.read(Time).should be_close(Time.utc_now + 1.hour, 2.seconds)
+            end
+          end
+        end
+
+        it "converts values from utc to local" do
+          contact = Factory.create_contact
+          with_time_zone("Etc/GMT+1") do
+            contact.reload.created_at!.should be_close(Time.utc_now - 1.hour, 2.seconds)
+          end
+        end
+      end
+
       context "nilable field" do
         context "passed with ?" do
           it "properly sets field as nilable" do
@@ -468,7 +487,7 @@ describe Jennifer::Model::Mapping do
           c.name.should eq("123")
         end
 
-        it "raises exeption if value has wrong type" do
+        it "raises exception if value has wrong type" do
           c = Factory.build_contact
           expect_raises(::Jennifer::BaseException) do
             c.set_attribute(:name, 123)
@@ -561,8 +580,8 @@ describe Jennifer::Model::Mapping do
 
   describe "%with_timestamps" do
     it "adds callbacks" do
-      Contact::BEFORE_CREATE_CALLBACKS.should contain("__update_created_at")
-      Contact::BEFORE_SAVE_CALLBACKS.should contain("__update_updated_at")
+      Contact::CALLBACKS[:create][:before].should contain("__update_created_at")
+      Contact::CALLBACKS[:save][:before].should contain("__update_updated_at")
     end
   end
 

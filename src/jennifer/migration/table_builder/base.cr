@@ -9,14 +9,13 @@ module Jennifer
 
         extend Ifrit
 
-        delegate table_exists?, index_exists?, column_exists?, to: Adapter.adapter
-        delegate adapter, to: Adapter
+        delegate schema_processor, table_exists?, index_exists?, column_exists?, to: adapter
 
-        getter fields
+        getter fields, adapter : Adapter::Base
 
         @name : String | Symbol
 
-        def initialize(@name)
+        def initialize(@adapter, @name)
           @fields = {} of String => DB_OPTIONS
           @indexes = [] of CreateIndex
         end

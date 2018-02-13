@@ -1,4 +1,5 @@
-#f1="./src/jennifer/adapter/mysql.cr " # for mysql
-f1="./src/jennifer/adapter/postgres.cr " # for postgres
-f2="./src/jennifer.cr"
-echo $f1$f2 | xargs crystal doc
+f1="./src/jennifer.cr "
+f2="./src/jennifer/adapter/mysql.cr " # for mysql
+f3="./src/jennifer/adapter/postgres.cr " # for postgres
+
+echo $f1$f2$f3 | xargs crystal doc

@@ -1,7 +1,8 @@
 module Jennifer
   module Model
     module STIMapping
-      macro sti_mapping(properties)
+      # Defines mapping using single table inheritance. Is automatically called by `%mapping` macro. 
+      private macro sti_mapping(properties)
         STI = true
 
         def self.sti_condition
@@ -93,7 +94,7 @@ module Jennifer
 
         # creates object from db tuple
         def initialize(%pull : DB::ResultSet)
-          initialize(::Jennifer::Adapter.adapter.result_to_hash(%pull), false)
+          initialize(self.class.adapter.result_to_hash(%pull), false)
         end
 
         def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
@@ -125,7 +126,7 @@ module Jennifer
           raise ::Jennifer::RecordNotFound.new("It is not persisted yet") if new_record?
           this = self
           self.class.all.where { this.class.primary == this.primary }.limit(1).each_result_set do |rs|
-            values = ::Jennifer::Adapter.adapter.result_to_hash(rs)
+            values = self.class.adapter.result_to_hash(rs)
             init_attributes(values)
           end
           __refresh_changes
@@ -281,10 +282,6 @@ module Jennifer
             {% end %}
           ]
         end
-      end
-
-      macro sti_mapping(**properties)
-        sti_mapping({{properties}})
       end
     end
   end

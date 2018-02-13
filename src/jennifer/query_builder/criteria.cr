@@ -1,4 +1,5 @@
 require "./json_selector"
+require "./criteria_container"
 
 module Jennifer
   module QueryBuilder
@@ -14,10 +15,7 @@ module Jennifer
       def initialize(@field : String, @table : String, @relation = nil)
       end
 
-      # NOTE: workaround for passing criteria to the hash as a key - somewhy any Criteria is realized as same one
-      def hash
-        object_id.hash
-      end
+      def_hash @field, @table
 
       def set_relation(table : String, name : String)
         @relation = name if @relation.nil? && @table == table
@@ -65,7 +63,7 @@ module Jennifer
       end
 
       def ==(value : Rightable)
-        # NOTE: here crystal improperly resolves override methods with Nilargument
+        # NOTE: here crystal improperly resolves override methods with Nil argument
         if !value.nil?
           Condition.new(self, :==, value)
         else
@@ -95,11 +93,11 @@ module Jennifer
       end
 
       def is(value : Symbol | Bool | Nil)
-        Condition.new(self, :is, translate(value))
+        Condition.new(self, :is, value)
       end
 
       def not(value : Symbol | Bool | Nil)
-        Condition.new(self, :is_not, translate(value))
+        Condition.new(self, :is_not, value)
       end
 
       def not
@@ -127,7 +125,7 @@ module Jennifer
         as_sql
       end
 
-      def as_sql : String
+      def as_sql(_generator) : String
         @ident ||= identifier
       end
 
@@ -149,17 +147,6 @@ module Jennifer
 
       def to_condition
         Condition.new(self)
-      end
-
-      private def translate(value : Symbol | Bool | Nil)
-        case value
-        when nil, true, false
-          Adapter::SqlGenerator.quote(value)
-        when :unknown
-          "UNKNOWN"
-        when :nil
-          Adapter::SqlGenerator.quote(nil)
-        end
       end
     end
   end

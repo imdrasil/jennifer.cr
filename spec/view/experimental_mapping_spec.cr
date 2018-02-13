@@ -123,7 +123,7 @@ describe Jennifer::View::ExperimentalMapping do
 
     describe "::field_count" do
       it "returns correct number of model fields" do
-        MaleContact.field_count.should eq(4)
+        MaleContact.field_count.should eq(5)
       end
     end
 
@@ -142,6 +142,35 @@ describe Jennifer::View::ExperimentalMapping do
         it "raises DataTypeCasting exception" do
           expect_raises(::Jennifer::DataTypeCasting, "Column MaleContact.name can't be casted from Nil to it's type - String") do
             MaleContact.build({gender: nil})
+          end
+        end
+      end
+
+      describe JSON::Any do
+        pending "properly loads json field" do
+          # This checks nillable JSON as well
+          # c = Factory.create_address(street: "a st.", details: JSON.parse(%(["a", "b", 1])))
+          # c = Address.find!(c.id)
+          # c.details.should be_a(JSON::Any)
+          # c.details![2].as_i.should eq(1)
+        end
+      end
+
+      describe Time do
+        it "stores to db time converted to UTC" do
+          with_time_zone("Etc/GMT+1") do
+            contact = Factory.create_contact
+            Contact.all.update(created_at: Time.utc_now)
+            MaleContact.all.select { [_created_at] }.each_result_set do |rs|
+              rs.read(Time).should be_close(Time.utc_now + 1.hour, 2.seconds)
+            end
+          end
+        end
+
+        it "converts values from utc to local" do
+          contact = Factory.create_contact
+          with_time_zone("Etc/GMT+1") do
+            MaleContact.all.first!.created_at!.should be_close(Time.utc_now - 1.hour, 2.seconds)
           end
         end
       end
@@ -228,7 +257,7 @@ describe Jennifer::View::ExperimentalMapping do
 
   describe "::field_names" do
     it "returns array of defined fields" do
-      MaleContact.field_names.should eq(%w(id name gender age))
+      MaleContact.field_names.should eq(%w(id name gender age created_at))
     end
   end
 end

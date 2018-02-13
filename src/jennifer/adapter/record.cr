@@ -6,7 +6,8 @@ module Jennifer
     end
 
     def initialize(result_set : DB::ResultSet)
-      @attributes = Adapter.adapter.result_to_hash(result_set)
+      # TODO: decouple adapter
+      @attributes = Adapter.default_adapter.result_to_hash(result_set)
     end
 
     def initialize

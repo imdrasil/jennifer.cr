@@ -10,6 +10,12 @@ describe Jennifer::QueryBuilder::Condition do
       end
     {% end %}
 
+    context "operator ==" do
+      it "returns short" do
+        (Factory.build_criteria == "asd").as_sql.should eq("tests.f1 = %s")
+      end
+    end
+
     postgres_only do
       context "operator overlap" do
         it "accepts plain args" do
@@ -42,18 +48,15 @@ describe Jennifer::QueryBuilder::Condition do
       end
     end
 
-    context "operator ==" do
-      it "returns short" do
-        (Factory.build_criteria == "asd").as_sql.should eq("tests.f1 = %s")
-      end
-    end
-
     context "operator =~" do
       it "returns regexp operator" do
         cond = Factory.build_criteria =~ "asd"
-        if Jennifer::Adapter.adapters.keys.last == "postgres"
+
+        postgres_only do
           cond.as_sql.should match(/~/)
-        else
+        end
+
+        mysql_only do
           cond.as_sql.should match(/REGEXP/)
         end
       end
@@ -126,25 +129,6 @@ describe Jennifer::QueryBuilder::Condition do
     context "rhs is criteria" do
       it "returns empty array" do
         (Factory.build_criteria > Factory.build_criteria).sql_args.empty?.should be_true
-      end
-    end
-  end
-
-  describe "#filter_out" do
-    context "is Criteria" do
-      it "renders sql of criteria" do
-        c1 = Factory.build_criteria.to_condition
-        c2 = Factory.build_criteria
-        c1.filter_out(c2).should eq(c2.as_sql)
-      end
-    end
-
-    context "anything else" do
-      it "renders question mark" do
-        c1 = Factory.build_criteria.to_condition
-        c1.filter_out(1).should eq("%s")
-        c1.filter_out("s").should eq("%s")
-        c1.filter_out(false).should eq("%s")
       end
     end
   end

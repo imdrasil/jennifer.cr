@@ -64,7 +64,11 @@ module Jennifer
       end
 
       def as_sql
-        @lhs.as_sql + " " + operator + " " + @rhs.as_sql
+        as_sql(Adapter.default_adapter.sql_generator)
+      end
+      
+      def as_sql(generator)
+        @lhs.as_sql(generator) + " " + operator + " " + @rhs.as_sql(generator)
       end
 
       def sql_args

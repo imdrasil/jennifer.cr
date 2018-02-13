@@ -103,7 +103,7 @@ class Passport < Jennifer::Model::Base
     contact_id: Int32?
   )
 
-  validates_with [EnnValidator]
+  validates_with EnnValidator
   belongs_to :contact, Contact
 end
 
@@ -119,7 +119,7 @@ class Profile < Jennifer::Model::Base
 end
 
 class FacebookProfile < Profile
-  sti_mapping(
+  mapping(
     uid: String
   )
 

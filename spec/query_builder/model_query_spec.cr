@@ -50,7 +50,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
       it "it generates proper request" do
         contact = Factory.create_contact
         query = Contact.all.eager_load(:main_address)
-        Jennifer::Adapter::SqlGenerator.select(query).should match(/addresses\.main/)
+        Jennifer::Adapter.adapter.sql_generator.select(query).should match(/addresses\.main/)
       end
     end
 
@@ -97,9 +97,9 @@ describe Jennifer::QueryBuilder::ModelQuery do
   describe "#relation" do
     # TODO: refactor this bad test - this should be tested under sql generating process
     it "makes join using relation scope" do
-      ::Jennifer::Adapter::SqlGenerator
-        .select(Contact.all.relation(:addresses))
-        .should match(/LEFT JOIN addresses ON addresses.contact_id = contacts.id/)
+      ::Jennifer::Adapter.adapter.sql_generator
+                                 .select(Contact.all.relation(:addresses))
+                                 .should match(/LEFT JOIN addresses ON addresses.contact_id = contacts.id/)
     end
   end
 
@@ -109,6 +109,35 @@ describe Jennifer::QueryBuilder::ModelQuery do
       count = Address.destroy_counter
       Address.all.destroy
       Address.destroy_counter.should eq(count + 2)
+    end
+  end
+
+  describe "#patch" do
+    it "triggers validation" do
+      Factory.create_contact(age: 20)
+      Contact.all.patch(age: 12)
+      Contact.all.where { _age == 12 }.exists?.should be_false
+    end
+
+    it do
+      Factory.create_contact(age: 20)
+      Contact.all.patch(age: 30)
+      Contact.all.where { _age == 30 }.exists?.should be_true
+    end
+  end
+
+  describe "#patch!" do
+    it "raises exception if is invalid" do
+      Factory.create_contact(age: 20)
+      expect_raises(Jennifer::RecordInvalid) do
+        Contact.all.patch!(age: 12)
+      end
+    end
+
+    it do
+      Factory.create_contact(age: 20)
+      Contact.all.patch!(age: 30)
+      Contact.all.where { _age == 30 }.exists?.should be_true
     end
   end
 

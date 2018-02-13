@@ -1,8 +1,9 @@
 require "../spec_helper"
+
 mysql_only do
-  describe Jennifer::Adapter::Mysql do
-    described_class = Jennifer::Adapter::Mysql
-    adapter = Jennifer::Adapter.adapter.as(Jennifer::Adapter::Mysql)
+  describe Jennifer::Mysql::Adapter do
+    described_class = Jennifer::Mysql::Adapter
+    adapter = Jennifer::Adapter.adapter.as(Jennifer::Mysql::Adapter)
 
     describe "#index_exists?" do
       it "returns true if table has index with given name" do
@@ -23,6 +24,12 @@ mysql_only do
     describe "#default_type_size" do
       it "returns default type size for given alias" do
         adapter.default_type_size(:string).should eq(254)
+      end
+    end
+
+    describe "#parse_query" do
+      it "returns string without %s placeholders" do
+        adapter.parse_query("asd %s asd", [2] of Jennifer::DBAny).should eq({"asd ? asd", [2]})
       end
     end
   end

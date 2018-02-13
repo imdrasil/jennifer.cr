@@ -54,28 +54,22 @@ module Jennifer
         as_sql
       end
 
-      def parsed_rhs
-        if filterable?
-          filter_out(@rhs)
-        elsif @rhs.is_a?(Criteria)
-          @rhs.as(Criteria).as_sql
-        else
-          @rhs.to_s
-        end
+      def as_sql
+        as_sql(Adapter.default_adapter.sql_generator)
       end
 
-      def as_sql
-        _lhs = @lhs.as_sql
+      def as_sql(generator)
+        _lhs = @lhs.as_sql(generator)
         str =
           case @operator
           when :bool
             _lhs
           when :in
-            "#{_lhs} IN(#{Adapter::SqlGenerator.escape_string(@rhs.as(Array).size)})"
+            "#{_lhs} IN(#{generator.escape_string(@rhs.as(Array).size)})"
           when :between
-            "#{_lhs} BETWEEN #{Adapter.escape_string(1)} AND #{Adapter.escape_string(1)}"
+            "#{_lhs} BETWEEN #{generator.escape_string(1)} AND #{generator.escape_string(1)}"
           else
-            "#{_lhs} #{Adapter::SqlGenerator.operator_to_sql(@operator)} #{parsed_rhs}"
+            "#{_lhs} #{generator.operator_to_sql(@operator)} #{parsed_rhs(generator)}"
           end
         str = "NOT (#{str})" if @negative
         str
@@ -83,7 +77,7 @@ module Jennifer
 
       def sql_args : Array(DB::Any)
         res = [] of DB::Any
-        if filterable?
+        if filterable? && !(@operator == :is || @operator == :is_not)
           if @operator == :in || @operator == :between
             @rhs.as(Array).each do |e|
               unless e.is_a?(Criteria)
@@ -100,7 +94,7 @@ module Jennifer
       end
 
       def sql_args_count
-        if filterable?
+        if filterable? && !(@operator == :is || @operator == :is_not)
           count = 0
           if @operator == :in || @operator == :between
             @rhs.as(Array).each do |e|
@@ -115,20 +109,34 @@ module Jennifer
         end
       end
 
-      def filter_out(arg : Criteria)
-        arg.as_sql
-      end
-
-      def filter_out(arg)
-        Adapter.escape_string(1)
-      end
-
       private def filterable?
         !(
           @rhs.is_a?(Criteria) ||
-            @operator == :bool ||
-            RAW_OPERATORS.includes?(@operator)
+            @operator == :bool
         )
+      end
+
+      private def parsed_rhs(generator)
+        if @operator == :is || @operator == :is_not
+          translate(generator)
+        elsif filterable?
+          generator.filter_out(@rhs)
+        elsif @rhs.is_a?(Criteria)
+          @rhs.as(Criteria).as_sql(generator)
+        else
+          @rhs.to_s
+        end
+      end
+
+      private def translate(generator)
+        case @rhs
+        when nil, true, false
+          generator.quote(@rhs.as(Nil | Bool))
+        when :unknown
+          "UNKNOWN"
+        when :nil
+          generator.quote(nil)
+        end
       end
     end
   end

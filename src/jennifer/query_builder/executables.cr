@@ -18,7 +18,7 @@ module Jennifer
         result = to_a
         reverse_order
         @limit = old_limit
-        raise RecordNotFound.new(Adapter::SqlGenerator.select(self)) if result.empty?
+        raise RecordNotFound.new(adapter.sql_generator.select(self)) if result.empty?
         result[0]
       end
 
@@ -34,37 +34,37 @@ module Jennifer
         old_limit = @limit
         result = to_a
         @limit = old_limit
-        raise RecordNotFound.new(Adapter::SqlGenerator.select(self)) if result.empty?
+        raise RecordNotFound.new(adapter.sql_generator.select(self)) if result.empty?
         result[0]
       end
 
       def pluck(fields : Array)
-        ::Jennifer::Adapter.adapter.pluck(self, fields.map(&.to_s))
+        adapter.pluck(self, fields.map(&.to_s))
       end
 
       def pluck(field : String | Symbol)
-        ::Jennifer::Adapter.adapter.pluck(self, field.to_s)
+        adapter.pluck(self, field.to_s)
       end
 
       def pluck(*fields : String | Symbol)
-        ::Jennifer::Adapter.adapter.pluck(self, fields.to_a.map(&.to_s))
+        adapter.pluck(self, fields.to_a.map(&.to_s))
       end
 
       def delete
-        ::Jennifer::Adapter.adapter.delete(self)
+        adapter.delete(self)
       end
 
       def exists?
-        ::Jennifer::Adapter.adapter.exists?(self)
+        adapter.exists?(self)
       end
 
       # skips any callbacks and validations
       def modify(options : Hash)
-        ::Jennifer::Adapter.adapter.modify(self, options)
+        adapter.modify(self, options)
       end
 
       def update(options : Hash)
-        ::Jennifer::Adapter.adapter.update(self, options)
+        adapter.update(self, options)
       end
 
       def update(**options)
@@ -115,7 +115,7 @@ module Jennifer
         result = [] of Hash(String, DBAny)
         return result if @do_nothing
         each_result_set do |rs|
-          result << Adapter.adapter.result_to_hash(rs)
+          result << adapter.result_to_hash(rs)
         end
         result
       end
@@ -139,7 +139,7 @@ module Jennifer
       end
 
       def each_result_set(&block)
-        ::Jennifer::Adapter.adapter.select(self) do |rs|
+        adapter.select(self) do |rs|
           begin
             rs.each do
               yield rs
@@ -217,7 +217,7 @@ module Jennifer
       def find_records_by_sql(query : String, args : Array(DBAny) = [] of DBAny)
         results = [] of Record
         return results if @do_nothing
-        ::Jennifer::Adapter.adapter.query(query, args) do |rs|
+        adapter.query(query, args) do |rs|
           begin
             rs.each do
               results << Record.new(rs)

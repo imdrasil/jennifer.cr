@@ -3,7 +3,7 @@ require "../spec_helper"
 describe Jennifer::Model::RelationDefinition do
   describe "%nullify_dependecy" do
     it "adds before_desctroy callback" do
-      ContactWithDependencies::BEFORE_DESTROY_CALLBACKS.includes?("__nullify_callback_facebook_profiles").should be_true
+      ContactWithDependencies::CALLBACKS[:destroy][:before].includes?("__nullify_callback_facebook_profiles").should be_true
     end
 
     it "doen't invoke callbacks on associated model" do
@@ -19,7 +19,7 @@ describe Jennifer::Model::RelationDefinition do
 
   describe "%delete_dependency" do
     it "adds before_desctroy callback" do
-      ContactWithDependencies::BEFORE_DESTROY_CALLBACKS.includes?("__delete_callback_addresses").should be_true
+      ContactWithDependencies::CALLBACKS[:destroy][:before].includes?("__delete_callback_addresses").should be_true
     end
 
     it "doen't invoke callbacks on associated model" do
@@ -36,7 +36,7 @@ describe Jennifer::Model::RelationDefinition do
 
   describe "%destroy_dependency" do
     it "adds before_desctroy callback" do
-      ContactWithDependencies::BEFORE_DESTROY_CALLBACKS.includes?("__destroy_callback_passports").should be_true
+      ContactWithDependencies::CALLBACKS[:destroy][:before].includes?("__destroy_callback_passports").should be_true
     end
 
     it "invokes callbacks on associated model" do
@@ -53,7 +53,7 @@ describe Jennifer::Model::RelationDefinition do
 
   describe "%restrict_with_exception_dependency" do
     it "adds before_desctroy callback" do
-      ContactWithDependencies::BEFORE_DESTROY_CALLBACKS.includes?("__restrict_with_exception_callback_twitter_profiles").should be_true
+      ContactWithDependencies::CALLBACKS[:destroy][:before].includes?("__restrict_with_exception_callback_twitter_profiles").should be_true
     end
 
     it "raises exception if any associated record exists" do

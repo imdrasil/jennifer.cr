@@ -1,18 +1,29 @@
-class DB::ResultSet
-  getter column_index
+module MySql
+  class ResultSet
+    getter column_index, columns
 
-  @column_index = 0
-  @columns = [] of MySql::ColumnSpec
+    @column_index = 0
 
-  def current_column
-    @columns[@column_index]
+    def current_column
+      @columns[@column_index]
+    end
+
+    def current_column_name
+      column_name(@column_index)
+    end
   end
 
-  def current_column_name
-    column_name(@column_index)
-  end
+  class TextResultSet
+    getter column_index, columns
 
-  def columns
-    @columns
+    @column_index = 0
+
+    def current_column
+      @columns[@column_index]
+    end
+
+    def current_column_name
+      column_name(@column_index)
+    end
   end
 end

@@ -1,14 +1,18 @@
 require "inflector"
 require "inflector/string"
 require "accord"
+
 require "ifrit/converter"
+require "ifrit/core"
+
+require "time_zone"
+require "i18n"
 
 require "./jennifer/macros"
 
 require "./jennifer/exceptions"
 require "./jennifer/adapter"
 require "./jennifer/adapter/record"
-require "./jennifer/adapter/sql_generator"
 require "./jennifer/config"
 require "./jennifer/version"
 
@@ -19,14 +23,26 @@ require "./jennifer/query_builder/*"
 require "./jennifer/adapter/base"
 require "./jennifer/relation/base"
 require "./jennifer/relation/*"
-require "./jennifer/model/*"
+
+require "./jennifer/model/base"
+
+require "./jennifer/validator"
 
 require "./jennifer/view/base"
 
-require "./jennifer/migration/table_builder/*"
 require "./jennifer/migration/*"
 
 module Jennifer
+  {% if Jennifer.constant("AFTER_LOAD_SCRIPT") == nil %}
+    AFTER_LOAD_SCRIPT = [] of String
+  {% end %}
+
+  macro after_load_hook
+    {% for script in AFTER_LOAD_SCRIPT %}
+      {{script.id}}
+    {% end %}
+  end
+
   class StubRelation < ::Jennifer::Relation::IRelation
     def insert(a, b)
       raise "stubed relation"
@@ -65,3 +81,5 @@ struct JSON::Any
 end
 
 ::Jennifer.after_load_hook
+
+I18n.load_path << File.join(__DIR__, "jennifer/locale")

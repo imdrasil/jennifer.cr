@@ -1,8 +1,12 @@
 module Jennifer
   module QueryBuilder
     abstract class SQLNode
-      abstract def as_sql
+      abstract def as_sql(sql_generator)
       abstract def sql_args : Array
+
+      def as_sql
+        as_sql(Adapter.default_adapter.sql_generator)
+      end
 
       def sql_args_count : Int32
         sql_args.size

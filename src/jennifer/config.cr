@@ -4,27 +4,31 @@ require "logger"
 module Jennifer
   class Config
     CONNECTION_URI_PARAMS = [:max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts, :checkout_timeout, :retry_delay]
-    STRING_FIELDS = {:user, :password, :db, :host, :adapter, :migration_files_path, :schema, :structure_folder}
+    STRING_FIELDS = {
+      :user, :password, :db, :host, :adapter, :migration_files_path, :schema,
+      :structure_folder, :local_time_zone_name
+    }  
     INT_FIELDS    = {:port, :max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
-    FLOAT_FIELDS  = [:checkout_timeout, :retry_delay]
+    FLOAT_FIELDS  = {:checkout_timeout, :retry_delay}
 
     macro define_fields(const, default)
       {% for field in @type.constant(const.stringify) %}
-      @@{{field.id}} = {{default}}
+        @@{{field.id}} = {{default}}
 
-      def self.{{field.id}}=(value)
-        @@{{field.id}} = value
-      end
+        def self.{{field.id}}=(value)
+          @@{{field.id}} = value
+        end
 
-      def self.{{field.id}}
-        @@{{field.id}}
-      end
-    {% end %}
+        def self.{{field.id}}
+          @@{{field.id}}
+        end
+      {% end %}
     end
 
-    define_fields(STRING_FIELDS, default: "")
+    define_fields(STRING_FIELDS, "")
     define_fields(INT_FIELDS, 0)
     define_fields(FLOAT_FIELDS, 0.0)
+    @@local_time_zone : TimeZone::Zone = TimeZone::Zone.utc
 
     def self.structure_folder
       if @@structure_folder.empty?
@@ -45,6 +49,7 @@ module Jennifer
       @@migration_files_path = "./db/migrations"
       @@schema = "public"
       @@db = ""
+      @@local_time_zone_name = TimeZone::Zone.default.name
 
       @@initial_pool_size = 1
       @@max_pool_size = 5
@@ -54,9 +59,11 @@ module Jennifer
       @@checkout_timeout = 5.0
       @@retry_delay = 1.0
 
+      @@local_time_zone = TimeZone::Zone.default
+
       @@logger = Logger.new(STDOUT)
       @@logger.not_nil!.level = Logger::DEBUG
-      @@logger.not_nil!.formatter = Logger::Formatter.new do |severity, datetime, progname, message, io|
+      @@logger.not_nil!.formatter = Logger::Formatter.new do |_severity, datetime, _progname, message, io|
         io << datetime << ": " << message
       end
     end
@@ -69,6 +76,16 @@ module Jennifer
 
     def self.logger=(value)
       @@logger = value
+    end
+
+    def self.local_time_zone_name=(value : String)
+      @@local_time_zone_name = value
+      @@local_time_zone = TimeZone::Zone.get(@@local_time_zone_name)
+      value
+    end
+
+    def self.local_time_zone
+      @@local_time_zone
     end
 
     def self.configure(&block)

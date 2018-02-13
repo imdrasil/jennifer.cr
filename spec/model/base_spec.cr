@@ -1,5 +1,12 @@
 require "../spec_helper"
 
+class ModelWithIntName < Jennifer::Model::Base
+  mapping({
+    id: Primary32,
+    name: Int32
+  })
+end
+
 describe Jennifer::Model::Base do
   describe "#changed?" do
     it "returns true if at list one field was changed" do
@@ -69,8 +76,7 @@ describe Jennifer::Model::Base do
   describe "::create" do
     it "doesn't raise exception if object is invalid" do
       country = Country.create
-      country.validate!
-      country.valid?.should be_false
+      country.should_not be_valid
       country.id.should be_nil
     end
 
@@ -277,7 +283,7 @@ describe Jennifer::Model::Base do
   describe "%scope" do
     context "with block" do
       it "executes in query context" do
-        ::Jennifer::Adapter::SqlGenerator.select(Contact.all.ordered).should match(/ORDER BY contacts\.name ASC/)
+        ::Jennifer::Adapter.adapter.sql_generator.select(Contact.all.ordered).should match(/ORDER BY contacts\.name ASC/)
       end
 
       context "without arguemnt" do
@@ -312,7 +318,7 @@ describe Jennifer::Model::Base do
 
     context "with query object class" do
       it "executes in class context" do
-        ::Jennifer::Adapter::SqlGenerator.select(Contact.johny).should match(/name =/)
+        ::Jennifer::Adapter.adapter.sql_generator.select(Contact.johny).should match(/name =/)
       end
 
       context "without arguemnt" do
@@ -506,6 +512,122 @@ describe Jennifer::Model::Base do
           Address.import(objects)
           Address.all.count.should eq(2)
         end
+      end
+    end
+  end
+
+  describe "#update_attributes" do
+    context "when given attribute exists" do
+      it "raises exception if value has wrong type" do
+        c = Factory.build_contact
+        expect_raises(::Jennifer::BaseException) do
+          c.update_attributes({ :name => 123 })
+        end
+      end
+
+      it "marks changed field as modified" do
+        c = Factory.build_contact
+        c.update_attributes({ "name" => "asd" })
+        c.name.should eq("asd")
+        c.name_changed?.should be_true
+      end
+    end
+
+    context "when no such setter" do
+      it "raises exception" do
+        c = Factory.build_contact
+        expect_raises(::Jennifer::BaseException) do
+          c.update_attributes({ :asd => 123 })
+        end
+      end
+    end
+
+    context "with named tuple" do
+      it do
+        c = Factory.build_contact
+        c.update_attributes({name: "asd"})
+        c.name.should eq("asd") 
+      end
+    end
+
+    context "with splatted named tuple" do
+      it do
+        c = Factory.build_contact
+        c.update_attributes(name: "asd")
+        c.name.should eq("asd") 
+      end
+
+      it do
+        subject = ModelWithIntName.build(name: 1)
+        subject.update_attributes(name: 2)
+        subject.name.should eq(2)
+      end
+    end
+  end
+
+  describe "#update" do
+    context "when given attribute exists" do
+      it "stores given fields" do
+        c = Factory.create_contact
+        c.update({ "name" => "asd" })
+        Contact.all.where { _name == "asd" }.exists?.should be_true
+      end
+    end
+
+    context "when no such setter" do
+      it "raises exception" do
+        c = Factory.build_contact
+        expect_raises(::Jennifer::BaseException) do
+          c.update({ :asd => 123 })
+        end
+      end
+    end
+
+    context "with splatted named tuple" do
+      it do
+        c = Factory.create_contact
+        c.update(name: "asd")
+        Contact.all.where { _name == "asd" }.exists?.should be_true
+      end
+    end
+
+    it "doesn't store invalid data" do
+      c = Factory.create_contact
+      c.update(age: 12).should be_false
+      Contact.where { _age == 12 }.exists?.should be_false
+    end
+  end
+
+  describe "#update!" do
+    context "when given attribute exists" do
+      it "stores given fields" do
+        c = Factory.create_contact
+        c.update!({ "name" => "asd" })
+        Contact.all.where { _name == "asd" }.exists?.should be_true
+      end
+    end
+
+    context "when no such setter" do
+      it "raises exception" do
+        c = Factory.build_contact
+        expect_raises(::Jennifer::BaseException) do
+          c.update!({ :asd => 123 })
+        end
+      end
+    end
+
+    context "with splatted named tuple" do
+      it do
+        c = Factory.create_contact
+        c.update!(name: "asd")
+        Contact.all.where { _name == "asd" }.exists?.should be_true
+      end
+    end
+
+    it "doesn't store invalid data" do
+      expect_raises(Jennifer::RecordInvalid) do
+        c = Factory.create_contact
+        c.update!(age: 12)
       end
     end
   end

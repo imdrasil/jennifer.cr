@@ -1,6 +1,7 @@
 # Mapping
 
 Several model examples
+
 ```crystal
 class Contact < Jennifer::Model::Base
   with_timestamps
@@ -57,7 +58,7 @@ class Passport < Jennifer::Model::Base
     contact_id: {type: Int32, null: true}
   )
 
-  validates_with [EnnValidator]
+  validates_with EnnValidator
   belongs_to :contact, Contact
 end
 
@@ -73,7 +74,7 @@ class Profile < Jennifer::Model::Base
 end
 
 class FacebookProfile < Profile
-  sti_mapping(
+  mapping(
     uid: String
   )
 
@@ -81,7 +82,7 @@ class FacebookProfile < Profile
 end
 
 class TwitterProfile < Profile
-  sti_mapping(
+  mapping(
     email: String
   )
 end

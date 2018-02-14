@@ -22,7 +22,9 @@ module Jennifer
 
           {% if value[:setter] != false %}
             def {{key.id}}=(_{{key.id}} : {{value[:parsed_type].id}})
-              @{{key.id}}_changed = true if _{{key.id}} != @{{key.id}}
+              {% if !value[:virtual] %}
+                @{{key.id}}_changed = true if _{{key.id}} != @{{key.id}}
+              {% end %}
               @{{key.id}} = _{{key.id}}
             end
           {% end %}
@@ -39,58 +41,72 @@ module Jennifer
             {% end %}
           {% end %}
 
-          def {{key.id}}_changed?
-            @{{key.id}}_changed
-          end
-
-          def self._{{key}}
-            c("{{key.id}}")
-          end
-
-          {% if value[:primary] %}
-            def primary
-              @{{key.id}}
+          {% if !value[:virtual] %}
+            def {{key.id}}_changed?
+              @{{key.id}}_changed
             end
 
-            def self.primary
+            def self._{{key}}
               c("{{key.id}}")
             end
 
-            def self.primary_field_name
-              "{{key.id}}"
-            end
-
-            def self.primary_field_type
-              {{value[:parsed_type].id}}
-            end
-
-            {% if primary_auto_incrementable %}
-              # Inits primary field
-              def init_primary_field(value)
-                raise ::Jennifer::AlreadyInitialized.new(@{{key.id}}, value) if @{{key.id}}
-                @{{key.id}} = value.as({{value[:type]}})
+            {% if value[:primary] %}
+              def primary
+                @{{key.id}}
               end
+
+              def self.primary
+                c("{{key.id}}")
+              end
+
+              def self.primary_field_name
+                "{{key.id}}"
+              end
+
+              def self.primary_field_type
+                {{value[:parsed_type].id}}
+              end
+
+              {% if primary_auto_incrementable %}
+                # Inits primary field
+                def init_primary_field(value)
+                  raise ::Jennifer::AlreadyInitialized.new(@{{key.id}}, value) if @{{key.id}}
+                  @{{key.id}} = value.as({{value[:type]}})
+                end
+              {% end %}
             {% end %}
           {% end %}
         {% end %}
       end
 
       # Adds callbacks for `created_at` and `updated_at` fields
-      macro with_timestamps
-        before_create :__update_created_at
-        before_save :__update_updated_at
+      macro with_timestamps(created_at = true, updated_at = true)
+        {% if created_at %}
+          before_save :__update_updated_at
 
-        # Sets `created_at` tocurrent time
-        def __update_created_at
-          @created_at = Jennifer::Config.local_time_zone.now
-        end
+          # Sets `created_at` to current time
+          def __update_created_at
+            @created_at = Jennifer::Config.local_time_zone.now
+          end
+        {% end %}
 
-        # Sets `updated_at` to current time
-        def __update_updated_at
-          @updated_at = Jennifer::Config.local_time_zone.now
-        end
+        {% if updated_at %}
+          before_create :__update_created_at
+
+          # Sets `updated_at` to current time
+          def __update_updated_at
+            @updated_at = Jennifer::Config.local_time_zone.now
+          end
+        {% end %}
       end
 
+      # Acceptable keys:
+      # - type
+      # - getter
+      # - setter
+      # - null
+      # - primary
+      # - virtual
       private macro single_mapping(properties, strict = true)
         def self.children_classes
           {% begin %}
@@ -141,6 +157,8 @@ module Jennifer
           {% add_default_constructor = add_default_constructor && (properties[key][:primary] || properties[key][:null] || properties[key].keys.includes?(:default)) %}
         {% end %}
 
+        {% nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] } %}
+
         # TODO: find way to allow model definition without any primary field
         {% if primary == nil %}
           {% raise "Model #{@type} has no defined primary field. For now model without primary field is not allowed" %}
@@ -162,11 +180,7 @@ module Jennifer
 
         # Returns array of field names
         def self.field_names
-          [
-            {% for key in properties.keys %}
-              "{{key.id}}",
-            {% end %}
-          ]
+          [{{nonvirtual_attrs.join(", ")}}]
         end
 
         # Returns named tuple of column metadata
@@ -261,7 +275,7 @@ module Jennifer
           requested_columns_count = self.class.actual_table_field_count
           ::Jennifer::BaseException.assert_column_count(requested_columns_count, pull.column_count)
           {% for key, value in properties %}
-            %var{key.id} = nil
+            %var{key.id} = {{value[:default]}}
             %found{key.id} = false
           {% end %}
           requested_columns_count.times do
@@ -317,7 +331,7 @@ module Jennifer
 
         def _extract_attributes(values : Hash(String, ::Jennifer::DBAny))
           {% for key, value in properties %}
-            %var{key.id} = nil
+            %var{key.id} = {{value[:default]}}
             %found{key.id} = true
           {% end %}
 
@@ -422,8 +436,8 @@ module Jennifer
         # Returns if any field was changed. If field again got first value - `true` anyway
         # will be returned.
         def changed?
-          {% for key, value in properties %}
-            @{{key.id}}_changed ||
+          {% for attr in nonvirtual_attrs %}
+            @{{attr.id}}_changed ||
           {% end %}
           false
         end
@@ -431,7 +445,7 @@ module Jennifer
         # Returns hash with all attributes and symbol keys.
         def to_h
           {
-            {% for key in properties.keys %}
+            {% for key in nonvirtual_attrs %}
               :{{key.id}} => @{{key.id}},
             {% end %}
           }
@@ -440,7 +454,7 @@ module Jennifer
         # Returns hash with all attributes and string keys
         def to_str_h
           {
-            {% for key in properties.keys %}
+            {% for key in nonvirtual_attrs %}
               {{key.stringify}} => @{{key.id}},
             {% end %}
           }
@@ -458,14 +472,16 @@ module Jennifer
           values.each do |name, value|
             case name.to_s
             {% for key, value in properties %}
-            when "{{key.id}}"
-              if value.is_a?({{value[:parsed_type].id}})
-                local = value.as({{value[:parsed_type].id}})
-                @{{key.id}} = local
-                @{{key.id}}_changed = true
-              else
-                raise ::Jennifer::BaseException.new("Wrong type for #{name} : #{value.class}")
-              end
+              {% if !value[:virtual] %}
+                when "{{key.id}}"
+                  if value.is_a?({{value[:parsed_type].id}})
+                    local = value.as({{value[:parsed_type].id}})
+                    @{{key.id}} = local
+                    @{{key.id}}_changed = true
+                  else
+                    raise ::Jennifer::BaseException.new("Wrong type for #{name} : #{value.class}")
+                  end
+              {% end %}
             {% end %}
             else
               raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}")
@@ -498,27 +514,32 @@ module Jennifer
         # To avoid raising exception set `raise_exception` to `false`.
         def attribute(name : String | Symbol, raise_exception : Bool = true)
           case name.to_s
-          {% for key, value in properties %}
-          when "{{key.id}}"
-            @{{key.id}}
+          {% for attr in properties.keys %}
+          when "{{attr.id}}"
+            @{{attr.id}}
           {% end %}
           else
             raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}") if raise_exception
           end
         end
 
+        def attribute(name : Symbol, raise_exception : Bool = true)
+          attribute(name.to_s, raise_exception)
+        end
+
+        # Returns named tuple of all fields should be saved (because they are changed).
         def arguments_to_save
           args = [] of ::Jennifer::DBAny
           fields = [] of String
-          {% for key, value in properties %}
-            {% unless value[:primary] %}
-              if @{{key.id}}_changed
-                args << {% if value[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
-                          @{{key.id}}.to_json
+          {% for attr, options in properties %}
+            {% unless options[:primary] || options[:virtual] %}
+              if @{{attr.id}}_changed
+                args << {% if options[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
+                          @{{attr.id}}.to_json
                         {% else %}
-                          @{{key.id}}
+                          @{{attr.id}}
                         {% end %}
-                fields << "{{key.id}}"
+                fields << "{{attr.id}}"
               end
             {% end %}
           {% end %}
@@ -527,24 +548,24 @@ module Jennifer
 
         def arguments_to_insert
           args = [] of ::Jennifer::DBAny
-          # TODO: think about moving this array to constant; maybe use compiletime instead of runtime
+          # TODO: think about moving this array to constant; maybe use compile time instead of runtime
           fields = [] of String
-          {% for key, value in properties %}
-            {% unless value[:primary] && primary_auto_incrementable %}
-              args << {% if value[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
-                        (@{{key.id}} ? @{{key.id}}.to_json : nil)
+          {% for attr, options in properties %}
+            {% unless options[:virtual] || options[:primary] && primary_auto_incrementable %}
+              args << {% if options[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
+                        (@{{attr.id}} ? @{{attr.id}}.to_json : nil)
                       {% else %}
-                        @{{key.id}}
+                        @{{attr.id}}
                       {% end %}
-              fields << "{{key.id}}"
+              fields << "{{attr.id}}"
             {% end %}
           {% end %}
           {args: args, fields: fields}
         end
 
         private def __refresh_changes
-          {% for key, value in properties %}
-            @{{key.id}}_changed = false
+          {% for attr in nonvirtual_attrs %}
+            @{{attr.id}}_changed = false
           {% end %}
         end
 

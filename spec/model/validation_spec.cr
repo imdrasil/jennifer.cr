@@ -30,11 +30,10 @@ end
 class AcceptanceContact < ApplicationRecord
   mapping({
     id: Primary32,
-    name: String
+    name: String,
+    terms_of_service: { type: Bool, default: false, virtual: true },
+    eula: { type: String?, virtual: true }
   }, false)
-
-  property terms_of_service = false
-  property eula : String?
 
   validates_acceptance :terms_of_service
   validates_acceptance :eula, accept: %w(true accept yes)
@@ -44,10 +43,10 @@ class ConfirmationContact < ApplicationRecord
   mapping({
     id: Primary32,
     name: String?,
-    case_insensitive_name: String?
+    case_insensitive_name: String?,
+    name_confirmation: { type: String?, virtual: true },
+    case_insensitive_name_confirmation: { type: String?, virtual: true }
   }, false)
-
-  property name_confirmation : String?, case_insensitive_name_confirmation : String?
 
   validates_confirmation :name
   validates_confirmation :case_insensitive_name, case_sensitive: false
@@ -435,15 +434,12 @@ describe Jennifer::Model::Validation do
 
   describe "%validates_acceptance" do
     it "pass validation" do
-      c = AcceptanceContact.build({:name => "New country"})
-      c.terms_of_service = true
-      c.eula = "yes"
+      c = AcceptanceContact.build({:name => "New country", :terms_of_service => true, :eula => "yes"})
       c.should be_valid
     end
 
     it "adds error message if doesn't satisfies validation" do
-      c = AcceptanceContact.build({:name => "New country"})
-      c.eula = "no"
+      c = AcceptanceContact.build({:name => "New country", :eula => "no"})
       c.should validate(:terms_of_service).with("must be accepted")
       c.should validate(:eula).with("must be accepted")
     end
@@ -458,16 +454,22 @@ describe Jennifer::Model::Validation do
     end
 
     it "pass validation" do
-      c = ConfirmationContact.build({:name => "name", :case_insensitive_name => "cin"})
-      c.name_confirmation = "name"
-      c.case_insensitive_name_confirmation = "CIN"
+      c = ConfirmationContact.build({
+        :name => "name", 
+        :case_insensitive_name => "cin", 
+        :name_confirmation => "name", 
+        :case_insensitive_name_confirmation => "CIN"
+      })
       c.should be_valid
     end
 
     it "adds error message if doesn't satisfies validation" do
-      c = ConfirmationContact.build({:name => "name", :case_insensitive_name => "cin"})
-      c.name_confirmation = "Name"
-      c.case_insensitive_name_confirmation = "NIC"
+      c = ConfirmationContact.build({
+        :name => "name", 
+        :case_insensitive_name => "cin", 
+        :name_confirmation => "Name", 
+        :case_insensitive_name_confirmation => "NIC"
+      })
       c.should validate(:name).with("doesn't match Name")
       c.should validate(:case_insensitive_name).with("doesn't match Case insensitive name")
     end

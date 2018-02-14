@@ -93,7 +93,7 @@ describe Jennifer::Model::STIMapping do
   describe "#to_h" do
     it "sets all fields" do
       r = c = Factory.build_facebook_profile(uid: "1111", login: "my_login").to_h
-      r.has_key?(:id).should be_true
+      r.keys.should eq(%i(id login contact_id type uid))
       r[:login].should eq("my_login")
       r[:type].should eq("FacebookProfile")
       r[:uid].should eq("1111")
@@ -103,6 +103,7 @@ describe Jennifer::Model::STIMapping do
   describe "#to_str_h" do
     it "sets all fields" do
       r = Factory.build_facebook_profile(uid: "1111", login: "my_login").to_str_h
+      r.keys.should eq(%w(id login contact_id type uid))
       r["login"].should eq("my_login")
       r["type"].should eq("FacebookProfile")
       r["uid"].should eq("1111")
@@ -158,7 +159,13 @@ describe Jennifer::Model::STIMapping do
   end
 
   describe "#attribute" do
-    it "returns attribute" do
+    it "returns virtual attribute" do
+      f = Factory.build_facebook_profile(uid: "111", login: "my_login")
+      f.virtual_child_field = 2
+      f.attribute(:virtual_child_field).should eq(2)
+    end
+    
+    it "returns own attribute" do
       f = Factory.build_facebook_profile(uid: "111", login: "my_login")
       f.attribute("uid").should eq("111")
     end

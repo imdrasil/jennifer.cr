@@ -83,6 +83,11 @@ class CountryFactory < Factory::Jennifer::Base
   attr :name, "Amber"
 end
 
+class CityFactory < Factory::Jennifer::Base
+  attr :name, "Guda"
+  attr :country_id, -> { Factory.create_country.id }, Int32
+end
+
 class ProfileFactory < Factory::Jennifer::Base
   attr :login, "some_login"
   attr :type, Profile.to_s

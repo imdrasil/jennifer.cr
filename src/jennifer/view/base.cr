@@ -2,11 +2,8 @@ require "./experimental_mapping"
 
 module Jennifer
   module View
-    abstract class Base
-      extend Ifrit
-      extend Model::Translation
+    abstract class Base < Model::Resource
       include ExperimentalMapping
-      include Model::Scoping
 
       macro after_initialize(*names)
         {% for name in names %}
@@ -33,62 +30,13 @@ module Jennifer
         o
       end
 
-      def self.build(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-        o = new(values)
-        o.__after_initialize_callback
-        o
-      end
-
-      def self.build(values : Hash(String, ::Jennifer::DBAny))
-        o = new(values)
-        o.__after_initialize_callback
-        o
-      end
-
       def self.build(values : Hash | NamedTuple, new_record : Bool)
         build(values)
-      end
-
-      def self.all
-        QueryBuilder::ModelQuery(self).new(table_name)
-      end
-
-      def self.where(&block)
-        ac = all
-        tree = with ac.expression_builder yield
-        ac.set_tree(tree)
-        ac
-      end
-
-      def self.c(name)
-        ::Jennifer::QueryBuilder::Criteria.new(name, table_name)
-      end
-
-      def self.c(name : String, relation)
-        ::Jennifer::QueryBuilder::Criteria.new(name, table_name, relation)
-      end
-
-      def self.adapter
-        Adapter.adapter
       end
 
       def self.i18n_scope
         :views
       end
-
-      def append_relation(name : String, hash)
-        raise Jennifer::UnknownRelation.new(self.class, name)
-      end
-
-      def relation_retrieved(name : String)
-        raise Jennifer::UnknownRelation.new(self.class, name)
-      end
-
-      def __after_initialize_callback
-        true
-      end
-
-      abstract def attribute(name)
 
       def self.views
         {% begin %}
@@ -98,6 +46,10 @@ module Jennifer
             [] of Jennifer::View::Base.class
           {% end %}
         {% end %}
+      end
+
+      def __after_initialize_callback
+        true
       end
 
       macro inherited
@@ -116,7 +68,7 @@ module Jennifer
         end
 
         # NOTE: override regular behavior - used fields count instead of
-        # quering db
+        # querying db
         def self.actual_table_field_count
           COLUMNS_METADATA.size
         end

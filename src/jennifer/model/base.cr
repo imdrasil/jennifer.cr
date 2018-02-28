@@ -1,31 +1,29 @@
+require "./resource"
 require "./mapping"
 require "./sti_mapping"
 require "./validation"
 require "./callback"
-require "./relation_definition"
-require "./scoping"
-require "./translation"
 require "./parameter_converter"
 
 module Jennifer
   module Model
-    abstract class Base
-      extend Ifrit
-      extend Translation
+    abstract class Base < Resource
       include Mapping
       include STIMapping
       include Validation
       include Callback
-      include RelationDefinition
-      include Scoping
 
-      alias Supportable = DBAny | Base
+      module ClassMethods
+        abstract def relations
+        abstract def relation(name)
+      end
+
+      extend ClassMethods
 
       @@table_name : String?
       @@foreign_key_name : String?
       @@actual_table_field_count : Int32?
       @@has_table : Bool?
-      @@expression_builder : QueryBuilder::ExpressionBuilder?
 
       def self.has_table?
         @@has_table ||= adapter.table_exists?(table_name).as(Bool)
@@ -58,22 +56,6 @@ module Jennifer
         @@foreign_key_name ||= Inflector.singularize(table_name) + "_id"
       end
 
-      def self.c(name : String)
-        context.c(name)
-      end
-
-      def self.c(name : String | Symbol, relation)
-        ::Jennifer::QueryBuilder::Criteria.new(name, table_name, relation)
-      end
-
-      def self.context
-        @@expression_builder ||= QueryBuilder::ExpressionBuilder.new(table_name)
-      end
-
-      def self.star
-        context.star
-      end
-
       def self.parameter_converter
         @@converter ||= ParameterConverter.new
       end
@@ -82,26 +64,8 @@ module Jennifer
         {} of String => Jennifer::DBAny
       end
 
-      def self.build(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-        o = new(values)
-        o.__after_initialize_callback
-        o
-      end
-
-      def self.build(values : Hash(String, ::Jennifer::DBAny))
-        o = new(values)
-        o.__after_initialize_callback
-        o
-      end
-
       def self.build(values : Hash | NamedTuple, new_record : Bool)
         o = new(values, new_record)
-        o.__after_initialize_callback
-        o
-      end
-
-      def self.build(**values)
-        o = new(values)
         o.__after_initialize_callback
         o
       end
@@ -153,17 +117,7 @@ module Jennifer
       private def init_attributes(values : Hash)
       end
 
-      abstract def primary
-      abstract def attribute(name)
       abstract def set_attribute(name, value)
-
-      def self.relations
-        raise AbstractMethod.new(:relations, {{@type}})
-      end
-
-      def self.relation(name)
-        raise AbstractMethod.new(:relation, {{@type}})
-      end
 
       def self.models
         {% begin %}
@@ -230,30 +184,11 @@ module Jennifer
         end
       end
 
-      # Starts transaction.
-      def self.transaction
-        adapter.transaction do |t|
-          yield(t)
-        end
-      end
-
       # Performs table lock for current model's table.
       def self.with_table_lock(type : String | Symbol, &block)
         adapter.with_table_lock(table_name, type.to_s) do |t|
           yield t
         end
-      end
-
-      # Returns adapter instance.
-      def self.adapter
-        Adapter.adapter
-      end
-
-      def self.where(&block)
-        ac = all
-        tree = with ac.expression_builder yield
-        ac.set_tree(tree)
-        ac
       end
 
       def self.find(id)
@@ -266,10 +201,6 @@ module Jennifer
         _id = id
         this = self
         all.where { this.primary == _id }.first!
-      end
-
-      def self.all : QueryBuilder::ModelQuery(self)
-        QueryBuilder::ModelQuery(self).build(table_name)
       end
 
       def self.destroy(*ids)
@@ -300,16 +231,6 @@ module Jennifer
             c(primary_field_name).in(_ids)
           end
         end.delete
-      end
-
-      def self.search_by_sql(query : String, args = [] of Supportable)
-        result = [] of self
-        adapter.query(query, args) do |rs|
-          rs.each do
-            result << build(rs)
-          end
-        end
-        result
       end
 
       def self.import(collection : Array(self))

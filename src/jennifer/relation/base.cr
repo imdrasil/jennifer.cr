@@ -3,6 +3,7 @@ module Jennifer
     abstract class IRelation
       extend Ifrit
 
+      abstract def name
       abstract def table_name
       abstract def model_class
       abstract def join_query
@@ -18,8 +19,7 @@ module Jennifer
     class Base(T, Q) < IRelation
       getter join_query : QueryBuilder::Condition | QueryBuilder::LogicOperator?
       getter foreign : String?, primary : String?, through : Symbol?
-
-      @name : String
+      getter name : String
 
       def initialize(@name, foreign : String | Symbol?, primary : String | Symbol?, query : QueryBuilder::Query, @through = nil)
         @foreign = foreign.to_s if foreign

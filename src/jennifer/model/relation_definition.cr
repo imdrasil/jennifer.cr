@@ -4,17 +4,10 @@ module Jennifer
       def __refresh_relation_retrieves
       end
 
-      def set_inverse_of(name : String, object)
-        raise Jennifer::UnknownRelation.new(self.class, name)
-      end
-
-      def append_relation(name : String, hash)
-        raise Jennifer::UnknownRelation.new(self.class, name)
-      end
-
-      def relation_retrieved(name : String)
-        raise Jennifer::UnknownRelation.new(self.class, name)
-      end
+      abstract def set_inverse_of(name : String, object)
+      abstract def append_relation(name : String, hash)
+      abstract def relation_retrieved(name : String)
+      abstract def get_relation(name : String)
 
       macro nullify_dependency(name, relation_type)
         def __nullify_callback_{{name.id}}
@@ -125,11 +118,19 @@ module Jennifer
         # builds related object from hash and adds to relation
         def append_{{name.id}}(rel : Hash)
           obj = {{klass}}.build(rel, false)
-          set_{{name.id}}_relation({{klass}}.build(rel, false))
+          set_{{name.id}}_relation(obj)
+          obj
         end
 
         def append_{{name.id}}(rel : {{klass}})
           set_{{name.id}}_relation(rel)
+          rel
+        end
+
+        def append_{{name.id}}(rel : Jennifer::Model::Resource)
+          obj = rel.as({{klass}})
+          set_{{name.id}}_relation(obj)
+          obj
         end
 
         def __{{name.id}}_retrieved
@@ -215,11 +216,19 @@ module Jennifer
         end
 
         def append_{{name.id}}(rel : Hash)
-          set_{{name.id}}_relation({{klass}}.build(rel, false))
+          obj = {{klass}}.build(rel, false)
+          set_{{name.id}}_relation(obj)
+          obj
         end
 
         def append_{{name.id}}(rel : {{klass}})
           set_{{name.id}}_relation(rel)
+          rel
+        end
+
+        def append_{{name.id}}(rel : Jennifer::Model::Resource)
+          set_{{name.id}}_relation(rel.as({{klass}}))
+          rel
         end
 
         def __{{name.id}}_retrieved
@@ -296,6 +305,11 @@ module Jennifer
           @{{name.id}} = rel
         end
 
+        def append_{{name.id}}(rel : Jennifer::Model::Resource)
+          @__{{name.id}}_retrieved = true
+          @{{name.id}} = rel.as({{klass}})
+        end
+
         def __{{name.id}}_retrieved
           @__{{name.id}}_retrieved = true
         end
@@ -370,6 +384,11 @@ module Jennifer
           @{{name.id}} = rel
         end
 
+        def append_{{name.id}}(rel : Jennifer::Model::Resource)
+          @__{{name.id}}_retrieved = true
+          @{{name.id}} = rel.as({{klass}})
+        end
+
         def __{{name.id}}_retrieved
           @__{{name.id}}_retrieved = true
         end
@@ -404,6 +423,8 @@ module Jennifer
               else
                 super(name, object)
               end
+            \{% else %}
+              super(name, object)
             \{% end %}
           \{% end %}
         end
@@ -420,6 +441,8 @@ module Jennifer
               else
                 super(name, hash)
               end
+            \{% else %}
+              super(name, hash)
             \{% end %}
           \{% end %}
         end
@@ -436,6 +459,26 @@ module Jennifer
               else
                 super(name)
               end
+            \{% else %}
+              super(name)
+            \{% end %}
+          \{% end %}
+        end
+
+        def get_relation(name : String)
+          \{% begin %}
+            \{% relations = RELATION_NAMES %}
+            \{% if relations.size > 0 %}
+              case name
+              \{% for rel in relations %}
+                when \{{rel}}
+                  \{{rel.id}}
+              \{% end %}
+              else
+                super(name)
+              end
+            \{% else %}
+              super(name)
             \{% end %}
           \{% end %}
         end

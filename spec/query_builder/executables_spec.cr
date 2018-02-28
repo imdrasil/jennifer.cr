@@ -176,10 +176,9 @@ describe Jennifer::QueryBuilder::Executables do
   describe "#to_a" do
     context "none was called" do
       it "doesn't hit db and return empty array" do
-        count = query_count
-        result = Jennifer::Query["contacts"].none.to_a
-        query_count.should eq(count)
-        result.empty?.should be_true
+        expect_query_silence do
+          Jennifer::Query["contacts"].none.to_a.empty?.should be_true
+        end
       end
     end
   end

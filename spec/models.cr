@@ -192,6 +192,7 @@ class Country < Jennifer::Model::Base
   validates_presence :name
 
   has_and_belongs_to_many :contacts, Contact
+  has_many :cities, City, inverse_of: :country
 
   {% for callback in %i(before_save after_save after_create before_create after_initialize 
                         before_destroy after_destroy before_update after_update) %}
@@ -219,6 +220,16 @@ class Country < Jennifer::Model::Base
     end
     @before_destroy_attr = true
   end
+end
+
+class City < ApplicationRecord
+  mapping(
+    id: Primary32,
+    name: String,
+    country_id: Int32
+  )
+
+  belongs_to :country, Country
 end
 
 class OneFieldModel < Jennifer::Model::Base

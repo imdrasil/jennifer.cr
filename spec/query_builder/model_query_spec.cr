@@ -4,7 +4,7 @@ require "../spec_helper"
 
 describe Jennifer::QueryBuilder::ModelQuery do
   describe "#with" do
-    it "addes to select clause given relation" do
+    it "adds to select clause given relation" do
       q1 = Contact.all.relation(:addresses)
       q1.with(:addresses)
       select_clause(q1).should match(/SELECT contacts\.\*, addresses\.\*/)
@@ -13,13 +13,13 @@ describe Jennifer::QueryBuilder::ModelQuery do
     it "raises error if given relation is not exists" do
       q1 = Contact.all
       expect_raises(Jennifer::UnknownRelation, "Unknown relation for Contact: relation") do
-        q1.with(:relation)
+        q1.relation(:addresses).with(:relation)
         select_clause(q1)
       end
     end
 
     it "raises error if given relation is not joined" do
-      expect_raises(Jennifer::BaseException, /with should be called after correspond join: no such table/) do
+      expect_raises(Jennifer::BaseException, /with should be called after correspond join/) do
         select_clause(Contact.all.with(:addresses))
       end
     end
@@ -29,8 +29,80 @@ describe Jennifer::QueryBuilder::ModelQuery do
     it "loads relation as well" do
       c1 = Factory.create_contact(name: "asd")
       Factory.create_address(contact_id: c1.id, street: "asd st.")
+
       res = Contact.all.eager_load(:addresses).first!
       res.addresses[0].street.should eq("asd st.")
+    end
+
+    context "with nested relation defined as symbol" do
+      it do
+        c = Factory.create_contact(name: "contact 1")
+        Factory.create_address(contact_id: c.id, street: "some st.")
+        country = Factory.create_country
+        Factory.create_city(country_id: country.id)
+        c.add_countries(country)
+
+        res = Contact.all.eager_load(:addresses, :passport, countries: :cities).to_a
+        expect_query_silence do
+          res.size.should eq(1)
+          res[0].addresses.size.should eq(1)
+          res[0].passport.should be_nil
+          res[0].countries.size.should eq(1)
+          res[0].countries[0].cities.size.should eq(1)
+        end
+      end
+    end
+
+    context "with nested relation defined as array" do
+      it do
+        c = Factory.create_contact(name: "contact 1")
+        Factory.create_address(contact_id: c.id, street: "some st.")
+        country = Factory.create_country
+        Factory.create_city(country_id: country.id)
+        c.add_countries(country)
+
+        res = Contact.all.eager_load(:addresses, :passport, countries: [:cities]).to_a
+        expect_query_silence do
+          res.size.should eq(1)
+          res[0].addresses.size.should eq(1)
+          res[0].passport.should be_nil
+          res[0].countries.size.should eq(1)
+          res[0].countries[0].cities.size.should eq(1)
+        end
+      end
+    end
+
+    context "with nested relation defined as hash" do
+      it do
+        c = Factory.create_contact(name: "contact 1")
+        Factory.create_address(contact_id: c.id, street: "some st.")
+        country = Factory.create_country
+        Factory.create_city(country_id: country.id)
+        c.add_countries(country)
+
+        res = City.all.eager_load(country: { :contacts => [:addresses, :passport] }).to_a
+        expect_query_silence do
+          res.size.should eq(1)
+          res[0].country!.contacts.size.should eq(1)
+          res[0].country!.contacts[0].addresses.size.should eq(1)
+          res[0].country!.contacts[0].passport.should be_nil
+        end
+      end
+    end
+
+    context "when object belongs to several parent objects" do
+      it do
+        country = Factory.create_country
+        Factory.create_city(name: "c1", country_id: country.id)
+        Factory.create_city(name: "c2", country_id: country.id)
+
+        res = City.all.eager_load(:country).to_a
+        expect_query_silence do
+          res.size.should eq(2)
+          res[0].country!.id.should eq(country.id)
+          res[0].country!.same?(res[1].country).should be_true          
+        end
+      end
     end
 
     context "target class defines not all fields and has non strict mapping" do
@@ -38,6 +110,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
         contacts = Factory.create_contact(3)
         ids = contacts.map(&.id)
         Factory.create_address(contact_id: contacts[0].id)
+
         res = ContactWithDependencies.all.eager_load(:addresses).where { _id.in(ids) }.order(id: :asc).to_a
         res.size.should eq(3)
         res[0].addresses.size.should eq(1)
@@ -58,10 +131,10 @@ describe Jennifer::QueryBuilder::ModelQuery do
       it "sets owner during building collection" do
         c = Factory.create_contact
         a = Factory.create_address(contact_id: c.id)
-        count = query_count
-        res = Contact.all.eager_load(:addresses).to_a
-        res[0].addresses[0].contact
-        query_count.should eq(count + 1)
+        expect_queries_to_be_executed(1) do
+          res = Contact.all.eager_load(:addresses).to_a
+          res[0].addresses[0].contact
+        end
       end
     end
 
@@ -69,33 +142,33 @@ describe Jennifer::QueryBuilder::ModelQuery do
       c = Factory.create_contact
       a = Factory.create_address(contact_id: c.id, main: false)
       main_address = Factory.create_address(contact_id: c.id, main: true)
-      count = query_count
-      res = Contact.all.eager_load(:addresses, :main_address).to_a
-      res[0].addresses.size.should eq(2)
-      res[0].main_address!.id.should eq(main_address.id)
-      query_count.should eq(count + 1)
+      expect_queries_to_be_executed(1) do
+        res = Contact.all.eager_load(:addresses, :main_address).to_a
+        res[0].addresses.size.should eq(2)
+        res[0].main_address!.id.should eq(main_address.id)
+      end
     end
 
     it "stops reloading relation from db if there is no records" do
       Factory.create_contact
       c = Contact.all.eager_load(:addresses).to_a
-      count = query_count
-      c[0].addresses
-      (query_count - count).should eq(0)
+      expect_query_silence do
+        c[0].addresses
+      end
     end
 
     it "stop reloading relation from the db if it is already loaded" do
       c = Factory.create_contact
       Factory.create_address(contact_id: c.id)
       c = Contact.all.eager_load(:addresses).to_a
-      count = query_count
-      c[0].addresses.size.should eq(1)
-      (query_count - count).should eq(0)
+      expect_query_silence do
+        c[0].addresses.size.should eq(1)
+      end
     end
   end
 
   describe "#relation" do
-    # TODO: refactor this bad test - this should be tested under sql generating process
+    # TODO: this should be tested under sql generating process
     it "makes join using relation scope" do
       ::Jennifer::Adapter.adapter.sql_generator
                                  .select(Contact.all.relation(:addresses))
@@ -148,7 +221,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
   end
 
   describe "#to_a" do
-    it "retruns array of models" do
+    it "returns array of models" do
       Factory.create_contact(name: "a", age: 13)
       Factory.create_contact(name: "b", age: 14)
       res = Contact.all.to_a
@@ -168,10 +241,9 @@ describe Jennifer::QueryBuilder::ModelQuery do
 
       context "none was called" do
         it "doesn't hit db and return empty array" do
-          count = query_count
-          result = Contact.all.eager_load(:addresses).none.to_a
-          query_count.should eq(count)
-          result.empty?.should be_true
+          expect_query_silence do
+            Contact.all.eager_load(:addresses).none.to_a.empty?.should be_true
+          end
         end
       end
 
@@ -235,10 +307,9 @@ describe Jennifer::QueryBuilder::ModelQuery do
 
     context "none was called" do
       it "doesn't hit db and return empty array" do
-        count = query_count
-        result = Jennifer::Query["contacts"].none.to_a
-        query_count.should eq(count)
-        result.empty?.should be_true
+        expect_query_silence do
+          Jennifer::Query["contacts"].none.to_a.empty?.should be_true
+        end
       end
     end
   end
@@ -251,28 +322,28 @@ describe Jennifer::QueryBuilder::ModelQuery do
     it "stops reloading relation from db if there is no records" do
       Factory.create_contact
       c = Contact.all.includes(:addresses).to_a
-      count = query_count
-      c[0].addresses
-      (query_count - count).should eq(0)
+      expect_query_silence do
+        c[0].addresses
+      end
     end
 
     it "stop reloading relation from the db if it is already loaded" do
       c = Factory.create_contact
       Factory.create_address(contact_id: c.id)
       c = Contact.all.includes(:addresses).to_a
-      count = query_count
-      c[0].addresses.size.should eq(1)
-      (query_count - count).should eq(0)
+      expect_query_silence do
+        c[0].addresses.size.should eq(1)
+      end
     end
 
     context "with defined inverse_of" do
       it "sets owner during building collection" do
         c = Factory.create_contact
         a = Factory.create_address(contact_id: c.id)
-        count = query_count
-        res = Contact.all.includes(:addresses).to_a
-        res[0].addresses[0].contact
-        query_count.should eq(count + 2)
+        expect_queries_to_be_executed(2) do
+          res = Contact.all.includes(:addresses).to_a
+          res[0].addresses[0].contact
+        end
       end
     end
   end
@@ -343,12 +414,11 @@ describe Jennifer::QueryBuilder::ModelQuery do
     it "preloads related objects if given" do
       c = Factory.create_contact
       Factory.create_address(contact_id: c.id)
-      executed_query_count = query_count
-      res = Contact.all.includes(:addresses).find_by_sql(query)
-      (query_count - executed_query_count).should eq(2)
-      res.size.should eq(1)
-      res[0].addresses.size.should eq(1)
-      (query_count - executed_query_count).should eq(2)
+      expect_queries_to_be_executed(2) do
+        res = Contact.all.includes(:addresses).find_by_sql(query)
+        res.size.should eq(1)
+      end
+      expect_query_silence { res[0].addresses.size.should eq(1) }
     end
   end
 

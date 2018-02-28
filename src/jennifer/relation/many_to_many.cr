@@ -53,7 +53,7 @@ module Jennifer
       def join_condition(query, type)
         _foreign = foreign_field
         _primary = primary_field
-        jt = @join_table.not_nil!
+        jt = join_table!
         jtk = @association_foreign || T.to_s.foreign_key
         q = query.join(jt, type: type) { Q.c(_primary) == c(_foreign) }.join(T, type: type) do
           T.primary == c(jtk, jt)

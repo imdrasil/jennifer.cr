@@ -15,7 +15,8 @@ module Jennifer
 
       def each
         @key_bucket.each do |internal_key, criteria|
-          yield({criteria, @value_bucket[internal_key]})
+          # NOTE: somewhy compiling with Amber makes Hash(String, String)#[] to return String?
+          yield({criteria, @value_bucket[internal_key].not_nil!})
         end
       end
 

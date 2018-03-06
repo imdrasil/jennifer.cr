@@ -45,11 +45,13 @@ module Jennifer
           {% add_default_constructor = add_default_constructor && (properties[key][:null] || properties[key].keys.includes?(:default)) %}
         {% end %}
 
+        {% nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] } %}
+
         __field_declaration({{properties}}, false)
 
         def _sti_extract_attributes(values : Hash(String, ::Jennifer::DBAny))
           {% for key, value in properties %}
-            %var{key.id} = nil
+            %var{key.id} = {{value[:default]}}
             %found{key.id} = true
           {% end %}
 
@@ -136,7 +138,7 @@ module Jennifer
 
         def changed?
           super ||
-          {% for key in properties.keys %}
+          {% for key in nonvirtual_attrs %}
             @{{key.id}}_changed ||
           {% end %}
           false
@@ -144,7 +146,7 @@ module Jennifer
 
         def to_h
           hash = super
-          {% for key in properties.keys %}
+          {% for key in nonvirtual_attrs %}
             hash[:{{key.id}}] = @{{key.id}}
           {% end %}
           hash
@@ -152,7 +154,7 @@ module Jennifer
 
         def to_str_h
           hash = super
-          {% for key in properties.keys %}
+          {% for key in nonvirtual_attrs %}
             hash[{{key.stringify}}] = @{{key.id}}
           {% end %}
           hash
@@ -163,14 +165,16 @@ module Jennifer
           values.each do |name, value|
             case name.to_s
             {% for key, value in properties %}
-            when "{{key.id}}"
-              if value.is_a?({{value[:parsed_type].id}})
-                local = value.as({{value[:parsed_type].id}})
-                @{{key.id}} = local
-                @{{key.id}}_changed = true
-              else
-                raise ::Jennifer::BaseException.new("Wrong type for #{name} : #{value.class}")
-              end
+              {% if !value[:virtual] %}
+                when "{{key.id}}"
+                  if value.is_a?({{value[:parsed_type].id}})
+                    local = value.as({{value[:parsed_type].id}})
+                    @{{key.id}} = local
+                    @{{key.id}}_changed = true
+                  else
+                    raise ::Jennifer::BaseException.new("Wrong type for #{name} : #{value.class}")
+                  end
+              {% end %}
             {% end %}
             else
               missing_values[name] = value
@@ -197,7 +201,7 @@ module Jennifer
         end
 
         def attribute(name : String, raise_exception = true)
-          if raise_exception && !{{@type}}.field_names.includes?(name)
+          if raise_exception && !self.class.attribute_names.includes?(name)
             raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}")
           end
           case name
@@ -215,14 +219,16 @@ module Jennifer
           args = res[:args]
           fields = res[:fields]
           {% for key, value in properties %}
-            if @{{key.id}}_changed
-              args << {% if value[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
-                        @{{key.id}}.to_json
-                      {% else %}
-                        @{{key.id}}
-                      {% end %}
-              fields << "{{key.id}}"
-            end
+            {% unless value[:virtual] %}
+              if @{{key.id}}_changed
+                args << {% if value[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
+                          @{{key.id}}.to_json
+                        {% else %}
+                          @{{key.id}}
+                        {% end %}
+                fields << "{{key.id}}"
+              end
+            {% end %}
           {% end %}
           {args: args, fields: fields}
         end
@@ -232,12 +238,14 @@ module Jennifer
           args = res[:args]
           fields = res[:fields]
           {% for key, value in properties %}
-            args << {% if value[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
-                      (@{{key.id}} ? @{{key.id}}.to_json : nil)
-                    {% else %}
-                      @{{key.id}}
-                    {% end %}
-            fields << {{key.stringify}}
+            {% unless value[:virtual] %}
+              args << {% if value[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
+                        (@{{key.id}} ? @{{key.id}}.to_json : nil)
+                      {% else %}
+                        @{{key.id}}
+                      {% end %}
+              fields << {{key.stringify}}
+            {% end %}
           {% end %}
 
           { args: args, fields: fields }
@@ -253,7 +261,7 @@ module Jennifer
         end
 
         private def __refresh_changes
-          {% for key in properties.keys %}
+          {% for key in nonvirtual_attrs %}
             @{{key.id}}_changed = false
           {% end %}
           super
@@ -272,15 +280,21 @@ module Jennifer
         end
 
         def self.field_count
-          {{all_properties.size}}
+          {{ all_properties.to_a.reduce(0) { |sum, opts| sum + (opts[1][:virtual] ? 0 : 1) } }}
         end
 
         def self.field_names
           [
-            {% for key in all_properties.keys %}
-              "{{key.id}}",
+            {% for key, opts in all_properties %}
+              {% unless opts[:virtual] %}
+                "{{key.id}}",
+              {% end %}
             {% end %}
           ]
+        end
+
+        def self.attribute_names
+          [{{all_properties.keys.map { |e| "\"#{e.id}\"" }.join(", ").id}}]
         end
       end
     end

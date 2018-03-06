@@ -141,7 +141,8 @@ class Profile < ApplicationRecord
     id: Primary32,
     login: String,
     contact_id: Int32?,
-    type: String
+    type: String,
+    virtual_parent_field: { type: String?, virtual: true }
   )
 
   getter commit_callback_called = false
@@ -157,7 +158,8 @@ end
 
 class FacebookProfile < Profile
   mapping(
-    uid: String? # for testing purposes
+    uid: String?, # for testing purposes
+    virtual_child_field: { type: Int32?, virtual: true }
   )
 
   getter fb_commit_callback_called = false

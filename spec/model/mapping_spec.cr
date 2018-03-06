@@ -25,6 +25,8 @@ describe Jennifer::Model::Mapping do
         Profile.all.first!.class.to_s.should eq("Profile")
       end
     end
+
+
   end
 
   describe "#reload" do
@@ -406,8 +408,8 @@ describe Jennifer::Model::Mapping do
     end
 
     describe "#primary" do
-      context "defaul primary field" do
-        it "returns id valud" do
+      context "default primary field" do
+        it "returns id value" do
           c = Factory.build_contact
           c.id = -1
           c.primary.should eq(-1)
@@ -415,7 +417,7 @@ describe Jennifer::Model::Mapping do
       end
 
       context "custom field" do
-        it "returns valud of custom primary field" do
+        it "returns value of custom primary field" do
           p = Factory.build_passport
           p.enn = "1qaz"
           p.primary.should eq("1qaz")
@@ -433,7 +435,7 @@ describe Jennifer::Model::Mapping do
           c.name.should eq("123")
         end
 
-        it "raises exeption if value has wrong type" do
+        it "raises exception if value has wrong type" do
           c = Factory.create_contact
           expect_raises(::Jennifer::BaseException) do
             c.update_columns({:name => 123})
@@ -480,6 +482,14 @@ describe Jennifer::Model::Mapping do
     end
 
     describe "#set_attribute" do
+      context "when attribute is virtual" do
+        it do
+          p = Factory.build_profile
+          p.set_attribute(:virtual_parent_field, "virtual value")
+          p.virtual_parent_field.should eq("virtual value")
+        end
+      end
+
       context "attribute exists" do
         it "sets attribute if value has proper type" do
           c = Factory.build_contact
@@ -512,10 +522,25 @@ describe Jennifer::Model::Mapping do
     end
 
     describe "#attribute" do
+      context "when attribute is virtual" do
+        it "" do
+          p = Factory.build_profile
+          p.virtual_parent_field = "value"
+          p.attribute(:virtual_parent_field).should eq("value")
+        end
+      end
+
       it "returns attribute value by given name" do
         c = Factory.build_contact(name: "Jessy")
         c.attribute("name").should eq("Jessy")
         c.attribute(:name).should eq("Jessy")
+      end
+
+      it do
+        c = Factory.build_contact(name: "Jessy")
+        expect_raises(::Jennifer::BaseException) do
+          c.attribute("missing")
+        end
       end
     end
 
@@ -563,17 +588,17 @@ describe Jennifer::Model::Mapping do
 
     describe "#to_h" do
       it "creates hash with symbol keys" do
-        contact = Factory.build_contact(name: "Abdul").to_h
-        contact.is_a?(Hash).should be_true
-        contact[:name].should eq("Abdul")
+        hash = Factory.build_profile(login: "Abdul").to_h
+        # NOTE: virtual field isn't included
+        hash.keys.should eq(%i(id login contact_id type))
       end
     end
 
     describe "#to_str_h" do
       it "creates hash with string keys" do
-        contact = Factory.build_contact(name: "Abdul").to_str_h
-        contact.is_a?(Hash).should be_true
-        contact["name"].should eq("Abdul")
+        hash = Factory.build_profile(login: "Abdul").to_str_h
+        # NOTE: virtual field isn't included
+        hash.keys.should eq(%w(id login contact_id type))
       end
     end
   end

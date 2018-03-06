@@ -110,6 +110,7 @@ end
 | `:default` | default value which be set during creating **new** object |
 | `:getter` | if getter should be created (default - `true`) |
 | `:setter` | if setter should be created (default - `true`) |
+| `:virtual` | mark field as virtual - will not be stored and retrieved from db |
 
 To make some field nillable tou can use any of next options:
 
@@ -159,11 +160,11 @@ All allowed types are listed on the [Migration](https://imdrasil.github.io/jenni
 
 Automatically model is associated with table with underscored pluralized name of it's class, but special name can be defined using `::table_name` method in own body before using any relation (`::singular_table_name` - for singular variant).
 
-All defined mapping properties are accessible via `COLUMNS_METADA` constant and `::columns_tuple` method.
+All defined mapping properties are accessible via `COLUMNS_METADATA` constant and `::columns_tuple` method.
 
 **Important restriction** - model with no primary field is not allowed for now.
 
-It may be usefull to have one parent class for your model - just make it abstract and everything will work well:
+It may be useful to have one parent class for your model - just make it abstract and everything will work well:
 
 ```crystal
 abstract class ApplicationRecord < Jennifer::Model::Base
@@ -175,4 +176,29 @@ class SomeModel < ApplicationRecord
     name: String
   )
 end
+```
+
+## Virtual attributes
+
+If you pass `virtual: true` option for some field - it will not be stored to db and tried to be retrieved from there. Such behavior is useful if you have model-level attributes but it is not obvious to store them into db. Such approach allows mass assignment and dynamic get/set based on their name.
+
+```crystal
+class User < Jennifer::Model::Base
+  mapping(
+    id: Primary32,
+    password_hash: String,
+    password: { type: String?, virtual: true },
+    password_confirmation: { type: String?, virtual: true }
+  )
+
+  validate_confirmation :password
+
+  before_create :crypt_password
+
+  def crypt_password
+    self.password_hash = SomeCryptAlgorithm.call(self.password)
+  end
+end
+
+User.create!(password: "qwe", password_confirmation: "qwe")
 ```

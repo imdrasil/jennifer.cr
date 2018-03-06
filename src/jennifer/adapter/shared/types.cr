@@ -2,6 +2,8 @@
 # all adapters
 module PG
   struct Numeric
+    def initialize(ndigits, weight, sign, dscale, digits)
+    end
   end
 
   module Geo

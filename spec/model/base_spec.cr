@@ -192,6 +192,14 @@ describe Jennifer::Model::Base do
           match_fields(contact, name: "Deepthi", age: 18, gender: "female")
         end
       end
+
+      context "with string encoded values" do
+        it "builds object with converted values" do
+          c = Contact.build(Contact.build_params({"name" => "a", "age" => "999", "gender" => "female", "ballance" => "12345.456"}))
+          c.name.should eq("a")
+          c.age.should eq(999)
+        end
+      end
     end
 
     context "from named tuple" do

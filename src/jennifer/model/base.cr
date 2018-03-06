@@ -5,6 +5,7 @@ require "./callback"
 require "./relation_definition"
 require "./scoping"
 require "./translation"
+require "./parameter_converter"
 
 module Jennifer
   module Model
@@ -61,6 +62,14 @@ module Jennifer
 
       def self.star
         context.star
+      end
+
+      def self.parameter_converter
+        @@converter ||= ParameterConverter.new
+      end
+
+      def self.build_params(hash : Hash(String, String)) : Hash(String, Jennifer::DBAny)
+        {} of String => Jennifer::DBAny
       end
 
       def self.build(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)

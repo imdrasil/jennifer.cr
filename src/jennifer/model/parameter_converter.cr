@@ -1,7 +1,7 @@
 module Jennifer
   module Model
     class ParameterConverter
-      def parse(value, str_class)
+      def parse(value : String, str_class : String)
         case str_class
         when /Array/
           to_array(value, str_class)
@@ -28,6 +28,10 @@ module Jennifer
         else
           raise ArgumentError.new
         end
+      end
+
+      def parse(value : Nil, str_class : String)
+        nil
       end
 
       def to_pr32(value)
@@ -78,7 +82,7 @@ module Jennifer
       def to_numeric(value)
         value = value.strip
         raise ArgumentError.new unless value =~ /-{0,1}\d+(.\d+){0,1}/
-        sign = 
+        sign =
           if value[0] == '-'
             value = value[1..-1]
             0x4000
@@ -92,13 +96,13 @@ module Jennifer
         if weight == -1
           int_part = value
           digits = str_to_i16_array(int_part)
-          PG::Numeric.new(digits.size.to_i16, (digits.size - 1).to_i16, sign, 0i16, digits)
+          PG::Numeric.build(digits.size.to_i16, (digits.size - 1).to_i16, sign, 0i16, digits)
         else
           int_part = value[0...weight]
           digits = str_to_i16_array(int_part)
           int_digits_size = digits.size
           str_to_i16_array(value[(weight + 1)..-1], digits)
-          PG::Numeric.new(digits.size.to_i16, (int_digits_size - 1).to_i16, sign, (digits.size - int_digits_size).to_i16, digits)
+          PG::Numeric.build(digits.size.to_i16, (int_digits_size - 1).to_i16, sign, (digits.size - int_digits_size).to_i16, digits)
         end
       end
 

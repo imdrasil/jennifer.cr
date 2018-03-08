@@ -14,8 +14,12 @@ describe Jennifer::Model::ParameterConverter do
     it { converter.parse("1", "Bool").is_a?(Bool).should be_true }
     it { converter.parse("1", "JSON::Any?").is_a?(JSON::Any).should be_true }
     it { converter.parse("2010-12-10", "Time?").is_a?(Time).should be_true }
-    it { converter.parse("1", "Numeric?").is_a?(PG::Numeric).should be_true }
+    postgres_only do
+      it { converter.parse("1", "Numeric?").is_a?(PG::Numeric).should be_true }
+    end
     it { converter.parse(%(["1"]), "Array(String)").class.should eq(Array(String)) }
+    it { converter.parse("asd".as(String?), "String?").class.should eq(String) }
+    it { converter.parse(nil.as(String?), "String?").class.should eq(Nil) }
   end
 
   postgres_only do

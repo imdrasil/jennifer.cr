@@ -146,7 +146,7 @@ module Jennifer
         auth_part += ":#{Config.password}" if Config.password && !Config.password.empty?
 
         host_part = Config.host
-        host_part += Config.port.to_s if Config.port && Config.port > 0
+        host_part += ":#{Config.port}" if Config.port.try(&.> 0)
 
         String.build do |s|
           s << Config.adapter << "://" << auth_part << "@" << host_part

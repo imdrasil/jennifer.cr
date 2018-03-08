@@ -68,7 +68,7 @@ module Jennifer
         @@converter ||= ParameterConverter.new
       end
 
-      def self.build_params(hash : Hash(String, String)) : Hash(String, Jennifer::DBAny)
+      def self.build_params(hash : Hash(String, String?)) : Hash(String, Jennifer::DBAny)
         {} of String => Jennifer::DBAny
       end
 
@@ -195,7 +195,7 @@ module Jennifer
       def destroy_without_transaction
         return false if new_record? || !__before_destroy_callback
         @destroyed = true if delete
-        __after_destroy_callback if @destroyed  
+        __after_destroy_callback if @destroyed
         @destroyed
       end
 

@@ -4,12 +4,12 @@ require "logger"
 module Jennifer
   class Config
     CONNECTION_URI_PARAMS = [:max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts, :checkout_timeout, :retry_delay]
-    STRING_FIELDS = {
+    STRING_FIELDS         = {
       :user, :password, :db, :host, :adapter, :migration_files_path, :schema,
-      :structure_folder, :local_time_zone_name
-    }  
-    INT_FIELDS    = {:port, :max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
-    FLOAT_FIELDS  = {:checkout_timeout, :retry_delay}
+      :structure_folder, :local_time_zone_name,
+    }
+    INT_FIELDS   = {:port, :max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
+    FLOAT_FIELDS = {:checkout_timeout, :retry_delay}
 
     macro define_fields(const, default)
       {% for field in @type.constant(const.stringify) %}
@@ -117,7 +117,7 @@ module Jennifer
     def self.from_uri(uri : URI)
       config.adapter = uri.scheme.to_s if uri.scheme
       config.host = uri.host.to_s if uri.host
-      config.port = uri.port.not_nil!  if uri.port
+      config.port = uri.port.not_nil! if uri.port
       config.db = uri.path.to_s.lchop if uri.path
       config.user = uri.user.to_s if uri.user
       config.password = uri.password.to_s if uri.password
@@ -139,7 +139,7 @@ module Jennifer
       self.validate_config
       self
     end
-    
+
     def self.read(path : String, env : String | Symbol = :development)
       _env = env.to_s
       source = YAML.parse(File.read(path))[_env]

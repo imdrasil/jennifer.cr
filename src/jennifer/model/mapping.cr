@@ -267,19 +267,19 @@ module Jennifer
         {% end %}
 
         # Converts String based hash to `Hash(String, Jennifer::DBAny)`
-        def self.build_params(hash : Hash(String, String)) : Hash(String, Jennifer::DBAny)
+        def self.build_params(hash : Hash(String, String?)) : Hash(String, Jennifer::DBAny)
           converted_hash = super(hash)
           hash.each do |key, value|
             case key.to_s
             {% for field, opts in properties %}
             when {{field.id.stringify}}
-              if value.empty?
+              if value.nil? || value.empty?
                 converted_hash[key] = nil
               else
                 converted_hash[key] = parameter_converter.parse(value, {{opts[:stringified_type]}})
               end
             {% end %}
-            end 
+            end
           end
           converted_hash
         end

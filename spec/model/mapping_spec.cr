@@ -25,8 +25,20 @@ describe Jennifer::Model::Mapping do
         Profile.all.first!.class.to_s.should eq("Profile")
       end
     end
+  end
 
+  describe "::build_params" do
+    it do
+      hash = Contact.build_params({"name" => "asd", "age" => "20".as(String?)})
+      hash["name"].should eq("asd")
+      hash["age"].should eq(20)
+    end
 
+    it do
+      hash = Contact.build_params({"name" => "asd", "age" => nil})
+      hash["name"].should eq("asd")
+      hash["age"].should be_nil
+    end
   end
 
   describe "#reload" do

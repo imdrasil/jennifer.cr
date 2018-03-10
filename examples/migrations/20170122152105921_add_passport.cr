@@ -1,4 +1,4 @@
-class Passport20170122152105921 < Jennifer::Migration::Base
+class AddPassport < Jennifer::Migration::Base
   def up
     create_table(:passports, false) do |t|
       t.string(:enn, {:primary => true, :size => 5})

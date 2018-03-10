@@ -208,9 +208,9 @@ module Jennifer
       # migration ========================
 
       def ready_to_migrate!
-        return if table_exists?(Migration::Base::TABLE_NAME)
-        schema_processor.build_create_table(Migration::Base::TABLE_NAME) do |t|
-          t.string(:version, {:size => 17})
+        return if table_exists?(Migration::Version.table_name)
+        schema_processor.build_create_table(Migration::Version.table_name) do |t|
+          t.string(:version, {:size => 17, :null => false})
         end
       end
 

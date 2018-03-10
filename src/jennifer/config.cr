@@ -7,9 +7,11 @@ module Jennifer
     STRING_FIELDS         = {
       :user, :password, :db, :host, :adapter, :migration_files_path, :schema,
       :structure_folder, :local_time_zone_name,
+      :migration_failure_handler_method,
     }
-    INT_FIELDS   = {:port, :max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
-    FLOAT_FIELDS = {:checkout_timeout, :retry_delay}
+    INT_FIELDS                                = {:port, :max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
+    FLOAT_FIELDS                              = {:checkout_timeout, :retry_delay}
+    ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS = %w(reverse_direction callback none)
 
     macro define_fields(const, default)
       {% for field in @type.constant(const.stringify) %}
@@ -49,6 +51,7 @@ module Jennifer
       @@migration_files_path = "./db/migrations"
       @@schema = "public"
       @@db = ""
+      @@migration_after_failure_method = "none"
       @@local_time_zone_name = TimeZone::Zone.default.name
 
       @@initial_pool_size = 1
@@ -86,6 +89,17 @@ module Jennifer
 
     def self.local_time_zone
       @@local_time_zone
+    end
+
+    def self.migration_failure_handler_method=(value)
+      parsed_value = value.to_s
+      unless ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS.includes?(parsed_value)
+        allowed_methods = ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS.map { |e| %("#{e}") }.join(" ")
+        raise Jennifer::InvalidConfig.new(
+          %(migration_failure_handler_method config may be only #{allowed_methods})
+        )
+      end
+      @@migration_failure_handler_method = parsed_value
     end
 
     def self.configure(&block)

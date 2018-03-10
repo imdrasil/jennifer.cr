@@ -10,6 +10,10 @@ module Jennifer
       def self.has_table?
         false
       end
+
+      def self.list
+        all.pluck(:version).map(&.as(String))
+      end
     end
   end
 end

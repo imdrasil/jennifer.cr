@@ -1,4 +1,4 @@
-class AddJoinTable20170410221437549 < Jennifer::Migration::Base
+class AddJoinTable < Jennifer::Migration::Base
   def up
     create_table(:countries) do |t|
       t.string(:name)

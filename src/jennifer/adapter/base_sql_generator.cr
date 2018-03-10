@@ -1,8 +1,16 @@
 module Jennifer
   module Adapter
-    class BaseSQLGenerator
-      ARRAY_ESCAPE = "\\\\\\\\"
+    abstract class BaseSQLGenerator
+      ARRAY_ESCAPE           = "\\\\\\\\"
       ARGUMENT_ESCAPE_STRING = "%s"
+
+      module ClassMethods
+        # Generates query for inserting new record to db
+        abstract def insert(obj : Model::Base)
+        abstract def json_path(path : QueryBuilder::JSONSelector)
+      end
+
+      extend ClassMethods
 
       # Generates insert query
       def self.insert(table, hash)
@@ -11,12 +19,6 @@ module Jennifer
           hash.keys.join(", ", s)
           s << ") VALUES (" << escape_string(hash.size) << ")"
         end
-      end
-
-      # Generates query for inserting new record to db
-      def self.insert(obj : Model::Base)
-        # NOTE: is overrided by each adapter
-        raise "Not implemented"
       end
 
       def self.bulk_insert(table : String, field_names : Array(String), rows : Int32)
@@ -224,10 +226,6 @@ module Jennifer
         else
           operator.to_s
         end
-      end
-
-      def self.json_path(path : QueryBuilder::JSONSelector)
-        raise "Not Implemented"
       end
 
       def self.quote(value : Nil)

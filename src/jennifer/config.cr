@@ -9,11 +9,13 @@ module Jennifer
     ]
     STRING_FIELDS = {
       :user, :password, :db, :host, :adapter, :migration_files_path, :schema,
-      :structure_folder, :local_time_zone_name, :command_shell, :docker_container, :docker_source_location
+      :structure_folder, :local_time_zone_name, :command_shell, :docker_container, :docker_source_location,
+      :migration_failure_handler_method
     }
     INT_FIELDS    = {:port, :max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
     FLOAT_FIELDS  = {:checkout_timeout, :retry_delay}
     BOOL_FIELDS   = {:command_shell_sudo, :skip_dumping_schema_sql}
+    ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS = %w(reverse_direction callback none)
 
     macro define_fields(const, default)
       {% for field in const.resolve %}
@@ -71,6 +73,7 @@ module Jennifer
       @retry_delay = 1.0
 
       @command_shell = "bash"
+      @migration_after_failure_method = "none"
 
       @logger = Logger.new(STDOUT)
       logger.level = Logger::DEBUG
@@ -129,7 +132,19 @@ module Jennifer
       @local_time_zone
     end
 
+
     delegate_getter(:local_time_zone)
+
+    def self.migration_failure_handler_method=(value)
+      parsed_value = value.to_s
+      unless ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS.includes?(parsed_value)
+        allowed_methods = ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS.map { |e| %("#{e}") }.join(" ")
+        raise Jennifer::InvalidConfig.new(
+          %(migration_failure_handler_method config may be only #{allowed_methods})
+        )
+      end
+      @@migration_failure_handler_method = parsed_value
+    end
 
     def self.configure(&block)
       yield instance

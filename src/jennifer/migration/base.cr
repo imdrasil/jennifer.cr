@@ -1,8 +1,6 @@
 module Jennifer
   module Migration
     abstract class Base
-      TABLE_NAME = "migration_versions"
-
       module AbstractClassMethods
         abstract def version
       end
@@ -23,6 +21,14 @@ module Jennifer
         {% end %}
       end
 
+      macro inherited
+        def self.version
+          matched_data = File.basename(__FILE__, ".cr").match(/\A(\d)+/)
+          return matched_data[0] if matched_data
+          raise "#{self} migration class has no specified version"
+        end
+      end
+
       delegate adapter, to: Adapter
 
       delegate create_data_type, to: adapter
@@ -41,12 +47,14 @@ module Jennifer
       abstract def up
       abstract def down
 
-      def self.version
-        to_s[-17..-1]
+      def after_up_failure
+      end
+
+      def after_down_failure
       end
 
       def self.versions
-        migrations.map { |e| e.underscore.split("_").last }
+        migrations.map(&.version)
       end
 
       def self.migrations

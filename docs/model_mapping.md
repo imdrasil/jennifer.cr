@@ -100,7 +100,9 @@ class Country < Jennifer::Model::Base
 end
 ```
 
-`%mapping(options, strict = true)` macros stands for describing all model attributes. If field has no extra parameter, you can just specify name and type (type in case of crystal language): `field_name: :Type`. But you can use tuple and provide next parameters:
+## Mapping definition
+
+`%mapping(options, strict = true)` macros stands for defining all model attributes. If field has no extra parameter, you can just specify name and type (type in case of crystal language): `field_name: :Type`. Named tuple can be used instead of type. Next keys are supported:
 
 | argument | description |
 | --- | --- |
@@ -157,9 +159,6 @@ If you don't want to define all the table fields - pass `false` as second argume
 
 All allowed types are listed on the [Migration](https://imdrasil.github.io/jennifer.cr/docs/migration) page.
 
-
-Automatically model is associated with table with underscored pluralized name of it's class, but special name can be defined using `::table_name` method in own body before using any relation (`::singular_table_name` - for singular variant).
-
 All defined mapping properties are accessible via `COLUMNS_METADATA` constant and `::columns_tuple` method.
 
 **Important restriction** - model with no primary field is not allowed for now.
@@ -176,6 +175,32 @@ class SomeModel < ApplicationRecord
     name: String
   )
 end
+```
+
+## Table name
+
+Automatically model is associated with table with underscored pluralized name of it's class, but custom one can be specified defining `::table_name`. This means no modules will affect name generating. 
+
+```crystal
+Admin::User.table_name # "users"
+```
+
+To provide special table prefix per module basis use super class with defined `::table_prefix` method:
+
+```crystal
+module Admin
+  class Base < Jennifer::Model::Base
+    def self.table_prefix
+      "admin_"
+    end
+  end
+
+  class User < Base
+    mapping(id: Primary32)
+  end
+end
+
+Admin::User.table_name # "admin_users"
 ```
 
 ## Virtual attributes

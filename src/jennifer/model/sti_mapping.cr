@@ -1,7 +1,7 @@
 module Jennifer
   module Model
     module STIMapping
-      # Defines mapping using single table inheritance. Is automatically called by `%mapping` macro. 
+      # Defines mapping using single table inheritance. Is automatically called by `%mapping` macro.
       private macro sti_mapping(properties)
         STI = true
 
@@ -13,15 +13,7 @@ module Jennifer
           superclass.table_name
         end
 
-        def self.singular_table_name
-          superclass.table_name
-        end
-
         def self.table_name(name)
-          raise "You can't specify table name using STI on subclasses"
-        end
-
-        def self.singular_table_name(name)
           raise "You can't specify table name using STI on subclasses"
         end
 

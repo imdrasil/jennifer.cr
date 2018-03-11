@@ -2,9 +2,25 @@ require "../spec_helper"
 
 class ModelWithIntName < Jennifer::Model::Base
   mapping({
-    id: Primary32,
-    name: Int32
+    id:   Primary32,
+    name: Int32,
   })
+end
+
+module SomeModule
+  class SomeModel < Jennifer::Model::Base
+    mapping(id: Primary32)
+  end
+end
+
+abstract class SuperModel < Jennifer::Model::Base
+  def self.table_prefix
+    "custom_table_prefix_"
+  end
+end
+
+class ModelWithTablePrefix < SuperModel
+  mapping(id: Primary32)
 end
 
 describe Jennifer::Model::Base do
@@ -263,12 +279,30 @@ describe Jennifer::Model::Base do
   end
 
   describe "::table_name" do
-    it "loads from class name automatically" do
-      Contact.table_name.should eq("contacts")
-    end
+    it { Contact.table_name.should eq("contacts") }
+    it { SomeModule::SomeModel.table_name.should eq("some_models") }
+    it { ModelWithTablePrefix.table_name.should eq("custom_table_prefix_model_with_table_prefixes") }
 
     it "returns specified name" do
       ContactWithNotAllFields.table_name.should eq("contacts")
+    end
+
+    describe "STI" do
+      it { TwitterProfile.table_name.should eq("profiles") }
+    end
+  end
+
+  describe "::foreign_key_name" do
+    it { Contact.foreign_key_name.should eq("contact_id") }
+    it { SomeModule::SomeModel.foreign_key_name.should eq("some_model_id") }
+    it { ModelWithTablePrefix.foreign_key_name.should eq("custom_table_prefix_model_with_table_prefix_id") }
+
+    it "returns specified name" do
+      ContactWithNotAllFields.foreign_key_name.should eq("contact_id")
+    end
+
+    describe "STI" do
+      it { TwitterProfile.foreign_key_name.should eq("profile_id") }
     end
   end
 
@@ -529,13 +563,13 @@ describe Jennifer::Model::Base do
       it "raises exception if value has wrong type" do
         c = Factory.build_contact
         expect_raises(::Jennifer::BaseException) do
-          c.update_attributes({ :name => 123 })
+          c.update_attributes({:name => 123})
         end
       end
 
       it "marks changed field as modified" do
         c = Factory.build_contact
-        c.update_attributes({ "name" => "asd" })
+        c.update_attributes({"name" => "asd"})
         c.name.should eq("asd")
         c.name_changed?.should be_true
       end
@@ -545,7 +579,7 @@ describe Jennifer::Model::Base do
       it "raises exception" do
         c = Factory.build_contact
         expect_raises(::Jennifer::BaseException) do
-          c.update_attributes({ :asd => 123 })
+          c.update_attributes({:asd => 123})
         end
       end
     end
@@ -554,7 +588,7 @@ describe Jennifer::Model::Base do
       it do
         c = Factory.build_contact
         c.update_attributes({name: "asd"})
-        c.name.should eq("asd") 
+        c.name.should eq("asd")
       end
     end
 
@@ -562,7 +596,7 @@ describe Jennifer::Model::Base do
       it do
         c = Factory.build_contact
         c.update_attributes(name: "asd")
-        c.name.should eq("asd") 
+        c.name.should eq("asd")
       end
 
       it do
@@ -577,7 +611,7 @@ describe Jennifer::Model::Base do
     context "when given attribute exists" do
       it "stores given fields" do
         c = Factory.create_contact
-        c.update({ "name" => "asd" })
+        c.update({"name" => "asd"})
         Contact.all.where { _name == "asd" }.exists?.should be_true
       end
     end
@@ -586,7 +620,7 @@ describe Jennifer::Model::Base do
       it "raises exception" do
         c = Factory.build_contact
         expect_raises(::Jennifer::BaseException) do
-          c.update({ :asd => 123 })
+          c.update({:asd => 123})
         end
       end
     end
@@ -610,7 +644,7 @@ describe Jennifer::Model::Base do
     context "when given attribute exists" do
       it "stores given fields" do
         c = Factory.create_contact
-        c.update!({ "name" => "asd" })
+        c.update!({"name" => "asd"})
         Contact.all.where { _name == "asd" }.exists?.should be_true
       end
     end
@@ -619,7 +653,7 @@ describe Jennifer::Model::Base do
       it "raises exception" do
         c = Factory.build_contact
         expect_raises(::Jennifer::BaseException) do
-          c.update!({ :asd => 123 })
+          c.update!({:asd => 123})
         end
       end
     end

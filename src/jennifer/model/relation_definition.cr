@@ -278,7 +278,7 @@ module Jennifer
         end
 
         def {{name.id}}_query
-          foreign_field = {{ (foreign ? foreign : "attribute(#{klass}.singular_table_name + \"_id\")").id }}
+          foreign_field = {{ (foreign ? foreign : "attribute(#{klass}.foreign_key_name)").id }}
           @@relations["{{name.id}}"].query(foreign_field).as(::Jennifer::QueryBuilder::ModelQuery({{klass}}))
         end
 

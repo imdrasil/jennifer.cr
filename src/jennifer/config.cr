@@ -156,7 +156,14 @@ module Jennifer
 
     def self.read(path : String, env : String | Symbol = :development)
       _env = env.to_s
-      source = YAML.parse(File.read(path))[_env]
+      read(path) { |document| document[_env] }
+    end
+
+    # Reads configuration file by given ~path~ and yields it's content to block. Returned document is realized
+    # as configurations.
+    def self.read(path : String)
+      source = yield YAML.parse(File.read(path))
+
       {% for field in STRING_FIELDS %}
         @@{{field.id}} = source["{{field.id}}"].as_s if source["{{field.id}}"]?
       {% end %}

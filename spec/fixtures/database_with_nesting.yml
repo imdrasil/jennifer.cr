@@ -1,0 +1,15 @@
+database:
+  defaults : &defaults
+    host: localhost
+    adapter: postgres
+    user: developer
+    password: 1qazxsw2
+    migration_files_path: ./examples/migrations
+
+  development:
+    db: jennifer_develop
+    <<: *defaults
+
+  test:
+    db: jennifer_test
+    <<: *defaults

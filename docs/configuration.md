@@ -48,7 +48,20 @@ Jennifer::Config.configure do |conf|
 end
 ```
 
-All configs:
+If your configurations aren't stored on the top level - you can manipulate which document subpart will be used to parse parameters:
+
+```crystal
+Jennifer::Config.read("./spec/fixtures/database.yml", &.["database"]["development"])
+```
+
+Also configuration can be parsed directly from URI:
+
+```crystal
+db_uri = "mysql://root@somehost/some_database?max_pool_size=111&initial_pool_size=222&max_idle_pool_size=333&retry_attempts=444&checkout_timeout=555&retry_delay=666"
+Jennifer::Config.from_uri(db)
+```
+
+## Supported configuation parameters
 
 | config | default value |
 | --- | --- |
@@ -72,14 +85,7 @@ All configs:
 
 > `port = -1` will provide connection URI without port mention
 
-Also configuration can be parsed directly from URI:
-
-```crystal
-db_uri = "mysql://root@somehost/some_database?max_pool_size=111&initial_pool_size=222&max_idle_pool_size=333&retry_attempts=444&checkout_timeout=555&retry_delay=666"
-Jennifer::Config.from_uri(db)
-```
-
-#### Logging
+## Logging
 
 Jennifer uses regular Crystal logging mechanism so you could specify your own logger or formatter:
 

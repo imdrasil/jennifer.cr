@@ -22,7 +22,7 @@ module Jennifer
       alias Supportable = DBAny | Base
 
       @@table_name : String?
-      @@singular_table_name : String?
+      @@foreign_key_name : String?
       @@actual_table_field_count : Int32?
       @@has_table : Bool?
       @@expression_builder : QueryBuilder::ExpressionBuilder?
@@ -41,11 +41,21 @@ module Jennifer
       end
 
       def self.table_name : String
-        @@table_name ||= to_s.underscore.pluralize
+        @@table_name ||=
+          begin
+            name = ""
+            class_name = Inflector.demodulize(to_s)
+            name = self.table_prefix if self.responds_to?(:table_prefix)
+            Inflector.pluralize(name + class_name.underscore)
+          end
       end
 
-      def self.singular_table_name(value : String | Symbol)
-        @@singular_table_name = value.to_s
+      def self.foreign_key_name(value : String | Symbol)
+        @@foreign_key_name = value.to_s
+      end
+
+      def self.foreign_key_name
+        @@foreign_key_name ||= Inflector.singularize(table_name) + "_id"
       end
 
       def self.c(name : String)
@@ -315,10 +325,6 @@ module Jennifer
 
         after_save :__refresh_changes
         before_save :__check_if_changed
-
-        def self.singular_table_name
-          @@singular_table_name ||= {{@type}}.to_s.underscore
-        end
 
         def self.relations
           @@relations

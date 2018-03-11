@@ -97,7 +97,7 @@ module Jennifer
       end
 
       def foreign_field
-        @foreign ||= T.singular_table_name + "_id"
+        @foreign ||= T.foreign_key_name
       end
 
       def primary_field

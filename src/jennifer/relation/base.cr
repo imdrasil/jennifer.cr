@@ -92,7 +92,7 @@ module Jennifer
 
       # Foreign key on ~T~ model side
       def foreign_field
-        @foreign ||= Q.singular_table_name + "_id"
+        @foreign ||= Q.foreign_key_name
       end
 
       def primary_field

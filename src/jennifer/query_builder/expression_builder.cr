@@ -15,7 +15,7 @@ module Jennifer
         @query = other.@query
       end
 
-      def sql(_query : String, args : Array(DB::Any) = [] of DB::Any, use_brackets : Bool = true)
+      def sql(_query : String, args : Array(DBAny) = [] of DBAny, use_brackets : Bool = true)
         RawSql.new(_query, args, use_brackets)
       end
 

@@ -171,17 +171,24 @@ describe Jennifer::Adapter::Base do
 
   describe "#bulk_insert" do
     it "do nothing if empty array was given" do
-      count = query_count
-      adapter.bulk_insert([] of Contact)
-      query_count.should eq(count)
+      expect_query_silence do
+        adapter.bulk_insert([] of Contact)
+      end
     end
 
-    it "inserts using table lock" do
+    it "starts transaction" do
       void_transaction do
         c = Factory.build_contact
         adapter.bulk_insert([c])
         query_log.any? { |entry| entry =~ /TRANSACTION/ }.should be_true
-        postgres_only do
+      end
+    end
+
+    postgres_only do
+      it "uses table lock" do
+        void_transaction do
+          c = Factory.build_contact
+          adapter.bulk_insert([c])
           query_log.any? { |entry| entry =~ /LOCK TABLE/ }.should be_true
         end
       end

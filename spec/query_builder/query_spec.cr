@@ -4,8 +4,8 @@ describe Jennifer::QueryBuilder::Query do
   described_class = Jennifer::QueryBuilder::Query
 
   describe "#to_sql" do
-    context "if query tree is not epty" do
-      it "retruns sql representation of condition" do
+    context "if query tree is not empty" do
+      it "returns sql representation of condition" do
         q = Factory.build_query
         c = Factory.build_criteria
         q.set_tree(c).as_sql.should eq(c.as_sql)
@@ -20,8 +20,8 @@ describe Jennifer::QueryBuilder::Query do
   end
 
   describe "#sql_args" do
-    context "if query tree is not epty" do
-      it "retruns sql args of condition" do
+    context "if query tree is not empty" do
+      it "returns sql args of condition" do
         q = Factory.build_query
         c = Factory.build_criteria
         q.set_tree(c).sql_args.should eq(c.sql_args)
@@ -30,7 +30,7 @@ describe Jennifer::QueryBuilder::Query do
 
     context "if query tree is empty" do
       it "returns empty array" do
-        Factory.build_query.sql_args.should eq([] of DB::Any)
+        Factory.build_query.sql_args.should eq([] of Jennifer::DBAny)
       end
     end
   end
@@ -110,7 +110,7 @@ describe Jennifer::QueryBuilder::Query do
       end
     end
 
-    context "with array of criterias" do
+    context "with array of criterion" do
       it "removes brackets for all raw sql" do
         fields = described_class["table"].select([Contact._id, Contact.context.sql("some sql")])._select_fields
         fields.size.should eq(2)
@@ -264,7 +264,7 @@ describe Jennifer::QueryBuilder::Query do
   end
 
   describe "#distinct" do
-    it "adds DISTINC to SELECT clause" do
+    it "adds DISTINCT to SELECT clause" do
       Query["contacts"].select(:age).distinct.to_sql.should match(/SELECT DISTINCT contacts\.age/)
     end
 
@@ -344,12 +344,24 @@ describe Jennifer::QueryBuilder::Query do
       clone = q.except([""])
       clone.expression_builder.query.should eq(clone)
     end
+  end
 
-    it "automatially ignores any relation usage" do
-      q = Contact.all.eager_load(:addresses)
-      clone = q.except([""])
-      clone.with_relation?.should be_false
-      clone._joins!.empty?.should be_false
-    end
+  describe "#clone" do
+    clone = Query["contacts"]
+      .where { _id > 2 }
+      .group(:age)
+      .having { _age > 2 }
+      .order(age: "asc")
+      .join("passports") { _contact_id == _contacts__id }
+      .union(Query["contacts"])
+      .select { [_id] }
+      .clone
+
+    it { clone.to_sql.should match(/WHERE/) }
+    it { clone.to_sql.should match(/GROUP/) }
+    it { clone.to_sql.should match(/ORDER/) }
+    it { clone.to_sql.should match(/JOIN/) }
+    it { clone.to_sql.should match(/UNION/) }
+    it { clone._select_fields[0].should_not be_a(Jennifer::QueryBuilder::Star) }
   end
 end

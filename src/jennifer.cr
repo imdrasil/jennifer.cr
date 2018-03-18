@@ -44,6 +44,10 @@ module Jennifer
   end
 
   class StubRelation < ::Jennifer::Relation::IRelation
+    def name
+      raise "stubed relation"
+    end
+
     def insert(a, b)
       raise "stubed relation"
     end

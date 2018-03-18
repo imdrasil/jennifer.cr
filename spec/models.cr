@@ -61,11 +61,11 @@ class Contact < ApplicationRecord
   {% end %}
 
   has_many :addresses, Address, inverse_of: :contact
-  has_many :facebook_profiles, FacebookProfile
+  has_many :facebook_profiles, FacebookProfile, inverse_of: :contact
   has_and_belongs_to_many :countries, Country
   has_and_belongs_to_many :facebook_many_profiles, FacebookProfile, association_foreign: :profile_id
   has_one :main_address, Address, {where { _main }}, inverse_of: :contact
-  has_one :passport, Passport
+  has_one :passport, Passport, inverse_of: :contact
 
   validates_inclusion :age, 13..75
   validates_length :name, minimum: 1
@@ -142,7 +142,7 @@ class Profile < ApplicationRecord
     login: String,
     contact_id: Int32?,
     type: String,
-    virtual_parent_field: { type: String?, virtual: true }
+    virtual_parent_field: {type: String?, virtual: true}
   )
 
   getter commit_callback_called = false
@@ -159,7 +159,7 @@ end
 class FacebookProfile < Profile
   mapping(
     uid: String?, # for testing purposes
-    virtual_child_field: { type: Int32?, virtual: true }
+    virtual_child_field: {type: Int32?, virtual: true}
   )
 
   getter fb_commit_callback_called = false
@@ -194,8 +194,8 @@ class Country < Jennifer::Model::Base
   has_and_belongs_to_many :contacts, Contact
   has_many :cities, City, inverse_of: :country
 
-  {% for callback in %i(before_save after_save after_create before_create after_initialize 
-                        before_destroy after_destroy before_update after_update) %}
+  {% for callback in %i(before_save after_save after_create before_create after_initialize
+                       before_destroy after_destroy before_update after_update) %}
     getter {{callback.id}}_attr = false
 
     {{callback.id}} {{callback}}_check
@@ -239,15 +239,15 @@ class OneFieldModel < Jennifer::Model::Base
 end
 
 # ===================
-# synthetic models 
+# synthetic models
 # ===================
 
 class CountryWithTransactionCallbacks < ApplicationRecord
   table_name "countries"
 
   mapping({
-    id: Primary32,
-    name: String
+    id:   Primary32,
+    name: String,
   })
 
   {% for action in [:create, :save, :destroy, :update] %}
@@ -269,8 +269,8 @@ class CountryWithValidationCallbacks < ApplicationRecord
   table_name "countries"
 
   mapping({
-    id: Primary32,
-    name: String
+    id:   Primary32,
+    name: String,
   })
 
   before_validation :raise_skip, :before_validation_method
@@ -389,7 +389,7 @@ class AbstractContactModel < Jennifer::Model::Base
   mapping({
     id:   Primary32,
     name: String?,
-    age: Int32
+    age:  Int32,
   }, false)
 end
 
@@ -406,11 +406,11 @@ end
 
 class MaleContact < Jennifer::View::Base
   mapping({
-    id:     Primary32,
-    name:   String,
-    gender: String,
-    age:    Int32,
-    created_at: Time?
+    id:         Primary32,
+    name:       String,
+    gender:     String,
+    age:        Int32,
+    created_at: Time?,
   }, false)
 
   scope :main { where { _age < 50 } }
@@ -426,11 +426,11 @@ class FakeFemaleContact < Jennifer::View::Base
   view_name "female_contacs"
 
   mapping({
-    id:     Primary32,
-    name:   String,
-    gender: String,
-    age:    Int32,
-    created_at: Time?
+    id:         Primary32,
+    name:       String,
+    gender:     String,
+    age:        Int32,
+    created_at: Time?,
   }, false)
 end
 

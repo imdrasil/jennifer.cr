@@ -26,12 +26,27 @@ describe Jennifer::QueryBuilder::ModelQuery do
   end
 
   describe "#eager_load" do
-    it "loads relation as well" do
-      c1 = Factory.create_contact(name: "asd")
-      Factory.create_address(contact_id: c1.id, street: "asd st.")
+    describe "inverse_of" do
+      it "loads relation as well" do
+        c1 = Factory.create_contact(name: "asd")
+        Factory.create_address(contact_id: c1.id, street: "asd st.")
 
-      res = Contact.all.eager_load(:addresses).first!
-      res.addresses[0].street.should eq("asd st.")
+        res = Contact.all.eager_load(:addresses).first!
+        res.addresses[0].street.should eq("asd st.")
+      end
+
+      it "sets all deep relations" do
+        c = Factory.create_contact(name: "contact 1")
+        Factory.create_address(contact_id: c.id, street: "some st.")
+        country = Factory.create_country
+        Factory.create_city(country_id: country.id)
+        c.add_countries(country)
+
+        res = City.all.eager_load(country: {:contacts => [:addresses]}).to_a
+        expect_query_silence do
+          res[0].country!.contacts[0].addresses[0].contact
+        end
+      end
     end
 
     context "with nested relation defined as symbol" do
@@ -80,7 +95,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
         Factory.create_city(country_id: country.id)
         c.add_countries(country)
 
-        res = City.all.eager_load(country: { :contacts => [:addresses, :passport] }).to_a
+        res = City.all.eager_load(country: {:contacts => [:addresses, :passport]}).to_a
         expect_query_silence do
           res.size.should eq(1)
           res[0].country!.contacts.size.should eq(1)
@@ -100,7 +115,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
         expect_query_silence do
           res.size.should eq(2)
           res[0].country!.id.should eq(country.id)
-          res[0].country!.same?(res[1].country).should be_true          
+          res[0].country!.same?(res[1].country).should be_true
         end
       end
     end
@@ -315,8 +330,64 @@ describe Jennifer::QueryBuilder::ModelQuery do
   end
 
   describe "#includes" do
+    context "with nested relation defined as symbol" do
+      it do
+        c = Factory.create_contact(name: "contact 1")
+        Factory.create_address(contact_id: c.id, street: "some st.")
+        country = Factory.create_country
+        Factory.create_city(country_id: country.id)
+        c.add_countries(country)
+
+        res = Contact.all.includes(:addresses, :passport, countries: :cities).to_a
+        expect_query_silence do
+          res.size.should eq(1)
+          res[0].addresses.size.should eq(1)
+          res[0].passport.should be_nil
+          res[0].countries.size.should eq(1)
+          res[0].countries[0].cities.size.should eq(1)
+        end
+      end
+    end
+
+    context "with nested relation defined as array" do
+      it do
+        c = Factory.create_contact(name: "contact 1")
+        Factory.create_address(contact_id: c.id, street: "some st.")
+        country = Factory.create_country
+        Factory.create_city(country_id: country.id)
+        c.add_countries(country)
+
+        res = Contact.all.includes(:addresses, :passport, countries: [:cities]).to_a
+        expect_query_silence do
+          res.size.should eq(1)
+          res[0].addresses.size.should eq(1)
+          res[0].passport.should be_nil
+          res[0].countries.size.should eq(1)
+          res[0].countries[0].cities.size.should eq(1)
+        end
+      end
+    end
+
+    context "with nested relation defined as hash" do
+      it do
+        c = Factory.create_contact(name: "contact 1")
+        Factory.create_address(contact_id: c.id, street: "some st.")
+        country = Factory.create_country
+        Factory.create_city(country_id: country.id)
+        c.add_countries(country)
+
+        res = City.all.includes(country: {:contacts => [:addresses, :passport]}).to_a
+        expect_query_silence do
+          res.size.should eq(1)
+          res[0].country!.contacts.size.should eq(1)
+          res[0].country!.contacts[0].addresses.size.should eq(1)
+          res[0].country!.contacts[0].passport.should be_nil
+        end
+      end
+    end
+
     it "doesn't add JOIN condition" do
-      Contact.all.includes(:address)._joins.nil?.should be_true
+      Contact.all.includes(:addresses)._joins.nil?.should be_true
     end
 
     it "stops reloading relation from db if there is no records" do
@@ -340,9 +411,45 @@ describe Jennifer::QueryBuilder::ModelQuery do
       it "sets owner during building collection" do
         c = Factory.create_contact
         a = Factory.create_address(contact_id: c.id)
-        expect_queries_to_be_executed(2) do
-          res = Contact.all.includes(:addresses).to_a
+        res = Contact.all.includes(:addresses).to_a
+        expect_query_silence do
           res[0].addresses[0].contact
+        end
+      end
+
+      it "sets all deep relations" do
+        c = Factory.create_contact(name: "contact 1")
+        Factory.create_address(contact_id: c.id, street: "some st.")
+        country = Factory.create_country
+        Factory.create_city(country_id: country.id)
+        c.add_countries(country)
+
+        res = City.all.includes(country: {:contacts => [:addresses]}).to_a
+        expect_query_silence do
+          res.size.should eq(1)
+          res[0].country!.contacts[0].addresses[0].contact
+        end
+      end
+    end
+  end
+
+  describe "#preload" do
+    # NOTE: #preload is an alias for #includes so just check if it delegates call to original method
+    context "with nested relation defined as array" do
+      it do
+        c = Factory.create_contact(name: "contact 1")
+        Factory.create_address(contact_id: c.id, street: "some st.")
+        country = Factory.create_country
+        Factory.create_city(country_id: country.id)
+        c.add_countries(country)
+
+        res = Contact.all.includes(:addresses, :passport, countries: [:cities]).to_a
+        expect_query_silence do
+          res.size.should eq(1)
+          res[0].addresses.size.should eq(1)
+          res[0].passport.should be_nil
+          res[0].countries.size.should eq(1)
+          res[0].countries[0].cities.size.should eq(1)
         end
       end
     end
@@ -447,9 +554,107 @@ describe Jennifer::QueryBuilder::ModelQuery do
     end
   end
 
+  describe "#except" do
+    it "creates new instance" do
+      q = Contact.where { _id > 2 }
+      q.except([""]).should_not eq(q)
+    end
+
+    it "creates equal object if nothing to exclude was given" do
+      q = Contact.where { _id > 2 }
+      clone = q.except([""])
+      clone.eql?(q).should be_true
+    end
+
+    it "excludes having if given" do
+      q = Contact.all.group(:age).having { _age > 20 }
+      clone = q.except(["having"])
+      clone._having.nil?.should be_true
+    end
+
+    it "excludes order if given" do
+      q = Contact.all.order(age: "asc")
+      clone = q.except(["order"])
+      clone._order.empty?.should be_true
+    end
+
+    it "excludes join if given" do
+      q = Contact.all.join("passports") { _contact_id == _contacts__id }
+      clone = q.except(["join"])
+      clone._joins.nil?.should be_true
+    end
+
+    it "excludes join if given" do
+      q = Contact.all.union(Query["contacts"])
+      clone = q.except(["union"])
+      clone._unions.nil?.should be_true
+    end
+
+    it "excludes group if given" do
+      q = Contact.all.group(:age)
+      clone = q.except(["group"])
+      clone._groups.empty?.should be_true
+    end
+
+    it "excludes muting if given" do
+      q = Contact.all.join("passports") { _contact_id == _contacts__id }
+      clone = q.except(["none"])
+      clone.eql?(q).should be_true
+    end
+
+    it "excludes select if given" do
+      q = Contact.all.select { [_id] }
+      clone = q.except(["select"])
+      clone._select_fields.size.should eq(1)
+      clone._select_fields[0].should be_a(Jennifer::QueryBuilder::Star)
+    end
+
+    it "excludes where if given" do
+      q = Contact.where { _age < 99 }
+      clone = q.except(["where"])
+      clone.to_sql.should_not match(/WHERE/)
+    end
+
+    it "expression builder follow newly created object" do
+      q = Contact.all
+      clone = q.except([""])
+      clone.expression_builder.query.should eq(clone)
+    end
+
+    it "automatically ignores any relation usage" do
+      q = Contact.all.eager_load(:addresses)
+      clone = q.except([""])
+      clone.with_relation?.should be_false
+      clone._joins!.empty?.should be_false
+    end
+  end
+
+  describe "#clone" do
+    clone = Contact
+      .where { _id > 2 }
+      .group(:age)
+      .having { _age > 2 }
+      .order(age: "asc")
+      .join("passports") { _contact_id == _contacts__id }
+      .union(Query["contacts"])
+      .select { [_id] }
+      .eager_load(:addresses)
+      .includes(:addresses)
+      .clone
+
+    it { clone.to_sql.should match(/WHERE/) }
+    it { clone.to_sql.should match(/GROUP/) }
+    it { clone.to_sql.should match(/ORDER/) }
+    it { clone.to_sql.should match(/JOIN/) }
+    it { clone.to_sql.should match(/UNION/) }
+    it { clone._select_fields[0].should_not be_a(Jennifer::QueryBuilder::Star) }
+    it { clone.with_relation?.should be_true }
+    pending "add more precise testing" {}
+  end
+
   context "complex query example" do
     postgres_only do
-      it "allows custom select with crouping" do
+      it "allows custom select with grouping" do
         Factory.create_contact
         Contact
           .all

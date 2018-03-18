@@ -14,10 +14,10 @@ module Jennifer
         initialize
       end
 
-      def initialize_copy_with(other, except : Array(String))
-        super
-        @eager_load_tree = other.@eager_load_tree.clone
-        @eager_load = other.@eager_load.clone
+      protected def initialize_copy_without(other, except : Array(String))
+        super(other, except)
+        # @eager_load = false
+        # @include_relations = false
         @preload_relations = [] of String
       end
 
@@ -28,9 +28,10 @@ module Jennifer
       end
 
       protected def initialize_copy(other)
-        super
-        @eager_load_tree = other.@eager_load_tree.clone
-        @eager_load = other.@eager_load.clone
+        super(other)
+        @eager_load = other.@eager_load
+        @include_relations = other.@include_relations
+        @nested_relation_tree = other.@nested_relation_tree.clone
         @preload_relations = other.@preload_relations.clone
       end
 
@@ -42,8 +43,12 @@ module Jennifer
         T
       end
 
-      def eager_load_tree
-        @eager_load_tree ||= RelationNestingTree(T).new
+      def nested_relation_tree
+        @nested_relation_tree ||= NestedRelationTree.new(T)
+      end
+
+      def multi_query_relation_tree
+        @multi_query_relation_tree ||= MultiQueryRelationTree.new(T)
       end
 
       # Perform search using given plain query and arguments and builds ` but also allow to preload
@@ -87,12 +92,10 @@ module Jennifer
       # Perform request and maps results set to objects and related objects grepping fields from joined tables; preloading also
       # are performed
       private def to_a_with_relations
-        h_result = {} of DBAny => T
-
-        adapter.select(self) do |rs|
-          eager_load_tree.read(rs, h_result)
+        result = adapter.select(self) do |rs|
+          nested_relation_tree.read(rs, T)
         end
-        add_preloaded(h_result.values)
+        add_preloaded(result)
       end
 
       private def adapter

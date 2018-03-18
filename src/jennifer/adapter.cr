@@ -1,7 +1,7 @@
 require "./adapter/base"
 
 module Jennifer
-  alias AnyResult = DB::Any | Int8 | Int16 | JSON::Any
+  alias AnyResult = DBAny | Int8 | Int16 | JSON::Any
   alias AnyArgument = AnyResult | Array(AnyResult)
 
   alias DBAny = Array(Int32) | Array(Char) | Array(Float32) | Array(Float64) |
@@ -34,7 +34,7 @@ module Jennifer
       end
     {% end %}
 
-    def self.query(_query, args = [] of DB::Any)
+    def self.query(_query, args = [] of DBAny)
       adapter.query(_query, args) { |rs| yield rs }
     end
 

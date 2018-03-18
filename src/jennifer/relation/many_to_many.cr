@@ -41,7 +41,10 @@ module Jennifer
         afk = association_foreign_key
         _primary_value = primary_value
         mfk = foreign_field
-        q = T.all.join(join_table!) { (c(afk) == T.primary) & (c(mfk) == _primary_value) }
+        q = T.all.join(join_table!) do
+          (c(afk) == T.primary) &
+            (_primary_value.is_a?(Array) ? c(mfk).in(_primary_value) : c(mfk) == _primary_value)
+        end
         if @join_query
           _tree = @join_query.not_nil!
           q.where { _tree }

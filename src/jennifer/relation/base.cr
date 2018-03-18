@@ -43,13 +43,13 @@ module Jennifer
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
-      def condition_clause(ids : Array)
-        tree = T.c(foreign_field).in(ids)
+      def condition_clause(id)
+        tree = T.c(foreign_field) == id
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
-      def condition_clause(id)
-        tree = T.c(foreign_field) == id
+      def condition_clause(ids : Array)
+        tree = T.c(foreign_field).in(ids)
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 

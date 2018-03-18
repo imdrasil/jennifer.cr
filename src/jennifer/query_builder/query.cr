@@ -54,7 +54,7 @@ module Jennifer
         initialize
       end
 
-      def initialize_copy_without(other, except : Array(String))
+      protected def initialize_copy_without(other, except : Array(String))
         {% for segment in %w(having limit offset raw_select from lock distinct) %}
           @{{segment.id}} = other.@{{segment.id}}.clone unless except.includes?({{segment}})
         {% end %}
@@ -135,7 +135,7 @@ module Jennifer
       end
 
       def sql_args
-        @tree ? @tree.not_nil!.sql_args : [] of DB::Any
+        @tree ? @tree.not_nil!.sql_args : [] of DBAny
       end
 
       def sql_args_count
@@ -143,7 +143,7 @@ module Jennifer
       end
 
       def select_args
-        args = [] of DB::Any
+        args = [] of DBAny
         args.concat(@from.as(Query).select_args) if @from.is_a?(Query)
         _joins!.each { |join| args.concat(join.sql_args) } if @joins
         args.concat(@tree.not_nil!.sql_args) if @tree

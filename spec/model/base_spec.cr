@@ -385,14 +385,6 @@ describe Jennifer::Model::Base do
     end
   end
 
-  describe "::relations" do
-    it "returns hash of relation objects" do
-      rels = Contact.relations
-      rels.is_a?(Hash).should be_true
-      rels.empty?.should be_false
-    end
-  end
-
   describe "#destroy" do
     it "deletes from db" do
       contact = Factory.create_contact

@@ -13,13 +13,6 @@ module Jennifer
       include Validation
       include Callback
 
-      module ClassMethods
-        abstract def relations
-        abstract def relation(name)
-      end
-
-      extend ClassMethods
-
       @@table_name : String?
       @@foreign_key_name : String?
       @@actual_table_field_count : Int32?
@@ -242,14 +235,8 @@ module Jennifer
         ::Jennifer::Model::Callback.inherited_hook
         ::Jennifer::Model::RelationDefinition.inherited_hook
 
-        @@relations = {} of String => ::Jennifer::Relation::IRelation
-
         after_save :__refresh_changes
         before_save :__check_if_changed
-
-        def self.relations
-          @@relations
-        end
 
         def self.superclass
           {{@type.superclass}}
@@ -260,9 +247,9 @@ module Jennifer
           ::Jennifer::Model::Callback.finished_hook
 
           def self.relation(name : String)
-            @@relations[name]
+            RELATIONS[name]
           rescue e : KeyError
-            raise Jennifer::UnknownRelation.new(self, e)
+            super(name)
           end
         end
       end

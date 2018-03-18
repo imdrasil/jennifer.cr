@@ -75,19 +75,19 @@ module Jennifer
         str
       end
 
-      def sql_args : Array(DB::Any)
+      def sql_args : Array(DBAny)
         res = @lhs.sql_args
         if filterable? && !(@operator == :is || @operator == :is_not)
           if @operator == :in || @operator == :between
             @rhs.as(Array).each do |e|
               unless e.is_a?(Criteria)
-                res << e.as(DB::Any)
+                res << e.as(DBAny)
               else
                 res += e.sql_args
               end
             end
           else
-            res << @rhs.as(DB::Any)
+            res << @rhs.as(DBAny)
           end
         elsif @rhs.is_a?(Criteria)
           res += @rhs.as(Criteria).sql_args

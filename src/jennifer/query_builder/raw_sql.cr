@@ -2,19 +2,19 @@ module Jennifer
   module QueryBuilder
     class RawSql < Criteria
       @field : String
-      @params : Array(DB::Any)
+      @params : Array(DBAny)
       @use_brackets : Bool
 
       def_clone
 
-      def initialize(@field, args : Array = [] of DB::Any, @use_brackets = true)
+      def initialize(@field, args : Array = [] of DBAny, @use_brackets = true)
         @table = ""
-        @params = args.map { |e| e.as(DB::Any) }
+        @params = args.map { |e| e.as(DBAny) }
       end
 
       def initialize(@field, @use_brackets)
         @table = ""
-        @params = [] of DB::Any
+        @params = [] of DBAny
       end
 
       def with_brackets

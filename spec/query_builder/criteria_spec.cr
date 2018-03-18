@@ -110,7 +110,7 @@ describe Jennifer::QueryBuilder::Criteria do
     it "raises error if giben array is empty" do
       c = Factory.build_criteria
       expect_raises(Exception, "IN array can't be empty") do
-        c.in([] of DB::Any)
+        c.in([] of Jennifer::DBAny)
       end
     end
 

@@ -4,8 +4,10 @@ module Jennifer
   module QueryBuilder
     abstract class IModelQuery < Query
       @eager_load : Bool  = false
+      @include_relations : Bool = false
 
-      abstract def eager_load_tree
+      abstract def nested_relation_tree
+      abstract def multi_query_relation_tree
 
       # NOTE: improperly detects source of #abstract_class if run sam with only Version model
       def model_class
@@ -27,7 +29,7 @@ module Jennifer
       def _select_fields : Array(Criteria)
         if @select_fields.empty?
           if @eager_load
-            eager_load_tree.select_fields(self)
+            nested_relation_tree.select_fields(self)
           else
             [@expression.star] of Criteria
           end
@@ -52,49 +54,39 @@ module Jennifer
             raise BaseException.new("#with should be called after correspond join: no such table \"#{table_name}\" of relation \"#{name}\"")
           end
           @eager_load = true
-          eager_load_tree.add_relation(name)
+          nested_relation_tree.add_relation(name)
         end
         self
       end
 
-      # Preload given relation after object loading
-      def includes(relation : Symbol | String)
-        preload_relations << relation.to_s
-        self
-      end
+      def includes(*names, **deep_relations)
+        @include_relations = true
 
-      # Preload given relations after object loading
-      def includes(relations : Array)
-        relations.each { |rel| preload_relations << rel.to_s }
-        self
-      end
+        names.each do |name|
+          multi_query_relation_tree.add_relation(self, name)
+        end
 
-      # Preload given relations after object loading
-      def includes(*relations)
-        relations.each { |rel| preload_relations << rel.to_s }
+        deep_relations.each do |rel, nested_rel|
+          multi_query_relation_tree.add_deep_relation(self, rel, nested_rel)
+        end
         self
       end
 
       # Alias for includes
-      def preload(relation)
-        includes(relation)
-      end
-
-      # Alias for includes
-      def preload(*relations)
-        includes(relations)
+      def preload(*names, **deep_relations)
+        includes(*names, **deep_relations)
       end
 
       # Adds to select statement given relations (with correspond joins) and loads them from result
       def eager_load(*names, **deep_relations)
         @eager_load = true
-        
+
         names.each do |name|
-          eager_load_tree.add_relation(self, name)
+          nested_relation_tree.add_relation(self, name)
         end
 
         deep_relations.each do |rel, nested_rel|
-          eager_load_tree.add_deep_relation(self, rel, nested_rel)
+          nested_relation_tree.add_deep_relation(self, rel, nested_rel)
         end
         self
       end
@@ -138,33 +130,8 @@ module Jennifer
 
       # Loads relations added by `preload` method; makes one separate request per each relation
       private def add_preloaded(collection)
-        return collection if collection.empty?
-        primary_fields = [] of DBAny
-        last_primary_field_name = ""
-
-        preload_relations.each do |name|
-          rel = model_class.relation(name)
-          _primary = rel.primary_field
-          _foreign = rel.foreign_field
-
-          if last_primary_field_name != _primary
-            last_primary_field_name = _primary
-            primary_fields.clear
-            collection.each { |e| primary_fields << e.attribute(_primary) }
-          end
-
-          new_collection = rel.query(primary_fields).db_results
-
-          if new_collection.empty?
-            collection.each(&.relation_retrieved(name))
-          else
-            collection.each_with_index do |mod, i|
-              pv = primary_fields[i]
-              # TODO: check if deleting elements from array will increase performance
-              new_collection.each { |hash| mod.append_relation(name, hash) if hash[_foreign] == pv }
-            end
-          end
-        end
+        return collection if collection.empty? || !@include_relations
+        multi_query_relation_tree.preload(collection)
         collection
       end
 

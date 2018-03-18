@@ -137,8 +137,8 @@ module Jennifer
         @alias ? "#{identifier} AS #{@alias}" : identifier
       end
 
-      def sql_args : Array(DB::Any)
-        [] of DB::Any
+      def sql_args : Array(DBAny)
+        [] of DBAny
       end
 
       def sql_args_count

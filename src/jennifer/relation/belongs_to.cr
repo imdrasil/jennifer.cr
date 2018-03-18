@@ -17,6 +17,11 @@ module Jennifer
         @join_query ? _tree & @join_query.not_nil!.clone : _tree
       end
 
+      def condition_clause(ids : Array)
+        _tree = T.c(primary_field).in(ids)
+        @join_query ? _tree & @join_query.not_nil!.clone : _tree
+      end
+
       def join_condition(query, type)
         this = self
         query.join(model_class, type: type, relation: @name) do |eb|

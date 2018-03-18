@@ -16,6 +16,12 @@ module Jennifer
       include Scoping
       include RelationDefinition
 
+      module ClassMethods
+        abstract def relation(name)
+      end
+
+      extend ClassMethods
+
       alias Supportable = DBAny | self
 
       @@expression_builder : QueryBuilder::ExpressionBuilder?
@@ -87,11 +93,11 @@ module Jennifer
         context.star
       end
 
-      def append_relation(name : String, hash)
-        raise Jennifer::UnknownRelation.new(self.class, name)
+      def self.relation(name)
+        raise Jennifer::UnknownRelation.new(self, name)
       end
 
-      def relation_retrieved(name : String)
+      def append_relation(name : String, hash)
         raise Jennifer::UnknownRelation.new(self.class, name)
       end
 

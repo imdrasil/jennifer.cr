@@ -52,19 +52,18 @@ module Jennifer
         true
       end
 
+      def self.relation(name)
+        raise Jennifer::UnknownRelation.new(self, KeyError.new(name))
+      end
+
       macro inherited
         AFTER_INITIALIZE_CALLBACKS = [] of String
-
-        # NOTE: stub for query builder
-        @@relations = {} of String => ::Jennifer::Relation::IRelation
-        def self.relations
-          @@relations
-        end
+        RELATIONS = {} of String => ::Jennifer::Relation::IRelation
 
         def self.relation(name : String)
-          @@relations[name]
+          RELATIONS[name]
         rescue e : KeyError
-          raise Jennifer::UnknownRelation.new(self, e)
+          super(name)
         end
 
         # NOTE: override regular behavior - used fields count instead of

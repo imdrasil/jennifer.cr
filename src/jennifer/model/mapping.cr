@@ -67,13 +67,13 @@ module Jennifer
                 {{value[:parsed_type].id}}
               end
 
-              {% if primary_auto_incrementable %}
-                # Inits primary field
-                def init_primary_field(value)
+              # Inits primary field
+              def init_primary_field(value)
+                {% if primary_auto_incrementable %}
                   raise ::Jennifer::AlreadyInitialized.new(@{{key.id}}, value) if @{{key.id}}
                   @{{key.id}} = value.as({{value[:type]}})
-                end
-              {% end %}
+                {% end %}
+              end
             {% end %}
           {% end %}
         {% end %}
@@ -108,22 +108,6 @@ module Jennifer
       # - primary
       # - virtual
       private macro single_mapping(properties, strict = true)
-        def self.children_classes
-          {% begin %}
-            {% if @type.all_subclasses.size > 0 %}
-              [{{ @type.all_subclasses.join(", ").id }}]
-            {% else %}
-              [] of Model::Base.class
-            {% end %}
-          {% end %}
-        end
-
-        @@strict_mapping : Bool?
-
-        def self.strict_mapping?
-          @@strict_mapping ||= adapter.table_column_count(table_name) == field_count
-        end
-
         {%
           primary = nil
           primary_auto_incrementable = false
@@ -177,10 +161,11 @@ module Jennifer
         end
 
         COLUMNS_METADATA = {{properties}}
+        FIELD_NAMES = [{{properties.keys.map { |e| "#{e.id.stringify}" }.join(", ").id}}]
 
         # Returns array of field names
         def self.field_names
-          [{{nonvirtual_attrs.join(", ")}}]
+          FIELD_NAMES
         end
 
         # Returns named tuple of column metadata
@@ -209,31 +194,6 @@ module Jennifer
 
         def initialize(values : Hash | NamedTuple, @new_record)
           initialize(values)
-        end
-
-        def self.build(pull : DB::ResultSet)
-          \{% begin %}
-            \{% klasses = @type.all_subclasses.select { |s| s.constant("STI") == true } %}
-            \{% if !klasses.empty? %}
-              hash = adapter.result_to_hash(pull)
-              o =
-                case hash["type"]
-                when "", nil, "\{{@type}}"
-                  new(hash, false)
-                \{% for klass in klasses %}
-                when "\{{klass}}"
-                  \{{klass}}.new(hash, false)
-                \{% end %}
-                else
-                  raise ::Jennifer::UnknownSTIType.new(self, hash["type"])
-                end
-            \{% else %}
-              o = new(pull)
-            \{% end %}
-
-            o.__after_initialize_callback
-            o
-          \{% end %}
         end
 
         {% if add_default_constructor %}
@@ -268,7 +228,7 @@ module Jennifer
 
         # Converts String based hash to `Hash(String, Jennifer::DBAny)`
         def self.build_params(hash : Hash(String, String?)) : Hash(String, Jennifer::DBAny)
-          converted_hash = super(hash)
+          converted_hash = {} of String => Jennifer::DBAny
           hash.each do |key, value|
             case key.to_s
             {% for field, opts in properties %}
@@ -299,14 +259,14 @@ module Jennifer
           requested_columns_count.times do
             column = pull.column_name(pull.column_index)
             case column
-            {% for key, value in properties %}
-              when {{value[:column_name] || key.id.stringify}}
+            {% for key in nonvirtual_attrs %}
+              {% value = properties[key] %}
+              when {{(value[:column_name] || key).id.stringify}}
                 %found{key.id} = true
                 begin
                   %var{key.id} = pull.read({{value[:parsed_type].id}})
                 rescue e : Exception
-                  raise ::Jennifer::DataTypeMismatch.new(column, {{@type}}, e) if ::Jennifer::DataTypeMismatch.match?(e)
-                  raise e
+                  raise ::Jennifer::DataTypeMismatch.build(column, {{@type}}, e)
                 end
             {% end %}
             else
@@ -318,9 +278,9 @@ module Jennifer
             end
           end
           {% if strict %}
-            {% for key, value in properties %}
+            {% for key in nonvirtual_attrs %}
               unless %found{key.id}
-                raise ::Jennifer::BaseException.new("Column #{{{@type}}}##{{{key.id.stringify}}} hasn't been found in the result set.")
+                raise ::Jennifer::BaseException.new("Column {{@type}}.{{key.id}} hasn't been found in the result set.")
               end
             {% end %}
           {% end %}
@@ -331,8 +291,7 @@ module Jennifer
                 res = %var{key.id}.as({{value[:parsed_type].id}})
                 !res.is_a?(Time) ? res : ::Jennifer::Config.local_time_zone.utc_to_local(res)
               rescue e : Exception
-                raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
-                raise e
+                raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
               end,
             {% end %}
             }
@@ -341,8 +300,7 @@ module Jennifer
             begin
               %var{key}.as({{properties[key][:parsed_type].id}})
             rescue e : Exception
-              raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
-              raise e
+              raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
             end
           {% end %}
         end
@@ -354,8 +312,9 @@ module Jennifer
           {% end %}
 
           {% for key, value in properties %}
-            if !values[{{value[:column_name] || key.id.stringify}}]?.nil?
-              %var{key.id} = values[{{value[:column_name] || key.id.stringify}}]
+            {% column = (value[:column_name] || key).id.stringify %}
+            if values.has_key?({{column}})
+              %var{key.id} = values[{{column}}]
             else
               %found{key.id} = false
             end
@@ -376,8 +335,7 @@ module Jennifer
               {% end %}
               %casted_var{key.id} = !%casted_var{key.id}.is_a?(Time) ? %casted_var{key.id} : ::Jennifer::Config.local_time_zone.utc_to_local(%casted_var{key.id})
             rescue e : Exception
-              raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
-              raise e
+              raise ::Jennifer::DataTypeCasting.match?(e) ? ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) : e
             end
           {% end %}
 
@@ -391,35 +349,6 @@ module Jennifer
             {% key = properties.keys[0] %}
             %casted_var{key}
           {% end %}
-        end
-
-        def save!(skip_validation : Bool = false)
-          raise Jennifer::RecordInvalid.new(errors) unless save(skip_validation)
-          true
-        end
-
-        def save(skip_validation : Bool = false) : Bool
-          unless self.class.adapter.under_transaction?
-            self.class.transaction do
-              save_record_under_transaction(skip_validation)
-            end || false
-          else
-            save_record_under_transaction(skip_validation)
-          end
-        end
-
-        # Saves all changes to db without invoking transaction; if validation not passed - returns `false`
-        def save_without_transaction(skip_validation : Bool = false) : Bool
-          return false unless skip_validation || validate!
-          return false unless __before_save_callback
-          response =
-            if new_record?
-              store_record
-            else
-              update_record
-            end
-          __after_save_callback
-          response
         end
 
         # Deletes object from db and calls callbacks
@@ -439,18 +368,6 @@ module Jennifer
           result
         end
 
-        # Reloads all fields from db.
-        def reload
-          raise ::Jennifer::RecordNotFound.new("It is not persisted yet") if new_record?
-          this = self
-          self.class.all.where { this.class.primary == this.primary }.limit(1).each_result_set do |rs|
-            {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(rs)
-          end
-          __refresh_changes
-          __refresh_relation_retrieves
-          self
-        end
-
         # Returns if any field was changed. If field again got first value - `true` anyway
         # will be returned.
         def changed?
@@ -466,7 +383,7 @@ module Jennifer
             {% for key in nonvirtual_attrs %}
               :{{key.id}} => @{{key.id}},
             {% end %}
-          }
+          } of Symbol => ::Jennifer::DBAny
         end
 
         # Returns hash with all attributes and string keys
@@ -475,13 +392,7 @@ module Jennifer
             {% for key in nonvirtual_attrs %}
               {{key.stringify}} => @{{key.id}},
             {% end %}
-          }
-        end
-
-        # Sets *value* to field with name *name* and stores them directly to db without
-        # any validation or callback
-        def update_column(name, value : Jennifer::DBAny)
-          update_columns({name => value})
+          } of String => ::Jennifer::DBAny
         end
 
         # Sets given *values* to proper fields and stores them directly to db without
@@ -530,8 +441,8 @@ module Jennifer
 
         # Returns field by given name. If object has no such field - will raise `BaseException`.
         # To avoid raising exception set `raise_exception` to `false`.
-        def attribute(name : String | Symbol, raise_exception : Bool = true)
-          case name.to_s
+        def attribute(name : String, raise_exception : Bool = true)
+          case name
           {% for attr in properties.keys %}
           when "{{attr.id}}"
             @{{attr.id}}
@@ -539,10 +450,6 @@ module Jennifer
           else
             raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}") if raise_exception
           end
-        end
-
-        def attribute(name : Symbol, raise_exception : Bool = true)
-          attribute(name.to_s, raise_exception)
         end
 
         # Returns named tuple of all fields should be saved (because they are changed).
@@ -587,34 +494,12 @@ module Jennifer
           {% end %}
         end
 
-        private def __check_if_changed
-          raise Jennifer::Skip.new unless changed? || new_record?
-        end
-
         private def init_attributes(values : Hash)
-          super
           {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
-        private def store_record : Bool
-          return false unless __before_create_callback
-          res = self.class.adapter.insert(self)
-          {% if primary && primary_auto_incrementable %}
-            if primary.nil? && res.last_insert_id > -1
-              init_primary_field(res.last_insert_id.to_i)
-            end
-          {% end %}
-          raise ::Jennifer::BaseException.new("Record hasn't been stored to the db") if res.rows_affected == 0
-          @new_record = false
-          __after_create_callback
-          true
-        end
-
-        private def update_record : Bool
-          return false unless __before_update_callback
-          res = self.class.adapter.update(self)
-          __after_update_callback
-          res.rows_affected == 1
+        private def init_attributes(values : DB::ResultSet)
+          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
         private def save_record_under_transaction(skip_validation) : Bool

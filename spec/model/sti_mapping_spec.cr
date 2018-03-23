@@ -73,12 +73,7 @@ describe Jennifer::Model::STIMapping do
   describe "::field_names" do
     it "returns all fields" do
       names = FacebookProfile.field_names
-      names.includes?("login").should be_true
-      names.includes?("uid").should be_true
-      names.includes?("type").should be_true
-      names.includes?("contact_id").should be_true
-      names.includes?("id").should be_true
-      names.size.should eq(5)
+      match_array(names, %w(login uid type contact_id id virtual_child_field virtual_parent_field))
     end
   end
 
@@ -164,7 +159,7 @@ describe Jennifer::Model::STIMapping do
       f.virtual_child_field = 2
       f.attribute(:virtual_child_field).should eq(2)
     end
-    
+
     it "returns own attribute" do
       f = Factory.build_facebook_profile(uid: "111", login: "my_login")
       f.attribute("uid").should eq("111")

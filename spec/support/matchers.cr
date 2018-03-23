@@ -43,7 +43,7 @@ module Spec
       "'#{@error_message}', but got: '#{object.errors[@attr].inspect}'"
     end
   end
-  
+
   module Expectations
     macro expect_queries_to_be_executed(amount)
       %count = query_count

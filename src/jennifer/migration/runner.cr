@@ -114,8 +114,8 @@ module Jennifer
         end
 
         MIGRATION
-        File.write(File.join(Config.migration_files_path.to_s, "#{time}_#{migration_name}.cr"), str)
-        puts "Migration #{migration_name} was generated"
+        File.write(File.join(Config.migration_files_path.to_s, "#{time}_#{migration_name.underscore}.cr"), str)
+        puts "Migration #{migration_name.underscore} was generated"
       end
 
       def self.default_adapter

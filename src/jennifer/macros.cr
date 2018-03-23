@@ -1,6 +1,10 @@
+alias Primary32 = Int32
+alias Primary64 = Int64
+
 module Jennifer
-  # This module contais constants needed only during compilation process to avoid their recreating.
+  # This module contains constants needed only during compilation process to avoid their recreating.
   module Macros
+    TYPES = [] of String
     NILLABLE_REGEXP             = /(::Nil)|( Nil)/
     JSON_REGEXP                 = /JSON::Any/
     PRIMARY_32                  = "Primary32"

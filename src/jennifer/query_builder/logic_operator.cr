@@ -1,11 +1,5 @@
 module Jennifer
   module QueryBuilder
-    class Grouping < SQLNode
-    end
-
-    class Criteria < SQLNode
-    end
-
     abstract class LogicOperator
       module Operators
         def &(other : Criteria)
@@ -66,7 +60,7 @@ module Jennifer
       def as_sql
         as_sql(Adapter.default_adapter.sql_generator)
       end
-      
+
       def as_sql(generator)
         @lhs.as_sql(generator) + " " + operator + " " + @rhs.as_sql(generator)
       end

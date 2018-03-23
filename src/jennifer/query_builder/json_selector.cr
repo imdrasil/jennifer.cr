@@ -1,8 +1,5 @@
 module Jennifer
   module QueryBuilder
-    class Criteria < SQLNode
-    end
-
     class JSONSelector < Criteria
       getter path : Int32 | String, type : Symbol
 

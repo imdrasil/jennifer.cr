@@ -10,10 +10,10 @@ Add this to your application's `shard.yml`:
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.4.3"
+    version: "~> 0.5.1"
 ```
 
-#### Requirements 
+#### Requirements
 
 - you need to choose one of existing adapters for your db: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgres](https://github.com/will/crystal-pg);
 - if you prefer to use crystal `<0.23.1` - use jennifer `<0.4.2` (crystal `0.23.0` is buggy and not supported).

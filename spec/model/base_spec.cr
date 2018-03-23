@@ -512,9 +512,12 @@ describe Jennifer::Model::Base do
     it "returns all model classes" do
       models = Jennifer::Model::Base.models
       models.is_a?(Array(Jennifer::Model::Base.class)).should be_true
-      # I tired from modifing this each time new model is added
+      # I tired from modifying this each time new model is added
       (models.size > 6).should be_true
     end
+
+    it { Contact.models.empty?.should be_true }
+    it { Profile.models.should eq([FacebookProfile, TwitterProfile]) }
   end
 
   describe "::import" do

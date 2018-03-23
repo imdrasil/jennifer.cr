@@ -137,7 +137,7 @@ describe Jennifer::Model::Mapping do
 
       it "result set has no some field" do
         o = OneFieldModel.create({} of String => Jennifer::DBAny)
-        error_message = "Column OneFieldModelWithExtraArgument#missing_field hasn't been found in the result set."
+        error_message = "Column OneFieldModelWithExtraArgument.missing_field hasn't been found in the result set."
         expect_raises(Jennifer::BaseException, error_message) do
           OneFieldModelWithExtraArgument.all.to_a
         end

@@ -69,7 +69,7 @@ describe Jennifer::View::ExperimentalMapping do
 
   describe "%mapping" do
     describe "::columns_tuple" do
-      it "returns named tuple mith column metedata" do
+      it "returns named tuple with column metedata" do
         metadata = MaleContact.columns_tuple
         metadata.is_a?(NamedTuple).should be_true
         metadata[:id].is_a?(NamedTuple).should be_true
@@ -246,12 +246,6 @@ describe Jennifer::View::ExperimentalMapping do
         c.attribute("name").should eq("Jessy")
         c.attribute(:name).should eq("Jessy")
       end
-    end
-  end
-
-  describe "::strict_mapping?" do
-    it "returns false if mapping doesn't describe all db view fields" do
-      MaleContact.strict_mapping?.should eq(false)
     end
   end
 

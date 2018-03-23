@@ -48,8 +48,9 @@ module Jennifer
           {% end %}
 
           {% for key, value in properties %}
-            if !values["{{key.id}}"]?.nil?
-              %var{key.id} = values["{{key.id}}"]
+            {% column = (value[:column_name] || key).id.stringify %}
+            if values.has_key?({{column}})
+              %var{key.id} = values[{{column}}]
             else
               %found{key.id} = false
             end
@@ -59,30 +60,30 @@ module Jennifer
             begin
               {% if value[:null] %}
                 {% if value[:default] != nil %}
-                  %var{key.id} = %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
+                  %casted_var{key.id} = %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
                 {% else %}
-                  %var{key.id} = %var{key.id}.as({{value[:parsed_type].id}})
+                  %casted_var{key.id} = %var{key.id}.as({{value[:parsed_type].id}})
                 {% end %}
               {% elsif value[:default] != nil %}
-                %var{key.id} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
+                %casted_var{key.id} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
               {% else %}
-                %var{key.id} = __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
+                %casted_var{key.id} = __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
               {% end %}
+              %casted_var{key.id} = !%casted_var{key.id}.is_a?(Time) ? %casted_var{key.id} : ::Jennifer::Config.local_time_zone.utc_to_local(%casted_var{key.id})
             rescue e : Exception
-              raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
-              raise e
+              raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
             end
           {% end %}
 
           {% if properties.size > 1 %}
             {
             {% for key, value in properties %}
-              %var{key.id}.as({{value[:parsed_type].id}}),
+              %casted_var{key.id},
             {% end %}
             }
           {% else %}
             {% key = properties.keys[0] %}
-            %var{key}.as({{properties[key][:parsed_type].id}})
+            %casted_var{key}
           {% end %}
         end
 
@@ -115,18 +116,6 @@ module Jennifer
         {% else %}
           WITH_DEFAULT_CONSTRUCTOR = false
         {% end %}
-
-        def reload
-          raise ::Jennifer::RecordNotFound.new("It is not persisted yet") if new_record?
-          this = self
-          self.class.all.where { this.class.primary == this.primary }.limit(1).each_result_set do |rs|
-            values = self.class.adapter.result_to_hash(rs)
-            init_attributes(values)
-          end
-          __refresh_changes
-          __refresh_relation_retrieves
-          self
-        end
 
         def changed?
           super ||
@@ -193,7 +182,7 @@ module Jennifer
         end
 
         def attribute(name : String, raise_exception = true)
-          if raise_exception && !self.class.attribute_names.includes?(name)
+          if raise_exception && !self.class.field_names.includes?(name)
             raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}")
           end
           case name
@@ -248,8 +237,12 @@ module Jennifer
         end
 
         private def init_attributes(values : Hash)
-          super
+          super(values)
           {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _sti_extract_attributes(values)
+        end
+
+        private def init_attributes(values : DB::ResultSet)
+          init_attributes(self.class.adapter.result_to_hash(values))
         end
 
         private def __refresh_changes
@@ -261,32 +254,25 @@ module Jennifer
 
         {% all_properties = properties %}
         {% for key, value in @type.superclass.constant("COLUMNS_METADATA") %}
-          {% all_properties[key] = value %}
+          {% if !properties[key] %}
+            {% all_properties[key] = value %}
+          {% end %}
         {% end %}
 
         COLUMNS_METADATA = {{all_properties}}
         PRIMARY_AUTO_INCREMENTABLE = {{@type.superclass.constant("PRIMARY_AUTO_INCREMENTABLE")}}
+        FIELD_NAMES = [{{all_properties.keys.map { |e| "#{e.id.stringify}" }.join(", ").id}}]
 
         def self.columns_tuple
           COLUMNS_METADATA
         end
 
         def self.field_count
-          {{ all_properties.to_a.reduce(0) { |sum, opts| sum + (opts[1][:virtual] ? 0 : 1) } }}
+          {{all_properties.size}}
         end
 
         def self.field_names
-          [
-            {% for key, opts in all_properties %}
-              {% unless opts[:virtual] %}
-                "{{key.id}}",
-              {% end %}
-            {% end %}
-          ]
-        end
-
-        def self.attribute_names
-          [{{all_properties.keys.map { |e| "\"#{e.id}\"" }.join(", ").id}}]
+          FIELD_NAMES
         end
       end
     end

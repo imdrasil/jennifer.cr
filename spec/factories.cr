@@ -56,6 +56,25 @@ class QueryFactory < Factory::Base
   end
 end
 
+class UserFactory < Factory::Jennifer::Base
+  attr :name, "User"
+  sequence(:email) { |i| "email#{i}@example.com" }
+
+  trait :with_valid_password do
+    assign :password, "password"
+    assign :password_confirmation, "password"
+  end
+
+  trait :with_invalid_password_confirmation do
+    assign :password, "password"
+    assign :password_confirmation, "passwordd"
+  end
+
+  trait :with_password_digest do
+    attr :password_digest, Crypto::Bcrypt::Password.create("password").to_s, String
+  end
+end
+
 class ContactFactory < Factory::Jennifer::Base
   postgres_only do
     argument_type (Array(Int32) | Int32 | PG::Numeric | String?)
@@ -114,5 +133,5 @@ class MaleContactFactory < Factory::Base
   attr :name, "Raphael"
   attr :age, 21
   attr :gender, "male"
-  attr :created_at, -> { Time.utc_now }
+  attr :created_at, ->{ Time.utc_now }
 end

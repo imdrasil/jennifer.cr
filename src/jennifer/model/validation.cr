@@ -65,7 +65,7 @@ module Jennifer
         validates_with_method(%validate_method)
 
         def %validate_method
-          {% if options %}  
+          {% if options %}
             {{klass}}.new(errors).validate(self, {{**options}})
           {% else %}
             {{klass}}.new(errors).validate(self)
@@ -136,14 +136,18 @@ module Jennifer
 
       # TODO: add scope
 
-      macro validates_uniqueness(field)
+      macro validates_uniqueness(field, allow_blank = false)
         validates_with_method(%validate_method)
 
         def %validate_method
-          value = @{{field.id}}
-          if self.class.where { _{{field.id}} == value }.exists?
-            errors.add({{field}}, self.class.human_error({{field}}, :taken))
+          value = _not_nil_validation({{field}}, {{allow_blank}})
+          query = self.class.where { _{{field.id}} == value }
+          unless new_record?
+            this = self
+            query = query.where { primary != this.primary }
           end
+
+          errors.add({{field}}, self.class.human_error({{field}}, :taken)) if query.exists?
         end
       end
 
@@ -175,7 +179,7 @@ module Jennifer
         def %validate_method
           value = _not_nil_validation({{field}}, {{options[:allow_blank] || false}})
           {% if options[:greater_than] %}
-            if {{options[:greater_than]}} >= value 
+            if {{options[:greater_than]}} >= value
               errors.add({{field}}, self.class.human_error({{field}}, :greater_than, { :value => {{options[:greater_than]}} }))
             end
           {% end %}
@@ -235,13 +239,13 @@ module Jennifer
         def %validate_method
           return if @{{field.id}}_confirmation.nil?
           value = _not_nil_validation({{field}}, false)
-          
+
           if value.compare(@{{field.id}}_confirmation.not_nil!, !{{case_sensitive}}) != 0
             errors.add(
-              {{field}}, 
+              {{field}},
               self.class.human_error(
-                {{field}}, 
-                :confirmation, 
+                {{field}},
+                :confirmation,
                 options: { :attribute => self.class.human_attribute_name(:{{field.id}}) }
               )
             )

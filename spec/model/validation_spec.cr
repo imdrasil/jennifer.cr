@@ -116,7 +116,7 @@ describe Jennifer::Model::Validation do
     end
   end
 
-  describe "%validates_inclucions" do
+  describe "%validates_inclusions" do
     it "pass valid" do
       a = Factory.build_contact(age: 75)
       a.should be_valid
@@ -166,7 +166,7 @@ describe Jennifer::Model::Validation do
       a = Factory.build_address(street: "Saint Moon walk")
       a.should validate(:street).with("is invalid")
     end
-    
+
     context "allows blank" do
       pending "doesn't add error message" do
       end
@@ -264,16 +264,16 @@ describe Jennifer::Model::Validation do
   end
 
   describe "%validates_uniqueness" do
-    it "pass valid" do
-      p = Factory.build_country(name: "123asd")
-      p.should be_valid
-    end
+    it { Factory.build_country(name: "123asd").should be_valid }
+    it { Factory.create_country(name: "123asd").should be_valid }
 
-    it "doesn't pass invalid" do
+    it do
       Factory.create_country(name: "123asd")
       p = Factory.build_country(name: "123asd")
       p.should validate(:name).with("has already been taken")
     end
+
+    pending "allows blank" {}
   end
 
   describe "%validates_presence" do
@@ -455,9 +455,9 @@ describe Jennifer::Model::Validation do
 
     it "pass validation" do
       c = ConfirmationContact.build({
-        :name => "name", 
-        :case_insensitive_name => "cin", 
-        :name_confirmation => "name", 
+        :name => "name",
+        :case_insensitive_name => "cin",
+        :name_confirmation => "name",
         :case_insensitive_name_confirmation => "CIN"
       })
       c.should be_valid
@@ -465,9 +465,9 @@ describe Jennifer::Model::Validation do
 
     it "adds error message if doesn't satisfies validation" do
       c = ConfirmationContact.build({
-        :name => "name", 
-        :case_insensitive_name => "cin", 
-        :name_confirmation => "Name", 
+        :name => "name",
+        :case_insensitive_name => "cin",
+        :name_confirmation => "Name",
         :case_insensitive_name_confirmation => "NIC"
       })
       c.should validate(:name).with("doesn't match Name")

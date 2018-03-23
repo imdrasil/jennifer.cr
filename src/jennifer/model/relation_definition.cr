@@ -76,8 +76,7 @@ module Jennifer
 
         RELATIONS["{{name.id}}"] =
           ::Jennifer::Relation::HasMany({{klass}}, {{@type}}).new("{{name.id}}", {{foreign}}, {{primary}},
-            {{klass}}.all{% if request %}.exec {{request}} {% end %}
-            )
+            {{klass}}.all{% if request %}.exec {{request}} {% end %})
 
         @{{name.id}} = [] of {{klass}}
         @__{{name.id}}_retrieved = false
@@ -194,12 +193,7 @@ module Jennifer
         end
 
         def {{name.id}}_query
-          primary_field =
-            {% if primary %}
-              {{primary.id}}
-            {% else %}
-              primary
-            {% end %}
+          primary_field = {% if primary %} {{primary.id}} {% else %} primary {% end %}
           RELATIONS["{{name.id}}"].query(primary_field).as(::Jennifer::QueryBuilder::ModelQuery({{klass}}))
         end
 

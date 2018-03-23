@@ -248,7 +248,7 @@ class CountryWithTransactionCallbacks < ApplicationRecord
   mapping({
     id:   Primary32,
     name: String,
-  })
+  }, false)
 
   {% for action in [:create, :save, :destroy, :update] %}
     {% for type in [:commit, :rollback] %}

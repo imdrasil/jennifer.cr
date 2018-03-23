@@ -83,18 +83,17 @@ module Jennifer
             break if own_attributes == 0
             case column
             {% for key, value in COLUMNS_METADATA %}
-              when {{value[:column_name] ? value[:column_name].id : key.id.stringify}}
+              when {{(value[:column_name] || key).id.stringify}}
                 own_attributes -= 1
                 %found{key.id} = true
                 begin
                   %var{key.id} = pull.read({{value[:parsed_type].id}})
                 rescue e : Exception
-                  raise ::Jennifer::DataTypeMismatch.new(column, {{@type}}, e) if ::Jennifer::DataTypeMismatch.match?(e)
-                  raise e
+                  raise ::Jennifer::DataTypeMismatch.build(column, {{@type}}, e)
                 end
             {% end %}
             else
-              {% if STRICT_MAPPNIG %}
+              {% if STRICT_MAPPING %}
                 raise ::Jennifer::BaseException.new("Undefined column #{column} for model {{@type}}.")
               {% else %}
                 pull.read
@@ -102,10 +101,10 @@ module Jennifer
             end
           end
           pull.read_to_end
-          {% if STRICT_MAPPNIG %}
+          {% if STRICT_MAPPING %}
             {% for key in COLUMNS_METADATA.keys %}
               unless %found{key.id}
-                raise ::Jennifer::BaseException.new("Column #{{{@type}}}##{{{key.id.stringify}}} hasn't been found in the result set.")
+                raise ::Jennifer::BaseException.new("Column #{{{@type}}}.{{key.id}} hasn't been found in the result set.")
               end
             {% end %}
           {% end %}
@@ -116,8 +115,7 @@ module Jennifer
                 res = %var{key.id}.as({{value[:parsed_type].id}})
                 !res.is_a?(Time) ? res : ::Jennifer::Config.local_time_zone.utc_to_local(res)
               rescue e : Exception
-                raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
-                raise e
+                raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
               end,
             {% end %}
             }
@@ -126,8 +124,7 @@ module Jennifer
             begin
               %var{key}.as({{COLUMNS_METADATA[key][:parsed_type].id}})
             rescue e : Exception
-              raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
-              raise e
+              raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
             end
           {% end %}
         end
@@ -140,8 +137,8 @@ module Jennifer
           {% end %}
 
           {% for key, value in COLUMNS_METADATA %}
-            {% _key = value[:column_name] ? value[:column_name] : key.id.stringify %}
-            if !values[{{_key}}]?.nil?
+            {% _key = (value[:column_name] || key).id.stringify %}
+            if values.has_key?({{_key}})
               %var{key.id} = values[{{_key}}]
             else
               %found{key.id} = false
@@ -163,8 +160,7 @@ module Jennifer
               {% end %}
               %casted_var{key.id} = !%casted_var{key.id}.is_a?(Time) ? %casted_var{key.id} : ::Jennifer::Config.local_time_zone.utc_to_local(%casted_var{key.id})
             rescue e : Exception
-              raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
-              raise e
+              raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
             end
           {% end %}
 
@@ -211,24 +207,13 @@ module Jennifer
         # To avoid raising exception set `raise_exception` to `false`.
         def attribute(name : String | Symbol, raise_exception = true)
           case name.to_s
-          {% for key, value in COLUMNS_METADATA.keys %}
+          {% for key in COLUMNS_METADATA.keys %}
           when {{key.stringify}}
             @{{key.id}}
           {% end %}
           else
             raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}") if raise_exception
           end
-        end
-
-        # NOTE: This is deprecated method - it will be removed in 0.5.0. Use #to_h instead
-        def attributes_hash
-          hash = to_h
-          {% for key, value in COLUMNS_METADATA %}
-            {% if value[:primary] %}
-              hash.delete({{key}}) unless hash.has_key?({{key}})
-            {% end %}
-          {% end %}
-          hash
         end
       end
 
@@ -246,13 +231,7 @@ module Jennifer
       end
 
       macro mapping(properties, strict = true)
-        STRICT_MAPPNIG = {{strict}}
-
-        @@strict_mapping : Bool?
-
-        def self.strict_mapping?
-          @@strict_mapping ||= adapter.table_column_count(table_name) == field_count
-        end
+        STRICT_MAPPING = {{strict}}
 
         # Returns field count
         def self.field_count

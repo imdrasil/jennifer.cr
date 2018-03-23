@@ -53,10 +53,6 @@ module Jennifer
         @@converter ||= ParameterConverter.new
       end
 
-      def self.build_params(hash : Hash(String, String?)) : Hash(String, Jennifer::DBAny)
-        {} of String => Jennifer::DBAny
-      end
-
       def self.build(values : Hash | NamedTuple, new_record : Bool)
         o = new(values, new_record)
         o.__after_initialize_callback
@@ -107,19 +103,58 @@ module Jennifer
         o
       end
 
-      private def init_attributes(values : Hash)
-      end
+      private abstract def save_record_under_transaction(skip_validation)
+      private abstract def init_attributes(values : Hash)
+      private abstract def init_attributes(values : DB::ResultSet)
+      private abstract def __refresh_changes
+      private abstract def __refresh_relation_retrieves
 
       abstract def set_attribute(name, value)
+      abstract def update_columns(values)
+      abstract def changed?
+      abstract def attribute(name : String, raise_exception : Bool)
 
       def self.models
         {% begin %}
-          [
-            {% for model in @type.all_subclasses %}
-              {{model.id}},
-            {% end %}
-          ]
+          {% if !@type.all_subclasses.empty? %}
+            [
+              {% for model in @type.all_subclasses %}
+                {{model.id}},
+              {% end %}
+            ]
+          {% else %}
+            [] of ::Jennifer::Model::Base
+          {% end %}
         {% end %}
+      end
+
+      def self.build(pull : DB::ResultSet)
+        {% begin %}
+          {% klasses = @type.all_subclasses.select { |s| s.constant("STI") == true } %}
+          {% if !klasses.empty? %}
+            hash = adapter.result_to_hash(pull)
+            o =
+              case hash["type"]
+              when "", nil, "{{@type}}"
+                new(hash, false)
+              {% for klass in klasses %}
+              when "{{klass}}"
+                {{klass}}.new(hash, false)
+              {% end %}
+              else
+                raise ::Jennifer::UnknownSTIType.new(self, hash["type"])
+              end
+          {% else %}
+            o = new(pull)
+          {% end %}
+
+          o.__after_initialize_callback
+          o
+        {% end %}
+      end
+
+      def attribute(name : Symbol, raise_exception : Bool = true)
+        attribute(name.to_s, raise_exception)
       end
 
       def update(hash : Hash | NamedTuple)
@@ -148,11 +183,47 @@ module Jennifer
         update_attributes(opts)
       end
 
+      # Sets *value* to field with name *name* and stores them directly to db without
+      # any validation or callback
+      def update_column(name, value : Jennifer::DBAny)
+        update_columns({name => value})
+      end
+
+      private def __check_if_changed
+        raise Jennifer::Skip.new unless changed? || new_record?
+      end
+
+      def save!(skip_validation : Bool = false)
+        raise Jennifer::RecordInvalid.new(errors) unless save(skip_validation)
+        true
+      end
+
+      def save(skip_validation : Bool = false) : Bool
+        unless self.class.adapter.under_transaction?
+          self.class.transaction do
+            save_record_under_transaction(skip_validation)
+          end || false
+        else
+          save_record_under_transaction(skip_validation)
+        end
+      end
+
+      # Saves all changes to db without invoking transaction; if validation not passed - returns `false`
+      def save_without_transaction(skip_validation : Bool = false) : Bool
+        return false unless skip_validation || validate!
+        return false unless __before_save_callback
+        response = new_record? ? store_record : update_record
+        __after_save_callback
+        response
+      end
+
       # Perform destroy without starting a transaction
       def destroy_without_transaction
         return false if new_record? || !__before_destroy_callback
-        @destroyed = true if delete
-        __after_destroy_callback if @destroyed
+        if delete
+          @destroyed = true
+          __after_destroy_callback
+        end
         @destroyed
       end
 
@@ -177,11 +248,38 @@ module Jennifer
         end
       end
 
+      private def update_record : Bool
+        return false unless __before_update_callback
+        res = self.class.adapter.update(self)
+        __after_update_callback
+        res.rows_affected == 1
+      end
+
+      private def store_record : Bool
+        return false unless __before_create_callback
+        res = self.class.adapter.insert(self)
+        init_primary_field(res.last_insert_id.to_i) if primary.nil? && res.last_insert_id > -1
+        raise ::Jennifer::BaseException.new("Record hasn't been stored to the db") if res.rows_affected == 0
+        @new_record = false
+        __after_create_callback
+        true
+      end
+
+      # Reloads all fields from db.
+      def reload
+        raise ::Jennifer::RecordNotFound.new("It is not persisted yet") if new_record?
+        this = self
+        self.class.all.where { this.class.primary == this.primary }.limit(1).each_result_set do |rs|
+          init_attributes(rs)
+        end
+        __refresh_changes
+        __refresh_relation_retrieves
+        self
+      end
+
       # Performs table lock for current model's table.
       def self.with_table_lock(type : String | Symbol, &block)
-        adapter.with_table_lock(table_name, type.to_s) do |t|
-          yield t
-        end
+        adapter.with_table_lock(table_name, type.to_s) { |t| yield t }
       end
 
       def self.find(id)

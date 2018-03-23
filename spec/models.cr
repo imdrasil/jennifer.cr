@@ -1,3 +1,5 @@
+require "../src/jennifer/model/authentication"
+
 struct JohnyQuery < Jennifer::QueryBuilder::QueryObject
   def call
     relation.where { _name == "Johny" }
@@ -33,8 +35,29 @@ abstract class ApplicationRecord < Jennifer::Model::Base
   end
 end
 
+class User < ApplicationRecord
+  include Jennifer::Model::Authentication
+
+  mapping(
+    id: Primary32,
+    name: String?,
+    password_digest: {type: String, default: ""},
+    email: {type: String, default: ""},
+    password: Password,
+    password_confirmation: { type: String?, virtual: true }
+  )
+
+  with_authentication
+
+  validates_presence :email
+  validates_uniqueness :email
+
+  has_many :contacts, Contact, inverse_of: :user
+end
+
 class Contact < ApplicationRecord
   with_timestamps
+
   {% if env("DB") == "postgres" || env("DB") == nil %}
     mapping(
       id:          Primary32,
@@ -43,9 +66,10 @@ class Contact < ApplicationRecord
       age:         {type: Int32, default: 10},
       gender:      {type: String?, default: "male"},
       description: String?,
-      created_at:  Time | Nil,
+      created_at:  Time?,
       updated_at:  Time?,
-      tags: Array(Int32)?,
+      user_id:     Int32?,
+      tags:        Array(Int32)?
     )
   {% else %}
     mapping(
@@ -55,8 +79,9 @@ class Contact < ApplicationRecord
       age:         {type: Int32, default: 10},
       gender:      {type: String?, default: "male"},
       description: String?,
-      created_at:  Time | Nil,
+      created_at:  Time?,
       updated_at:  Time?,
+      user_id:     Int32?
     )
   {% end %}
 
@@ -66,6 +91,7 @@ class Contact < ApplicationRecord
   has_and_belongs_to_many :facebook_many_profiles, FacebookProfile, association_foreign: :profile_id
   has_one :main_address, Address, {where { _main }}, inverse_of: :contact
   has_one :passport, Passport, inverse_of: :contact
+  belongs_to :user, User
 
   validates_inclusion :age, 13..75
   validates_length :name, minimum: 1

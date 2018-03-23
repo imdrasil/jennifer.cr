@@ -1,6 +1,3 @@
-alias Primary32 = Int32
-alias Primary64 = Int64
-
 module Jennifer
   module Model
     module Mapping
@@ -115,7 +112,14 @@ module Jennifer
         %}
 
         # generates hash with options
-        {% for key, value in properties %}
+        {% for key, plain_value in properties %}
+          {% value = nil %}
+          {% if plain_value.is_a?(Path) && Jennifer::Macros::TYPES.includes?(plain_value.stringify) %}
+            {% value = plain_value.resolve %}
+            {% properties[key] = value %}
+          {% else %}
+            {% value = plain_value %}
+          {% end %}
           {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
             {% properties[key] = {type: value} %}
           {% end %}
@@ -245,7 +249,7 @@ module Jennifer
         end
 
         # Extracts arguments due to mapping from *pull* and returns tuple for
-        # fields assignment. It stands on that fact result set has all defined fields in a raw
+        # fields assignment. It stands on that fact result set has all defined fields in a row
         # TODO: think about moving it to class scope
         # NOTE: don't use it manually - there is some dependencies on caller such as reading result set to the end
         # if exception was raised
@@ -353,6 +357,7 @@ module Jennifer
 
         # Deletes object from db and calls callbacks
         def destroy
+          return false if new_record?
           result =
             unless self.class.adapter.under_transaction?
               self.class.transaction do

@@ -70,7 +70,7 @@ describe Jennifer::Model::RelationDefinition do
 
   describe "%has_many" do
     it "adds relation name to RELATIONS constant" do
-      Contact::RELATIONS.size.should eq(6)
+      Contact::RELATIONS.size.should eq(7)
       Contact::RELATIONS.has_key?("addresses").should be_true
     end
 

@@ -83,3 +83,8 @@ end
 ::Jennifer.after_load_hook
 
 I18n.load_path << File.join(__DIR__, "jennifer/locale")
+
+# NOTE: This is needed to compile query generic class, otherwise
+# `!query` at src/jennifer/adapter/base_sql_generator.cr:137:12 has no type
+# is raised
+Jennifer::Migration::Version.all

@@ -12,10 +12,10 @@ module Jennifer
 
         pending = interpolation.keys - Version.all.pluck(:version).map(&.as(String))
         return if pending.empty?
-        brocken = Version.where { _version.in(pending) }.pluck(:version).map(&.as(String))
-        unless brocken.empty?
-          puts "Can't run migrations because some of them are older then relase version.\nThey are:"
-          brocken.sort.each do |v|
+        broken = Version.where { _version.in(pending) }.pluck(:version).map(&.as(String))
+        unless broken.empty?
+          puts "Can't run migrations because some of them are older then master version.\nThey are:"
+          broken.sort.each do |v|
             puts "- #{v}"
           end
           return
@@ -83,7 +83,7 @@ module Jennifer
           klass.new.down
           Version.all.where { _version == v }.delete
           processed = true
-          puts "Droped migration #{v}"
+          puts "Dropped migration #{v}"
         end
       rescue e
         puts e.message

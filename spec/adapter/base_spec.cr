@@ -216,7 +216,7 @@ describe Jennifer::Adapter::Base do
 
     context "for db connection" do
       it "generates proper connection string" do
-        Jennifer::Config.password = "qwe"
+        config.password = "qwe"
         db_connection_string = "#{config.adapter}://#{config.user}:#{config.password}@#{config.host}/#{config.db}?" \
                                "max_pool_size=5&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
         adapter.class.connection_string(:db).should eq(db_connection_string)
@@ -225,10 +225,28 @@ describe Jennifer::Adapter::Base do
 
     context "for general connection" do
       it "generates proper connection string" do
-        Jennifer::Config.password = "qwe"
+        config.password = "qwe"
         connection_string = "#{config.adapter}://#{config.user}:#{config.password}@#{config.host}?" \
                             "max_pool_size=5&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
         adapter.class.connection_string.should eq(connection_string)
+      end
+    end
+
+    context "with defined port" do
+      it "generates proper connection string" do
+        config.port = 3333
+        config.password = ""
+        connection_string = "#{config.adapter}://#{config.user}@#{config.host}:3333?" \
+                            "max_pool_size=5&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
+        adapter.class.connection_string.should eq(connection_string)
+      end
+    end
+
+    context "without password" do
+      it do
+        config.password = ""
+        connection_string = /^#{config.adapter}\:\/\/#{config.user}@#{config.host}/
+        adapter.class.connection_string.should match(connection_string)
       end
     end
   end

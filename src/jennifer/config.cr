@@ -3,11 +3,14 @@ require "logger"
 
 module Jennifer
   class Config
-    CONNECTION_URI_PARAMS = [:max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts, :checkout_timeout, :retry_delay]
+    CONNECTION_URI_PARAMS = [
+      :max_pool_size, :initial_pool_size, :max_idle_pool_size,
+      :retry_attempts, :checkout_timeout, :retry_delay
+    ]
     STRING_FIELDS = {
       :user, :password, :db, :host, :adapter, :migration_files_path, :schema,
       :structure_folder, :local_time_zone_name
-    }  
+    }
     INT_FIELDS    = {:port, :max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
     FLOAT_FIELDS  = {:checkout_timeout, :retry_delay}
 
@@ -39,7 +42,7 @@ module Jennifer
     end
 
     def self.structure_path
-      File.join(Config.structure_folder, "structure.sql")
+      File.join(structure_folder, "structure.sql")
     end
 
     def self.reset_config
@@ -49,7 +52,7 @@ module Jennifer
       @@migration_files_path = "./db/migrations"
       @@schema = "public"
       @@db = ""
-      @@local_time_zone_name = TimeZone::Zone.default.name
+      self.local_time_zone_name = TimeZone::Zone.default.name
 
       @@initial_pool_size = 1
       @@max_pool_size = 5
@@ -58,8 +61,6 @@ module Jennifer
 
       @@checkout_timeout = 5.0
       @@retry_delay = 1.0
-
-      @@local_time_zone = TimeZone::Zone.default
 
       @@logger = Logger.new(STDOUT)
       @@logger.not_nil!.level = Logger::DEBUG
@@ -139,7 +140,7 @@ module Jennifer
       self.validate_config
       self
     end
-    
+
     def self.read(path : String, env : String | Symbol = :development)
       _env = env.to_s
       source = YAML.parse(File.read(path))[_env]
@@ -152,6 +153,7 @@ module Jennifer
       {% for field in FLOAT_FIELDS %}
         @@{{field.id}} = source["{{field.id}}"].as_s.to_f if source["{{field.id}}"]?
       {% end %}
+      local_time_zone_name = source["local_time_zone_name"].as_s if source["local_time_zone_name"]?
       self.validate_config
       self
     end

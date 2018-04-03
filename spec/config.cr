@@ -92,9 +92,9 @@ def set_default_configuration
     when "postgres"
       conf.user = ENV["DB_USER"]? || "developer"
       conf.password = ENV["DB_PASSWORD"]? || "1qazxsw2"
-    when "sqlite3"
-      conf.host = "./spec/fixtures"
-      conf.db = "jennifer_test.db"
+    # when "sqlite3"
+    #   conf.host = "./spec/fixtures"
+    #   conf.db = "jennifer_test.db"
     end
   end
 end

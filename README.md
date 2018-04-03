@@ -13,7 +13,7 @@ dependencies:
     version: "~> 0.4.3"
 ```
 
-#### Requirements 
+### Requirements
 
 - you need to choose one of existing adapters for your db: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgres](https://github.com/will/crystal-pg);
 - if you prefer to use crystal `<0.23.1` - use jennifer `<0.4.2` (crystal `0.23.0` is buggy and not supported).
@@ -22,7 +22,7 @@ dependencies:
 
 Jennifer allows you to maintain everything for your models - from db migrations and field mapping to callbacks and building queries. For detailed information see the [guide](https://imdrasil.github.io/jennifer.cr/docs/) or [api documentation](https://imdrasil.github.io/jennifer.cr/versions).
 
-#### Migration
+### Migration
 
 To start using Jennifer you'll first need to generate a migration:
 
@@ -61,9 +61,10 @@ $ crystal sam.cr -- db:setup
 to create the database and run the newly created migration.
 > For command management Jennifer uses [Sam](https://github.com/imdrasil/sam.cr).
 
-#### Model
+### Model
 
 Several model examples
+
 ```crystal
 class Contact < Jennifer::Model::Base
   with_timestamps
@@ -139,9 +140,10 @@ class Country < Jennifer::Model::Base
 end
 ```
 
-#### Quering
+### Query DSL
 
 Jennifer allows you to query the db using a flexible DSL:
+
 ```crystal
 Contact.all.left_join(Passport) { _contact_id == _contact__id }
             .order(id: :asc)
@@ -166,9 +168,9 @@ Now that Jennifer is under heavy development, there could be many breaking chang
 
 So even a patch version change could bring a lot of new stuff.
 
-If there is a branch for the next release - it will be removed 1 month after the release. So please use them only as a hotfix or for experiments or contibution.
+If there is a branch for the next release - it will be removed 1 month after the release. So please use them only as a hotfix or for experiments or contribution.
 
-### Test
+### Test tips
 
 The fastest way to rollback all changes in the DB after test case is by using a transaction. So add:
 
@@ -190,7 +192,8 @@ to your `spec_helper.cr`. NB. you could simply use regular deleting or truncatio
 
 > Before developing any feature please create an issue where you describe your idea.
 
-Before development create the db user (see `/spec/config.cr` file) by running:
+Before development create the db user (see `/spec/config.cr` file) and database:
+
 ```shell
 # Postgres
 $ crystal examples/run.cr -- db:setup
@@ -199,17 +202,13 @@ $ crystal examples/run.cr -- db:setup
 $ DB=mysql crystal examples/run.cr -- db:setup
 ```
 
-PostgreSQL is used by default, but MySql is also supported while running tests by using:
-```shell
-$ DB=mysql crystal spec
-```
+PostgreSQL is used by default, but MySql is also supported while running tests by specifying environment variable `DB=mysql`:
 
 In case you need to set the database user or password, use:
+
 ```shell
 $ DB_USER=user DB_PASSWORD=pass crystal spec
 ```
-
-Also you can override used user name and password using `DB_USER` and `DB_PASSWORD` env variables.
 
 ## Documentation
 
@@ -219,7 +218,7 @@ Self documentation is not fully support yet but docs can be compiled using this 
 $ ./generate-docs.sh
 ```
 
-NB. It also depends on then choosen adapter (postgres by default).
+NB. It also depends on then chosen adapter (postgres by default).
 
 ## Similar shards
 

@@ -181,7 +181,7 @@ module Spec
       "'#{@error_message}', but got: '#{object.errors[@attr].inspect}'"
     end
   end
-  
+
   module Expectations
     def be_valid
       BeValidExpectation.new

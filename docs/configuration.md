@@ -16,7 +16,7 @@ This should be done before you load your application configurations (or at least
 Jennifer::Config.read("./spec/fixtures/database.yml", :development)
 ```
 
-Second argument represents environment and just use it as namespace key grapping values from yml.
+Second argument represents environment and just use it as namespace key grepping values from yml.
 
 ```yaml
 defaults : &defaults
@@ -50,7 +50,7 @@ end
 
 All configs:
 
-| config | default value |
+| Config | Default value |
 | --- | --- |
 | `migration_files_path` | `"./db/migrations"` |
 | `structure_folder` | parent folder of `migration_files_path` |
@@ -70,7 +70,16 @@ All configs:
 | `retry_delay` | 1.0 |
 | `local_time_zone_name` | default time zone name for `TimeZone` |
 
-> `port = -1` will provide connection URI without port mention
+To avoid port usage set it to `-1`. For doing same with the password - assign to it blank value (`""`). Empty string also turns off `structure_folder` config.
+
+| Config | YAML | URI |
+| --- | --- | --- |
+| `logger` | ❌ | ❌ |
+| `migration_file_path` | ✔ | ❌ |
+| `schema` | ✔ | ❌ |
+| `local_time_zone_name` | ✔ | ❌ |
+| `schema` | ✔ | ❌ |
+| `structure_folder` | ✔ | ❌ |
 
 Also configuration can be parsed directly from URI:
 
@@ -79,7 +88,9 @@ db_uri = "mysql://root@somehost/some_database?max_pool_size=111&initial_pool_siz
 Jennifer::Config.from_uri(db)
 ```
 
-#### Logging
+Also take into account - some configs can't be initialized using URI string or yaml file but all of them always can be initialized using `Jennifer::Config.configure`. Here is the list of such configs:
+
+## Logging
 
 Jennifer uses regular Crystal logging mechanism so you could specify your own logger or formatter:
 

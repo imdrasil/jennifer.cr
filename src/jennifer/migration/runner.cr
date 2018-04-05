@@ -57,7 +57,7 @@ module Jennifer
 
       def self.drop
         # TODO: allow to specify adapter
-        default_adapter_class.drop_database
+        r = default_adapter_class.drop_database
         puts "DB is dropped!"
       end
 
@@ -93,8 +93,10 @@ module Jennifer
       end
 
       def self.load_schema
+        return if config.skip_dumping_schema_sql
         # TODO: load schema for each adapter
         default_adapter_class.load_schema
+        puts "Schema loaded"
       end
 
       def self.generate(name)
@@ -105,6 +107,10 @@ module Jennifer
         puts "Migration #{migration_name} was generated"
       rescue e
         puts e.message
+      end
+
+      def self.config
+        Config.instance
       end
 
       def self.default_adapter

@@ -3,6 +3,12 @@ module Jennifer
     abstract class Base
       TABLE_NAME = "migration_versions"
 
+      module AbstractClassMethods
+        abstract def version
+      end
+
+      extend AbstractClassMethods
+
       macro delegate(*methods, to object, prefix pref = "")
         {% for method in methods %}
           def {{method.id}}(*args, **options)

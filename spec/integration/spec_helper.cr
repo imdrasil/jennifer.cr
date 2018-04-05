@@ -22,3 +22,26 @@ end
   require "../../src/jennifer/adapter/postgres"
   Spec.adapter = "postgres"
 {% end %}
+
+module Spec
+  # :nodoc:
+  struct CommandSucceedExpectation
+    def match(tuple)
+      tuple[0] == 0
+    end
+
+    def failure_message(tuple)
+      "Expected command to return status 0, got #{tuple[0]}.\nError message:\n#{tuple[1]}"
+    end
+
+    def negative_failure_message(tuple)
+      "Expected command to return non 0 status, got #{tuple[0]}.\nError message:\n#{tuple[1]}"
+    end
+  end
+
+  module Expectations
+    def succeed
+      CommandSucceedExpectation.new
+    end
+  end
+end

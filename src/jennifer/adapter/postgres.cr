@@ -1,5 +1,4 @@
 require "pg"
-require "../adapter"
 require "./base"
 
 require "./postgres/result_set"
@@ -7,6 +6,8 @@ require "./postgres/exec_result"
 
 require "./postgres/sql_generator"
 require "./postgres/schema_processor"
+
+require "./postgres/command_interface"
 
 module Jennifer
   module Postgres
@@ -74,6 +75,10 @@ module Jennifer
 
       def sql_generator
         SQLGenerator
+      end
+
+      def self.command_interface
+        @@command_interface ||= CommandInterface.new(Config.instance)
       end
 
       def schema_processor
@@ -206,34 +211,6 @@ module Jennifer
 
       def exists?(query)
         scalar(*sql_generator.exists(query))
-      end
-
-      def self.create_database
-        opts = [Config.db, "-O", Config.user, "-h", Config.host, "-U", Config.user]
-        Process.run("PGPASSWORD=#{Config.password} createdb \"${@}\"", opts, shell: true).inspect
-      end
-
-      def self.drop_database
-        io = IO::Memory.new
-        opts = [Config.db, "-h", Config.host, "-U", Config.user]
-        s = Process.run("PGPASSWORD=#{Config.password} dropdb \"${@}\"", opts, shell: true, output: io, error: io)
-        if s.exit_code != 0
-          raise io.to_s
-        end
-      end
-
-      def self.generate_schema
-        io = IO::Memory.new
-        opts = ["-U", Config.user, "-d", Config.db, "-h", Config.host, "-s"]
-        s = Process.run("PGPASSWORD=#{Config.password} pg_dump \"${@}\"", opts, shell: true, output: io)
-        File.write(Config.structure_path, io.to_s)
-      end
-
-      def self.load_schema
-        io = IO::Memory.new
-        opts = ["-U", Config.user, "-d", Config.db, "-h", Config.host, "-a", "-f", Config.structure_path]
-        s = Process.run("PGPASSWORD=#{Config.password} psql \"${@}\"", opts, shell: true, output: io)
-        raise "Cant load schema: exit code #{s.exit_code}" if s.exit_code != 0
       end
     end
   end

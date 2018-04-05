@@ -1,6 +1,8 @@
 require "mysql"
 require "./base"
+
 require "./mysql/sql_generator"
+require "./mysql/command_interface"
 
 module Jennifer
   module Mysql
@@ -114,22 +116,20 @@ module Jennifer
         # raise BaseException.new("MySQL don't support table lock type '#{type}'.")
       end
 
-      def self.generate_schema
-        io = IO::Memory.new
-        error = IO::Memory.new
-        s = Process.run("mysqldump \"${@}\"", ["-u", Config.user, "--no-data", "-h", Config.host, "--skip-lock-tables", Config.db], shell: true, output: io, error: error)
-        raise error.to_s if s.exit_code != 0
-        File.write(Config.structure_path, io.to_s)
+      def self.command_interface
+        @@command_interface ||= CommandInterface.new(Config.instance)
       end
 
-      def self.load_schema
-        io = IO::Memory.new
-        s = if !Config.password.empty?
-              Process.run("mysql \"${@}\"", ["-u", Config.user, "-h", Config.host, "-p", Config.password, Config.db], shell: true, output: io, error: io)
-            else
-              Process.run("mysql \"${@}\"", ["-u", Config.user, "-h", Config.host, Config.db, "-B", "-s", "-e", "source #{Config.structure_path};"], shell: true, output: io, error: io)
-            end
-        raise io.to_s if s.exit_code != 0
+      def self.create_database
+        db_connection do |db|
+          db.exec "CREATE DATABASE #{Config.db}"
+        end
+      end
+
+      def self.drop_database
+        db_connection do |db|
+          db.exec "DROP DATABASE #{Config.db}"
+        end
       end
     end
   end

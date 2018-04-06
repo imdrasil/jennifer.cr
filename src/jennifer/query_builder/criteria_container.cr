@@ -15,7 +15,7 @@ module Jennifer
 
       def each
         @key_bucket.each do |internal_key, criteria|
-          yield({criteria, @value_bucket[internal_key]})
+          yield({criteria, @value_bucket.fetch(internal_key)})
         end
       end
 

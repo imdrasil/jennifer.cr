@@ -69,17 +69,13 @@ All configs:
 | `checkout_timeout` | 5.0 |
 | `retry_delay` | 1.0 |
 | `local_time_zone_name` | default time zone name for `TimeZone` |
+| `skip_dumping_schema_sql` | `false` |
+| `command_shell` | `"bash"` |
+| `docker_container` | `""` |
+| `docker_source_location` | `""` |
+| `command_shell_sudo` | `false` |
 
 To avoid port usage set it to `-1`. For doing same with the password - assign to it blank value (`""`). Empty string also turns off `structure_folder` config.
-
-| Config | YAML | URI |
-| --- | --- | --- |
-| `logger` | ❌ | ❌ |
-| `migration_file_path` | ✔ | ❌ |
-| `schema` | ✔ | ❌ |
-| `local_time_zone_name` | ✔ | ❌ |
-| `schema` | ✔ | ❌ |
-| `structure_folder` | ✔ | ❌ |
 
 Also configuration can be parsed directly from URI:
 
@@ -89,6 +85,21 @@ Jennifer::Config.from_uri(db)
 ```
 
 Also take into account - some configs can't be initialized using URI string or yaml file but all of them always can be initialized using `Jennifer::Config.configure`. Here is the list of such configs:
+
+| Config | YAML | URI |
+| --- | --- | --- |
+| `logger` | ❌ | ❌ |
+| `migration_file_path` | ✔ | ❌ |
+| `schema` | ✔ | ❌ |
+| `local_time_zone_name` | ✔ | ❌ |
+| `schema` | ✔ | ❌ |
+| `structure_folder` | ✔ | ❌ |
+| `skip_dumping_schema_sql` | ✔ | ❌ |
+| `docker_container` | ✔ | ❌ |
+| `docker_source_location` | ✔ | ❌ |
+| `command_shell_sudo` | ✔ | ❌ |
+
+From `0.5.1` `Jennifer::Config` has started working under singleton pattern instead of using class as a container of all configurations.
 
 ## Logging
 
@@ -105,3 +116,30 @@ Jennifer::Config.configure do |conf|
   conf.logger.level = Logger::DEBUG
 end
 ```
+
+## Command Shell
+
+Some database related operations need to be performed by invoking bash command (like creating or dropping database). By default bash shell is used for such purposes under user invoking this operation, but this may be specified.
+
+To specify another command shell set `command_shell` configuration to another registered one. One more onboard command shell is `"docker"` but you mau also define your own. To do this you should inherit from `Jennifer::Adapter::ICommandShell` abstract class and register it:
+
+```crystal
+class MySimpleDocker < Jennifer::Adapter::ICommandShell
+  def execute(command)
+    command_string = String.build do |io|
+      io << "sudo " if config.command_shell_sudo
+      io << "docker exec -i "
+      io << config.docker_container
+      io << " "
+      io << command.executable
+      io << " "
+      io << OPTIONS_PLACEHOLDER
+    end
+    invoke(command_string, command.options)
+  end
+end
+
+Jennifer::Adapter::DBCommandInterface.register_shell("my_docker", MySimpleDocker)
+```
+
+`command_shell_sudo` enables using `sudo` in command line. This will force you to enter a password for your admin user.

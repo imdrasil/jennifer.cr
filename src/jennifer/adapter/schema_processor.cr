@@ -235,6 +235,8 @@ module Jennifer
       end
     end
 
+    # NOTE: because of cyclic dependency this is the easiest solution ATM
+
     class Base
       def schema_processor
         @schema_processor ||= SchemaProcessor.new(self)

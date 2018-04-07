@@ -15,6 +15,12 @@ module Jennifer
       alias ArgType = DBAny
       alias ArgsType = Array(ArgType)
 
+      module AbstractClassMethods
+        abstract def command_interface
+      end
+
+      extend AbstractClassMethods
+
       @db : DB::Database
 
       getter db
@@ -128,6 +134,22 @@ module Jennifer
         sql_generator.parse_query(q)
       end
 
+      def self.create_database
+        command_interface.create_database
+      end
+
+      def self.generate_schema
+        command_interface.generate_schema
+      end
+
+      def self.load_schema
+        command_interface.load_schema
+      end
+
+      def self.drop_database
+        command_interface.drop_database
+      end
+
       def self.db_connection
         DB.open(connection_string) do |db|
           yield(db)
@@ -170,26 +192,6 @@ module Jennifer
           args << value
         end
         {args: args, fields: fields}
-      end
-
-      def self.drop_database
-        db_connection do |db|
-          db.exec "DROP DATABASE #{Config.db}"
-        end
-      end
-
-      def self.create_database
-        db_connection do |db|
-          db.exec "CREATE DATABASE #{Config.db}"
-        end
-      end
-
-      def self.generate_schema
-        raise AbstractMethod.new("generate_schema", self)
-      end
-
-      def self.load_schema
-        raise AbstractMethod.new("load_schema", self)
       end
 
       # filter out value; should be refactored

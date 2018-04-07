@@ -12,10 +12,10 @@ module Jennifer
 
         pending = interpolation.keys - Version.all.pluck(:version).map(&.as(String))
         return if pending.empty?
-        brocken = Version.where { _version.in(pending) }.pluck(:version).map(&.as(String))
-        unless brocken.empty?
-          puts "Can't run migrations because some of them are older then relase version.\nThey are:"
-          brocken.sort.each do |v|
+        broken = Version.where { _version.in(pending) }.pluck(:version).map(&.as(String))
+        unless broken.empty?
+          puts "Can't run migrations because some of them are older then master version.\nThey are:"
+          broken.sort.each do |v|
             puts "- #{v}"
           end
           return
@@ -57,7 +57,7 @@ module Jennifer
 
       def self.drop
         # TODO: allow to specify adapter
-        default_adapter_class.drop_database
+        r = default_adapter_class.drop_database
         puts "DB is dropped!"
       end
 
@@ -83,7 +83,7 @@ module Jennifer
           klass.new.down
           Version.all.where { _version == v }.delete
           processed = true
-          puts "Droped migration #{v}"
+          puts "Dropped migration #{v}"
         end
       rescue e
         puts e.message
@@ -93,8 +93,10 @@ module Jennifer
       end
 
       def self.load_schema
+        return if config.skip_dumping_schema_sql
         # TODO: load schema for each adapter
         default_adapter_class.load_schema
+        puts "Schema loaded"
       end
 
       def self.generate(name)
@@ -105,6 +107,10 @@ module Jennifer
         puts "Migration #{migration_name} was generated"
       rescue e
         puts e.message
+      end
+
+      def self.config
+        Config.instance
       end
 
       def self.default_adapter

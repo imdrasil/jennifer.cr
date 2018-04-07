@@ -202,6 +202,16 @@ $ crystal examples/run.cr -- db:setup
 $ DB=mysql crystal examples/run.cr -- db:setup
 ```
 
+### Running tests
+
+All unit tests are written using core `spec` component. Also in `spec/spec_helper.cr` some custom unit test matchers are defined.
+
+The common way to run tests is just use using regular crystal spec tool:
+
+```shell
+$ crystal spec
+```
+
 PostgreSQL is used by default, but MySql is also supported while running tests by specifying environment variable `DB=mysql`:
 
 In case you need to set the database user or password, use:
@@ -209,6 +219,18 @@ In case you need to set the database user or password, use:
 ```shell
 $ DB_USER=user DB_PASSWORD=pass crystal spec
 ```
+
+#### Integration tests
+
+Except unit tests there are also several *integration* tests. These tests checks possibility to compile and invoke jennifer functionality in some special edge cases (e.g. without defined models, migrations, etc.).
+
+To run all (except ones with special conditions) integration tests:
+
+```shell
+$ crystal spec spec/**/*_test.cr
+```
+
+There is no need in some extra presetup except running docker related tests. To run them (by the way, all of them run only with mysql) firstly you should run docker container and specify environment variable `DOCKER=1`. For more details take a look on `spec/integration/sam/*` application files and `examples/run_docker_mysql.sh` docker boot script.
 
 ## Documentation
 

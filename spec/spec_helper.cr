@@ -16,7 +16,7 @@ require "./config"
 require "./models.cr"
 require "./factories.cr"
 
-# Callbaks =======================
+# Callbacks =======================
 
 Spec.before_each do
   Jennifer::Adapter.adapter.begin_transaction

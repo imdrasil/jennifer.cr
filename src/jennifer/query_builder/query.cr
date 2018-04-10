@@ -135,11 +135,7 @@ module Jennifer
       end
 
       def sql_args
-        if @tree
-          @tree.not_nil!.sql_args
-        else
-          [] of DB::Any
-        end
+        @tree ? @tree.not_nil!.sql_args : [] of DB::Any
       end
 
       def sql_args_count

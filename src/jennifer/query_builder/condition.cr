@@ -76,7 +76,7 @@ module Jennifer
       end
 
       def sql_args : Array(DB::Any)
-        res = [] of DB::Any
+        res = @lhs.sql_args
         if filterable? && !(@operator == :is || @operator == :is_not)
           if @operator == :in || @operator == :between
             @rhs.as(Array).each do |e|
@@ -86,27 +86,30 @@ module Jennifer
                 res += e.sql_args
               end
             end
-          elsif !@rhs.is_a?(Criteria)
+          else
             res << @rhs.as(DB::Any)
           end
+        elsif @rhs.is_a?(Criteria)
+          res += @rhs.as(Criteria).sql_args
         end
         res
       end
 
       def sql_args_count
+        count = @lhs.sql_args_count
         if filterable? && !(@operator == :is || @operator == :is_not)
           count = 0
           if @operator == :in || @operator == :between
             @rhs.as(Array).each do |e|
               count += e.is_a?(Criteria) ? e.sql_args_count : 1
             end
-          elsif !@rhs.is_a?(Criteria)
+          else
             count += 1
           end
-          count
-        else
-          0
+        elsif @rhs.is_a?(Criteria)
+          count += @rhs.as(Criteria).sql_args_count
         end
+        count
       end
 
       private def filterable?
@@ -117,12 +120,12 @@ module Jennifer
       end
 
       private def parsed_rhs(generator)
-        if @operator == :is || @operator == :is_not
+        if @rhs.is_a?(Criteria)
+          @rhs.as(Criteria).as_sql(generator)
+        elsif @operator == :is || @operator == :is_not
           translate(generator)
         elsif filterable?
           generator.filter_out(@rhs)
-        elsif @rhs.is_a?(Criteria)
-          @rhs.as(Criteria).as_sql(generator)
         else
           @rhs.to_s
         end

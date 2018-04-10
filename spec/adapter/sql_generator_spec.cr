@@ -240,11 +240,21 @@ describe "Jennifer::Adapter::SQLGenerator" do
       it "replase placeholders with dollar numbers" do
         described_class.parse_query("asd %s qwe %s", [1, 2] of Jennifer::DBAny).should eq({"asd $1 qwe $2", [1, 2]})
       end
+
+      it "replaces user provided argument symbols with database specific" do
+        query = Contact.where { _name == sql("lower(%s)", ["john"], false) }
+        described_class.parse_query(described_class.select(query), query.sql_args)[0].should match(/name = lower\(\$1\)/m)
+      end
     end
 
     mysql_only do
       it "replace placeholders with question marks" do
         described_class.parse_query("asd %s qwe %s", [1, 2] of Jennifer::DBAny).should eq({"asd ? qwe ?", [1, 2]})
+      end
+
+      it "replaces user provided argument symbols with database specific" do
+        query = Contact.where { _name == sql("lower(%s)", ["john"], false) }
+        described_class.parse_query(described_class.select(query), query.sql_args)[0].should match(/name = lower\(\?\)/m)
       end
     end
 

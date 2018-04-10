@@ -130,6 +130,68 @@ describe Jennifer::QueryBuilder::Condition do
       it "returns empty array" do
         (Factory.build_criteria > Factory.build_criteria).sql_args.empty?.should be_true
       end
+
+      describe "raw sql" do
+        it do
+          Contact.all.where { _name == sql("lower(%s)", ["A"]) }.tree.not_nil!.sql_args.should eq(["A"])
+        end
+      end
+    end
+
+    context "when lhs is raw sql" do
+      it do
+        Contact.all.where { sql("lower(%s)", ["A"]) }.tree.not_nil!.sql_args.should eq(["A"])
+      end
+
+      context "when rhs is raw sql" do
+        it do
+          Contact.all.where { sql("lower(%s)", ["A"]) == sql("lower(%s)", ["Q"]) }.tree.not_nil!.sql_args.should eq(%w(A Q))
+        end
+      end
+    end
+  end
+
+  describe "#sql_args_count" do
+    context "bool operator" do
+      it "returns empty array" do
+        Factory.build_criteria.sql_args_count.should eq(0)
+      end
+    end
+
+    context "IN operator" do
+      it "returns array of IN args" do
+        Factory.build_criteria.in([1, "asd"]).sql_args_count.should eq(2)
+      end
+    end
+
+    context "rhs is not criteria" do
+      it "returns rhs as element of array" do
+        (Factory.build_criteria > 1).sql_args_count.should eq(1)
+      end
+    end
+
+    context "rhs is criteria" do
+      it "returns empty array" do
+        (Factory.build_criteria > Factory.build_criteria).sql_args_count.should eq(0)
+      end
+
+      describe "raw sql" do
+        it do
+          Contact.all.where { _name == sql("lower(%s)", ["A"]) }.tree.not_nil!.sql_args_count.should eq(1)
+        end
+      end
+    end
+
+    context "when lhs is raw sql" do
+      it do
+        Contact.all.where { sql("lower(%s)", ["A"]) }.tree.not_nil!.sql_args_count.should eq(1)
+      end
+
+      context "when rhs is raw sql" do
+        it do
+          Contact.all.where { sql("lower(%s)", ["A"]) == sql("lower(%s)", ["Q"]) }.tree.not_nil!.sql_args_count.should eq(2)
+        end
+      end
     end
   end
 end

@@ -53,6 +53,10 @@ module Jennifer
       def after_down_failure
       end
 
+      def self.version
+        raise AbstractMethod.new(self, :version)
+      end
+
       def self.versions
         migrations.map(&.version)
       end

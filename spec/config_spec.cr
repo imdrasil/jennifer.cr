@@ -1,7 +1,11 @@
 require "./spec_helper"
 
+private def config
+  Jennifer::Config.config
+end
+
 describe Jennifer::Config do
-  config = Jennifer::Config.config
+  described_class = Jennifer::Config
 
   describe "::read" do
     it "reads data from yaml file" do
@@ -29,11 +33,11 @@ describe Jennifer::Config do
 
     it "expects adapter and database at very least" do
       expect_raises(Jennifer::InvalidConfig, /No database configured/) do
-        config.configure { |c| c.db = "" }
+        described_class.configure { |c| c.db = "" }
       end
 
       expect_raises(Jennifer::InvalidConfig, /No adapter configured/) do
-        config.configure do |c|
+        described_class.configure do |c|
           c.db = "somedb"
           c.adapter = ""
         end

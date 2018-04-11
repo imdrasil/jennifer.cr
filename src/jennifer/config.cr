@@ -132,7 +132,6 @@ module Jennifer
       @local_time_zone
     end
 
-
     delegate_getter(:local_time_zone)
 
     def self.migration_failure_handler_method=(value)
@@ -156,25 +155,29 @@ module Jennifer
       raise Jennifer::InvalidConfig.new("No database configured") if db.empty?
     end
 
-    def self.from_uri(db_uri : String)
-      begin
-        from_uri(URI.parse(db_uri))
-      rescue e
-        config.logger.error("Error parsing database uri #{db_uri}")
-      end
+    def self.from_uri(uri)
+      config.from_uri(uri)
     end
 
-    def self.from_uri(uri : URI)
-      config.set_from_uri(uri)
+    def self.read(*args, **opts)
+      config.read(*args, **opts)
     end
 
-    def self.read(path : String, env : String | Symbol = :development)
+    def self.read(*args, **opts)
+      config.read(*args, **opts) { |document| yield document }
+    end
+
+    def read(path : String)
+      source = yield YAML.parse(File.read(path))
+      from_yaml(source)
+    end
+
+    def read(path : String, env : String | Symbol = :development)
       _env = env.to_s
-      source = YAML.parse(File.read(path))[_env]
-      config.set_from_yaml(source)
+      read(path) { |document| document[_env] }
     end
 
-    def set_from_yaml(source)
+    def from_yaml(source)
       {% for field in STRING_FIELDS %}
         @{{field.id}} = source["{{field.id}}"].as_s if source["{{field.id}}"]?
       {% end %}
@@ -193,7 +196,13 @@ module Jennifer
       self
     end
 
-    def set_from_uri(uri : URI)
+    def from_uri(uri : String)
+      from_uri(URI.parse(uri))
+    rescue e
+      logger.error("Error parsing database uri #{uri}")
+    end
+
+    def from_uri(uri : URI)
       @adapter = uri.scheme.to_s if uri.scheme
       @host = uri.host.to_s if uri.host
       @port = uri.port.not_nil!  if uri.port

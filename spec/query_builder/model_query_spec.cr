@@ -663,6 +663,14 @@ describe Jennifer::QueryBuilder::ModelQuery do
           .order({"period" => :desc})
           .results.size.should eq(1)
       end
+
+      it "allows to use float for filtering decimal fields" do
+        converter = Jennifer::Model::ParameterConverter.new
+        c = Factory.create_contact
+        c.ballance = converter.parse("15.1", "Numeric").as(PG::Numeric)
+        c.save
+        Contact.all.where { _ballance == 15.1 }.count.should eq(1)
+      end
     end
   end
 end

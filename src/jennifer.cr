@@ -68,6 +68,10 @@ module Jennifer
       raise "stubed relation"
     end
 
+    def preload_relation(collection, out_collection, pk_repo)
+      raise "stubbed relation"
+    end
+
     {% for method in %i(table_name model_class type set_callback condition_clause foreign_field primary_field join_query) %}
       def {{method.id}}
         raise "stubed relation"

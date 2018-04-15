@@ -74,6 +74,33 @@ module Jennifer
         @association_foreign || T.to_s.foreign_key
       end
 
+      def preload_relation(collection, out_collection : Array(Model::Resource), pk_repo)
+        return if collection.empty?
+        _primary = primary_field
+
+        unless pk_repo.has_key?(_primary)
+          array = pk_repo[_primary] = Array(DBAny).new(collection.size)
+          collection.each { |e| array << e.attribute(_primary) }
+        end
+
+        join_fk = "__join_fk__"
+        query = query(pk_repo[_primary])
+        fields = query._select_fields
+        fields << QueryBuilder::Criteria.new(foreign_field, join_table!).alias(join_fk)
+        new_collection = query.select(fields).db_results
+
+        name = self.name
+        if new_collection.empty?
+          collection.each(&.relation_retrieved(name))
+        else
+          primary_fields = pk_repo[_primary]
+          collection.each_with_index do |mod, i|
+            pv = primary_fields[i]
+            new_collection.each { |hash| out_collection << mod.append_relation(name, hash) if hash[join_fk] == pv }
+          end
+        end
+      end
+
       private def add_join_table_record(obj, rel)
         adapter.insert(
           join_table!,

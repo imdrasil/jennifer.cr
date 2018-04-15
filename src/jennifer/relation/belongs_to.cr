@@ -108,6 +108,30 @@ module Jennifer
       def primary_field
         @primary ||= T.primary_field_name
       end
+
+      def preload_relation(collection, out_collection : Array(Model::Resource), pk_repo)
+        return if collection.empty?
+        _primary = primary_field
+        _foreign = foreign_field
+
+        unless pk_repo.has_key?(_foreign)
+          array = pk_repo[_foreign] = Array(DBAny).new(collection.size)
+          collection.each { |e| array << e.attribute(_foreign) }
+        end
+
+        new_collection = query(pk_repo[_foreign]).db_results
+
+        name = self.name
+        if new_collection.empty?
+          collection.each(&.relation_retrieved(name))
+        else
+          foreign_fields = pk_repo[_foreign]
+          collection.each_with_index do |mod, i|
+            fk = foreign_fields[i]
+            new_collection.each { |hash| out_collection << mod.append_relation(name, hash) if hash[_primary] == fk }
+          end
+        end
+      end
     end
   end
 end

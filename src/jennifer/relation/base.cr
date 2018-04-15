@@ -12,6 +12,8 @@ module Jennifer
       abstract def join_condition(a, b)
       abstract def query(a)
       abstract def insert(a, b)
+      # Preloads relation into *collection* from *out_collection* depending on keys from *pk_repo*.
+      abstract def preload_relation(collection, out_collection, pk_repo)
     end
 
     # T - related model
@@ -97,6 +99,29 @@ module Jennifer
 
       def primary_field
         @primary ||= Q.primary_field_name
+      end
+
+      def preload_relation(collection, out_collection : Array(Model::Resource), pk_repo)
+        return if collection.empty?
+
+        unless pk_repo.has_key?(primary_field)
+          array = pk_repo[primary_field] = Array(DBAny).new(collection.size)
+          collection.each { |e| array << e.attribute(primary_field) }
+        end
+
+        new_collection = query(pk_repo[primary_field]).db_results
+
+        name = self.name
+        if new_collection.empty?
+          collection.each(&.relation_retrieved(name))
+        else
+          primary_fields = pk_repo[primary_field]
+          collection.each_with_index do |mod, i|
+            pv = primary_fields[i]
+            # TODO: check if deleting elements from array will increase performance
+            new_collection.each { |hash| out_collection << mod.append_relation(name, hash) if hash[foreign_field] == pv }
+          end
+        end
       end
     end
   end

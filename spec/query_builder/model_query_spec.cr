@@ -180,6 +180,20 @@ describe Jennifer::QueryBuilder::ModelQuery do
         c[0].addresses.size.should eq(1)
       end
     end
+
+    describe "one-to-many relation" do
+      it do
+        c = Factory.create_contact
+        Factory.create_address(contact_id: c.id)
+        Factory.create_address(contact_id: c.id)
+        executed_times = 0
+        Address.all.eager_load(:contact).to_a.each do |address|
+          executed_times += 1
+          address.contact.should_not be_nil
+        end
+        executed_times.should eq(2)
+      end
+    end
   end
 
   describe "#relation" do
@@ -429,6 +443,20 @@ describe Jennifer::QueryBuilder::ModelQuery do
           res.size.should eq(1)
           res[0].country!.contacts[0].addresses[0].contact
         end
+      end
+    end
+
+    describe "one-to-many relation" do
+      it do
+        c = Factory.create_contact
+        Factory.create_address(contact_id: c.id)
+        Factory.create_address(contact_id: c.id)
+        executed_times = 0
+        Address.all.includes(:contact).to_a.each do |address|
+          executed_times += 1
+          address.contact.should_not be_nil
+        end
+        executed_times.should eq(2)
       end
     end
   end

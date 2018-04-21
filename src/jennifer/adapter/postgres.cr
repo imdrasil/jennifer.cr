@@ -24,7 +24,7 @@ module Jennifer
         :double => "double precision", # Float64
 
         :numeric => "numeric", # PG::Numeric
-        :decimal => "decimal", # PG::Numeric - is alias for numeric
+        :decimal => "decimal", # PG::Numeric - alias for numeric
 
         :string     => "varchar",
         :char       => "char",
@@ -190,7 +190,7 @@ module Jennifer
         id = -1i64
         affected = 0i64
         if obj.class.primary_auto_incrementable?
-          id = scalar(*query_opts).as(Int32).to_i64
+          id = scalar(*query_opts).as(Int).to_i64
           affected += 1 if id > 0
         else
           affected = exec(*query_opts).rows_affected

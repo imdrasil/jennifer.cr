@@ -265,7 +265,7 @@ module Jennifer
       private def store_record : Bool
         return false unless __before_create_callback
         res = self.class.adapter.insert(self)
-        init_primary_field(res.last_insert_id.to_i) if primary.nil? && res.last_insert_id > -1
+        init_primary_field(res.last_insert_id.as(Int)) if primary.nil? && res.last_insert_id > -1
         raise ::Jennifer::BaseException.new("Record hasn't been stored to the db") if res.rows_affected == 0
         @new_record = false
         __after_create_callback

@@ -22,7 +22,7 @@ describe Jennifer::Model::RelationDefinition do
       ContactWithDependencies::CALLBACKS[:destroy][:before].includes?("__delete_callback_addresses").should be_true
     end
 
-    it "doen't invoke callbacks on associated model" do
+    it "doesn't invoke callbacks on associated model" do
       c = Factory.create_contact
       Factory.create_address(contact_id: c.id)
       count = Address.destroy_counter

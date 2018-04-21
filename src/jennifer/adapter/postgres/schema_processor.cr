@@ -121,13 +121,8 @@ module Jennifer
       end
 
       private def column_type_definition(options, io)
-        type = if options[:serial]? || options[:auto_increment]?
-                 "serial"
-               else
-                 options[:sql_type]? || adapter.translate_type(options[:type].as(Symbol))
-               end
         size = options[:size]? || adapter.default_type_size(options[:type]?)
-        io << " " << type
+        io << " " << column_type(options)
         io << "(#{size})" if size
         io << " ARRAY" if options[:array]?
       end
@@ -140,6 +135,14 @@ module Jennifer
           " "
         else
           raise ArgumentError.new("Unknown index type: #{name}")
+        end
+      end
+
+      private def column_type(options)
+        if options[:serial]? || options[:auto_increment]?
+          options[:type] == :bigint ? "bigserial" : "serial"
+        else
+          options[:sql_type]? || adapter.translate_type(options[:type].as(Symbol))
         end
       end
     end

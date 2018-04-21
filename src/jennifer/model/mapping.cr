@@ -64,13 +64,15 @@ module Jennifer
                 {{value[:parsed_type].id}}
               end
 
-              # Inits primary field
-              def init_primary_field(value)
+              def init_primary_field(value : Int)
                 {% if primary_auto_incrementable %}
                   raise ::Jennifer::AlreadyInitialized.new(@{{key.id}}, value) if @{{key.id}}
-                  @{{key.id}} = value.as({{value[:type]}})
+                  @{{key.id}} = value{% if value[:parsed_type] =~ /32/ %}.to_i{% else %}.to_i64{% end %}
                 {% end %}
               end
+
+              # Inits primary field
+              def init_primary_field(value); end
             {% end %}
           {% end %}
         {% end %}

@@ -260,7 +260,7 @@ end
 
 class OneFieldModel < Jennifer::Model::Base
   mapping(
-    id: Primary32
+    id: Primary64
   )
 end
 
@@ -340,7 +340,7 @@ class OneFieldModelWithExtraArgument < Jennifer::Model::Base
   table_name "one_field_models"
 
   mapping(
-    id: Primary32,
+    id: Primary64,
     missing_field: String
   )
 end

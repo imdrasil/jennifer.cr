@@ -50,7 +50,7 @@ module Jennifer
           {% for key, value in properties %}
             {% column = (value[:column_name] || key).id.stringify %}
             if values.has_key?({{column}})
-              %var{key.id} = values[{{column}}]
+              %var{key.id} = values[{{column}}]{% if value[:numeric_converter] %}.as(PG::Numeric).{{value[:numeric_converter].id}}{% end %}
             else
               %found{key.id} = false
             end

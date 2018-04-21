@@ -268,7 +268,12 @@ module Jennifer
               when {{(value[:column_name] || key).id.stringify}}
                 %found{key.id} = true
                 begin
-                  %var{key.id} = pull.read({{value[:parsed_type].id}})
+                  %var{key.id} =
+                    {% if value[:numeric_converter] %}
+                      pull.read(PG::Numeric).{{value[:numeric_converter].id}}
+                    {% else %}
+                      pull.read({{value[:parsed_type].id}})
+                    {% end %}
                 rescue e : Exception
                   raise ::Jennifer::DataTypeMismatch.build(column, {{@type}}, e)
                 end
@@ -318,7 +323,8 @@ module Jennifer
           {% for key, value in properties %}
             {% column = (value[:column_name] || key).id.stringify %}
             if values.has_key?({{column}})
-              %var{key.id} = values[{{column}}]
+              %var{key.id} =
+                values[{{column}}]{% if value[:numeric_converter] %}.as(PG::Numeric).{{value[:numeric_converter].id}}{% end %}
             else
               %found{key.id} = false
             end

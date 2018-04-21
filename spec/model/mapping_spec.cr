@@ -80,6 +80,20 @@ describe Jennifer::Model::Mapping do
   end
 
   describe "#_extract_attributes" do
+    postgres_only do
+      it "allows to use other type for PG::Numeric" do
+        ballance = PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
+        c = Factory.create_contact(ballance: ballance)
+        contact_with_float = ContactWithFloatMapping.find!(c.id)
+        contact_with_float.ballance.should eq(1.0f64)
+        contact_with_float.ballance.is_a?(Float64)
+        contact_with_float.ballance = contact_with_float.ballance! + 10.25f64
+        contact_with_float.save
+        contact_with_float.reload
+        contact_with_float.ballance.should eq(11.25f64)
+      end
+    end
+
     it "returns tuple with values" do
       ballance = postgres_only do
         PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])

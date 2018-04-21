@@ -19,16 +19,22 @@ module Jennifer
       @@has_table : Bool?
 
       def self.has_table?
-        @@has_table ||= adapter.table_exists?(table_name).as(Bool)
+        if @@has_table.nil?
+          @@has_table = adapter.table_exists?(table_name).as(Bool)
+        else
+          @@has_table
+        end
       end
 
-      # Represent actual amount of model's table column amount (is greped from db).
+      # Represent actual amount of model's table column amount (is grepped from db).
       def self.actual_table_field_count
         @@actual_table_field_count ||= adapter.table_column_count(table_name)
       end
 
       def self.table_name(value : String | Symbol)
         @@table_name = value.to_s
+        @@actual_table_field_count = nil
+        @@has_table = nil
       end
 
       def self.table_name : String
@@ -43,6 +49,7 @@ module Jennifer
 
       def self.foreign_key_name(value : String | Symbol)
         @@foreign_key_name = value.to_s
+        @@foreign_key_name = nil
       end
 
       def self.foreign_key_name
@@ -123,7 +130,7 @@ module Jennifer
               {% end %}
             ]
           {% else %}
-            [] of ::Jennifer::Model::Base
+            [] of ::Jennifer::Model::Base.class
           {% end %}
         {% end %}
       end

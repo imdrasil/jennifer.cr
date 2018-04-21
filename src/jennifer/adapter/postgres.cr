@@ -141,6 +141,7 @@ module Jennifer
         end.exists?
       end
 
+      # Returns if table exists.
       def table_exists?(table)
         Query["information_schema.tables"]
           .where { _table_name == table }

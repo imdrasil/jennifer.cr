@@ -8,6 +8,9 @@ require "./request_methods"
 module Jennifer
   module Adapter
     abstract class Base
+      # NOTE: if any request will be performed before response of the previous one is finished
+      # we will get freezed.
+
       include Transactions
       include ResultParsers
       include RequestMethods

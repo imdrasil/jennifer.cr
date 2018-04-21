@@ -419,6 +419,19 @@ class AbstractContactModel < Jennifer::Model::Base
   }, false)
 end
 
+class ContactWithFloatMapping < Jennifer::Model::Base
+  table_name "contacts"
+
+  {% if env("DB") == "postgres" || env("DB") == nil %}
+    mapping({
+      id: Primary32,
+      ballance: { type: Float64?, numeric_converter: :to_f64}
+    }, false)
+  {% else %}
+    mapping({id: Primary32}, false)
+  {% end %}
+end
+
 # ===========
 # views
 # ===========

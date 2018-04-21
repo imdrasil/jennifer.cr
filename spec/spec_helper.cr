@@ -13,8 +13,8 @@ end
 require "spec"
 require "factory"
 require "./config"
-require "./models.cr"
-require "./factories.cr"
+require "./models"
+require "./factories"
 require "./support/*"
 
 # Callbacks =======================

@@ -113,6 +113,7 @@ end
 | `:getter` | if getter should be created (default - `true`) |
 | `:setter` | if setter should be created (default - `true`) |
 | `:virtual` | mark field as virtual - will not be stored and retrieved from db |
+| `:numeric_converter` | **postgres only**: contains method to convert `PG::Numeric` to a used `type` |
 
 To make some field nillable tou can use any of next options:
 
@@ -137,7 +138,7 @@ If you don't want to define all the table fields - pass `false` as second argume
 | `#{{field_name}}=`| | setter |
 | `::_{{field_name}}` | | helper method for building queries |
 | `#{{field_name}}_changed?` | | shows if field was changed |
-| `#changed?` | | shows if any field was changed | 
+| `#changed?` | | shows if any field was changed |
 | `#primary` | | value of primary key field |
 | `::primary` | | returns criteria for primary field (query dsl) |
 | `::primary_field_name` | | name of primary field |
@@ -177,9 +178,23 @@ class SomeModel < ApplicationRecord
 end
 ```
 
+### Numeric fields
+
+The crystal type of a numeric field depends on chosen adapter: `Float64` for mysql and `PG::Numeric` for postgre. Sometimes `PG::Numeric` with postgre may be annoying. To convert it to another type at the object building stage you can pass `numeric_converter` with method be used to convert `PF::Numeric` to the defined field `type`.
+
+```crystal
+class Product < Jennifer::Model::Base
+  mapping(
+    id: Primary32,
+    #...
+    price: { type: Float64, numeric_converter: :to_f64 }
+  )
+end
+```
+
 ## Table name
 
-Automatically model is associated with table with underscored pluralized name of it's class, but custom one can be specified defining `::table_name`. This means no modules will affect name generating. 
+Automatically model is associated with table with underscored pluralized name of it's class, but custom one can be specified defining `::table_name`. This means no modules will affect name generating.
 
 ```crystal
 Admin::User.table_name # "users"

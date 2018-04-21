@@ -668,4 +668,19 @@ describe Jennifer::Model::Base do
       end
     end
   end
+
+  describe "#inspect" do
+    it {
+      address = Factory.build_address
+      address.inspect.should eq("#<Address:0x#{address.object_id.to_s(16)} id: nil, main: false, street: \"#{address.street}\","\
+        " contact_id: nil, details: nil>")
+    }
+
+    it {
+      profile = Factory.build_facebook_profile
+      profile.inspect.should eq("#<FacebookProfile:0x#{profile.object_id.to_s(16)} uid: \"1234\", "\
+        "virtual_child_field: nil, id: nil, login: \"some_login\", contact_id: nil, type: \"FacebookProfile\", "\
+        "virtual_parent_field: nil>")
+    }
+  end
 end

@@ -113,7 +113,7 @@ module Jennifer
           exec(*parsed_query)
           if klass.primary_auto_incrementable?
             klass.all.order({klass.primary => :desc}).limit(collection.size).pluck(:id).reverse_each.each_with_index do |id, i|
-              collection[i].init_primary_field(id)
+              collection[i].init_primary_field(id.as(Int))
             end
           end
         end

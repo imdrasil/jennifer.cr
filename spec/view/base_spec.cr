@@ -1,6 +1,15 @@
 require "../spec_helper"
 
 describe Jennifer::View::Base do
+  describe "#inspect" do
+    it {
+      Factory.create_contact(gender: "male")
+      view = MaleContact.all.first!
+      view.inspect.should eq("#<MaleContact:0x#{view.object_id.to_s(16)} id: #{view.id}, name: \"Deepthi\", "\
+        "gender: \"male\", age: 28, created_at: #{view.created_at.to_s}>")
+    }
+  end
+
   describe "::primary" do
     it "return criteria with primary key" do
       c = MaleContact.primary

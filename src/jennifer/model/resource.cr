@@ -26,6 +26,27 @@ module Jennifer
 
       @@expression_builder : QueryBuilder::ExpressionBuilder?
 
+      def inspect(io) : Nil
+        {% begin %}
+          {% if @type.constant("COLUMNS_METADATA") %}
+            io << "#<" << {{@type.name.id.stringify}} << ":0x"
+            object_id.to_s(16, io)
+            io << ' '
+            {% for var, i in @type.constant("COLUMNS_METADATA").keys %}
+              {% if i > 0 %}
+                io << ", "
+              {% end %}
+              io << "{{var.id}}: "
+              @{{var.id}}.inspect(io)
+            {% end %}
+            io << '>'
+            nil
+          {% else %}
+            super(io)
+          {% end %}
+        {% end %}
+      end
+
       def self.build(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
         o = new(values)
         o.__after_initialize_callback

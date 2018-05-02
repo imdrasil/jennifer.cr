@@ -81,16 +81,37 @@ describe Jennifer::Model::Mapping do
 
   describe "#_extract_attributes" do
     postgres_only do
-      it "allows to use other type for PG::Numeric" do
-        ballance = PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
-        c = Factory.create_contact(ballance: ballance)
-        contact_with_float = ContactWithFloatMapping.find!(c.id)
-        contact_with_float.ballance.should eq(1.0f64)
-        contact_with_float.ballance.is_a?(Float64)
-        contact_with_float.ballance = contact_with_float.ballance! + 10.25f64
-        contact_with_float.save
-        contact_with_float.reload
-        contact_with_float.ballance.should eq(11.25f64)
+      context "with casting from PG::Numeric" do
+        it "allows passing PG::Numeric" do
+          ballance = PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
+          c = ContactWithFloatMapping.build(ballance: ballance)
+          c.ballance.should eq(1.0f64)
+          c.ballance.is_a?(Float64)
+        end
+
+        it "properly creates using provided field instead of numeric" do
+          ballance = 10f64
+          c = ContactWithFloatMapping.build(ballance: ballance)
+          c.ballance.should eq(10f64)
+          c.ballance.is_a?(Float64).should be_true
+        end
+
+        it "properly loads data from db" do
+          ballance = PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
+          c = ContactWithFloatMapping.create(ballance: ballance)
+          contact_with_float = ContactWithFloatMapping.find!(c.id)
+          contact_with_float.ballance.should eq(1.0f64)
+          contact_with_float.ballance.is_a?(Float64).should be_true
+        end
+
+        it "properly stores modified numeric field" do
+          ballance = PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
+          c = ContactWithFloatMapping.create(ballance: ballance)
+          c.ballance = c.ballance! + 10.25f64
+          c.save
+          c.reload
+          c.ballance.should eq(11.25f64)
+        end
       end
     end
 

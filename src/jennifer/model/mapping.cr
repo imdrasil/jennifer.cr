@@ -325,8 +325,13 @@ module Jennifer
           {% for key, value in properties %}
             {% column = (value[:column_name] || key).id.stringify %}
             if values.has_key?({{column}})
-              %var{key.id} =
-                values[{{column}}]{% if value[:numeric_converter] %}.as(PG::Numeric).{{value[:numeric_converter].id}}{% end %}
+              {% if value[:numeric_converter] %}
+                column_value = values[{{column}}]
+                %var{key.id} =
+                  column_value.is_a?(PG::Numeric) ? column_value.as(PG::Numeric).{{value[:numeric_converter].id}} : column_value
+              {% else %}
+                %var{key.id} = values[{{column}}]
+              {% end %}
             else
               %found{key.id} = false
             end

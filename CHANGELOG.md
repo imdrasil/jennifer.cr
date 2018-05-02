@@ -1,3 +1,22 @@
+# 0.5.1 (02-05-2018)
+
+**QueryBuilder**
+
+* fixes bug with compiling application without defined any model (as a result no `ModelQuery` class is defined as well)
+* allows to pass sql arguments to left hand condition statement
+* fixes bug with invalid order direction type interpretation (#124)
+
+**Adapter**
+
+* adds command interface layer for invoking console tool utilities (e.g. for dumping database schema)
+* adds docker command interface
+
+**Config**
+
+* makes `Config` to realize singleton pattern instead of holding all data as class variables
+* adds flag to skip dumping database schema after running migrations
+* fixes connection port definition (#121)
+
 # 0.5.0 (13-02-2018)
 
 * `ifrit/core` pact is required

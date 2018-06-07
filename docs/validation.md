@@ -20,7 +20,6 @@ user.validate!
 user.valid? # true
 ```
 
-> For validation purposes is used [accord](https://github.com/neovintage/accord) shard which provides some basic functionality.
 
 ## Trigger validation
 

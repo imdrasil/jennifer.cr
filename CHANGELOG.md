@@ -1,3 +1,5 @@
+# Future release (__-__-2018)
+
 # 0.5.1 (02-05-2018)
 
 **QueryBuilder**

@@ -2,7 +2,7 @@ module Jennifer
   module Model
     module Validation
       def errors
-        @errors ||= Accord::ErrorList.new
+        @errors ||= Errors.new(self)
       end
 
       def valid?
@@ -17,7 +17,7 @@ module Jennifer
       end
 
       def validate!(skip = false) : Bool
-        errors.clear!
+        errors.clear
         return false if skip
         return false unless __before_validation_callback
         validate
@@ -45,7 +45,7 @@ module Jennifer
           {% if allow_blank %}
             return if @{{field.id}}.nil?
           {% else %}
-            return errors.add({{field}}, self.class.human_error({{field}}, :blank)) if @{{field.id}}.nil?
+            return errors.add({{field}}, :blank) if @{{field.id}}.nil?
           {% end %}
           @{{field.id}}.not_nil!
         end
@@ -79,7 +79,7 @@ module Jennifer
         def %validate_method
           value = _not_nil_validation({{field}}, {{allow_blank}})
           unless ({{in}}).includes?(value)
-            errors.add({{field}}, self.class.human_error({{field}}, :inclusion))
+            errors.add({{field}}, :inclusion)
           end
         end
       end
@@ -90,7 +90,7 @@ module Jennifer
         def %validate_method
           value = _not_nil_validation({{field}}, {{allow_blank}})
           if ({{in}}).includes?(value)
-            errors.add(:{{field.id}}, self.class.human_error({{field}}, :exclusion))
+            errors.add(:{{field.id}}, :exclusion)
           end
         end
       end
@@ -101,7 +101,7 @@ module Jennifer
         def %validate_method
           value = _not_nil_validation({{field}}, {{allow_blank}})
           unless {{value}} =~ value
-            errors.add({{field}}, self.class.human_error({{field}}, :invalid))
+            errors.add({{field}}, :invalid)
           end
         end
       end
@@ -114,21 +114,21 @@ module Jennifer
           size = value.not_nil!.size
           {% if options[:in] %}
             if ({{options[:in]}}).max < size
-              errors.add({{field}}, self.class.human_error({{field}}, :too_long, ({{options[:in]}}).max))
+              errors.add({{field}}, :too_long, ({{options[:in]}}).max)
             elsif ({{options[:in]}}).min > size
-              errors.add({{field}}, self.class.human_error({{field}}, :too_short, ({{options[:in]}}).min))
+              errors.add({{field}}, :too_short, ({{options[:in]}}).min)
             end
           {% elsif options[:is] %}
             if {{options[:is]}} != size
-              errors.add({{field}}, self.class.human_error({{field}}, :wrong_length, {{options[:is]}}))
+              errors.add({{field}}, :wrong_length, {{options[:is]}})
             end
           {% elsif options[:minimum] %}
             if {{options[:minimum]}} > size
-              errors.add({{field}}, self.class.human_error({{field}}, :too_short, {{options[:minimum]}}))
+              errors.add({{field}}, :too_short, {{options[:minimum]}})
             end
           {% elsif options[:maximum] %}
             if {{options[:maximum]}} < size
-              errors.add({{field}}, self.class.human_error({{field}}, :too_long, {{options[:maximum]}}))
+              errors.add({{field}}, :too_long, {{options[:maximum]}})
             end
           {% end %}
         end
@@ -147,7 +147,7 @@ module Jennifer
             query = query.where { primary != this.primary }
           end
 
-          errors.add({{field}}, self.class.human_error({{field}}, :taken)) if query.exists?
+          errors.add({{field}}, :taken) if query.exists?
         end
       end
 
@@ -157,7 +157,7 @@ module Jennifer
         def %validate_method
           value = @{{field.id}}
           if value.blank?
-            errors.add({{field}}, self.class.human_error({{field}}, :blank))
+            errors.add({{field}}, :blank)
           end
         end
       end
@@ -168,7 +168,7 @@ module Jennifer
         def %validate_method
           value = @{{field.id}}
           if value.present?
-            errors.add({{field}}, self.class.human_error({{field}}, :present))
+            errors.add({{field}}, :present)
           end
         end
       end
@@ -180,42 +180,42 @@ module Jennifer
           value = _not_nil_validation({{field}}, {{options[:allow_blank] || false}})
           {% if options[:greater_than] %}
             if {{options[:greater_than]}} >= value
-              errors.add({{field}}, self.class.human_error({{field}}, :greater_than, { :value => {{options[:greater_than]}} }))
+              errors.add({{field}}, :greater_than, { :value => {{options[:greater_than]}} })
             end
           {% end %}
           {% if options[:greater_than_or_equal_to] %}
             if {{options[:greater_than_or_equal_to]}} > value
-              errors.add({{field}}, self.class.human_error({{field}}, :greater_than_or_equal_to, { :value => {{options[:greater_than_or_equal_to]}} }))
+              errors.add({{field}}, :greater_than_or_equal_to, { :value => {{options[:greater_than_or_equal_to]}} })
             end
           {% end %}
           {% if options[:equal_to] %}
             if {{options[:equal_to]}} != value
-              errors.add({{field}}, self.class.human_error({{field}}, :equal_to, { :value => {{options[:equal_to]}} }))
+              errors.add({{field}}, :equal_to, { :value => {{options[:equal_to]}} })
             end
           {% end %}
           {% if options[:less_than] %}
             if {{options[:less_than]}} <= value
-              errors.add({{field}}, self.class.human_error({{field}}, :less_than, { :value => {{options[:less_than]}} }))
+              errors.add({{field}}, :less_than, { :value => {{options[:less_than]}} })
             end
           {% end %}
           {% if options[:less_than_or_equal_to] %}
             if {{options[:less_than_or_equal_to]}} < value
-              errors.add({{field}}, self.class.human_error({{field}}, :less_than_or_equal_to, { :value => {{options[:less_than_or_equal_to]}} }))
+              errors.add({{field}}, :less_than_or_equal_to, { :value => {{options[:less_than_or_equal_to]}} })
             end
           {% end %}
           {% if options[:other_than] %}
             if {{options[:other_than]}} == value
-              errors.add({{field}}, self.class.human_error({{field}}, :other_than, { :value => {{options[:other_than]}} }))
+              errors.add({{field}}, :other_than, { :value => {{options[:other_than]}} })
             end
           {% end %}
           {% if options[:odd] %}
             if value.even?
-              errors.add({{field}}, self.class.human_error({{field}}, :odd))
+              errors.add({{field}}, :odd)
             end
           {% end %}
           {% if options[:even] %}
             if value.odd?
-              errors.add({{field}}, self.class.human_error({{field}}, :even))
+              errors.add({{field}}, :even)
             end
           {% end %}
         end
@@ -228,7 +228,7 @@ module Jennifer
           value = @{{field.id}}
           {% condition = accept ? "!(#{accept}).includes?(value)" : "value != true && value != '1'" %}
           if {{condition.id}}
-            errors.add({{field}}, self.class.human_error({{field}}, :accepted))
+            errors.add({{field}}, :accepted)
           end
         end
       end
@@ -243,11 +243,8 @@ module Jennifer
           if value.compare(@{{field.id}}_confirmation.not_nil!, !{{case_sensitive}}) != 0
             errors.add(
               {{field}},
-              self.class.human_error(
-                {{field}},
-                :confirmation,
-                options: { :attribute => self.class.human_attribute_name(:{{field.id}}) }
-              )
+              :confirmation,
+              options: { :attribute => self.class.human_attribute_name(:{{field.id}}) }
             )
           end
         end

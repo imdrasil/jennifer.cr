@@ -79,7 +79,7 @@ module Jennifer
   class RecordInvalid < BaseException
     getter :errors
 
-    def initialize(@errors : Accord::ErrorList)
+    def initialize(@errors : Array(String))
       @message = "Object is invalid: #{errors.inspect}"
     end
   end

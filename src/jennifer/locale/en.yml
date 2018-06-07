@@ -1,6 +1,6 @@
 jennifer:
   errors:
-    # format: "%{attribute} %{message}"
+    format: "%{attribute} %{message}"
     messages:
       # model_invalid: "Validation failed: %{errors}"
       inclusion: "is not included in the list"

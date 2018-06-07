@@ -1,6 +1,5 @@
 require "inflector"
 require "inflector/string"
-require "accord"
 
 require "ifrit/converter"
 require "ifrit/core"
@@ -24,6 +23,7 @@ require "./jennifer/adapter/base"
 require "./jennifer/relation/base"
 require "./jennifer/relation/*"
 
+require "./jennifer/model/errors"
 require "./jennifer/model/base"
 
 require "./jennifer/validator"

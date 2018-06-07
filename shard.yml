@@ -27,9 +27,6 @@ dependencies:
   inflector:
     github: phoffer/inflector.cr
     version: "~> 0.1.8"
-  accord:
-    github: neovintage/accord
-    version: "~> 1.1.0"
   ifrit:
     github: imdrasil/ifrit
     version: "~> 0.1.2"

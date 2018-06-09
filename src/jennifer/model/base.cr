@@ -201,7 +201,7 @@ module Jennifer
       end
 
       def save!(skip_validation : Bool = false)
-        raise Jennifer::RecordInvalid.new(errors) unless save(skip_validation)
+        raise Jennifer::RecordInvalid.new(errors.to_a) unless save(skip_validation)
         true
       end
 

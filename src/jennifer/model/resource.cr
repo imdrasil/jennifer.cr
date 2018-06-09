@@ -5,22 +5,17 @@ require "./relation_definition"
 module Jennifer
   module Model
     abstract class Resource
-      module ClassMethods
+      module AbstractClassMethods
         abstract def table_name
         abstract def build(values, new_record : Bool)
-      end
-
-      extend Ifrit
-      extend Translation
-      extend ClassMethods
-      include Scoping
-      include RelationDefinition
-
-      module ClassMethods
         abstract def relation(name)
       end
 
-      extend ClassMethods
+      extend AbstractClassMethods
+      extend Ifrit
+      extend Translation
+      include Scoping
+      include RelationDefinition
 
       alias Supportable = DBAny | self
 
@@ -28,8 +23,8 @@ module Jennifer
 
       def inspect(io) : Nil
         {% begin %}
+          io << "#<" << {{@type.name.id.stringify}} << ":0x"
           {% if @type.constant("COLUMNS_METADATA") %}
-            io << "#<" << {{@type.name.id.stringify}} << ":0x"
             object_id.to_s(16, io)
             io << ' '
             {% for var, i in @type.constant("COLUMNS_METADATA").keys %}
@@ -39,11 +34,9 @@ module Jennifer
               io << "{{var.id}}: "
               @{{var.id}}.inspect(io)
             {% end %}
-            io << '>'
-            nil
-          {% else %}
-            super(io)
           {% end %}
+          io << '>'
+          nil
         {% end %}
       end
 

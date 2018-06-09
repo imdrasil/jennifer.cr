@@ -1,12 +1,12 @@
 module Jennifer
   abstract class Validator
-    getter errors : Accord::ErrorList
+    getter errors : Model::Errors
 
     def initialize(@errors)
     end
 
     def validate(subject)
-      raise raise AbstractMethod.new("validate", self.class)
+      raise AbstractMethod.new("validate", self.class)
     end
 
     def validate(subject, **options)

@@ -60,11 +60,11 @@ describe Jennifer::Model::Mapping do
         contact.save!
         fail("should raise validation exception")
       rescue ex : Jennifer::RecordInvalid
-        ex.errors.size.should eq(3)
-        raw_errors = ex.errors.@errors
-        validate_error(raw_errors[0], :age, "is not included in the list")
-        validate_error(raw_errors[1], :name, "is too long (maximum is 15 characters)")
-        validate_error(raw_errors[2], :description, "Too large description")
+        contact.errors.size.should eq(3)
+        raw_errors = contact.errors
+        raw_errors[:age].should eq(["is not included in the list"])
+        raw_errors[:name].should eq(["is too long (maximum is 15 characters)"])
+        raw_errors[:description].should eq(["Too large description"])
       end
     end
 
@@ -672,9 +672,4 @@ describe Jennifer::Model::Mapping do
       ((c.updated_at! - Time.now).total_seconds < 1).should be_true
     end
   end
-end
-
-def validate_error(error, attr, message)
-  error.attr.should eq(attr)
-  error.message.should eq(message)
 end

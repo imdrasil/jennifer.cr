@@ -41,7 +41,7 @@ module Jennifer
         end
 
         private def validate_{{password.id}}_presence
-          errors.add(:{{password.id}}, self.class.human_error({{password}}, :blank)) if {{password_hash.id}}.blank?
+          errors.add(:{{password.id}}, :blank) if {{password_hash.id}}.blank?
         end
       end
     end

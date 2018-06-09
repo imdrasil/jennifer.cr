@@ -4,7 +4,7 @@
 
 # Release notes
 
-Please fill corresponding section regarding this pull request notes below instead of modifying `CHANGELOG.md` file.
+Please fill the corresponding section regarding this pull request notes below instead of modifying `CHANGELOG.md` file. Please remove all redundant sections before posting request.
 
 **General**
 
@@ -25,5 +25,3 @@ Please fill corresponding section regarding this pull request notes below instea
 **Record**
 
 **Exceptions**
-
-> NOTE: please remove all redundant sections before posting request.

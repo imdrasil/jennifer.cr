@@ -20,7 +20,6 @@ user.validate!
 user.valid? # true
 ```
 
-
 ## Trigger validation
 
 The following methods triggers validations and will save the object only if all validations will pass:

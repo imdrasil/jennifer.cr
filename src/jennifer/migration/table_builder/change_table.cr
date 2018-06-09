@@ -23,17 +23,17 @@ module Jennifer
 
         def change_column(old_name, new_name, type : Symbol? = nil, options = DB_OPTIONS.new)
           @changed_columns[old_name.to_s] =
-            sym_hash_cast(options, AAllowedTypes).merge(sym_hash({
+            sym_hash_cast(options, AAllowedTypes).merge(
+            {
               :new_name => new_name,
               :type     => type,
-            }, EAllowedTypes))
+            } of Symbol => EAllowedTypes)
           self
         end
 
         def add_column(name, type : Symbol, options = DB_OPTIONS.new)
-          @fields[name.to_s] = sym_hash_cast(options, AAllowedTypes).merge(sym_hash({
-            :type => type,
-          }, AAllowedTypes))
+          @fields[name.to_s] =
+            sym_hash_cast(options, AAllowedTypes).merge({ :type => type } of Symbol => AAllowedTypes)
           self
         end
 

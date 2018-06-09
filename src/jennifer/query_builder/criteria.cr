@@ -89,7 +89,7 @@ module Jennifer
       end
 
       def between(left : Rightable, right : Rightable)
-        Condition.new(self, :between, Ifrit.typed_array([left, right], DBAny))
+        Condition.new(self, :between, [left, right] of DBAny)
       end
 
       def is(value : Symbol | Bool | Nil)

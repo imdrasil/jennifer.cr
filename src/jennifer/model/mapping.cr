@@ -272,7 +272,11 @@ module Jennifer
                 begin
                   %var{key.id} =
                     {% if value[:numeric_converter] %}
-                      pull.read(PG::Numeric).{{value[:numeric_converter].id}}
+                      {% if value[:null] %}
+                        pull.read(PG::Numeric?).try &.{{value[:numeric_converter].id}}
+                      {% else %}
+                        pull.read(PG::Numeric).{{value[:numeric_converter].id}}
+                      {% end %}
                     {% else %}
                       pull.read({{value[:parsed_type].id}})
                     {% end %}

@@ -113,7 +113,7 @@ module Jennifer
             {% for key, value in COLUMNS_METADATA %}
               begin
                 res = %var{key.id}.as({{value[:parsed_type].id}})
-                !res.is_a?(Time) ? res : ::Jennifer::Config.local_time_zone.utc_to_local(res)
+                !res.is_a?(Time) ? res : res.in(::Jennifer::Config.local_time_zone)
               rescue e : Exception
                 raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
               end,
@@ -158,7 +158,7 @@ module Jennifer
               {% else %}
                 %casted_var{key.id} = Jennifer::Model::Mapping.__bool_convert(%var{key.id}, {{value["parsed_type"].id}})
               {% end %}
-              %casted_var{key.id} = !%casted_var{key.id}.is_a?(Time) ? %casted_var{key.id} : ::Jennifer::Config.local_time_zone.utc_to_local(%casted_var{key.id})
+              %casted_var{key.id} = !%casted_var{key.id}.is_a?(Time) ? %casted_var{key.id} : %casted_var{key.id}.in(::Jennifer::Config.local_time_zone)
             rescue e : Exception
               raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
             end

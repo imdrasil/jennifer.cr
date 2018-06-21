@@ -6,7 +6,7 @@ describe Jennifer::View::Base do
       Factory.create_contact(gender: "male")
       view = MaleContact.all.first!
       view.inspect.should eq("#<MaleContact:0x#{view.object_id.to_s(16)} id: #{view.id}, name: \"Deepthi\", "\
-        "gender: \"male\", age: 28, created_at: #{view.created_at.to_s}>")
+        "gender: \"male\", age: 28, created_at: #{view.created_at.inspect}>")
     }
   end
 
@@ -140,7 +140,7 @@ describe Jennifer::View::Base do
   describe "::views" do
     it "returns all model classes" do
       views = Jennifer::View::Base.views
-      views.is_a?(Array(Jennifer::View::Base.class)).should be_true
+      views.is_a?(Array).should be_true
       # I tired from modifing this each time new view is added
       (views.size > 0).should be_true
     end

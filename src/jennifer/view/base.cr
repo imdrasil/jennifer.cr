@@ -12,7 +12,7 @@ module Jennifer
       end
 
       def self.view_name
-        @@view_name ||= to_s.underscore.pluralize
+        @@view_name ||= Inflector.pluralize(to_s.underscore)
       end
 
       def self.view_name(value : String)

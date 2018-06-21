@@ -3,20 +3,10 @@ module Jennifer
     module Runner
       MIGRATION_DATE_FORMAT = "%Y%m%d%H%M%S%L"
 
-      @@migration_classes = {} of String => Base.class
       @@pending_versions = [] of String
 
-      def self.migration_classes
-        if @@migration_classes.empty?
-          Base.migrations.each { |m| @@migration_classes[m.version] = m }
-        end
-        @@migration_classes
-      end
-
       def self.pending_versions
-        if @@pending_versions.empty?
-          @@pending_versions = (migration_classes.keys - Version.list).sort!
-        end
+        @@pending_versions = (Base.versions - Version.list).sort! if @@pending_versions.empty?
         @@pending_versions
       end
 
@@ -24,12 +14,13 @@ module Jennifer
       def self.migrate(count : Int)
         performed = false
         default_adapter.ready_to_migrate!
-        return if Base.migrations.empty? || pending_versions.empty?
+        migrations = Base.migrations
+        return if migrations.empty? || pending_versions.empty?
         assert_outdated_pending_migrations
 
-        pending_versions.each_with_index do |p, i|
+        pending_versions.each_with_index do |version, i|
           return if count > 0 && i >= count
-          process_up_migration(migration_classes[p].new)
+          process_up_migration(migrations[version].new)
           performed = true
         end
       rescue e
@@ -59,7 +50,8 @@ module Jennifer
       def self.rollback(options : Hash(Symbol, DBAny))
         processed = true
         default_adapter.ready_to_migrate!
-        return if Base.migrations.empty? || !Version.all.exists?
+        migrations = Base.migrations
+        return if migrations.empty? || !Version.all.exists?
 
         versions =
           if options[:count]?
@@ -71,8 +63,8 @@ module Jennifer
             raise ArgumentError.new
           end
 
-        versions.each do |v|
-          process_down_migration(migration_classes[v].new)
+        versions.each do |version|
+          process_down_migration(migrations[version].new)
           processed = true
         end
       rescue e
@@ -85,14 +77,13 @@ module Jennifer
       def self.assert_outdated_pending_migrations
         return unless Version.all.exists?
         db_version = Version.all.order(version: :desc).limit(1).pluck(:version)[0].as(String)
-        brocken = pending_versions.select { |version| version < db_version }
-        unless brocken.empty?
-          message = <<-MESSAGE
+        broken = pending_versions.select { |version| version < db_version }
+        unless broken.empty?
+          raise <<-MESSAGE
           Can't run migrations because some of them are older then release version.
           They are:
-          #{brocken.map { |v| "- #{v}" }.join("\n")}
+          #{broken.map { |v| "- #{v}" }.join("\n")}
           MESSAGE
-          raise message
         end
       end
 

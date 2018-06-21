@@ -1,10 +1,8 @@
 require "inflector"
-require "inflector/string"
 
 require "ifrit/converter"
 require "ifrit/core"
 
-require "time_zone"
 require "i18n"
 
 require "./jennifer/macros"
@@ -82,6 +80,14 @@ end
 
 struct Time
   def_clone
+end
+
+class Time::Location
+  def_clone
+
+  struct Zone
+    def_clone
+  end
 end
 
 struct JSON::Any

@@ -1,14 +1,18 @@
 require "json"
 
 struct MySql::Type
-  alias JsonType = ::JSON::Any | ::JSON::Type
-
-  def self.type_for(t : JsonType.class)
+  def self.type_for(t : ::JSON::Any.class)
     MySql::Type::Json
   end
 
-  decl_type Json, 0xF5u8, ::String do
-    def self.write(packet, v : JsonType)
+  struct Json < Type
+    @@hex_value = 0xF5u8
+
+    def self.db_any_type
+      ::String
+    end
+
+    def self.write(packet, v : ::JSON::Any)
       packet.write_lenenc_string v.to_json
     end
 
@@ -20,6 +24,8 @@ struct MySql::Type
       ::JSON.parse(str)
     end
   end
+
+  Type.types_by_code[0xF5u8] = Json
 
   # TODO: remove this monkeypatching after merging this PR
   # https://github.com/crystal-lang/crystal-mysql/pull/29

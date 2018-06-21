@@ -78,6 +78,10 @@ def read_to_end(rs)
   end
 end
 
+def local_time_zone
+  Jennifer::Config.local_time_zone
+end
+
 def with_time_zone(zone_name : String)
   old_zone = Jennifer::Config.local_time_zone_name
   begin

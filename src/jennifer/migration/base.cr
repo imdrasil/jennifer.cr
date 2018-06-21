@@ -58,19 +58,19 @@ module Jennifer
       end
 
       def self.versions
-        migrations.map(&.version)
+        migrations.keys
       end
 
       def self.migrations
         {% begin %}
           {% if @type.all_subclasses.size > 0 %}
-            [
+            {
               {% for model in @type.all_subclasses %}
-                {{model.id}},
+                {{model.id}}.version => {{model.id}},
               {% end %}
-            ]
+            }
           {% else %}
-            [] of Jennifer::Migration::Base.class
+            {} of String => Jennifer::Migration::Base.class
           {% end %}
         {% end %}
       end

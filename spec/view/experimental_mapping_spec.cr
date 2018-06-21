@@ -158,11 +158,13 @@ describe Jennifer::View::ExperimentalMapping do
 
       describe Time do
         it "stores to db time converted to UTC" do
+          contact = Factory.create_contact
+          new_time = Time.now(local_time_zone)
+
           with_time_zone("Etc/GMT+1") do
-            contact = Factory.create_contact
-            Contact.all.update(created_at: Time.utc_now)
+            Contact.all.update(created_at: new_time)
             MaleContact.all.select { [_created_at] }.each_result_set do |rs|
-              rs.read(Time).should be_close(Time.utc_now + 1.hour, 2.seconds)
+              rs.read(Time).should be_close(new_time, 1.second)
             end
           end
         end
@@ -170,7 +172,7 @@ describe Jennifer::View::ExperimentalMapping do
         it "converts values from utc to local" do
           contact = Factory.create_contact
           with_time_zone("Etc/GMT+1") do
-            MaleContact.all.first!.created_at!.should be_close(Time.utc_now - 1.hour, 2.seconds)
+            MaleContact.all.first!.created_at!.should be_close(Time.now(local_time_zone), 2.seconds)
           end
         end
       end

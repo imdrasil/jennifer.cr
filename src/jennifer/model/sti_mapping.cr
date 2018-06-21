@@ -69,7 +69,7 @@ module Jennifer
               {% else %}
                 %casted_var{key.id} = __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
               {% end %}
-              %casted_var{key.id} = !%casted_var{key.id}.is_a?(Time) ? %casted_var{key.id} : ::Jennifer::Config.local_time_zone.utc_to_local(%casted_var{key.id})
+              %casted_var{key.id} = !%casted_var{key.id}.is_a?(Time) ? %casted_var{key.id} : %casted_var{key.id}.in(::Jennifer::Config.local_time_zone)
             rescue e : Exception
               raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
             end
@@ -232,7 +232,7 @@ module Jennifer
           { args: args, fields: fields }
         end
 
-        def self.all
+        def self.all : ::Jennifer::QueryBuilder::ModelQuery({{@type}})
           ::Jennifer::QueryBuilder::ModelQuery({{@type}}).build(table_name).where { _type == {{@type.stringify}} }
         end
 

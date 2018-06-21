@@ -33,8 +33,8 @@ module Jennifer
       # Creates join table; raises table builder to given block
       def build_create_join_table(table1, table2, table_name : String? = nil)
         build_create_table(table_name || adapter_class.join_table_name(table1, table2), false) do |tb|
-          tb.integer(table1.to_s.singularize.foreign_key)
-          tb.integer(table2.to_s.singularize.foreign_key)
+          tb.integer(Inflector.foreign_key(Inflector.singularize(table1.to_s)))
+          tb.integer(Inflector.foreign_key(Inflector.singularize(table2.to_s)))
           yield tb
         end
       end

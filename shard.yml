@@ -4,22 +4,20 @@ version: 0.5.1
 authors:
   - Roman Kalnytskyi <moranibaca@gmail.com>
 
-crystal: 0.24.1
+crystal: 0.25.0
 
 license: MIT
 
 development_dependencies:
   mysql:
     github: crystal-lang/crystal-mysql
-    version: "~> 0.4"
+    version: "~> 0.5"
   pg:
     github: will/crystal-pg
-    version: "~> 0.14.1"
-  sqlite3:
-    github: crystal-lang/crystal-sqlite3
+    version: "~> 0.15.0"
   factory:
     github: imdrasil/factory
-    branch: master
+    version: "~> 0.1.3"
 dependencies:
   sam:
     github: imdrasil/sam.cr
@@ -30,9 +28,7 @@ dependencies:
   ifrit:
     github: imdrasil/ifrit
     version: "~> 0.1.2"
-  time_zone:
-    github: imdrasil/time_zone
-    version: "~> 0.1"
   i18n:
     github: TechMagister/i18n.cr
-    commit: "fc96c6b12547c84da2e76495f9c970acda64976b"
+    version: "~> 0.2.0"
+    # commit: "fc96c6b12547c84da2e76495f9c970acda64976b"

@@ -9,6 +9,12 @@ module Jennifer
         abstract def table_name
         abstract def build(values, new_record : Bool)
         abstract def relation(name)
+
+        abstract def actual_table_field_count
+        abstract def primary_field_name
+        abstract def build
+        abstract def all
+        abstract def superclass
       end
 
       extend AbstractClassMethods
@@ -17,6 +23,8 @@ module Jennifer
       include Scoping
       include RelationDefinition
 
+      def self.superclass; end
+
       alias Supportable = DBAny | self
 
       @@expression_builder : QueryBuilder::ExpressionBuilder?
@@ -24,8 +32,8 @@ module Jennifer
       def inspect(io) : Nil
         {% begin %}
           io << "#<" << {{@type.name.id.stringify}} << ":0x"
+          object_id.to_s(16, io)
           {% if @type.constant("COLUMNS_METADATA") %}
-            object_id.to_s(16, io)
             io << ' '
             {% for var, i in @type.constant("COLUMNS_METADATA").keys %}
               {% if i > 0 %}
@@ -67,8 +75,10 @@ module Jennifer
         @@expression_builder ||= QueryBuilder::ExpressionBuilder.new(table_name)
       end
 
-      def self.all : QueryBuilder::ModelQuery(self)
-        QueryBuilder::ModelQuery(self).build(table_name)
+      def self.all
+        {% begin %}
+          QueryBuilder::ModelQuery({{@type}}).build(table_name)
+        {% end %}
       end
 
       def self.where(&block)

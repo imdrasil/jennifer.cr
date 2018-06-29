@@ -49,7 +49,7 @@ describe "Jennifer::Adapter::SQLGenerator" do
 
   describe "::from_clause" do
     it "build correct from clause" do
-      sb { |io| described_class.from_clause(io, Contact.all) }.should eq("FROM contacts\n")
+      sb { |io| described_class.from_clause(io, Contact.all) }.should eq("FROM contacts ")
     end
   end
 
@@ -129,7 +129,7 @@ describe "Jennifer::Adapter::SQLGenerator" do
     context "condition exists" do
       it "includes its sql" do
         sb { |io| described_class.where_clause(io, Contact.where { _id == 1 }) }
-          .should eq("WHERE contacts.id = %s\n")
+          .should eq("WHERE contacts.id = %s ")
       end
     end
 

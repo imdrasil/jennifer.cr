@@ -23,7 +23,7 @@ module Jennifer
         esc = escape_string(1)
         String.build do |s|
           s << "UPDATE " << query.table
-          s << "\n"
+          s << ' '
           _joins = query._joins
 
           unless _joins.nil?

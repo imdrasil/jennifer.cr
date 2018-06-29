@@ -198,48 +198,50 @@ module Jennifer
       end
 
       macro finished_hook
-        \{% for type in [:before, :after] %}
-          \{% for action in [:save, :create, :destroy, :validation, :update] %}
-            \{% if !CALLBACKS[action][type].empty? %}
-              def __\{{type.id}}_\{{action.id}}_callback
-                return false unless super
-                \{{ CALLBACKS[action][type].join("\n").id }}
-                true
-              rescue ::Jennifer::Skip
-                false
-              end
-            \{% end %}
-          \{% end %}
-        \{% end %}
+        {% verbatim do %}
+          {% for type in [:before, :after] %}
+            {% for action in [:save, :create, :destroy, :validation, :update] %}
+              {% if !CALLBACKS[action][type].empty? %}
+                def __{{type.id}}_{{action.id}}_callback
+                  return false unless super
+                  {{ CALLBACKS[action][type].join("\n").id }}
+                  true
+                rescue ::Jennifer::Skip
+                  false
+                end
+              {% end %}
+            {% end %}
+          {% end %}
 
-        \{% for action in ["save", "create", "destroy", "update"] %}
-          \{% for type in ["commit", "rollback"] %}
-            \{% constant_name = "HAS_#{action.upcase.id}_#{type.upcase.id}_CALLBACK" %}
-            \{% if !CALLBACKS[action][type].empty? %}
-              \{{ "#{constant_name.id} = true".id}}
+          {% for action in ["save", "create", "destroy", "update"] %}
+            {% for type in ["commit", "rollback"] %}
+              {% constant_name = "HAS_#{action.upcase.id}_#{type.upcase.id}_CALLBACK" %}
+              {% if !CALLBACKS[action][type].empty? %}
+                {{ "#{constant_name.id} = true".id}}
 
-              def __after_\{{action.id}}_\{{type.id}}_callback
-                return false unless super
-                \{{ CALLBACKS[action][type].join("\n").id }}
-                true
-              rescue ::Jennifer::Skip
-                false
-              end
-            \{% else %}
-              \{{ "#{constant_name.id} = false".id}}
-            \{% end %}
-          \{% end %}
-        \{% end %}
+                def __after_{{action.id}}_{{type.id}}_callback
+                  return false unless super
+                  {{ CALLBACKS[action][type].join("\n").id }}
+                  true
+                rescue ::Jennifer::Skip
+                  false
+                end
+              {% else %}
+                {{ "#{constant_name.id} = false".id}}
+              {% end %}
+            {% end %}
+          {% end %}
 
-        \{% if !CALLBACKS[:initialize][:after].empty? %}
-          def __after_initialize_callback
-            return false unless super
-            \{{ CALLBACKS[:initialize][:after].join("\n").id }}
-            true
-          rescue ::Jennifer::Skip
-            false
-          end
-        \{% end %}
+          {% if !CALLBACKS[:initialize][:after].empty? %}
+            def __after_initialize_callback
+              return false unless super
+              {{ CALLBACKS[:initialize][:after].join("\n").id }}
+              true
+            rescue ::Jennifer::Skip
+              false
+            end
+          {% end %}
+        {% end %}
       end
     end
   end

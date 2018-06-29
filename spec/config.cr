@@ -79,7 +79,6 @@ def set_default_configuration
   Jennifer::Config.configure do |conf|
     conf.logger = Spec.logger
     conf.logger.level = Logger::DEBUG
-    # conf.logger.level = Logger::ERROR
     conf.host = "localhost"
     conf.adapter = Spec.adapter
     conf.migration_files_path = "./examples/migrations"

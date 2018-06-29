@@ -386,58 +386,60 @@ module Jennifer
         RELATION_NAMES = [] of String
         RELATIONS = {} of String => ::Jennifer::Relation::IRelation
 
-        def append_relation(name : String, hash_or_object)
-          \{% if !RELATION_NAMES.empty? %}
-            case name
-            \{% for rel in RELATION_NAMES %}
-            when \{{rel}}
-              append_\{{rel.id}}(hash_or_object)
-            \{% end %}
-            else
+        {% verbatim do %}
+          def append_relation(name : String, hash_or_object)
+            {% if !RELATION_NAMES.empty? %}
+              case name
+              {% for rel in RELATION_NAMES %}
+              when {{rel}}
+                append_{{rel.id}}(hash_or_object)
+              {% end %}
+              else
+                super(name, hash_or_object)
+              end
+            {% else %}
               super(name, hash_or_object)
-            end
-          \{% else %}
-            super(name, hash_or_object)
-          \{% end %}
-        end
+            {% end %}
+          end
 
-        def relation_retrieved(name : String)
-          \{% if !RELATION_NAMES.empty? %}
-            case name
-            \{% for rel in RELATION_NAMES %}
-              when \{{rel}}
-                @__\{{rel.id}}_retrieved = true
-            \{% end %}
-            else
+          def relation_retrieved(name : String)
+            {% if !RELATION_NAMES.empty? %}
+              case name
+              {% for rel in RELATION_NAMES %}
+                when {{rel}}
+                  @__{{rel.id}}_retrieved = true
+              {% end %}
+              else
+                super(name)
+              end
+            {% else %}
               super(name)
-            end
-          \{% else %}
-            super(name)
-          \{% end %}
-        end
+            {% end %}
+          end
 
-        def get_relation(name : String)
-          \{% relations = RELATION_NAMES %}
-          \{% if relations.size > 0 %}
-            case name
-            \{% for rel in relations %}
-              when \{{rel}}
-                \{{rel.id}}
-            \{% end %}
-            else
+          def get_relation(name : String)
+            {% relations = RELATION_NAMES %}
+            {% if relations.size > 0 %}
+              case name
+              {% for rel in relations %}
+                when {{rel}}
+                  {{rel.id}}
+              {% end %}
+              else
+                super(name)
+              end
+            {% else %}
               super(name)
-            end
-          \{% else %}
-            super(name)
-          \{% end %}
-        end
+            {% end %}
+          end
 
-        protected def __refresh_relation_retrieves
-          \{% for rel in RELATION_NAMES %}
-            @__\{{rel.id}}_retrieved = false
-          \{% end %}
-          super
-        end
+          protected def __refresh_relation_retrieves
+            {% for rel in RELATION_NAMES %}
+              @__{{rel.id}}_retrieved = false
+            {% end %}
+            super
+          end
+        {% end %}
       end
     end
   end

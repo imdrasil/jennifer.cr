@@ -65,7 +65,7 @@ describe Jennifer::QueryBuilder::LateralJoin do
 
   describe "#as_sql" do
     it "includes source request definition" do
-      lateral_join.as_sql.should match(/ \(SELECT tests\.\*\nFROM tests\nWHERE tests\.id = %s\n\) ON /m)
+      lateral_join.as_sql.should match(/ \(SELECT tests\.\* FROM tests WHERE tests\.id = %s \) ON /m)
     end
 
     it "calls to_sql on @on" do

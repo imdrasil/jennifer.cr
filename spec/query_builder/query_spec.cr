@@ -226,12 +226,12 @@ describe Jennifer::QueryBuilder::Query do
   describe "#from" do
     it "accepts plain query" do
       select_clause(Factory.build_query(table: "contacts").from("select * from contacts where id > 2"))
-        .should eq("SELECT contacts.*\nFROM ( select * from contacts where id > 2 ) ")
+        .should eq("SELECT contacts.* FROM ( select * from contacts where id > 2 ) ")
     end
 
     it "accepts query object" do
       select_clause(Factory.build_query(table: "contacts").from(Contact.where { _id > 2 }))
-        .should eq("SELECT contacts.*\nFROM ( SELECT contacts.*\nFROM contacts\nWHERE contacts.id > %s\n ) ")
+        .should eq("SELECT contacts.* FROM ( SELECT contacts.* FROM contacts WHERE contacts.id > %s  ) ")
     end
   end
 

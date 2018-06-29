@@ -92,7 +92,7 @@ module Jennifer
         String.build do |s|
           s << "UPDATE " << query.table << " SET "
           options.map { |k, v| "#{k.to_s}= #{esc}" }.join(", ", s)
-          s << "\n"
+          s << ' '
           body_section(s, query)
         end
       end
@@ -102,7 +102,7 @@ module Jennifer
         String.build do |s|
           s << "UPDATE " << q.table << " SET "
           modifications.map { |field, value| "#{field.to_s} = #{field.to_s} #{value[:operator]} #{esc}" }.join(", ", s)
-          s << "\n"
+          s << ' '
           body_section(s, q)
         end
       end
@@ -146,14 +146,14 @@ module Jennifer
         else
           io << query._raw_select.not_nil!
         end
-        io << "\n"
+        io << ' '
 
         from_clause(io, query)
       end
 
       def self.from_clause(io : String::Builder, query, from = nil)
         io << "FROM "
-        return io << (from || query._table) << "\n" unless query._from
+        return io << (from || query._table) << ' ' unless query._from
         io << "( " <<
           if query._from.is_a?(String)
             query._from
@@ -171,12 +171,12 @@ module Jennifer
         return if !query._groups || query._groups.empty?
         io << "GROUP BY "
         query._groups.not_nil!.each.join(", ", io) { |c| io << c.as_sql(self) }
-        io << "\n"
+        io << ' '
       end
 
       def self.having_clause(io : String::Builder, query)
         return unless query._having
-        io << "HAVING " << query._having.not_nil!.as_sql(self) << "\n"
+        io << "HAVING " << query._having.not_nil!.as_sql(self) << ' '
       end
 
       def self.join_clause(io : String::Builder, query)
@@ -190,19 +190,19 @@ module Jennifer
 
       def self.where_clause(io : String::Builder, tree)
         return unless tree
-        io << "WHERE " << tree.not_nil!.as_sql(self) << "\n"
+        io << "WHERE " << tree.not_nil!.as_sql(self) << ' '
       end
 
       def self.limit_clause(io : String::Builder, query)
-        io.print "LIMIT ", query._limit.not_nil!, "\n" if query._limit
-        io.print "OFFSET ", query._offset.not_nil!, "\n" if query._offset
+        io.print "LIMIT ", query._limit.not_nil!, ' ' if query._limit
+        io.print "OFFSET ", query._offset.not_nil!, ' ' if query._offset
       end
 
       def self.order_clause(io : String::Builder, query)
         return if !query._order || query._order.empty?
         io << "ORDER BY "
-        query._order.join(", ", io) { |(k, v), _| io.print k.as_sql(self), " ", v.upcase }
-        io << "\n"
+        query._order.join(", ", io) { |(k, v), _| io.print k.as_sql(self), ' ', v.upcase }
+        io << ' '
       end
 
       # ======== utils

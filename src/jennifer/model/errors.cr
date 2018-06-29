@@ -1,7 +1,7 @@
 module Jennifer
   module Model
     class Errors
-      getter base : Resource
+      getter base : Base
       getter messages : Hash(Symbol, Array(String))
 
       def initialize(@base)
@@ -125,12 +125,6 @@ module Jennifer
       def generate_message(attribute : Symbol, message : Symbol, count, options : Hash)
         prefix = "#{Translation::GLOBAL_SCOPE}.errors."
         opts = { count: count, options: options}
-        i18n_key = @base.class.i18n_key
-
-        path = "#{prefix}#{i18n_key}.attributes.#{attribute}.#{message}"
-        return I18n.translate(path, **opts) if I18n.exists?(path, count: count)
-        path = "#{prefix}#{i18n_key}.#{message}"
-        return I18n.translate(path, **opts) if I18n.exists?(path, count: count)
 
         @base.class.lookup_ancestors do |ancestor|
           path = "#{prefix}#{ancestor.i18n_key}.attributes.#{attribute}.#{message}"
@@ -149,6 +143,15 @@ module Jennifer
 
       def generate_message(attribute : Symbol, message : String, count, options : Hash)
         message
+      end
+
+      def inspect(io) : Nil
+        io << "#<" << {{@type.name.id.stringify}} << ":0x"
+        object_id.to_s(16, io)
+          io << " @messages="
+          @messages.inspect(io)
+        io << '>'
+        nil
       end
     end
   end

@@ -264,9 +264,7 @@ module Jennifer
       # TODO: optimize array initializing
       def self.parse_query(query : String, args : Array(DBAny))
         args.each_with_index do |arg, i|
-          if arg.is_a?(Time)
-            args[i] = Config.local_time_zone.local_to_utc(arg.as(Time))
-          end
+          args[i] = arg.as(Time).to_utc if arg.is_a?(Time)
         end
         {query % Array.new(args.size, "?"), args}
       end

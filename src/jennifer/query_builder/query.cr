@@ -101,7 +101,7 @@ module Jennifer
 
       def _select_fields : Array(Criteria)
         if @select_fields.empty?
-          ([] of Criteria) << @expression.star
+          [@expression.star] of Criteria
         else
           @select_fields
         end

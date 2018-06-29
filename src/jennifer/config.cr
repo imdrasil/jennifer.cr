@@ -51,7 +51,7 @@ module Jennifer
     define_fields(FLOAT_FIELDS, 0.0)
     define_fields(BOOL_FIELDS, false)
 
-    @local_time_zone : TimeZone::Zone
+    @local_time_zone : Time::Location
 
     @@instance = new
 
@@ -61,8 +61,8 @@ module Jennifer
       @port = -1
       @migration_files_path = "./db/migrations"
       @schema = "public"
-      @local_time_zone_name = TimeZone::Zone.default.name
-      @local_time_zone = TimeZone::Zone.default
+      @local_time_zone_name = Time::Location.local.name
+      @local_time_zone = Time::Location.local
 
       @initial_pool_size = 1
       @max_pool_size = 5
@@ -124,7 +124,7 @@ module Jennifer
 
     def local_time_zone_name=(value : String)
       @local_time_zone_name = value
-      @local_time_zone = TimeZone::Zone.get(@local_time_zone_name)
+      @local_time_zone = Time::Location.load(value)
       value
     end
 

@@ -30,12 +30,30 @@ describe Jennifer::Model::ParameterConverter do
       it { converter.to_numeric("-1").to_s.should eq("-1") }
       it { converter.to_numeric("1.12345").to_s.should eq("1.12345") }
       it { converter.to_numeric("-1.12345").to_s.should eq("-1.12345") }
+
+      # NOTE: some cases from the will/crystal-pg
+
+      it { converter.to_numeric("0").to_s.should eq("0") }
+      it { converter.to_numeric("0.0").to_s.should eq("0.0") }
+      it { converter.to_numeric("1.30").to_s.should eq("1.30") }
+      it { converter.to_numeric("-0.00009").to_s.should eq("-0.00009") }
+      it { converter.to_numeric("-0.00000009").to_s.should eq("-0.00000009") }
+      it { converter.to_numeric("50093").to_s.should eq("50093") }
+      it { converter.to_numeric("500000093").to_s.should eq("500000093") }
+      it { converter.to_numeric("0.0000006000000").to_s.should eq("0.0000006000000") }
+      it { converter.to_numeric("0.3").to_s.should eq("0.3") }
+      it { converter.to_numeric("0.03").to_s.should eq("0.03") }
+      it { converter.to_numeric("0.003").to_s.should eq("0.003") }
+      it { converter.to_numeric("0.000300003").to_s.should eq("0.000300003") }
     end
   end
 
   describe "#to_time" do
     it { converter.to_time("2010-10-10").should eq(Time.new(2010, 10, 10)) }
     it { converter.to_time("2010-10-10 20:10:10").should eq(Time.new(2010, 10, 10, 20, 10, 10)) }
+    it "ignores given time zone" do
+      converter.to_time("2010-10-10 20:10:10 +01:00").should eq(Time.new(2010, 10, 10, 20, 10, 10, location: local_time_zone))
+    end
   end
 
   describe "#to_b" do

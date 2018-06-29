@@ -85,7 +85,7 @@ module Jennifer
 
           # Sets `created_at` to current time
           def __update_created_at
-            @created_at = Jennifer::Config.local_time_zone.now
+            @created_at = Time.new(Jennifer::Config.local_time_zone)
           end
         {% end %}
 
@@ -94,7 +94,7 @@ module Jennifer
 
           # Sets `updated_at` to current time
           def __update_updated_at
-            @updated_at = Jennifer::Config.local_time_zone.now
+            @updated_at = Time.new(Jennifer::Config.local_time_zone)
           end
         {% end %}
       end
@@ -300,7 +300,7 @@ module Jennifer
             {% for key, value in properties %}
               begin
                 res = %var{key.id}.as({{value[:parsed_type].id}})
-                !res.is_a?(Time) ? res : ::Jennifer::Config.local_time_zone.utc_to_local(res)
+                !res.is_a?(Time) ? res : res.in(::Jennifer::Config.local_time_zone)
               rescue e : Exception
                 raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
               end,
@@ -350,7 +350,7 @@ module Jennifer
               {% else %}
                 %casted_var{key.id} = __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
               {% end %}
-              %casted_var{key.id} = !%casted_var{key.id}.is_a?(Time) ? %casted_var{key.id} : ::Jennifer::Config.local_time_zone.utc_to_local(%casted_var{key.id})
+              %casted_var{key.id} = !%casted_var{key.id}.is_a?(Time) ? %casted_var{key.id} : %casted_var{key.id}.in(::Jennifer::Config.local_time_zone)
             rescue e : Exception
               raise ::Jennifer::DataTypeCasting.match?(e) ? ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) : e
             end

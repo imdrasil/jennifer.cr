@@ -12,8 +12,6 @@ module Jennifer
       def human_attribute_name(attribute : String | Symbol)
         prefix = "#{GLOBAL_SCOPE}.attributes."
 
-        path = "#{prefix}#{i18n_key}.#{attribute}"
-        return I18n.translate(path) if I18n.exists?(path)
         lookup_ancestors do |ancestor|
           path = "#{prefix}#{ancestor.i18n_key}.#{attribute}"
           return I18n.translate(path) if I18n.exists?(path)
@@ -28,12 +26,9 @@ module Jennifer
       def human(count = nil)
         prefix = "#{GLOBAL_SCOPE}.#{i18n_scope}."
 
-        path = prefix + i18n_key
-        return I18n.translate(path, count: count) if I18n.exists?(path, count: count)
-
         lookup_ancestors do |ancestor|
           path = prefix + ancestor.i18n_key
-          return I18n.translate(path) if I18n.exists?(path, count: count)
+          return I18n.translate(path, count: count) if I18n.exists?(path, count: count)
         end
 
         name = Inflector.humanize(i18n_key)
@@ -51,12 +46,11 @@ module Jennifer
         @@i18n_key = Inflector.underscore(Inflector.demodulize(to_s)).downcase
       end
 
+      # Yields all ancestors which respond to `.superclass`.
       def lookup_ancestors(&block)
-        return unless responds_to?(:superclass)
-        klass = superclass
-        while true
+        klass = self
+        while klass
           yield klass
-          break unless klass.responds_to?(:superclass)
           klass = klass.superclass
         end
       end

@@ -57,9 +57,8 @@ module Jennifer
         _foreign = foreign_field
         _primary = primary_field
         jt = join_table!
-        jtk = @association_foreign || T.to_s.foreign_key
         q = query.join(jt, type: type) { Q.c(_primary) == c(_foreign) }.join(T, type: type) do
-          T.primary == c(jtk, jt)
+          T.primary == c(association_foreign_key, jt)
         end
         if @join_query
           _tree = @join_query.not_nil!
@@ -69,9 +68,8 @@ module Jennifer
         end
       end
 
-      # Stands for
       def association_foreign_key
-        @association_foreign || T.to_s.foreign_key
+        @association_foreign || Inflector.foreign_key(T.to_s)
       end
 
       def preload_relation(collection, out_collection : Array(Model::Resource), pk_repo)

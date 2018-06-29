@@ -67,7 +67,7 @@ describe Jennifer::Adapter::Base do
   describe "#transaction" do
     it "rollbacks if exception was raised" do
       void_transaction do
-        expect_raises(DivisionByZero) do
+        expect_raises(DivisionByZeroError) do
           adapter.transaction do |tx|
             Factory.create_contact
             1 / 0

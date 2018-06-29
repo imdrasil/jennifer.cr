@@ -18,8 +18,7 @@ module Jennifer
 
       def validate!(skip = false) : Bool
         errors.clear
-        return false if skip
-        return false unless __before_validation_callback
+        return false if skip || !__before_validation_callback
         validate
         return false if invalid?
         __after_validation_callback
@@ -43,16 +42,12 @@ module Jennifer
       macro _not_nil_validation(field, allow_blank)
         begin
           {% if allow_blank %}
-            return if @{{field.id}}.nil?
+            return if {{field.id}}.nil?
           {% else %}
-            return errors.add({{field}}, :blank) if @{{field.id}}.nil?
+            return errors.add({{field}}, :blank) if {{field.id}}.nil?
           {% end %}
-          @{{field.id}}.not_nil!
+          {{field.id}}.not_nil!
         end
-      end
-
-      macro validates_with_method(name)
-        {% VALIDATION_METHODS << name.id.stringify %}
       end
 
       macro validates_with_method(*names)
@@ -111,7 +106,7 @@ module Jennifer
 
         def %validate_method
           value = _not_nil_validation({{field}}, {{options[:allow_blank] || false}})
-          size = value.not_nil!.size
+          size = value.size
           {% if options[:in] %}
             if ({{options[:in]}}).max < size
               errors.add({{field}}, :too_long, ({{options[:in]}}).max)

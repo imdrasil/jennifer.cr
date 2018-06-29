@@ -431,7 +431,7 @@ describe Jennifer::Model::Base do
   describe "#with_lock" do
     it "starts transaction" do
       void_transaction do
-        expect_raises(DivisionByZero) do
+        expect_raises(DivisionByZeroError) do
           Factory.create_contact.with_lock do
             Factory.create_contact
             Contact.all.count.should eq(2)
@@ -452,7 +452,7 @@ describe Jennifer::Model::Base do
   describe "::transaction" do
     it "allow to start transaction" do
       void_transaction do
-        expect_raises(DivisionByZero) do
+        expect_raises(DivisionByZeroError) do
           Contact.transaction do
             Factory.create_contact
             1 / 0
@@ -511,7 +511,7 @@ describe Jennifer::Model::Base do
   describe "::models" do
     it "returns all model classes" do
       models = Jennifer::Model::Base.models
-      models.is_a?(Array(Jennifer::Model::Base.class)).should be_true
+      models.is_a?(Array).should be_true
       # I tired from modifying this each time new model is added
       (models.size > 6).should be_true
     end

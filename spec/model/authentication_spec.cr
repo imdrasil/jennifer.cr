@@ -3,13 +3,11 @@ require "../spec_helper"
 describe Jennifer::Model::Authentication do
   describe "%with_authentication" do
     context "with default field names" do
-      default_user = Factory.build_user
-
       describe "validations" do
         it do
           user = Factory.build_user
-          user.password = "1" * 52
-          user.should validate(:password).with("is too long (maximum is 51 characters)")
+          user.password = "1" * 72
+          user.should validate(:password).with("is too long (maximum is 71 characters)")
         end
 
         it { Factory.build_user([:with_invalid_password_confirmation]).should validate(:password).with("doesn't match Password") }
@@ -21,6 +19,7 @@ describe Jennifer::Model::Authentication do
           user.password_digest = Crypto::Bcrypt::Password.create("password").to_s
           user.should be_valid
         end
+
         it do
           Factory.create_user([:with_password_digest])
           user = User.all.last!
@@ -47,7 +46,7 @@ describe Jennifer::Model::Authentication do
 
         it do
           user = Factory.build_user
-          user.password = "1" * 53
+          user.password = "1" * 72
           user.password_digest.should eq("")
         end
 

@@ -28,7 +28,7 @@ module Jennifer
         String.build do |s|
           s << "UPDATE " << query._table << " SET "
           options.map { |k, v| "#{k.to_s}= #{esc}" }.join(", ", s)
-          s << "\n"
+          s << ' '
 
           from_clause(s, query, query._joins![0].table_name(self)) if query._joins
           where_clause(s, query.tree)

@@ -99,6 +99,7 @@ module Jennifer
         @expression
       end
 
+      # Returns array of `Criteria` for `SELECT` query statement.
       def _select_fields : Array(Criteria)
         if @select_fields.empty?
           [@expression.star] of Criteria
@@ -142,6 +143,7 @@ module Jennifer
         @tree ? @tree.not_nil!.sql_args_count : 0
       end
 
+      # Returns array of query arguments.
       def select_args
         args = [] of DBAny
         args.concat(@from.as(Query).select_args) if @from.is_a?(Query)
@@ -151,6 +153,7 @@ module Jennifer
         args
       end
 
+      # Returns count of query arguments.
       def select_args_count
         count = 0
         count += @from.as(Query).select_args_count if @from.is_a?(Query)

@@ -1,7 +1,16 @@
-class FemaleContact < Jennifer::View::Materialized
+abstract class BaseView < Jennifer::View::Materialized
+  BlankString = {
+    type: String,
+    null: true
+  }
+
+  {% Jennifer::Macros::TYPES << "BlankString" %}
+end
+
+class FemaleContact < BaseView
   mapping({
     id:   Primary32,
-    name: String?,
+    name: BlankString,
   }, false)
 end
 

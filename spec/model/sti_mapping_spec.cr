@@ -11,7 +11,7 @@ describe Jennifer::Model::STIMapping do
         id = FacebookProfile::COLUMNS_METADATA[:id]
         id.is_a?(NamedTuple).should be_true
         id[:type].should eq(Int32)
-        id[:parsed_type].should eq("Primary32?")
+        id[:parsed_type].should eq("Int32?")
       end
     end
 

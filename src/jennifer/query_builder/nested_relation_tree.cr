@@ -10,7 +10,7 @@ module Jennifer
         @bucket << {index, relation}
       end
 
-      def select_fields(query : Query)
+      def select_fields(query)
         eb = query.expression_builder
         buff = Array(Criteria).new(@bucket.size + 1)
         buff << eb.star

@@ -74,7 +74,7 @@ describe Jennifer::View::ExperimentalMapping do
         metadata.is_a?(NamedTuple).should be_true
         metadata[:id].is_a?(NamedTuple).should be_true
         metadata[:id][:type].should eq(Int32)
-        metadata[:id][:parsed_type].should eq("Primary32?")
+        metadata[:id][:parsed_type].should eq("Int32?")
       end
     end
 
@@ -143,6 +143,19 @@ describe Jennifer::View::ExperimentalMapping do
           expect_raises(::Jennifer::DataTypeCasting, "Column MaleContact.name can't be casted from Nil to it's type - String") do
             MaleContact.build({gender: nil})
           end
+        end
+      end
+
+      describe "user-defined mapping types" do
+        it "is accessible if defined in parent class" do
+          FemaleContact::COLUMNS_METADATA[:name].should eq({type: String, null: true, parsed_type: "String?"})
+          FemaleContact::FIELDS["name"].should eq({"type" => "String", "null" => "true", "parsed_type" => "String?"})
+        end
+
+        pending "allows to add extra options" do
+        end
+
+        pending "allows to override options" do
         end
       end
 

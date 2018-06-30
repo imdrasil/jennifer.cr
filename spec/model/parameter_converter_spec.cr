@@ -7,8 +7,7 @@ describe Jennifer::Model::ParameterConverter do
     it { converter.parse("1", "String?").is_a?(String).should be_true }
     it { converter.parse("1", "Int16").is_a?(Int16).should be_true }
     it { converter.parse("1", "Int32").is_a?(Int32).should be_true }
-    it { converter.parse("1", "Primary32").is_a?(Int32).should be_true }
-    it { converter.parse("1", "Primary64").is_a?(Int64).should be_true }
+    it { converter.parse("1", "Int64").is_a?(Int64).should be_true }
     it { converter.parse("1", "Float64").is_a?(Float64).should be_true }
     it { converter.parse("1", "Float32?").class.should eq(Float32) }
     it { converter.parse("1", "Bool").is_a?(Bool).should be_true }

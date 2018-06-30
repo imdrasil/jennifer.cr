@@ -1,7 +1,6 @@
-require "../spec_helper"
+require "../shared_helpers"
 require "sam"
 require "../../../src/jennifer/sam"
-require "../shared_helpers"
 
 Jennifer::Config.configure do |conf|
   conf.logger.level = Logger::DEBUG

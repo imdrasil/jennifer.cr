@@ -1,6 +1,7 @@
 require "./scoping"
 require "./translation"
 require "./relation_definition"
+require "../macros"
 
 module Jennifer
   module Model
@@ -22,6 +23,7 @@ module Jennifer
       extend Translation
       include Scoping
       include RelationDefinition
+      include Macros
 
       def self.superclass; end
 

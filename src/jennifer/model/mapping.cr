@@ -114,35 +114,26 @@ module Jennifer
         %}
 
         # generates hash with options
-        {% for key, plain_value in properties %}
-          {% value = nil %}
-          {% if plain_value.is_a?(Path) && Jennifer::Macros::TYPES.includes?(plain_value.stringify) %}
-            {% value = plain_value.resolve %}
-            {% properties[key] = value %}
-          {% else %}
-            {% value = plain_value %}
-          {% end %}
-          {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
-            {% properties[key] = {type: value} %}
+        {% for key, value in properties %}
+          {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %} {% properties[key] = {type: value} %} {% end %}
+          {% if properties[key][:type].is_a?(Path) && TYPES.includes?(properties[key][:type].stringify) %}
+            {% for tkey, tvalue in properties[key][:type].resolve %}
+              {% if tkey == :type || properties[key][tkey] == nil %} {% properties[key][tkey] = tvalue %} {% end %}
+            {% end %}
           {% end %}
           {% properties[key][:stringified_type] = properties[key][:type].stringify %}
-          {% if properties[key][:stringified_type] == Jennifer::Macros::PRIMARY_32 || properties[key][:stringified_type] == Jennifer::Macros::PRIMARY_64 %}
-            {% properties[key][:primary] = true %}
-          {% end %}
           {% if properties[key][:primary] %}
             {%
               primary = key
               primary_type = properties[key][:type]
-              primary_auto_incrementable = Jennifer::Macros::AUTOINCREMENTABLE_STR_TYPES.includes?(properties[key][:stringified_type])
+              primary_auto_incrementable = AUTOINCREMENTABLE_STR_TYPES.includes?(properties[key][:stringified_type])
             %}
           {% end %}
-          {% if properties[key][:stringified_type] =~ Jennifer::Macros::NILLABLE_REGEXP %}
-            {%
-              properties[key][:null] = true
-              properties[key][:parsed_type] = properties[key][:stringified_type]
-            %}
-          {% else %}
-            {% properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? properties[key][:stringified_type] + "?" : properties[key][:stringified_type] %}
+          {% properties[key][:parsed_type] = properties[key][:stringified_type] %}
+          {% if properties[key][:stringified_type] =~ NILLABLE_REGEXP %}
+            {% properties[key][:null] = true %}
+          {% elsif properties[key][:null] || properties[key][:primary] %}
+            {% properties[key][:parsed_type] = properties[key][:stringified_type] + "?" %}
           {% end %}
           {% add_default_constructor = add_default_constructor && (properties[key][:primary] || properties[key][:null] || properties[key].keys.includes?(:default)) %}
         {% end %}
@@ -207,18 +198,7 @@ module Jennifer
           # Default constructor without any fields
           def initialize
             {% for key, value in properties %}
-              @{{key.id}} =
-                {% if value[:null] %}
-                  {% if value[:default] != nil %}
-                    {{value[:default]}}
-                  {% else %}
-                    nil
-                  {% end %}
-                {% elsif value[:default] != nil %}
-                  {{value[:default]}}
-                {% else %}
-                  nil
-                {% end %}
+              @{{key.id}} = {{ value[:default] }}
             {% end %}
           end
 

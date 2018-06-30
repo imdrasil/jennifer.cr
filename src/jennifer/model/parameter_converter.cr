@@ -9,9 +9,9 @@ module Jennifer
           to_s(value)
         when /Int16/
           to_i16(value)
-        when /Int64/, /Primary64/
+        when /Int64/
           to_i64(value)
-        when /Int/, /Primary32/
+        when /Int/
           to_i(value)
         when /Float32/
           to_f32(value)

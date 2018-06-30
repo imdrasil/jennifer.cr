@@ -178,9 +178,46 @@ class SomeModel < ApplicationRecord
 end
 ```
 
+### Mapping Types
+
+Jennifer has built-in system of predefined options for some usage. They are not data types on language level (you can't defined variable of `Primary32` type) and can be used only in mapping definition (standard usage).
+
+```crystal
+class Post < Jennifer::Model::Base
+  mapping(
+    id: Primary32,
+    # or even with full definition
+    pk: { type: Primary32, primary: false, virtual: true }
+  )
+end
+```
+
+All overrides from full definition will be respected and used instead of predefined for such a type.
+
+To defined your own type define it such a way it may be lexically accessible from place you want to use it:
+
+```crystal
+class ApplicationRecord < Jennifer::Model::Base
+  EmptyString = {
+    type: String,
+    default: ""
+  }
+
+  {% TYPES << "EmptyString" %}
+  # or if this is outside of model or view scope
+  {% ::Jennifer::Macros::TYPES << "EmptyString" %}
+end
+```
+
+Existing mapping types:
+
+- `Primary32 = { type: Int32, primary: true }`
+- `Primary64 = { type: Int64, primary: true }`
+- `Password = { type: String?, virtual: true, setter: false }`
+
 ### Numeric fields
 
-The crystal type of a numeric field depends on chosen adapter: `Float64` for mysql and `PG::Numeric` for postgre. Sometimes `PG::Numeric` with postgre may be annoying. To convert it to another type at the object building stage you can pass `numeric_converter` with method be used to convert `PF::Numeric` to the defined field `type`.
+Crystal type of a numeric (decimal) field depends on chosen adapter: `Float64` for mysql and `PG::Numeric` for postgre. Sometimes usage of `PG::Numeric` with postgre may be annoying. To convert it to another type at the object building stage you can pass `numeric_converter` option with method to be used to convert `PG::Numeric` to the defined field `type`.
 
 ```crystal
 class Product < Jennifer::Model::Base

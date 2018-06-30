@@ -247,36 +247,39 @@ module Jennifer
 
         # generates hash with options
         {% for key, opt in properties %}
-          {% _key = key.id.stringify %}
-          {% unless opt.is_a?(HashLiteral) || opt.is_a?(NamedTupleLiteral) %}
-            {% FIELDS[_key] = {"type" => opt.stringify} %}
-            {% properties[key] = {type: opt} %}
-          {% else %}
-            {% FIELDS[_key] = {} of String => String %}
-            {% for attr, value in opt %}
-              {% FIELDS[_key][attr.id.stringify] = value.stringify %}
+          {%
+            _key = key.id.stringify
+            str_properties = FIELDS[_key] = {} of String => String
+          %}
+          {% unless opt.is_a?(HashLiteral) || opt.is_a?(NamedTupleLiteral) %} {% properties[key] = {type: opt} %} {% end %}
+
+          {% for attr, value in properties[key] %}
+            {% str_properties[attr.id.stringify] = value.stringify %}
+          {% end %}
+
+          {% if properties[key][:type].is_a?(Path) && Jennifer::Macros::TYPES.includes?(str_properties["type"]) %}
+            {% for tkey, tvalue in properties[key][:type].resolve %}
+              {% if tkey == :type || properties[key][tkey] == nil %}
+                {%
+                  properties[key][tkey] = tvalue
+                  str_properties[tkey.stringify] = tvalue.stringify
+                %}
+              {% end %}
             {% end %}
           {% end %}
 
-          {% stringified_type = properties[key][:stringified_type] = properties[key][:type].stringify %}
-          {% if stringified_type == Jennifer::Macros::PRIMARY_32 || stringified_type == Jennifer::Macros::PRIMARY_64 %}
-            {%
-              properties[key][:primary] = true
-              FIELDS[_key]["primary"] = "true"
-            %}
-          {% end %}
-          {% if properties[key][:primary] %}
-            {% primary = key %}
-          {% end %}
+          {% stringified_type = str_properties["type"] %}
+          {% if properties[key][:primary] %} {% primary = key %} {% end %}
           {% if stringified_type =~ Jennifer::Macros::NILLABLE_REGEXP %}
             {%
               properties[key][:null] = true
-              FIELDS[_key]["parsed_type"] = properties[key][:parsed_type] = stringified_type
+              str_properties["null"] = "true"
+              str_properties["parsed_type"] = properties[key][:parsed_type] = stringified_type
             %}
           {% else %}
             {%
               properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? stringified_type + "?" : stringified_type
-              FIELDS[_key]["parsed_type"] = properties[key][:parsed_type]
+              str_properties["parsed_type"] = properties[key][:parsed_type]
             %}
           {% end %}
         {% end %}

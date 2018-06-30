@@ -10,9 +10,9 @@ module Jennifer
         setter: false
       }
 
-      PASSWORD_RANGE = Crypto::Bcrypt::PASSWORD_RANGE.min...Crypto::Bcrypt::PASSWORD_RANGE.max
-
       {% Macros::TYPES << "Password" %}
+
+      PASSWORD_RANGE = Crypto::Bcrypt::PASSWORD_RANGE.min...Crypto::Bcrypt::PASSWORD_RANGE.max
 
       # Adds methods to set and authenticate against a Crypto::Bcrypt password.
       # - `password` - password field name (default is `"password"`);

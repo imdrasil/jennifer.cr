@@ -34,6 +34,13 @@ abstract class ApplicationRecord < Jennifer::Model::Base
   def before_abstract_create
     @super_class_callback_called = true
   end
+
+  EmptyString = {
+    type: String,
+    default: ""
+  }
+
+  {% TYPES << "EmptyString" %}
 end
 
 class User < ApplicationRecord
@@ -42,8 +49,8 @@ class User < ApplicationRecord
   mapping(
     id: Primary32,
     name: String?,
-    password_digest: {type: String, default: ""},
-    email: {type: String, default: ""},
+    password_digest: EmptyString,
+    email: { type: EmptyString },
     password: Password,
     password_confirmation: { type: String?, virtual: true }
   )

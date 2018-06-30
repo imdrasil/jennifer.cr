@@ -206,7 +206,7 @@ describe Jennifer::Model::Mapping do
         metadata.is_a?(NamedTuple).should be_true
         metadata[:id].is_a?(NamedTuple).should be_true
         metadata[:id][:type].should eq(Int32)
-        metadata[:id][:parsed_type].should eq("Primary32?")
+        metadata[:id][:parsed_type].should eq("Int32?")
       end
     end
 
@@ -303,15 +303,30 @@ describe Jennifer::Model::Mapping do
     end
 
     context "data types" do
-      describe Primary32 do
-        it "makes field nilable" do
-          Contact.primary_field_type.should eq(Int32?)
+      describe "mapping types" do
+        describe "Primary32" do
+          it "makes field nilable" do
+            Contact.primary_field_type.should eq(Int32?)
+          end
         end
-      end
 
-      describe Primary64 do
-        it "makes field nillable" do
-          ContactWithInValidation.primary_field_type.should eq(Int64?)
+        describe "Primary64" do
+          it "makes field nillable" do
+            ContactWithInValidation.primary_field_type.should eq(Int64?)
+          end
+        end
+
+        describe "user-defined mapping types" do
+          it "is accessible if defined in parent class" do
+            User::COLUMNS_METADATA[:password_digest].should eq({type: String, default: "", stringified_type: "String", parsed_type: "String"})
+            User::COLUMNS_METADATA[:email].should eq({type: String, default: "", stringified_type: "String", parsed_type: "String"})
+          end
+
+          pending "allows to add extra options" do
+          end
+
+          pending "allows to override options" do
+          end
         end
       end
 

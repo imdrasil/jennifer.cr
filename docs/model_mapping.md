@@ -115,13 +115,11 @@ end
 | `:virtual` | mark field as virtual - will not be stored and retrieved from db |
 | `:numeric_converter` | **postgres only**: contains method to convert `PG::Numeric` to a used `type` |
 
-To make some field nillable tou can use any of next options:
+To make some field nillable tou can use any of the next options:
 
 - pass `null: true` option to the named tuple
-- use `?` in type declaration (e.g. `some_field: String?` and `some_filed: {type: String?}`)
-- use union with `Nil` in the type declaration (e.g. `some_field: String | Nil` and `some_filed: {type: String | Nil}`)
-
-Also for there is a shortcut for defining `Int32` and `Int64` primary keys
+- use `?` in type declaration (e.g. `some_field: String?` or `some_filed: {type: String?}`)
+- use union with `Nil` in the type declaration (e.g. `some_field: String | Nil` or `some_filed: {type: String | Nil}`)
 
 If you don't want to define all the table fields - pass `false` as second argument.
 
@@ -149,6 +147,7 @@ If you don't want to define all the table fields - pass `false` as second argume
 | `::build` | `Hash(String \| Symbol, DB::Any), NamedTuple` | builds object |
 | `::create` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with all callbacks |
 | `::create!` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with callbacks or raise exception |
+| `::build_params` | `Hash(String, String?)` | converts given string-based hash using field mapping |
 | `#save` | | saves object to db; returns `true` if success and `false` elsewhere |
 | `#save!` | | saves object to db; returns `true` if success or rise exception otherwise |
 | `#to_h` | | returns hash with all attributes |
@@ -164,7 +163,7 @@ All defined mapping properties are accessible via `COLUMNS_METADATA` constant an
 
 **Important restriction** - model with no primary field is not allowed for now.
 
-It may be useful to have one parent class for your model - just make it abstract and everything will work well:
+It may be useful to have one parent class for all your models - just make it abstract and everything will work well:
 
 ```crystal
 abstract class ApplicationRecord < Jennifer::Model::Base
@@ -208,6 +207,8 @@ class ApplicationRecord < Jennifer::Model::Base
   {% ::Jennifer::Macros::TYPES << "EmptyString" %}
 end
 ```
+
+> Obviously, registered type added to the `TYPES` should be the same as defined constant; also it should be stringified.
 
 Existing mapping types:
 
@@ -278,4 +279,22 @@ class User < Jennifer::Model::Base
 end
 
 User.create!(password: "qwe", password_confirmation: "qwe")
+```
+
+## Converting form options
+
+In the Web world all data got submitted forms will be recognized as `Hash(String, String)` which is not acceptable by your models. To resolve this case `.build_params` may be used - just pass received string based hash and all fields will be converted respectively to the class mapping.
+
+```crystal
+class Post < Jennifer::Model::Base
+  mapping(
+    id: Primary32,
+    name: String,
+    age: Int32
+  )
+end
+
+opts = { "name" => "Jason", "age" => "23" }
+
+Post.build_params(opts) # { "name" => "Jason", "age" => 23 } of String => Jennifer::DBAny
 ```

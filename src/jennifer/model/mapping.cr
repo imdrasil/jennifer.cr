@@ -106,6 +106,8 @@ module Jennifer
       # - null
       # - primary
       # - virtual
+      # - default
+      # - numeric_converter (only for postgre numeric field)
       private macro single_mapping(properties, strict = true)
         {%
           primary = nil

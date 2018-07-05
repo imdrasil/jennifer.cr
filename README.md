@@ -10,17 +10,17 @@ Add this to your application's `shard.yml`:
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.5.1"
+    version: "~> 0.6.0"
 ```
 
 ### Requirements
 
 - you need to choose one of existing adapters for your db: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgres](https://github.com/will/crystal-pg);
-- if you prefer to use crystal `<0.23.1` - use jennifer `<0.4.2` (crystal `0.23.0` is buggy and not supported).
+- crystal `>= 0.25.0`
 
 ## Usage
 
-Jennifer allows you to maintain everything for your models - from db migrations and field mapping to callbacks and building queries. For detailed information see the [guide](https://imdrasil.github.io/jennifer.cr/docs/) or [api documentation](https://imdrasil.github.io/jennifer.cr/versions).
+Jennifer allows you to maintain everything for your models - from db migrations and field mapping to callbacks and building queries. For detailed information see the [guide](https://imdrasil.github.io/jennifer.cr/docs/) and [API documentation](https://imdrasil.github.io/jennifer.cr/versions).
 
 ### Migration
 
@@ -162,7 +162,7 @@ Much more about the query DSL can be found on the wiki [[page|Query-DSL]]
 
 Now that Jennifer is under heavy development, there could be many breaking changes. So please check the release notes to check if any of the changes may prevent you from using it. Also, until this library reaches a beta version, the next version rules will be followed:
 
-- all bugfixies, new minor features or (sometimes) ones that don't break the existing API will be added as a patch number (e.g. 0.3.**4**);
+- all bugfixes, new minor features or (sometimes) ones that don't break the existing API will be added as a patch number (e.g. 0.3.**4**);
 
 - all breaking changes and new important features (as well as reaching a milestone) will be added by bumping the minor digit (0.**4**.0);
 
@@ -245,14 +245,10 @@ NB. It also depends on then chosen adapter (postgres by default).
 ## Similar shards
 
 - [active_record.cr](https://github.com/waterlink/active_record.cr) - small simple AR realization
-
-- [crecto](https://github.com/vladfaust/core.cr) - based on Phoenix's ecto lib and follows the repository pattern;
-
+- [crecto](https://github.com/vladfaust/core.cr) - based on Phoenix's Ecto lib and follows the repository pattern
 - [granite-orm](https://github.com/amberframework/granite-orm) - light weight orm focusing on mapping fields from request to your objects
-
 - [topaz](https://github.com/topaz-crystal/topaz) - inspired by AR ORM with migration mechanism
-
-- [micrate](https://github.com/juanedi/micrate) - standalone migration tool for crystal
+- [micrate](https://github.com/juanedi/micrate) - standalone database migration tool for crystal
 
 ## Contributing
 

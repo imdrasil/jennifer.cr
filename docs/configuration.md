@@ -112,7 +112,7 @@ Also take into account - some configs can't be initialized using URI string or y
 | `docker_source_location` | ✔ | ❌ |
 | `command_shell_sudo` | ✔ | ❌ |
 
-From `0.5.1` `Jennifer::Config` has started working under singleton pattern instead of using class as a container of all configurations.
+From `0.5.1` `Jennifer::Config` has started working under singleton pattern instead of using class as a container for all configuration properties.
 
 ## Logging
 

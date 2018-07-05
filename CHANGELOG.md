@@ -1,5 +1,61 @@
 # Future release (__-__-2018)
 
+# 0.6.0 (06-07-2018)
+
+**General**
+
+* adds support of crystal `0.25.0`
+* removes `time_zone` dependency
+* removes requiring `"inflector/string"`
+* adds cloning to `Time::Location` & `Time::Location::Zone`
+* removes `Ifrit.typed_hash` and `Ifrit.typed_array` usage
+* presents "mapping types" which allows reusing common type definition
+* now `Primary32` and `Primary64` are mapping types (not aliases of `Int32` and `Int64`)
+* removes `accord` dependency
+
+**QueryBuilder**
+
+* allows nested eager loading in `ModelQuery(T)#eager_load` and `ModelQuery(T)#include`
+* all query eager loading methods are extracted to separate module `QueryBuilder::EagerLoading` which is included in `QueryBuilder::IModelQuery`
+
+**Model**
+
+* introduces model virtual attributes
+* adds `Mapping.build_params` and `ParameterConverter` class for converting `Hash(String, String)` parameters to acceptable by model
+* allows to specify table prefix
+* all relations are stored in `Base::RELATIONS`
+* fixes building of sti objects using parent class
+* adds `Jennifer::Model::Authentication` module with authentication logic
+* fixes compile time issue with `IRelation` when app has no belongs-to relation defined
+* fixes bug with reading `Int64` primary key
+* adds `#inspect`
+* adds `numeric_converter` mapping option for numeric postgres field
+* introduces new `Jennifer::Model::Errors` class replacing `Accord::ErrorList` which mimics analogic rails one a lot;
+* moves `Translation::human_error` method functionality to introduced `Errors` instance level
+* now next `Resource` static methods are abstract: `actual_table_field_count`, `primary_field_name`, `build`, `all`, `superclass`
+* `Resource#inspect` returns simplified version (only class name and object id)
+* `Resource.all` now is a macro method
+* fixes `Model::Transaltion.lookup_ancestors` from breaking at compilation time
+* now all built-in validations use attribute getter methods instead of variables
+
+**View**
+
+* removes `ExperimentalMapping#attributes_hash`, `ExperimentalMapping.strict_mapping?`
+
+**Config**
+
+* `local_time_zone` now is a `Time::Location`
+* local time zone is loaded using `Time::Location.local` as default value
+
+**SqlGenerator**
+
+* replaces `\n` with whitespace character as query part separator
+
+**Migration**
+
+* now migration version is taken from file name timestamp
+* `Jennifer::Migration::Base.migrations` returns a hash of version number => migration class instead of array of classes
+
 # 0.5.1 (02-05-2018)
 
 **QueryBuilder**

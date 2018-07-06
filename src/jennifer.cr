@@ -1,11 +1,8 @@
 require "inflector"
-require "inflector/string"
-require "accord"
 
 require "ifrit/converter"
 require "ifrit/core"
 
-require "time_zone"
 require "i18n"
 
 require "./jennifer/macros"
@@ -24,6 +21,7 @@ require "./jennifer/adapter/base"
 require "./jennifer/relation/base"
 require "./jennifer/relation/*"
 
+require "./jennifer/model/errors"
 require "./jennifer/model/base"
 
 require "./jennifer/validator"
@@ -44,6 +42,10 @@ module Jennifer
   end
 
   class StubRelation < ::Jennifer::Relation::IRelation
+    def name
+      raise "stubed relation"
+    end
+
     def insert(a, b)
       raise "stubed relation"
     end
@@ -64,6 +66,10 @@ module Jennifer
       raise "stubed relation"
     end
 
+    def preload_relation(collection, out_collection, pk_repo)
+      raise "stubbed relation"
+    end
+
     {% for method in %i(table_name model_class type set_callback condition_clause foreign_field primary_field join_query) %}
       def {{method.id}}
         raise "stubed relation"
@@ -74,6 +80,14 @@ end
 
 struct Time
   def_clone
+end
+
+class Time::Location
+  def_clone
+
+  struct Zone
+    def_clone
+  end
 end
 
 struct JSON::Any

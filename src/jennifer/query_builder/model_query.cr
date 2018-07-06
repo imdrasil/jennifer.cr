@@ -3,8 +3,21 @@ require "./i_model_query"
 module Jennifer
   module QueryBuilder
     class ModelQuery(T) < IModelQuery
-      def initialize_copy_with(other, except : Array(String))
+      @preload_relations : Array(String)
+
+      def initialize
+        @preload_relations = [] of String
         super
+      end
+
+      def initialize(@table)
+        initialize
+      end
+
+      protected def initialize_copy_without(other, except : Array(String))
+        super(other, except)
+        # @eager_load = false
+        # @include_relations = false
         @preload_relations = [] of String
       end
 
@@ -15,12 +28,27 @@ module Jennifer
       end
 
       protected def initialize_copy(other)
-        super
+        super(other)
+        @eager_load = other.@eager_load
+        @include_relations = other.@include_relations
+        @nested_relation_tree = other.@nested_relation_tree.clone
         @preload_relations = other.@preload_relations.clone
+      end
+
+      protected def preload_relations
+        @preload_relations
       end
 
       def model_class
         T
+      end
+
+      def nested_relation_tree
+        @nested_relation_tree ||= NestedRelationTree.new(T)
+      end
+
+      def multi_query_relation_tree
+        @multi_query_relation_tree ||= MultiQueryRelationTree.new(T)
       end
 
       # Perform search using given plain query and arguments and builds ` but also allow to preload
@@ -45,7 +73,7 @@ module Jennifer
       def to_a
         return [] of T if @do_nothing
         add_aliases if @relation_used
-        return to_a_with_relations unless @relations.empty?
+        return to_a_with_relations if @eager_load
         result = [] of T
         adapter.select(self) do |rs|
           rs.each do
@@ -62,45 +90,12 @@ module Jennifer
 
       # TODO: brake this method to smaller ones
       # Perform request and maps results set to objects and related objects grepping fields from joined tables; preloading also
-      # are perfomed
+      # are performed
       private def to_a_with_relations
-        h_result = {} of String => T
-
-        models = @relations.map { |e| T.relation(e).model_class }
-        existence = @relations.map { |_| {} of String => Bool }
-        adapter.select(self) do |rs|
-          rs.each do
-            begin
-              h = build_hash(rs, T.actual_table_field_count)
-              main_field = T.primary_field_name
-              if h[main_field]?
-                obj = (h_result[h[main_field].to_s] ||= T.build(h, false))
-                models.each_with_index do |model, i|
-                  h = build_hash(rs, model.actual_table_field_count)
-                  pfn = model.primary_field_name
-                  if h[pfn].nil? || existence[i][h[pfn].to_s]?
-                    (rs.column_count - rs.column_index).times do |i|
-                      rs.read
-                    end
-                    break
-                  else
-                    existence[i][h[pfn].to_s] = true
-                    obj.as(T).append_relation(@relations[i], h)
-                  end
-                end
-              else
-                (rs.column_count - T.actual_table_field_count).times { |_| rs.read }
-              end
-            ensure
-              rs.read_to_end
-            end
-          end
+        result = adapter.select(self) do |rs|
+          nested_relation_tree.read(rs, T)
         end
-        collection = h_result.values
-        @relations.each do |rel|
-          collection.each(&.relation_retrieved(rel))
-        end
-        add_preloaded(collection)
+        add_preloaded(result)
       end
 
       private def adapter

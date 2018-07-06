@@ -3,39 +3,25 @@ module Jennifer
     module Runner
       MIGRATION_DATE_FORMAT = "%Y%m%d%H%M%S%L"
 
-      def self.migrate(count)
+      @@pending_versions = [] of String
+
+      def self.pending_versions
+        @@pending_versions = (Base.versions - Version.list).sort! if @@pending_versions.empty?
+        @@pending_versions
+      end
+
+      # Invokes migrations. *count* with negative or zero value will invoke all pending migrations.
+      def self.migrate(count : Int)
         performed = false
         default_adapter.ready_to_migrate!
-        return if ::Jennifer::Migration::Base.migrations.empty?
-        interpolation = {} of String => typeof(Base.migrations[0])
-        Base.migrations.each { |m| interpolation[m.version] = m }
+        migrations = Base.migrations
+        return if migrations.empty? || pending_versions.empty?
+        assert_outdated_pending_migrations
 
-        pending = interpolation.keys - Version.all.pluck(:version).map(&.as(String))
-        return if pending.empty?
-        broken = Version.where { _version.in(pending) }.pluck(:version).map(&.as(String))
-        unless broken.empty?
-          puts "Can't run migrations because some of them are older then master version.\nThey are:"
-          broken.sort.each do |v|
-            puts "- #{v}"
-          end
-          return
-        end
-
-        i = 0
-        pending.sort.each do |p|
+        pending_versions.each_with_index do |version, i|
           return if count > 0 && i >= count
+          process_up_migration(migrations[version].new)
           performed = true
-          klass = interpolation[p]
-          puts "Migration #{klass}"
-          instance = klass.new
-          begin
-            instance.up
-          rescue e
-            puts "rollbacked"
-            puts e.message
-            raise e
-          end
-          Version.create({version: p})
         end
       rescue e
         puts e.message
@@ -64,9 +50,8 @@ module Jennifer
       def self.rollback(options : Hash(Symbol, DBAny))
         processed = true
         default_adapter.ready_to_migrate!
-        return if ::Jennifer::Migration::Base.migrations.empty? || !Version.all.exists?
-        interpolation = {} of String => typeof(Base.migrations[0])
-        Base.migrations.each { |m| interpolation[m.version] = m }
+        migrations = Base.migrations
+        return if migrations.empty? || !Version.all.exists?
 
         versions =
           if options[:count]?
@@ -78,18 +63,28 @@ module Jennifer
             raise ArgumentError.new
           end
 
-        versions.each do |v|
-          klass = interpolation[v]
-          klass.new.down
-          Version.all.where { _version == v }.delete
+        versions.each do |version|
+          process_down_migration(migrations[version].new)
           processed = true
-          puts "Dropped migration #{v}"
         end
       rescue e
         puts e.message
       ensure
         # TODO: generate schema for each adapter
         default_adapter_class.generate_schema if processed
+      end
+
+      def self.assert_outdated_pending_migrations
+        return unless Version.all.exists?
+        db_version = Version.all.order(version: :desc).limit(1).pluck(:version)[0].as(String)
+        broken = pending_versions.select { |version| version < db_version }
+        unless broken.empty?
+          raise <<-MESSAGE
+          Can't run migrations because some of them are older then release version.
+          They are:
+          #{broken.map { |v| "- #{v}" }.join("\n")}
+          MESSAGE
+        end
       end
 
       def self.load_schema
@@ -99,14 +94,21 @@ module Jennifer
         puts "Schema loaded"
       end
 
-      def self.generate(name)
+      def self.generate(name : String)
         time = Time.now.to_s(MIGRATION_DATE_FORMAT)
-        migration_name = name.camelcase + time
-        str = "class #{migration_name} < Jennifer::Migration::Base\n  def up\n  end\n\n  def down\n  end\nend\n"
-        File.write(File.join(Config.migration_files_path.to_s, "#{time}_#{name.underscore}.cr"), str)
-        puts "Migration #{migration_name} was generated"
-      rescue e
-        puts e.message
+        migration_name = name.camelcase
+        str = <<-MIGRATION
+        class #{migration_name} < Jennifer::Migration::Base
+          def up
+          end
+
+          def down
+          end
+        end
+
+        MIGRATION
+        File.write(File.join(Config.migration_files_path.to_s, "#{time}_#{migration_name.underscore}.cr"), str)
+        puts "Migration #{migration_name.underscore} was generated"
       end
 
       def self.config
@@ -119,6 +121,48 @@ module Jennifer
 
       def self.default_adapter_class
         Adapter.default_adapter_class
+      end
+
+      private def self.process_up_migration(migration)
+        migration_processed = false
+        begin
+          transaction { migration.up }
+          Version.create(version: migration.class.version)
+          migration_processed = true
+          puts "Migration #{migration.class}"
+        ensure
+          transaction do
+            case Config.migration_failure_handler_method
+            when "reverse_direction"
+              migration.down
+            when "callback"
+              migration.after_up_failure
+            end
+          end
+        end
+      end
+
+      private def self.process_down_migration(migration)
+        migration_processed = false
+        begin
+          transaction { migration.down }
+          Version.all.where { _version == migration.class.version }.delete
+          migration_processed = true
+          puts "Droped migration #{migration.class}"
+        ensure
+          transaction do
+            case Config.migration_failure_handler_method
+            when "reverse_direction"
+              migration.up
+            when "callback"
+              migration.after_down_failure
+            end
+          end
+        end
+      end
+
+      private def self.transaction
+        Model::Base.transaction { yield }
       end
     end
   end

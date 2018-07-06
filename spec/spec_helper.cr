@@ -13,8 +13,9 @@ end
 require "spec"
 require "factory"
 require "./config"
-require "./models.cr"
-require "./factories.cr"
+require "./models"
+require "./factories"
+require "./support/*"
 
 # Callbacks =======================
 
@@ -77,6 +78,10 @@ def read_to_end(rs)
   end
 end
 
+def local_time_zone
+  Jennifer::Config.local_time_zone
+end
+
 def with_time_zone(zone_name : String)
   old_zone = Jennifer::Config.local_time_zone_name
   begin
@@ -134,61 +139,4 @@ macro match_fields(object, **fields)
   {% for field, value in fields %}
     {{object}}.{{field.id}}.should eq({{value}})
   {% end %}
-end
-
-module Spec
-  # :nodoc:
-  struct BeValidExpectation
-    def match(object)
-      object.valid?
-    end
-
-    def failure_message(object)
-      "Expected: #{object.inspect} to be valid"
-    end
-
-    def negative_failure_message(object)
-      "Expected: #{object.inspect} not to be valid"
-    end
-  end
-
-  struct AttributeValidationExpectation
-    @error_message : String?
-
-    def initialize(@attr : Symbol)
-    end
-
-    def with(msg)
-      @error_message = msg
-      self
-    end
-
-    def match(object)
-      raise ArgumentError.new("validation message should be specified.") if @error_message.nil?
-      _error_message = @error_message.not_nil!
-
-      object.validate!
-      object.errors[@attr].includes?(@error_message)
-    end
-
-    def failure_message(object)
-      "Expected: #{object.inspect} to have error message: "\
-      "'#{@error_message}', but got: '#{object.errors[@attr].inspect}'"
-    end
-
-    def negative_failure_message(object)
-      "Expected: #{object.inspect} not to have error message: "\
-      "'#{@error_message}', but got: '#{object.errors[@attr].inspect}'"
-    end
-  end
-
-  module Expectations
-    def be_valid
-      BeValidExpectation.new
-    end
-
-    def validate(attr)
-      AttributeValidationExpectation.new(attr)
-    end
-  end
 end

@@ -1,10 +1,19 @@
 module Jennifer
-  # This module contais constants needed only during compilation process to avoid their recreating.
+  # This module contains constants needed only during compilation process to avoid their recreating.
   module Macros
+    TYPES                       = %w(Primary32 Primary64)
     NILLABLE_REGEXP             = /(::Nil)|( Nil)/
     JSON_REGEXP                 = /JSON::Any/
-    PRIMARY_32                  = "Primary32"
-    PRIMARY_64                  = "Primary64"
-    AUTOINCREMENTABLE_STR_TYPES = ["Int32", "Int64", "Primary32", "Primary64"]
+    AUTOINCREMENTABLE_STR_TYPES = %w(Int32 Int64)
+
+    Primary32 = {
+      type: Int32,
+      primary: true
+    }
+
+    Primary64 = {
+      type: Int64,
+      primary: true
+    }
   end
 end

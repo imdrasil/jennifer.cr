@@ -41,7 +41,10 @@ module Jennifer
         afk = association_foreign_key
         _primary_value = primary_value
         mfk = foreign_field
-        q = T.all.join(join_table!) { (c(afk) == T.primary) & (c(mfk) == _primary_value) }
+        q = T.all.join(join_table!) do
+          (c(afk) == T.primary) &
+            (_primary_value.is_a?(Array) ? c(mfk).in(_primary_value) : c(mfk) == _primary_value)
+        end
         if @join_query
           _tree = @join_query.not_nil!
           q.where { _tree }
@@ -53,10 +56,9 @@ module Jennifer
       def join_condition(query, type)
         _foreign = foreign_field
         _primary = primary_field
-        jt = @join_table.not_nil!
-        jtk = @association_foreign || T.to_s.foreign_key
+        jt = join_table!
         q = query.join(jt, type: type) { Q.c(_primary) == c(_foreign) }.join(T, type: type) do
-          T.primary == c(jtk, jt)
+          T.primary == c(association_foreign_key, jt)
         end
         if @join_query
           _tree = @join_query.not_nil!
@@ -66,9 +68,35 @@ module Jennifer
         end
       end
 
-      # Stands for
       def association_foreign_key
-        @association_foreign || T.to_s.foreign_key
+        @association_foreign || Inflector.foreign_key(T.to_s)
+      end
+
+      def preload_relation(collection, out_collection : Array(Model::Resource), pk_repo)
+        return if collection.empty?
+        _primary = primary_field
+
+        unless pk_repo.has_key?(_primary)
+          array = pk_repo[_primary] = Array(DBAny).new(collection.size)
+          collection.each { |e| array << e.attribute(_primary) }
+        end
+
+        join_fk = "__join_fk__"
+        query = query(pk_repo[_primary])
+        fields = query._select_fields
+        fields << QueryBuilder::Criteria.new(foreign_field, join_table!).alias(join_fk)
+        new_collection = query.select(fields).db_results
+
+        name = self.name
+        if new_collection.empty?
+          collection.each(&.relation_retrieved(name))
+        else
+          primary_fields = pk_repo[_primary]
+          collection.each_with_index do |mod, i|
+            pv = primary_fields[i]
+            new_collection.each { |hash| out_collection << mod.append_relation(name, hash) if hash[join_fk] == pv }
+          end
+        end
       end
 
       private def add_join_table_record(obj, rel)

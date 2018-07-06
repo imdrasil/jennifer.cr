@@ -1,7 +1,6 @@
-require "../spec_helper"
+require "../shared_helpers"
 require "sam"
 require "../../../src/jennifer/sam"
-require "../shared_helpers"
 
 raise "Currently Docker related integration tests are available only for mysql" if Spec.adapter != "mysql"
 

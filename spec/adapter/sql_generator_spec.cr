@@ -49,7 +49,7 @@ describe "Jennifer::Adapter::SQLGenerator" do
 
   describe "::from_clause" do
     it "build correct from clause" do
-      sb { |io| described_class.from_clause(io, Contact.all) }.should eq("FROM contacts\n")
+      sb { |io| described_class.from_clause(io, Contact.all) }.should eq("FROM contacts ")
     end
   end
 
@@ -129,7 +129,7 @@ describe "Jennifer::Adapter::SQLGenerator" do
     context "condition exists" do
       it "includes its sql" do
         sb { |io| described_class.where_clause(io, Contact.where { _id == 1 }) }
-          .should eq("WHERE contacts.id = %s\n")
+          .should eq("WHERE contacts.id = %s ")
       end
     end
 
@@ -261,8 +261,8 @@ describe "Jennifer::Adapter::SQLGenerator" do
     context "with given Time object" do
       it do
         with_time_zone("Etc/GMT+1") do
-          time = Time.utc_now
-          adapter.parse_query("%s", [time] of Jennifer::DBAny)[1][0].as(Time).should be_close(time + 1.hour, 1.second)
+          adapter.parse_query("%s", [Time.now(local_time_zone)] of Jennifer::DBAny)[1][0].as(Time)
+            .should be_close(Time.utc_now, 1.second)
         end
       end
     end

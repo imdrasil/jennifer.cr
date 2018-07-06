@@ -48,7 +48,20 @@ Jennifer::Config.configure do |conf|
 end
 ```
 
-All configs:
+If your configurations aren't stored on the top level - you can manipulate which document subpart will be used to parse parameters:
+
+```crystal
+Jennifer::Config.read("./spec/fixtures/database.yml", &.["database"]["development"])
+```
+
+Also configuration can be parsed directly from URI:
+
+```crystal
+db_uri = "mysql://root@somehost/some_database?max_pool_size=111&initial_pool_size=222&max_idle_pool_size=333&retry_attempts=444&checkout_timeout=555&retry_delay=666"
+Jennifer::Config.from_uri(db)
+```
+
+## Supported configuation parameters
 
 | Config | Default value |
 | --- | --- |
@@ -68,7 +81,7 @@ All configs:
 | `retry_attempts` | 1 |
 | `checkout_timeout` | 5.0 |
 | `retry_delay` | 1.0 |
-| `local_time_zone_name` | default time zone name for `TimeZone` |
+| `local_time_zone_name` | default time zone name |
 | `skip_dumping_schema_sql` | `false` |
 | `command_shell` | `"bash"` |
 | `docker_container` | `""` |
@@ -99,7 +112,7 @@ Also take into account - some configs can't be initialized using URI string or y
 | `docker_source_location` | ✔ | ❌ |
 | `command_shell_sudo` | ✔ | ❌ |
 
-From `0.5.1` `Jennifer::Config` has started working under singleton pattern instead of using class as a container of all configurations.
+From `0.5.1` `Jennifer::Config` has started working under singleton pattern instead of using class as a container for all configuration properties.
 
 ## Logging
 

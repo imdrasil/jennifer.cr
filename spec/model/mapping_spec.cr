@@ -27,6 +27,20 @@ describe Jennifer::Model::Mapping do
     end
   end
 
+  describe "::build_params" do
+    it do
+      hash = Contact.build_params({"name" => "asd", "age" => "20".as(String?)})
+      hash["name"].should eq("asd")
+      hash["age"].should eq(20)
+    end
+
+    it do
+      hash = Contact.build_params({"name" => "asd", "age" => nil})
+      hash["name"].should eq("asd")
+      hash["age"].should be_nil
+    end
+  end
+
   describe "#reload" do
     it "assign all values from db to existing object" do
       c1 = Factory.create_contact
@@ -46,11 +60,11 @@ describe Jennifer::Model::Mapping do
         contact.save!
         fail("should raise validation exception")
       rescue ex : Jennifer::RecordInvalid
-        ex.errors.size.should eq(3)
-        raw_errors = ex.errors.@errors
-        validate_error(raw_errors[0], :age, "is not included in the list")
-        validate_error(raw_errors[1], :name, "is too long (maximum is 15 characters)")
-        validate_error(raw_errors[2], :description, "Too large description")
+        contact.errors.size.should eq(3)
+        raw_errors = contact.errors
+        raw_errors[:age].should eq(["is not included in the list"])
+        raw_errors[:name].should eq(["is too long (maximum is 15 characters)"])
+        raw_errors[:description].should eq(["Too large description"])
       end
     end
 
@@ -66,6 +80,41 @@ describe Jennifer::Model::Mapping do
   end
 
   describe "#_extract_attributes" do
+    postgres_only do
+      context "with casting from PG::Numeric" do
+        it "allows passing PG::Numeric" do
+          ballance = PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
+          c = ContactWithFloatMapping.build(ballance: ballance)
+          c.ballance.should eq(1.0f64)
+          c.ballance.is_a?(Float64)
+        end
+
+        it "properly creates using provided field instead of numeric" do
+          ballance = 10f64
+          c = ContactWithFloatMapping.build(ballance: ballance)
+          c.ballance.should eq(10f64)
+          c.ballance.is_a?(Float64).should be_true
+        end
+
+        it "properly loads data from db" do
+          ballance = PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
+          c = ContactWithFloatMapping.create(ballance: ballance)
+          contact_with_float = ContactWithFloatMapping.find!(c.id)
+          contact_with_float.ballance.should eq(1.0f64)
+          contact_with_float.ballance.is_a?(Float64).should be_true
+        end
+
+        it "properly stores modified numeric field" do
+          ballance = PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
+          c = ContactWithFloatMapping.create(ballance: ballance)
+          c.ballance = c.ballance! + 10.25f64
+          c.save
+          c.reload
+          c.ballance.should eq(11.25f64)
+        end
+      end
+    end
+
     it "returns tuple with values" do
       ballance = postgres_only do
         PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
@@ -123,7 +172,7 @@ describe Jennifer::Model::Mapping do
 
       it "result set has no some field" do
         o = OneFieldModel.create({} of String => Jennifer::DBAny)
-        error_message = "Column OneFieldModelWithExtraArgument#missing_field hasn't been found in the result set."
+        error_message = "Column OneFieldModelWithExtraArgument.missing_field hasn't been found in the result set."
         expect_raises(Jennifer::BaseException, error_message) do
           OneFieldModelWithExtraArgument.all.to_a
         end
@@ -157,7 +206,7 @@ describe Jennifer::Model::Mapping do
         metadata.is_a?(NamedTuple).should be_true
         metadata[:id].is_a?(NamedTuple).should be_true
         metadata[:id][:type].should eq(Int32)
-        metadata[:id][:parsed_type].should eq("Primary32?")
+        metadata[:id][:parsed_type].should eq("Int32?")
       end
     end
 
@@ -245,28 +294,39 @@ describe Jennifer::Model::Mapping do
 
     describe "::field_count" do
       it "returns correct number of model fields" do
-        postgres_only do
-          proper_count = 9
-          Contact.field_count.should eq(proper_count)
-        end
-
-        mysql_only do
-          proper_count = 8
-          Contact.field_count.should eq(proper_count)
-        end
+        proper_count = db_specific(
+          mysql: -> { 9 },
+          postgres: -> { 10 }
+        )
+        Contact.field_count.should eq(proper_count)
       end
     end
 
     context "data types" do
-      describe Primary32 do
-        it "makes field nilable" do
-          Contact.primary_field_type.should eq(Int32?)
+      describe "mapping types" do
+        describe "Primary32" do
+          it "makes field nilable" do
+            Contact.primary_field_type.should eq(Int32?)
+          end
         end
-      end
 
-      describe Primary64 do
-        it "makes field nillable" do
-          ContactWithInValidation.primary_field_type.should eq(Int64?)
+        describe "Primary64" do
+          it "makes field nillable" do
+            ContactWithInValidation.primary_field_type.should eq(Int64?)
+          end
+        end
+
+        describe "user-defined mapping types" do
+          it "is accessible if defined in parent class" do
+            User::COLUMNS_METADATA[:password_digest].should eq({type: String, default: "", stringified_type: "String", parsed_type: "String"})
+            User::COLUMNS_METADATA[:email].should eq({type: String, default: "", stringified_type: "String", parsed_type: "String"})
+          end
+
+          pending "allows to add extra options" do
+          end
+
+          pending "allows to override options" do
+          end
         end
       end
 
@@ -282,11 +342,12 @@ describe Jennifer::Model::Mapping do
 
       describe Time do
         it "stores to db time converted to UTC" do
+          contact = Factory.create_contact
+          new_time = Time.now(local_time_zone)
           with_time_zone("Etc/GMT+1") do
-            contact = Factory.create_contact
-            Contact.all.update(created_at: Time.utc_now)
+            Contact.all.update(created_at: new_time)
             Contact.all.select { [_created_at] }.each_result_set do |rs|
-              rs.read(Time).should be_close(Time.utc_now + 1.hour, 2.seconds)
+              rs.read(Time).should be_close(new_time, 1.second)
             end
           end
         end
@@ -294,7 +355,7 @@ describe Jennifer::Model::Mapping do
         it "converts values from utc to local" do
           contact = Factory.create_contact
           with_time_zone("Etc/GMT+1") do
-            contact.reload.created_at!.should be_close(Time.utc_now - 1.hour, 2.seconds)
+            contact.reload.created_at!.should be_close(Time.now(local_time_zone), 1.second)
           end
         end
       end
@@ -406,8 +467,8 @@ describe Jennifer::Model::Mapping do
     end
 
     describe "#primary" do
-      context "defaul primary field" do
-        it "returns id valud" do
+      context "default primary field" do
+        it "returns id value" do
           c = Factory.build_contact
           c.id = -1
           c.primary.should eq(-1)
@@ -415,7 +476,7 @@ describe Jennifer::Model::Mapping do
       end
 
       context "custom field" do
-        it "returns valud of custom primary field" do
+        it "returns value of custom primary field" do
           p = Factory.build_passport
           p.enn = "1qaz"
           p.primary.should eq("1qaz")
@@ -433,7 +494,7 @@ describe Jennifer::Model::Mapping do
           c.name.should eq("123")
         end
 
-        it "raises exeption if value has wrong type" do
+        it "raises exception if value has wrong type" do
           c = Factory.create_contact
           expect_raises(::Jennifer::BaseException) do
             c.update_columns({:name => 123})
@@ -461,7 +522,7 @@ describe Jennifer::Model::Mapping do
           c.name.should eq("123")
         end
 
-        it "raises exeption if value has wrong type" do
+        it "raises exception if value has wrong type" do
           c = Factory.create_contact
           expect_raises(::Jennifer::BaseException) do
             c.update_column(:name, 123)
@@ -480,6 +541,14 @@ describe Jennifer::Model::Mapping do
     end
 
     describe "#set_attribute" do
+      context "when attribute is virtual" do
+        it do
+          p = Factory.build_profile
+          p.set_attribute(:virtual_parent_field, "virtual value")
+          p.virtual_parent_field.should eq("virtual value")
+        end
+      end
+
       context "attribute exists" do
         it "sets attribute if value has proper type" do
           c = Factory.build_contact
@@ -512,10 +581,25 @@ describe Jennifer::Model::Mapping do
     end
 
     describe "#attribute" do
+      context "when attribute is virtual" do
+        it "" do
+          p = Factory.build_profile
+          p.virtual_parent_field = "value"
+          p.attribute(:virtual_parent_field).should eq("value")
+        end
+      end
+
       it "returns attribute value by given name" do
         c = Factory.build_contact(name: "Jessy")
         c.attribute("name").should eq("Jessy")
         c.attribute(:name).should eq("Jessy")
+      end
+
+      it do
+        c = Factory.build_contact(name: "Jessy")
+        expect_raises(::Jennifer::BaseException) do
+          c.attribute("missing")
+        end
       end
     end
 
@@ -563,17 +647,17 @@ describe Jennifer::Model::Mapping do
 
     describe "#to_h" do
       it "creates hash with symbol keys" do
-        contact = Factory.build_contact(name: "Abdul").to_h
-        contact.is_a?(Hash).should be_true
-        contact[:name].should eq("Abdul")
+        hash = Factory.build_profile(login: "Abdul").to_h
+        # NOTE: virtual field isn't included
+        hash.keys.should eq(%i(id login contact_id type))
       end
     end
 
     describe "#to_str_h" do
       it "creates hash with string keys" do
-        contact = Factory.build_contact(name: "Abdul").to_str_h
-        contact.is_a?(Hash).should be_true
-        contact["name"].should eq("Abdul")
+        hash = Factory.build_profile(login: "Abdul").to_str_h
+        # NOTE: virtual field isn't included
+        hash.keys.should eq(%w(id login contact_id type))
       end
     end
   end
@@ -604,9 +688,4 @@ describe Jennifer::Model::Mapping do
       ((c.updated_at! - Time.now).total_seconds < 1).should be_true
     end
   end
-end
-
-def validate_error(error, attr, message)
-  error.attr.should eq(attr)
-  error.message.should eq(message)
 end

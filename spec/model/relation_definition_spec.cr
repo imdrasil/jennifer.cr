@@ -22,7 +22,7 @@ describe Jennifer::Model::RelationDefinition do
       ContactWithDependencies::CALLBACKS[:destroy][:before].includes?("__delete_callback_addresses").should be_true
     end
 
-    it "doen't invoke callbacks on associated model" do
+    it "doesn't invoke callbacks on associated model" do
       c = Factory.create_contact
       Factory.create_address(contact_id: c.id)
       count = Address.destroy_counter
@@ -69,9 +69,9 @@ describe Jennifer::Model::RelationDefinition do
   end
 
   describe "%has_many" do
-    it "adds relation name to RELATION_NAMES constant" do
-      Contact::RELATION_NAMES.size.should eq(6)
-      Contact::RELATION_NAMES[0].should eq("addresses")
+    it "adds relation name to RELATIONS constant" do
+      Contact::RELATIONS.size.should eq(7)
+      Contact::RELATIONS.has_key?("addresses").should be_true
     end
 
     context "query" do
@@ -126,6 +126,14 @@ describe Jennifer::Model::RelationDefinition do
           a = Factory.create_address(contact_id: c.id)
           count = query_count
           c.addresses[0].contact
+          query_count.should eq(count + 1)
+        end
+
+        it "sets owner during building collection 2" do
+          c = Factory.create_contact
+          a = Factory.create_facebook_profile(contact_id: c.id)
+          count = query_count
+          c.facebook_profiles[0].contact
           query_count.should eq(count + 1)
         end
       end
@@ -198,9 +206,9 @@ describe Jennifer::Model::RelationDefinition do
   end
 
   describe "%belongs_to" do
-    it "adds relation name to RELATION_NAMES constant" do
-      Address::RELATION_NAMES.size.should eq(1)
-      Address::RELATION_NAMES[0].should eq("contact")
+    it "adds relation name to RELATIONS constant" do
+      Address::RELATIONS.size.should eq(1)
+      Address::RELATIONS.has_key?("contact").should be_true
     end
 
     context "query" do
@@ -285,8 +293,8 @@ describe Jennifer::Model::RelationDefinition do
   end
 
   describe "%has_one" do
-    it "adds relation name to RELATION_NAMES constant" do
-      Contact::RELATION_NAMES[0].should eq("addresses")
+    it "adds relation name to RELATIONS constant" do
+      Contact::RELATIONS.has_key?("addresses").should be_true
     end
 
     context "query" do
@@ -333,6 +341,14 @@ describe Jennifer::Model::RelationDefinition do
           a = Factory.create_address(contact_id: c.id, main: true)
           count = query_count
           c.main_address!.contact
+          query_count.should eq(count + 1)
+        end
+
+        it "sets owner during building collection 2" do
+          c = Factory.create_contact
+          a = Factory.create_passport(contact_id: c.id)
+          count = query_count
+          c.passport!.contact
           query_count.should eq(count + 1)
         end
       end
@@ -497,6 +513,30 @@ describe Jennifer::Model::RelationDefinition do
         country.__contacts_clean
         q.exists?.should be_false
       end
+    end
+  end
+
+  describe "#relation_retrieved" do
+    describe "sti" do
+      context "with unknown relation" do
+        it { expect_raises(Jennifer::UnknownRelation) { Factory.create_facebook_profile.relation_retrieved("unknown") } }
+      end
+
+      context "with own relation" do
+        it { Factory.create_facebook_profile.relation_retrieved("facebook_contacts") }
+      end
+
+      context "with parent relation" do
+        it { Factory.create_facebook_profile.relation_retrieved("contact") }
+      end
+    end
+
+    context "with unknown relation" do
+      it { expect_raises(Jennifer::UnknownRelation) { Factory.create_contact.relation_retrieved("unknown") } }
+    end
+
+    context "with own relation" do
+      it { Factory.create_contact.relation_retrieved("passport") }
     end
   end
 end

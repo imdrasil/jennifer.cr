@@ -83,18 +83,17 @@ module Jennifer
             break if own_attributes == 0
             case column
             {% for key, value in COLUMNS_METADATA %}
-              when {{value[:column_name] ? value[:column_name].id : key.id.stringify}}
+              when {{(value[:column_name] || key).id.stringify}}
                 own_attributes -= 1
                 %found{key.id} = true
                 begin
                   %var{key.id} = pull.read({{value[:parsed_type].id}})
                 rescue e : Exception
-                  raise ::Jennifer::DataTypeMismatch.new(column, {{@type}}, e) if ::Jennifer::DataTypeMismatch.match?(e)
-                  raise e
+                  raise ::Jennifer::DataTypeMismatch.build(column, {{@type}}, e)
                 end
             {% end %}
             else
-              {% if STRICT_MAPPNIG %}
+              {% if STRICT_MAPPING %}
                 raise ::Jennifer::BaseException.new("Undefined column #{column} for model {{@type}}.")
               {% else %}
                 pull.read
@@ -102,10 +101,10 @@ module Jennifer
             end
           end
           pull.read_to_end
-          {% if STRICT_MAPPNIG %}
+          {% if STRICT_MAPPING %}
             {% for key in COLUMNS_METADATA.keys %}
               unless %found{key.id}
-                raise ::Jennifer::BaseException.new("Column #{{{@type}}}##{{{key.id.stringify}}} hasn't been found in the result set.")
+                raise ::Jennifer::BaseException.new("Column #{{{@type}}}.{{key.id}} hasn't been found in the result set.")
               end
             {% end %}
           {% end %}
@@ -114,10 +113,9 @@ module Jennifer
             {% for key, value in COLUMNS_METADATA %}
               begin
                 res = %var{key.id}.as({{value[:parsed_type].id}})
-                !res.is_a?(Time) ? res : ::Jennifer::Config.local_time_zone.utc_to_local(res)
+                !res.is_a?(Time) ? res : res.in(::Jennifer::Config.local_time_zone)
               rescue e : Exception
-                raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
-                raise e
+                raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
               end,
             {% end %}
             }
@@ -126,8 +124,7 @@ module Jennifer
             begin
               %var{key}.as({{COLUMNS_METADATA[key][:parsed_type].id}})
             rescue e : Exception
-              raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
-              raise e
+              raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
             end
           {% end %}
         end
@@ -140,8 +137,8 @@ module Jennifer
           {% end %}
 
           {% for key, value in COLUMNS_METADATA %}
-            {% _key = value[:column_name] ? value[:column_name] : key.id.stringify %}
-            if !values[{{_key}}]?.nil?
+            {% _key = (value[:column_name] || key).id.stringify %}
+            if values.has_key?({{_key}})
               %var{key.id} = values[{{_key}}]
             else
               %found{key.id} = false
@@ -161,10 +158,9 @@ module Jennifer
               {% else %}
                 %casted_var{key.id} = Jennifer::Model::Mapping.__bool_convert(%var{key.id}, {{value["parsed_type"].id}})
               {% end %}
-              %casted_var{key.id} = !%casted_var{key.id}.is_a?(Time) ? %casted_var{key.id} : ::Jennifer::Config.local_time_zone.utc_to_local(%casted_var{key.id})
+              %casted_var{key.id} = !%casted_var{key.id}.is_a?(Time) ? %casted_var{key.id} : %casted_var{key.id}.in(::Jennifer::Config.local_time_zone)
             rescue e : Exception
-              raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) if ::Jennifer::DataTypeCasting.match?(e)
-              raise e
+              raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
             end
           {% end %}
 
@@ -211,24 +207,13 @@ module Jennifer
         # To avoid raising exception set `raise_exception` to `false`.
         def attribute(name : String | Symbol, raise_exception = true)
           case name.to_s
-          {% for key, value in COLUMNS_METADATA.keys %}
+          {% for key in COLUMNS_METADATA.keys %}
           when {{key.stringify}}
             @{{key.id}}
           {% end %}
           else
             raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}") if raise_exception
           end
-        end
-
-        # NOTE: This is deprecated method - it will be removed in 0.5.0. Use #to_h instead
-        def attributes_hash
-          hash = to_h
-          {% for key, value in COLUMNS_METADATA %}
-            {% if value[:primary] %}
-              hash.delete({{key}}) unless hash.has_key?({{key}})
-            {% end %}
-          {% end %}
-          hash
         end
       end
 
@@ -246,13 +231,7 @@ module Jennifer
       end
 
       macro mapping(properties, strict = true)
-        STRICT_MAPPNIG = {{strict}}
-
-        @@strict_mapping : Bool?
-
-        def self.strict_mapping?
-          @@strict_mapping ||= adapter.table_column_count(table_name) == field_count
-        end
+        STRICT_MAPPING = {{strict}}
 
         # Returns field count
         def self.field_count
@@ -268,36 +247,39 @@ module Jennifer
 
         # generates hash with options
         {% for key, opt in properties %}
-          {% _key = key.id.stringify %}
-          {% unless opt.is_a?(HashLiteral) || opt.is_a?(NamedTupleLiteral) %}
-            {% FIELDS[_key] = {"type" => opt.stringify} %}
-            {% properties[key] = {type: opt} %}
-          {% else %}
-            {% FIELDS[_key] = {} of String => String %}
-            {% for attr, value in opt %}
-              {% FIELDS[_key][attr.id.stringify] = value.stringify %}
+          {%
+            _key = key.id.stringify
+            str_properties = FIELDS[_key] = {} of String => String
+          %}
+          {% unless opt.is_a?(HashLiteral) || opt.is_a?(NamedTupleLiteral) %} {% properties[key] = {type: opt} %} {% end %}
+
+          {% for attr, value in properties[key] %}
+            {% str_properties[attr.id.stringify] = value.stringify %}
+          {% end %}
+
+          {% if properties[key][:type].is_a?(Path) && Jennifer::Macros::TYPES.includes?(str_properties["type"]) %}
+            {% for tkey, tvalue in properties[key][:type].resolve %}
+              {% if tkey == :type || properties[key][tkey] == nil %}
+                {%
+                  properties[key][tkey] = tvalue
+                  str_properties[tkey.stringify] = tvalue.stringify
+                %}
+              {% end %}
             {% end %}
           {% end %}
 
-          {% stringified_type = properties[key][:stringified_type] = properties[key][:type].stringify %}
-          {% if stringified_type == Jennifer::Macros::PRIMARY_32 || stringified_type == Jennifer::Macros::PRIMARY_64 %}
-            {%
-              properties[key][:primary] = true
-              FIELDS[_key]["primary"] = "true"
-            %}
-          {% end %}
-          {% if properties[key][:primary] %}
-            {% primary = key %}
-          {% end %}
+          {% stringified_type = str_properties["type"] %}
+          {% if properties[key][:primary] %} {% primary = key %} {% end %}
           {% if stringified_type =~ Jennifer::Macros::NILLABLE_REGEXP %}
             {%
               properties[key][:null] = true
-              FIELDS[_key]["parsed_type"] = properties[key][:parsed_type] = stringified_type
+              str_properties["null"] = "true"
+              str_properties["parsed_type"] = properties[key][:parsed_type] = stringified_type
             %}
           {% else %}
             {%
               properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? stringified_type + "?" : stringified_type
-              FIELDS[_key]["parsed_type"] = properties[key][:parsed_type]
+              str_properties["parsed_type"] = properties[key][:parsed_type]
             %}
           {% end %}
         {% end %}

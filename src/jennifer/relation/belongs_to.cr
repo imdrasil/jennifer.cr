@@ -17,6 +17,11 @@ module Jennifer
         @join_query ? _tree & @join_query.not_nil!.clone : _tree
       end
 
+      def condition_clause(ids : Array)
+        _tree = T.c(primary_field).in(ids)
+        @join_query ? _tree & @join_query.not_nil!.clone : _tree
+      end
+
       def join_condition(query, type)
         this = self
         query.join(model_class, type: type, relation: @name) do |eb|
@@ -97,11 +102,35 @@ module Jennifer
       end
 
       def foreign_field
-        @foreign ||= T.singular_table_name + "_id"
+        @foreign ||= T.foreign_key_name
       end
 
       def primary_field
         @primary ||= T.primary_field_name
+      end
+
+      def preload_relation(collection, out_collection : Array(Model::Resource), pk_repo)
+        return if collection.empty?
+        _primary = primary_field
+        _foreign = foreign_field
+
+        unless pk_repo.has_key?(_foreign)
+          array = pk_repo[_foreign] = Array(DBAny).new(collection.size)
+          collection.each { |e| array << e.attribute(_foreign) }
+        end
+
+        new_collection = query(pk_repo[_foreign]).db_results
+
+        name = self.name
+        if new_collection.empty?
+          collection.each(&.relation_retrieved(name))
+        else
+          foreign_fields = pk_repo[_foreign]
+          collection.each_with_index do |mod, i|
+            fk = foreign_fields[i]
+            new_collection.each { |hash| out_collection << mod.append_relation(name, hash) if hash[_primary] == fk }
+          end
+        end
       end
     end
   end

@@ -79,7 +79,7 @@ module Jennifer
   class RecordInvalid < BaseException
     getter :errors
 
-    def initialize(@errors : Accord::ErrorList)
+    def initialize(@errors : Array(String))
       @message = "Object is invalid: #{errors.inspect}"
     end
   end
@@ -110,6 +110,10 @@ module Jennifer
     def self.match?(exception)
       exception.message =~ MATCH_REG
     end
+
+    def self.build(column, klass, exception)
+      match?(exception) ? new(column, klass, exception) : exception
+    end
   end
 
   class DataTypeCasting < BaseException
@@ -122,6 +126,10 @@ module Jennifer
 
     def self.match?(exception)
       exception.message =~ EXTRACT_WORDS_REG
+    end
+
+    def self.build(column, klass, exception)
+      match?(exception) ? new(column, klass, exception) : exception
     end
   end
 

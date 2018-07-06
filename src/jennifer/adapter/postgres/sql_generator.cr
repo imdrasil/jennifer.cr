@@ -28,7 +28,7 @@ module Jennifer
         String.build do |s|
           s << "UPDATE " << query._table << " SET "
           options.map { |k, v| "#{k.to_s}= #{esc}" }.join(", ", s)
-          s << "\n"
+          s << ' '
 
           from_clause(s, query, query._joins![0].table_name(self)) if query._joins
           where_clause(s, query.tree)
@@ -111,9 +111,7 @@ module Jennifer
       def self.parse_query(query, args : Array(DBAny))
         arr = Array(String).new(args.size)
         args.each_with_index do |arg, i|
-          if arg.is_a?(Time)
-            args[i] = Config.local_time_zone.local_to_utc(arg.as(Time))
-          end
+          args[i] = arg.as(Time).to_utc if arg.is_a?(Time)
           arr << "$#{i + 1}"
         end
         {query % arr, args}

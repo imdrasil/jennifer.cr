@@ -18,7 +18,7 @@ class AddView20170916095004544 < Jennifer::Migration::Base
 end
 ```
 
-Second argument of `#create_view` describes query which will  be used to retrieve data. 
+Second argument of `#create_view` describes query which will  be used to retrieve data.
 
 **Importent restriction**: any prepared argument is not allowed for now - all arguments should be escaped by your own.
 
@@ -73,9 +73,8 @@ class AddMaterializedView20170829000433679 < Jennifer::Migration::Base
   end
 end
 ```
-As for non materialized view all arguments should be escaped explicitly as well.
 
-> Until 0.5.0 source could be represented as stringgified raw sql, but this will be removed.
+As for non materialized view all arguments should be escaped explicitly as well.
 
 Example of defining created before materialized view looks like:
 

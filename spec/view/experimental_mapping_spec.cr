@@ -69,12 +69,12 @@ describe Jennifer::View::ExperimentalMapping do
 
   describe "%mapping" do
     describe "::columns_tuple" do
-      it "returns named tuple mith column metedata" do
+      it "returns named tuple with column metedata" do
         metadata = MaleContact.columns_tuple
         metadata.is_a?(NamedTuple).should be_true
         metadata[:id].is_a?(NamedTuple).should be_true
         metadata[:id][:type].should eq(Int32)
-        metadata[:id][:parsed_type].should eq("Primary32?")
+        metadata[:id][:parsed_type].should eq("Int32?")
       end
     end
 
@@ -146,6 +146,19 @@ describe Jennifer::View::ExperimentalMapping do
         end
       end
 
+      describe "user-defined mapping types" do
+        it "is accessible if defined in parent class" do
+          FemaleContact::COLUMNS_METADATA[:name].should eq({type: String, null: true, parsed_type: "String?"})
+          FemaleContact::FIELDS["name"].should eq({"type" => "String", "null" => "true", "parsed_type" => "String?"})
+        end
+
+        pending "allows to add extra options" do
+        end
+
+        pending "allows to override options" do
+        end
+      end
+
       describe JSON::Any do
         pending "properly loads json field" do
           # This checks nillable JSON as well
@@ -158,11 +171,13 @@ describe Jennifer::View::ExperimentalMapping do
 
       describe Time do
         it "stores to db time converted to UTC" do
+          contact = Factory.create_contact
+          new_time = Time.now(local_time_zone)
+
           with_time_zone("Etc/GMT+1") do
-            contact = Factory.create_contact
-            Contact.all.update(created_at: Time.utc_now)
+            Contact.all.update(created_at: new_time)
             MaleContact.all.select { [_created_at] }.each_result_set do |rs|
-              rs.read(Time).should be_close(Time.utc_now + 1.hour, 2.seconds)
+              rs.read(Time).should be_close(new_time, 1.second)
             end
           end
         end
@@ -170,7 +185,7 @@ describe Jennifer::View::ExperimentalMapping do
         it "converts values from utc to local" do
           contact = Factory.create_contact
           with_time_zone("Etc/GMT+1") do
-            MaleContact.all.first!.created_at!.should be_close(Time.utc_now - 1.hour, 2.seconds)
+            MaleContact.all.first!.created_at!.should be_close(Time.now(local_time_zone), 2.seconds)
           end
         end
       end
@@ -246,12 +261,6 @@ describe Jennifer::View::ExperimentalMapping do
         c.attribute("name").should eq("Jessy")
         c.attribute(:name).should eq("Jessy")
       end
-    end
-  end
-
-  describe "::strict_mapping?" do
-    it "returns false if mapping doesn't describe all db view fields" do
-      MaleContact.strict_mapping?.should eq(false)
     end
   end
 

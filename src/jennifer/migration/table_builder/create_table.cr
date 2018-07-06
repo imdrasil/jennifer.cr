@@ -9,20 +9,20 @@ module Jennifer
 
         {% for method in Jennifer::Adapter::TYPES %}
           def {{method.id}}(name, options = DB_OPTIONS.new)
-            defaults = sym_hash({:type => {{method}}}, AAllowedTypes)
+            defaults = { :type => {{method}} } of Symbol => AAllowedTypes
             @fields[name.to_s] = defaults.merge(options)
             self
           end
         {% end %}
 
         def enum(name, values = [] of String, options = DB_OPTIONS.new)
-          hash = sym_hash({:type => :enum, :values => typed_array_cast(values, EAllowedTypes)}, AAllowedTypes).merge(options)
+          hash = ({ :type => :enum, :values => typed_array_cast(values, EAllowedTypes) } of Symbol => AAllowedTypes).merge(options)
           @fields[name.to_s] = hash
           self
         end
 
         def field(name, data_type, options = DB_OPTIONS.new)
-          @fields[name.to_s] = sym_hash({:sql_type => data_type}, AAllowedTypes).merge(options)
+          @fields[name.to_s] = ({ :sql_type => data_type } of Symbol => AAllowedTypes).merge(options)
           self
         end
 

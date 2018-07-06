@@ -1,3 +1,6 @@
+require "./views"
+require "../src/jennifer/model/authentication"
+
 struct JohnyQuery < Jennifer::QueryBuilder::QueryObject
   def call
     relation.where { _name == "Johny" }
@@ -31,10 +34,38 @@ abstract class ApplicationRecord < Jennifer::Model::Base
   def before_abstract_create
     @super_class_callback_called = true
   end
+
+  EmptyString = {
+    type: String,
+    default: ""
+  }
+
+  {% TYPES << "EmptyString" %}
+end
+
+class User < ApplicationRecord
+  include Jennifer::Model::Authentication
+
+  mapping(
+    id: Primary32,
+    name: String?,
+    password_digest: EmptyString,
+    email: { type: EmptyString },
+    password: Password,
+    password_confirmation: { type: String?, virtual: true }
+  )
+
+  with_authentication
+
+  validates_presence :email
+  validates_uniqueness :email
+
+  has_many :contacts, Contact, inverse_of: :user
 end
 
 class Contact < ApplicationRecord
   with_timestamps
+
   {% if env("DB") == "postgres" || env("DB") == nil %}
     mapping(
       id:          Primary32,
@@ -43,9 +74,10 @@ class Contact < ApplicationRecord
       age:         {type: Int32, default: 10},
       gender:      {type: String?, default: "male"},
       description: String?,
-      created_at:  Time | Nil,
+      created_at:  Time?,
       updated_at:  Time?,
-      tags: Array(Int32)?,
+      user_id:     Int32?,
+      tags:        Array(Int32)?
     )
   {% else %}
     mapping(
@@ -55,17 +87,19 @@ class Contact < ApplicationRecord
       age:         {type: Int32, default: 10},
       gender:      {type: String?, default: "male"},
       description: String?,
-      created_at:  Time | Nil,
+      created_at:  Time?,
       updated_at:  Time?,
+      user_id:     Int32?
     )
   {% end %}
 
   has_many :addresses, Address, inverse_of: :contact
-  has_many :facebook_profiles, FacebookProfile
+  has_many :facebook_profiles, FacebookProfile, inverse_of: :contact
   has_and_belongs_to_many :countries, Country
   has_and_belongs_to_many :facebook_many_profiles, FacebookProfile, association_foreign: :profile_id
   has_one :main_address, Address, {where { _main }}, inverse_of: :contact
-  has_one :passport, Passport
+  has_one :passport, Passport, inverse_of: :contact
+  belongs_to :user, User
 
   validates_inclusion :age, 13..75
   validates_length :name, minimum: 1
@@ -141,7 +175,8 @@ class Profile < ApplicationRecord
     id: Primary32,
     login: String,
     contact_id: Int32?,
-    type: String
+    type: String,
+    virtual_parent_field: {type: String?, virtual: true}
   )
 
   getter commit_callback_called = false
@@ -157,7 +192,8 @@ end
 
 class FacebookProfile < Profile
   mapping(
-    uid: String? # for testing purposes
+    uid: String?, # for testing purposes
+    virtual_child_field: {type: Int32?, virtual: true}
   )
 
   getter fb_commit_callback_called = false
@@ -190,9 +226,10 @@ class Country < Jennifer::Model::Base
   validates_presence :name
 
   has_and_belongs_to_many :contacts, Contact
+  has_many :cities, City, inverse_of: :country
 
-  {% for callback in %i(before_save after_save after_create before_create after_initialize 
-                        before_destroy after_destroy before_update after_update) %}
+  {% for callback in %i(before_save after_save after_create before_create after_initialize
+                       before_destroy after_destroy before_update after_update) %}
     getter {{callback.id}}_attr = false
 
     {{callback.id}} {{callback}}_check
@@ -219,23 +256,33 @@ class Country < Jennifer::Model::Base
   end
 end
 
+class City < ApplicationRecord
+  mapping(
+    id: Primary32,
+    name: String,
+    country_id: Int32
+  )
+
+  belongs_to :country, Country
+end
+
 class OneFieldModel < Jennifer::Model::Base
   mapping(
-    id: Primary32
+    id: Primary64
   )
 end
 
 # ===================
-# synthetic models 
+# synthetic models
 # ===================
 
 class CountryWithTransactionCallbacks < ApplicationRecord
   table_name "countries"
 
   mapping({
-    id: Primary32,
-    name: String
-  })
+    id:   Primary32,
+    name: String,
+  }, false)
 
   {% for action in [:create, :save, :destroy, :update] %}
     {% for type in [:commit, :rollback] %}
@@ -256,8 +303,8 @@ class CountryWithValidationCallbacks < ApplicationRecord
   table_name "countries"
 
   mapping({
-    id: Primary32,
-    name: String
+    id:   Primary32,
+    name: String,
   })
 
   before_validation :raise_skip, :before_validation_method
@@ -301,7 +348,7 @@ class OneFieldModelWithExtraArgument < Jennifer::Model::Base
   table_name "one_field_models"
 
   mapping(
-    id: Primary32,
+    id: Primary64,
     missing_field: String
   )
 end
@@ -376,79 +423,19 @@ class AbstractContactModel < Jennifer::Model::Base
   mapping({
     id:   Primary32,
     name: String?,
-    age: Int32
+    age:  Int32,
   }, false)
 end
 
-# ===========
-# views
-# ===========
+class ContactWithFloatMapping < Jennifer::Model::Base
+  table_name "contacts"
 
-class FemaleContact < Jennifer::View::Materialized
-  mapping({
-    id:   Primary32,
-    name: String?,
-  }, false)
-end
-
-class MaleContact < Jennifer::View::Base
-  mapping({
-    id:     Primary32,
-    name:   String,
-    gender: String,
-    age:    Int32,
-    created_at: Time?
-  }, false)
-
-  scope :main { where { _age < 50 } }
-  scope :older { |age| where { _age >= age } }
-  scope :johny, JohnyQuery
-end
-
-# ==================
-# synthetic views
-# ==================
-
-class FakeFemaleContact < Jennifer::View::Base
-  view_name "female_contacs"
-
-  mapping({
-    id:     Primary32,
-    name:   String,
-    gender: String,
-    age:    Int32,
-    created_at: Time?
-  }, false)
-end
-
-class FakeContactView < Jennifer::View::Base
-  view_name "male_contacs"
-
-  mapping({
-    id: Primary32,
-  }, false)
-end
-
-class StrinctBrokenMaleContact < Jennifer::View::Base
-  view_name "male_contacts"
-  mapping({
-    id:   Primary32,
-    name: String,
-  })
-end
-
-class StrictMaleContactWithExtraField < Jennifer::View::Base
-  view_name "male_contacts"
-  mapping({
-    id:            Primary64,
-    missing_field: String,
-  })
-end
-
-class MaleContactWithDescription < Jennifer::View::Base
-  view_name "male_contacts"
-  mapping({
-    id:          Primary32,
-    description: String,
-  }, false)
+  {% if env("DB") == "postgres" || env("DB") == nil %}
+    mapping({
+      id: Primary32,
+      ballance: { type: Float64?, numeric_converter: :to_f64}
+    }, false)
+  {% else %}
+    mapping({id: Primary32}, false)
+  {% end %}
 end

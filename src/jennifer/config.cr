@@ -9,11 +9,13 @@ module Jennifer
     ]
     STRING_FIELDS = {
       :user, :password, :db, :host, :adapter, :migration_files_path, :schema,
-      :structure_folder, :local_time_zone_name, :command_shell, :docker_container, :docker_source_location
+      :structure_folder, :local_time_zone_name, :command_shell, :docker_container, :docker_source_location,
+      :migration_failure_handler_method
     }
     INT_FIELDS    = {:port, :max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
     FLOAT_FIELDS  = {:checkout_timeout, :retry_delay}
     BOOL_FIELDS   = {:command_shell_sudo, :skip_dumping_schema_sql}
+    ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS = %w(reverse_direction callback none)
 
     macro define_fields(const, default)
       {% for field in const.resolve %}
@@ -49,7 +51,7 @@ module Jennifer
     define_fields(FLOAT_FIELDS, 0.0)
     define_fields(BOOL_FIELDS, false)
 
-    @local_time_zone : TimeZone::Zone
+    @local_time_zone : Time::Location
 
     @@instance = new
 
@@ -59,8 +61,8 @@ module Jennifer
       @port = -1
       @migration_files_path = "./db/migrations"
       @schema = "public"
-      @local_time_zone_name = TimeZone::Zone.default.name
-      @local_time_zone = TimeZone::Zone.default
+      @local_time_zone_name = Time::Location.local.name
+      @local_time_zone = Time::Location.local
 
       @initial_pool_size = 1
       @max_pool_size = 5
@@ -71,6 +73,7 @@ module Jennifer
       @retry_delay = 1.0
 
       @command_shell = "bash"
+      @migration_after_failure_method = "none"
 
       @logger = Logger.new(STDOUT)
       logger.level = Logger::DEBUG
@@ -121,7 +124,7 @@ module Jennifer
 
     def local_time_zone_name=(value : String)
       @local_time_zone_name = value
-      @local_time_zone = TimeZone::Zone.get(@local_time_zone_name)
+      @local_time_zone = Time::Location.load(value)
       value
     end
 
@@ -130,6 +133,17 @@ module Jennifer
     end
 
     delegate_getter(:local_time_zone)
+
+    def self.migration_failure_handler_method=(value)
+      parsed_value = value.to_s
+      unless ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS.includes?(parsed_value)
+        allowed_methods = ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS.map { |e| %("#{e}") }.join(" ")
+        raise Jennifer::InvalidConfig.new(
+          %(migration_failure_handler_method config may be only #{allowed_methods})
+        )
+      end
+      @@migration_failure_handler_method = parsed_value
+    end
 
     def self.configure(&block)
       yield instance
@@ -141,25 +155,29 @@ module Jennifer
       raise Jennifer::InvalidConfig.new("No database configured") if db.empty?
     end
 
-    def self.from_uri(db_uri : String)
-      begin
-        from_uri(URI.parse(db_uri))
-      rescue e
-        config.logger.error("Error parsing database uri #{db_uri}")
-      end
+    def self.from_uri(uri)
+      config.from_uri(uri)
     end
 
-    def self.from_uri(uri : URI)
-      config.set_from_uri(uri)
+    def self.read(*args, **opts)
+      config.read(*args, **opts)
     end
 
-    def self.read(path : String, env : String | Symbol = :development)
+    def self.read(*args, **opts)
+      config.read(*args, **opts) { |document| yield document }
+    end
+
+    def read(path : String)
+      source = yield YAML.parse(File.read(path))
+      from_yaml(source)
+    end
+
+    def read(path : String, env : String | Symbol = :development)
       _env = env.to_s
-      source = YAML.parse(File.read(path))[_env]
-      config.set_from_yaml(source)
+      read(path) { |document| document[_env] }
     end
 
-    def set_from_yaml(source)
+    def from_yaml(source)
       {% for field in STRING_FIELDS %}
         @{{field.id}} = source["{{field.id}}"].as_s if source["{{field.id}}"]?
       {% end %}
@@ -178,7 +196,13 @@ module Jennifer
       self
     end
 
-    def set_from_uri(uri : URI)
+    def from_uri(uri : String)
+      from_uri(URI.parse(uri))
+    rescue e
+      logger.error("Error parsing database uri #{uri}")
+    end
+
+    def from_uri(uri : URI)
       @adapter = uri.scheme.to_s if uri.scheme
       @host = uri.host.to_s if uri.host
       @port = uri.port.not_nil!  if uri.port

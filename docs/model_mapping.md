@@ -100,7 +100,9 @@ class Country < Jennifer::Model::Base
 end
 ```
 
-`%mapping(options, strict = true)` macros stands for describing all model attributes. If field has no extra parameter, you can just specify name and type (type in case of crystal language): `field_name: :Type`. But you can use tuple and provide next parameters:
+## Mapping definition
+
+`%mapping(options, strict = true)` macros stands for defining all model attributes. If field has no extra parameter, you can just specify name and type (type in case of crystal language): `field_name: :Type`. Named tuple can be used instead of type. Next keys are supported:
 
 | argument | description |
 | --- | --- |
@@ -110,14 +112,14 @@ end
 | `:default` | default value which be set during creating **new** object |
 | `:getter` | if getter should be created (default - `true`) |
 | `:setter` | if setter should be created (default - `true`) |
+| `:virtual` | mark field as virtual - will not be stored and retrieved from db |
+| `:numeric_converter` | **postgres only**: contains method to convert `PG::Numeric` to a used `type` |
 
-To make some field nillable tou can use any of next options:
+To make some field nillable tou can use any of the next options:
 
 - pass `null: true` option to the named tuple
-- use `?` in type declaration (e.g. `some_field: String?` and `some_filed: {type: String?}`)
-- use union with `Nil` in the type declaration (e.g. `some_field: String | Nil` and `some_filed: {type: String | Nil}`)
-
-Also for there is a shortcut for defining `Int32` and `Int64` primary keys
+- use `?` in type declaration (e.g. `some_field: String?` or `some_filed: {type: String?}`)
+- use union with `Nil` in the type declaration (e.g. `some_field: String | Nil` or `some_filed: {type: String | Nil}`)
 
 If you don't want to define all the table fields - pass `false` as second argument.
 
@@ -134,7 +136,7 @@ If you don't want to define all the table fields - pass `false` as second argume
 | `#{{field_name}}=`| | setter |
 | `::_{{field_name}}` | | helper method for building queries |
 | `#{{field_name}}_changed?` | | shows if field was changed |
-| `#changed?` | | shows if any field was changed | 
+| `#changed?` | | shows if any field was changed |
 | `#primary` | | value of primary key field |
 | `::primary` | | returns criteria for primary field (query dsl) |
 | `::primary_field_name` | | name of primary field |
@@ -145,6 +147,7 @@ If you don't want to define all the table fields - pass `false` as second argume
 | `::build` | `Hash(String \| Symbol, DB::Any), NamedTuple` | builds object |
 | `::create` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with all callbacks |
 | `::create!` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with callbacks or raise exception |
+| `::build_params` | `Hash(String, String?)` | converts given string-based hash using field mapping |
 | `#save` | | saves object to db; returns `true` if success and `false` elsewhere |
 | `#save!` | | saves object to db; returns `true` if success or rise exception otherwise |
 | `#to_h` | | returns hash with all attributes |
@@ -156,14 +159,11 @@ If you don't want to define all the table fields - pass `false` as second argume
 
 All allowed types are listed on the [Migration](https://imdrasil.github.io/jennifer.cr/docs/migration) page.
 
-
-Automatically model is associated with table with underscored pluralized name of it's class, but special name can be defined using `::table_name` method in own body before using any relation (`::singular_table_name` - for singular variant).
-
-All defined mapping properties are accessible via `COLUMNS_METADA` constant and `::columns_tuple` method.
+All defined mapping properties are accessible via `COLUMNS_METADATA` constant and `::columns_tuple` method.
 
 **Important restriction** - model with no primary field is not allowed for now.
 
-It may be usefull to have one parent class for your model - just make it abstract and everything will work well:
+It may be useful to have one parent class for all your models - just make it abstract and everything will work well:
 
 ```crystal
 abstract class ApplicationRecord < Jennifer::Model::Base
@@ -175,4 +175,126 @@ class SomeModel < ApplicationRecord
     name: String
   )
 end
+```
+
+### Mapping Types
+
+Jennifer has built-in system of predefined options for some usage. They are not data types on language level (you can't defined variable of `Primary32` type) and can be used only in mapping definition (standard usage).
+
+```crystal
+class Post < Jennifer::Model::Base
+  mapping(
+    id: Primary32,
+    # or even with full definition
+    pk: { type: Primary32, primary: false, virtual: true }
+  )
+end
+```
+
+All overrides from full definition will be respected and used instead of predefined for such a type.
+
+To defined your own type define it such a way it may be lexically accessible from place you want to use it:
+
+```crystal
+class ApplicationRecord < Jennifer::Model::Base
+  EmptyString = {
+    type: String,
+    default: ""
+  }
+
+  {% TYPES << "EmptyString" %}
+  # or if this is outside of model or view scope
+  {% ::Jennifer::Macros::TYPES << "EmptyString" %}
+end
+```
+
+> Obviously, registered type added to the `TYPES` should be the same as defined constant; also it should be stringified.
+
+Existing mapping types:
+
+- `Primary32 = { type: Int32, primary: true }`
+- `Primary64 = { type: Int64, primary: true }`
+- `Password = { type: String?, virtual: true, setter: false }`
+
+### Numeric fields
+
+Crystal type of a numeric (decimal) field depends on chosen adapter: `Float64` for mysql and `PG::Numeric` for postgre. Sometimes usage of `PG::Numeric` with postgre may be annoying. To convert it to another type at the object building stage you can pass `numeric_converter` option with method to be used to convert `PG::Numeric` to the defined field `type`.
+
+```crystal
+class Product < Jennifer::Model::Base
+  mapping(
+    id: Primary32,
+    #...
+    price: { type: Float64, numeric_converter: :to_f64 }
+  )
+end
+```
+
+## Table name
+
+Automatically model is associated with table with underscored pluralized name of it's class, but custom one can be specified defining `::table_name`. This means no modules will affect name generating.
+
+```crystal
+Admin::User.table_name # "users"
+```
+
+To provide special table prefix per module basis use super class with defined `::table_prefix` method:
+
+```crystal
+module Admin
+  class Base < Jennifer::Model::Base
+    def self.table_prefix
+      "admin_"
+    end
+  end
+
+  class User < Base
+    mapping(id: Primary32)
+  end
+end
+
+Admin::User.table_name # "admin_users"
+```
+
+## Virtual attributes
+
+If you pass `virtual: true` option for some field - it will not be stored to db and tried to be retrieved from there. Such behavior is useful if you have model-level attributes but it is not obvious to store them into db. Such approach allows mass assignment and dynamic get/set based on their name.
+
+```crystal
+class User < Jennifer::Model::Base
+  mapping(
+    id: Primary32,
+    password_hash: String,
+    password: { type: String?, virtual: true },
+    password_confirmation: { type: String?, virtual: true }
+  )
+
+  validate_confirmation :password
+
+  before_create :crypt_password
+
+  def crypt_password
+    self.password_hash = SomeCryptAlgorithm.call(self.password)
+  end
+end
+
+User.create!(password: "qwe", password_confirmation: "qwe")
+```
+
+## Converting form options
+
+In the Web world all data got submitted forms will be recognized as `Hash(String, String)` which is not acceptable by your models. To resolve this case `.build_params` may be used - just pass received string based hash and all fields will be converted respectively to the class mapping.
+
+```crystal
+class Post < Jennifer::Model::Base
+  mapping(
+    id: Primary32,
+    name: String,
+    age: Int32
+  )
+end
+
+opts = { "name" => "Jason", "age" => "23" }
+
+Post.build_params(opts) # { "name" => "Jason", "age" => 23 } of String => Jennifer::DBAny
 ```

@@ -26,7 +26,7 @@ User.human(count: 2) # Customers
 
 ### Error message translation
 
-Error messages of predefined validation helper macros are generated using `::human_error_message` method and is retrieved from local files. Lets take a look how it will search `blank` error message:
+Error messages of predefined validation helper macros are generated using `Jennifer::Model::Errors#generate_message` method and is retrieved from local files. Lets take a look how it will search `blank` error message:
 
 - `jennifer.errors.[model_name].attributes.[attribute_name].blank`
 - `jennifer.errors.[model_name].[attribute_name].blank`

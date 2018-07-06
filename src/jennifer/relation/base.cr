@@ -3,6 +3,7 @@ module Jennifer
     abstract class IRelation
       extend Ifrit
 
+      abstract def name
       abstract def table_name
       abstract def model_class
       abstract def join_query
@@ -11,6 +12,8 @@ module Jennifer
       abstract def join_condition(a, b)
       abstract def query(a)
       abstract def insert(a, b)
+      # Preloads relation into *collection* from *out_collection* depending on keys from *pk_repo*.
+      abstract def preload_relation(collection, out_collection, pk_repo)
     end
 
     # T - related model
@@ -18,8 +21,7 @@ module Jennifer
     class Base(T, Q) < IRelation
       getter join_query : QueryBuilder::Condition | QueryBuilder::LogicOperator?
       getter foreign : String?, primary : String?, through : Symbol?
-
-      @name : String
+      getter name : String
 
       def initialize(@name, foreign : String | Symbol?, primary : String | Symbol?, query : QueryBuilder::Query, @through = nil)
         @foreign = foreign.to_s if foreign
@@ -43,13 +45,13 @@ module Jennifer
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
-      def condition_clause(ids : Array)
-        tree = T.c(foreign_field).in(ids)
+      def condition_clause(id)
+        tree = T.c(foreign_field) == id
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
-      def condition_clause(id)
-        tree = T.c(foreign_field) == id
+      def condition_clause(ids : Array)
+        tree = T.c(foreign_field).in(ids)
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
@@ -92,11 +94,34 @@ module Jennifer
 
       # Foreign key on ~T~ model side
       def foreign_field
-        @foreign ||= Q.singular_table_name + "_id"
+        @foreign ||= Q.foreign_key_name
       end
 
       def primary_field
         @primary ||= Q.primary_field_name
+      end
+
+      def preload_relation(collection, out_collection : Array(Model::Resource), pk_repo)
+        return if collection.empty?
+
+        unless pk_repo.has_key?(primary_field)
+          array = pk_repo[primary_field] = Array(DBAny).new(collection.size)
+          collection.each { |e| array << e.attribute(primary_field) }
+        end
+
+        new_collection = query(pk_repo[primary_field]).db_results
+
+        name = self.name
+        if new_collection.empty?
+          collection.each(&.relation_retrieved(name))
+        else
+          primary_fields = pk_repo[primary_field]
+          collection.each_with_index do |mod, i|
+            pv = primary_fields[i]
+            # TODO: check if deleting elements from array will increase performance
+            new_collection.each { |hash| out_collection << mod.append_relation(name, hash) if hash[foreign_field] == pv }
+          end
+        end
       end
     end
   end

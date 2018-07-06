@@ -168,8 +168,8 @@ module Jennifer
       def find_in_batches(primary_key : Nil, batch_size : Int32 = 1000, start : Int32 = 0, &block)
         Config.logger.warn("#find_in_batches is invoked with already ordered query - it will be reordered") if ordered?
         Config.logger.warn("#find_in_batches methods was invoked without passing primary_key" \
-                           " key field name which may results in not proper records extraction; 'start' argument" \
-                           " was realized as page number.")
+                          " key field name which may results in not proper records extraction; 'start' argument" \
+                          " was realized as page number.")
         request = clone.reorder({} of String => String).limit(batch_size)
 
         records = request.offset(start * batch_size).to_a

@@ -2,9 +2,25 @@ require "../spec_helper"
 
 class ModelWithIntName < Jennifer::Model::Base
   mapping({
-    id: Primary32,
-    name: Int32
+    id:   Primary32,
+    name: Int32,
   })
+end
+
+module SomeModule
+  class SomeModel < Jennifer::Model::Base
+    mapping(id: Primary32)
+  end
+end
+
+abstract class SuperModel < Jennifer::Model::Base
+  def self.table_prefix
+    "custom_table_prefix_"
+  end
+end
+
+class ModelWithTablePrefix < SuperModel
+  mapping(id: Primary32)
 end
 
 describe Jennifer::Model::Base do
@@ -192,6 +208,14 @@ describe Jennifer::Model::Base do
           match_fields(contact, name: "Deepthi", age: 18, gender: "female")
         end
       end
+
+      context "with string encoded values" do
+        it "builds object with converted values" do
+          c = Contact.build(Contact.build_params({"name" => "a", "age" => "999", "gender" => "female", "ballance" => "12345.456"}))
+          c.name.should eq("a")
+          c.age.should eq(999)
+        end
+      end
     end
 
     context "from named tuple" do
@@ -255,12 +279,30 @@ describe Jennifer::Model::Base do
   end
 
   describe "::table_name" do
-    it "loads from class name automatically" do
-      Contact.table_name.should eq("contacts")
-    end
+    it { Contact.table_name.should eq("contacts") }
+    it { SomeModule::SomeModel.table_name.should eq("some_models") }
+    it { ModelWithTablePrefix.table_name.should eq("custom_table_prefix_model_with_table_prefixes") }
 
     it "returns specified name" do
       ContactWithNotAllFields.table_name.should eq("contacts")
+    end
+
+    describe "STI" do
+      it { TwitterProfile.table_name.should eq("profiles") }
+    end
+  end
+
+  describe "::foreign_key_name" do
+    it { Contact.foreign_key_name.should eq("contact_id") }
+    it { SomeModule::SomeModel.foreign_key_name.should eq("some_model_id") }
+    it { ModelWithTablePrefix.foreign_key_name.should eq("custom_table_prefix_model_with_table_prefix_id") }
+
+    it "returns specified name" do
+      ContactWithNotAllFields.foreign_key_name.should eq("contact_id")
+    end
+
+    describe "STI" do
+      it { TwitterProfile.foreign_key_name.should eq("profile_id") }
     end
   end
 
@@ -343,14 +385,6 @@ describe Jennifer::Model::Base do
     end
   end
 
-  describe "::relations" do
-    it "returns hash of relation objects" do
-      rels = Contact.relations
-      rels.is_a?(Hash).should be_true
-      rels.empty?.should be_false
-    end
-  end
-
   describe "#destroy" do
     it "deletes from db" do
       contact = Factory.create_contact
@@ -397,7 +431,7 @@ describe Jennifer::Model::Base do
   describe "#with_lock" do
     it "starts transaction" do
       void_transaction do
-        expect_raises(DivisionByZero) do
+        expect_raises(DivisionByZeroError) do
           Factory.create_contact.with_lock do
             Factory.create_contact
             Contact.all.count.should eq(2)
@@ -418,7 +452,7 @@ describe Jennifer::Model::Base do
   describe "::transaction" do
     it "allow to start transaction" do
       void_transaction do
-        expect_raises(DivisionByZero) do
+        expect_raises(DivisionByZeroError) do
           Contact.transaction do
             Factory.create_contact
             1 / 0
@@ -477,10 +511,13 @@ describe Jennifer::Model::Base do
   describe "::models" do
     it "returns all model classes" do
       models = Jennifer::Model::Base.models
-      models.is_a?(Array(Jennifer::Model::Base.class)).should be_true
-      # I tired from modifing this each time new model is added
+      models.is_a?(Array).should be_true
+      # I tired from modifying this each time new model is added
       (models.size > 6).should be_true
     end
+
+    it { Contact.models.empty?.should be_true }
+    it { Profile.models.should eq([FacebookProfile, TwitterProfile]) }
   end
 
   describe "::import" do
@@ -521,13 +558,13 @@ describe Jennifer::Model::Base do
       it "raises exception if value has wrong type" do
         c = Factory.build_contact
         expect_raises(::Jennifer::BaseException) do
-          c.update_attributes({ :name => 123 })
+          c.update_attributes({:name => 123})
         end
       end
 
       it "marks changed field as modified" do
         c = Factory.build_contact
-        c.update_attributes({ "name" => "asd" })
+        c.update_attributes({"name" => "asd"})
         c.name.should eq("asd")
         c.name_changed?.should be_true
       end
@@ -537,7 +574,7 @@ describe Jennifer::Model::Base do
       it "raises exception" do
         c = Factory.build_contact
         expect_raises(::Jennifer::BaseException) do
-          c.update_attributes({ :asd => 123 })
+          c.update_attributes({:asd => 123})
         end
       end
     end
@@ -546,7 +583,7 @@ describe Jennifer::Model::Base do
       it do
         c = Factory.build_contact
         c.update_attributes({name: "asd"})
-        c.name.should eq("asd") 
+        c.name.should eq("asd")
       end
     end
 
@@ -554,7 +591,7 @@ describe Jennifer::Model::Base do
       it do
         c = Factory.build_contact
         c.update_attributes(name: "asd")
-        c.name.should eq("asd") 
+        c.name.should eq("asd")
       end
 
       it do
@@ -569,7 +606,7 @@ describe Jennifer::Model::Base do
     context "when given attribute exists" do
       it "stores given fields" do
         c = Factory.create_contact
-        c.update({ "name" => "asd" })
+        c.update({"name" => "asd"})
         Contact.all.where { _name == "asd" }.exists?.should be_true
       end
     end
@@ -578,7 +615,7 @@ describe Jennifer::Model::Base do
       it "raises exception" do
         c = Factory.build_contact
         expect_raises(::Jennifer::BaseException) do
-          c.update({ :asd => 123 })
+          c.update({:asd => 123})
         end
       end
     end
@@ -602,7 +639,7 @@ describe Jennifer::Model::Base do
     context "when given attribute exists" do
       it "stores given fields" do
         c = Factory.create_contact
-        c.update!({ "name" => "asd" })
+        c.update!({"name" => "asd"})
         Contact.all.where { _name == "asd" }.exists?.should be_true
       end
     end
@@ -611,7 +648,7 @@ describe Jennifer::Model::Base do
       it "raises exception" do
         c = Factory.build_contact
         expect_raises(::Jennifer::BaseException) do
-          c.update!({ :asd => 123 })
+          c.update!({:asd => 123})
         end
       end
     end
@@ -630,5 +667,20 @@ describe Jennifer::Model::Base do
         c.update!(age: 12)
       end
     end
+  end
+
+  describe "#inspect" do
+    it {
+      address = Factory.build_address
+      address.inspect.should eq("#<Address:0x#{address.object_id.to_s(16)} id: nil, main: false, street: \"#{address.street}\","\
+        " contact_id: nil, details: nil>")
+    }
+
+    it {
+      profile = Factory.build_facebook_profile
+      profile.inspect.should eq("#<FacebookProfile:0x#{profile.object_id.to_s(16)} uid: \"1234\", "\
+        "virtual_child_field: nil, id: nil, login: \"some_login\", contact_id: nil, type: \"FacebookProfile\", "\
+        "virtual_parent_field: nil>")
+    }
   end
 end

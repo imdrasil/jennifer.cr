@@ -89,7 +89,7 @@ module Jennifer
       end
 
       def between(left : Rightable, right : Rightable)
-        Condition.new(self, :between, Ifrit.typed_array([left, right], DBAny))
+        Condition.new(self, :between, [left, right] of DBAny)
       end
 
       def is(value : Symbol | Bool | Nil)
@@ -137,8 +137,8 @@ module Jennifer
         @alias ? "#{identifier} AS #{@alias}" : identifier
       end
 
-      def sql_args : Array(DB::Any)
-        [] of DB::Any
+      def sql_args : Array(DBAny)
+        [] of DBAny
       end
 
       def sql_args_count

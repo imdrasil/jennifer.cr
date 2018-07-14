@@ -6,7 +6,7 @@ class AddIndex20170912145453751 < Jennifer::Migration::Base
   end
 
   def down
-    change_table(:countries) do |t|
+    change_table(:addresses) do |t|
       t.drop_index "addresses_street_index"
     end
   end

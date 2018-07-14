@@ -121,9 +121,9 @@ describe Jennifer::Adapter::Base do
 
   describe "#truncate" do
     it "clean up db" do
-      Factory.create_contact
-      adapter.truncate(Contact.table_name)
-      Contact.all.count.should eq(0)
+      Factory.create_address
+      adapter.truncate(Address.table_name)
+      Address.all.count.should eq(0)
     end
   end
 
@@ -160,7 +160,7 @@ describe Jennifer::Adapter::Base do
       adapter.column_exists?("contacts", "id").should be_true
     end
 
-    it "returns false if table has no such olumn" do
+    it "returns false if table has no such column" do
       adapter.column_exists?("contacts", "some_field").should be_false
     end
 
@@ -298,7 +298,7 @@ describe Jennifer::Adapter::Base do
       typeof(res).should eq(Array(Array(String)))
     end
 
-    it "retrieaves given amount of fields" do
+    it "retrieves given amount of fields" do
       Factory.create_contact
       res = adapter.query_array("SELECT name, description FROM contacts", String?, 2)
       res[0].should eq(["Deepthi", nil])

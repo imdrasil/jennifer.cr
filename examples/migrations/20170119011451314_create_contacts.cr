@@ -1,4 +1,4 @@
-class TestMigration20170119011451314 < Jennifer::Migration::Base
+class CreateContacts20170119011451314 < Jennifer::Migration::Base
   def up
     {% if env("DB") == "postgres" || env("DB") == nil %}
       create_enum(:gender_enum, ["male", "female"])

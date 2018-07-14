@@ -45,7 +45,7 @@ $ crystal sam.cr -- db:rollback
 ```shell
 $ crystal sam.cr -- db:rollback n
 ```
-- rollback untill version `a`
+- rollback until version `a`
 ```shell
 $ crystal sam.cr -- db:rollback -v a
 ```
@@ -66,6 +66,7 @@ $ crystal sam.cr -- db:schema:load
 #### Migration DSL
 
 Generator will create template file for you with next name  pattern "timestamp_your_underscored_migration_name.cr". Empty file looks like this:
+
 ```crystal
 class YourCamelcasedMigrationName20170119011451314 < Jennifer::Migration::Base
   def up
@@ -143,10 +144,10 @@ All those methods accepts additional options:
 - `:auto_increment` - marks field to use auto increment (properly works only with `Int32` fields, another crystal types have cut functionality for it);
 - `:array` - mark field to be array type (postgres only)
 
-Also there is `#field` method which allows to directly define sql type (very suitable for snums in postgres).
+Also there is `#field` method which allows to directly define sql type.
 
+To drop table just write:
 
-To drop table just write
 ```crystal
 drop_table(:addresses) # drops if exists
 ```
@@ -164,14 +165,18 @@ drop_materialized_view("female_contacts")
 ```
 
 To alter existing table use next methods:
+
  - `#change_column(name, [new_name], options)` - to change column definition; postgres has slighly another implementation of this than mysql one - check source code for details;
  - `#add_column(name, type, options)` - add new column;
  - `#drop_column(name)` - drops existing column
  - `#add_index(name : String, field : Symbol, type : Symbol, order : Symbol?, length : Int32?)` - adds new index (postgres doesn't support length parameter and only support `:unique` type);
  - `#drop_index(name : String)` - drops existing index;
+ - `#add_foreign_key(from_table, to_table, column = nil, primary_key = nil, name = nil)` - adds foreign key constraint;
+ - `drop_foreign_key(from_table, to_table, name = nil)` - drops foreign key constraint;
  - `#rename_table(new_name)` - renames table.
 
 Also next support methods are available:
+
 - `#table_exists?(name)`
 - `#index_exists?(table, name)`
 - `#column_exists?(table, name)`
@@ -210,20 +215,22 @@ Also plain SQL could be executed as well:
 ```crystal
 execute("ALTER TABLE addresses CHANGE street st VARCHAR(20)")
 ```
+
 All changes are executed one by one so you also could add data changes here (in `up` method) but if execution of `up` method fails - `down` method will be called and all process will stop - be ready for such behavior.
 
 To be sure that your db is up to date before run tests of your application, add `Jennifer::Migration::Runner.migrate`.
 
 #### Enum
 
-Now enums are supported as well but it has different implementation for adapters. For mysql is enought just write down all values:
+Now enums are supported as well but it has different implementation for adapters. For mysql is enough just write down all values:
+
 ```crystal
 create_table(:contacts) do |t|
   t.enum(:gender, values: ["male", "female"])
 end
 ```
 
-Postgres provide much more flexible and complex behaviour. Using it you need to create it firstly:
+Postgres provide much more flexible and complex behavior. Using it you need to create it firstly:
 
 ```crystal
 create_enum(:gender_enum, ["male", "female"])
@@ -237,4 +244,5 @@ change_enum(:gender_enum, {:add_values => ["unknown"]})
 change_enum(:gender_enum, {:rename_values => ["unknown", "other"]})
 change_enum(:gender_enum, {:remove_values => ["other"]})
 ```
+
 For more details check source code and PostgreSQL docs.

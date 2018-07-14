@@ -1,10 +1,14 @@
+require "./create_foreign_key"
+
 module Jennifer
   module Migration
     module TableBuilder
       class CreateTable < Base
+        getter fields = {} of String => DB_OPTIONS
+
         def process
           schema_processor.create_table(self)
-          @indexes.each(&.process)
+          process_commands
         end
 
         {% for method in Jennifer::Adapter::TYPES %}
@@ -35,19 +39,30 @@ module Jennifer
           timestamp(:updated_at, {:null => true})
         end
 
-        def add_index(name : String, fields : Array(Symbol), type : Symbol? = nil, lengths : Hash(Symbol, Int32) = {} of Symbol => Int32, orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
-          @indexes << CreateIndex.new(@name, name, fields, type, lengths, orders)
+        def index(name : String, fields : Array(Symbol), type : Symbol? = nil, lengths : Hash(Symbol, Int32) = {} of Symbol => Int32, orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
+          @commands << CreateIndex.new(@name, name, fields, type, lengths, orders)
           self
         end
 
-        def add_index(name : String, field : Symbol, type : Symbol? = nil, length : Int32? = nil, order : Symbol? = nil)
-          add_index(
+        def index(name : String, field : Symbol, type : Symbol? = nil, length : Int32? = nil, order : Symbol? = nil)
+          index(
             name,
             [field],
             type: type,
             orders: (order ? {field => order.not_nil!} : {} of Symbol => Symbol),
             lengths: (length ? {field => length.not_nil!} : {} of Symbol => Int32)
           )
+        end
+
+        # Is an alias for `#index`
+        def add_index(*args, **opts)
+          index(*args, **opts)
+        end
+
+        # Creates a foreign key constraint to `to_table` table.
+        def foreign_key(to_table, column = nil, primary_key = nil, name = nil)
+          @commands << CreateForeignKey.new(@adapter, @name, to_table.to_s, column, primary_key, name)
+          self
         end
       end
     end

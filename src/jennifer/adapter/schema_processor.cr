@@ -89,6 +89,14 @@ module Jennifer
         Migration::TableBuilder::DropIndex.new(@adapter, table_name, name).process
       end
 
+      def build_add_foreign_key(from_table, to_table, column = nil, primary_key = nil, name = nil)
+        Migration::TableBuilder::CreateForeignKey.new(@adapter, from_table.to_s, to_table.to_s, column, primary_key, name).process
+      end
+
+      def build_drop_foreign_key(from_table, to_table, name = nil)
+        Migration::TableBuilder::DropForeignKey.new(@adapter, from_table.to_s, to_table.to_s, name).process
+      end
+
       # ============================
       # Schema manipulating methods
       # ============================
@@ -157,18 +165,6 @@ module Jennifer
         adapter.exec buffer
       end
 
-      def create_enum(name, options)
-        raise BaseException.new("Current adapter doesn't support this method.")
-      end
-
-      def drop_enum(name, options)
-        raise BaseException.new("Current adapter doesn't support this method.")
-      end
-
-      def change_enum(name, options)
-        raise BaseException.new("Current adapter doesn't support this method.")
-      end
-
       def create_view(name, query, silent = true)
         buff = String.build do |s|
           s << "CREATE "
@@ -186,6 +182,24 @@ module Jennifer
           s << name
         end
         adapter.exec buff
+      end
+
+      def add_foreign_key(from_table, to_table, column, primary_key, name)
+        query = String.build do |s|
+          s << "ALTER TABLE " << from_table
+          s << " ADD CONSTRAINT " << name
+          s << " FOREIGN KEY (" << column << ") REFERENCES "
+          s << to_table << "(" << primary_key << ")"
+        end
+        adapter.exec query
+      end
+
+      def drop_foreign_key(from_table, name)
+        query = String.build do |s|
+          s << "ALTER TABLE " << from_table
+          s << "DROP FOREIGN KEY " << name
+        end
+        adapter.exec query
       end
 
       private def adapter_class

@@ -1,12 +1,12 @@
 require "../spec_helper"
 
 describe Jennifer::Model::RelationDefinition do
-  describe "%nullify_dependecy" do
-    it "adds before_desctroy callback" do
+  describe "%nullify_dependency" do
+    it "adds before_destroy callback" do
       ContactWithDependencies::CALLBACKS[:destroy][:before].includes?("__nullify_callback_facebook_profiles").should be_true
     end
 
-    it "doen't invoke callbacks on associated model" do
+    it "doesn't invoke callbacks on associated model" do
       c = Factory.create_contact
       Factory.create_facebook_profile(contact_id: c.id)
       c = ContactWithDependencies.all.last!
@@ -18,7 +18,7 @@ describe Jennifer::Model::RelationDefinition do
   end
 
   describe "%delete_dependency" do
-    it "adds before_desctroy callback" do
+    it "adds before_destroy callback" do
       ContactWithDependencies::CALLBACKS[:destroy][:before].includes?("__delete_callback_addresses").should be_true
     end
 
@@ -35,7 +35,7 @@ describe Jennifer::Model::RelationDefinition do
   end
 
   describe "%destroy_dependency" do
-    it "adds before_desctroy callback" do
+    it "adds before_destroy callback" do
       ContactWithDependencies::CALLBACKS[:destroy][:before].includes?("__destroy_callback_passports").should be_true
     end
 
@@ -52,7 +52,7 @@ describe Jennifer::Model::RelationDefinition do
   end
 
   describe "%restrict_with_exception_dependency" do
-    it "adds before_desctroy callback" do
+    it "adds before_destroy callback" do
       ContactWithDependencies::CALLBACKS[:destroy][:before].includes?("__restrict_with_exception_callback_twitter_profiles").should be_true
     end
 
@@ -216,7 +216,7 @@ describe Jennifer::Model::RelationDefinition do
         Address.relation("contact").condition_clause.as_sql.should eq("contacts.id = addresses.contact_id")
       end
 
-      context "when desclaration has additional block" do
+      context "when declaration has additional block" do
         it "sets correct query part" do
           query = JohnPassport.relation("contact").condition_clause
           query.as_sql.should match(/contacts\.id = passports\.contact_id AND contacts\.name = %s/)
@@ -227,10 +227,11 @@ describe Jennifer::Model::RelationDefinition do
 
     describe "#/relation_name/_query" do
       it "returns query object" do
-        a = Factory.create_address(contact_id: 1)
+        c = Factory.create_contact
+        a = Factory.create_address(contact_id: c.id)
         q = a.contact_query
         q.as_sql.should match(/contacts.id = %s/)
-        q.sql_args.should eq(db_array(a.contact_id))
+        q.sql_args.should eq(db_array(c.id))
       end
     end
 
@@ -302,7 +303,7 @@ describe Jennifer::Model::RelationDefinition do
         Contact.relation("passport").condition_clause.as_sql.should eq("passports.contact_id = contacts.id")
       end
 
-      context "when desclaration has additional block" do
+      context "when declaration has additional block" do
         it "sets correct query part" do
           sql_reg = /addresses\.contact_id = contacts\.id AND addresses\.main/
           Contact.relation("main_address").condition_clause.as_sql.should match(sql_reg)

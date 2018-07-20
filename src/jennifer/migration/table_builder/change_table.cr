@@ -1,3 +1,6 @@
+require "./create_foreign_key"
+require "./drop_foreign_key"
+
 module Jennifer
   module Migration
     module TableBuilder
@@ -7,8 +10,8 @@ module Jennifer
         def initialize(adapter, name)
           super
           @changed_columns = {} of String => DB_OPTIONS
+          @new_columns = {} of String => DB_OPTIONS
           @drop_columns = [] of String
-          @drop_index = [] of DropIndex
           @new_table_name = ""
         end
 
@@ -32,7 +35,7 @@ module Jennifer
         end
 
         def add_column(name, type : Symbol, options = DB_OPTIONS.new)
-          @fields[name.to_s] =
+          @new_columns[name.to_s] =
             sym_hash_cast(options, AAllowedTypes).merge({ :type => type } of Symbol => AAllowedTypes)
           self
         end
@@ -45,7 +48,7 @@ module Jennifer
         # add_index("index_name", [:field1, :field2], { :length => { :field1 => 2, :field2 => 3 }, :order => { :field1 => :asc }})
         # add_index("index_name", [:field1], { :length => { :field1 => 2, :field2 => 3 }, :order => { :field1 => :asc }})
         def add_index(name : String, fields : Array(Symbol), type : Symbol? = nil, lengths : Hash(Symbol, Int32) = {} of Symbol => Int32, orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
-          @indexes << CreateIndex.new(@adapter, @name, name, fields, type, lengths, orders)
+          @commands << CreateIndex.new(@adapter, @name, name, fields, type, lengths, orders)
           self
         end
 
@@ -60,19 +63,28 @@ module Jennifer
         end
 
         def drop_index(name)
-          @drop_index << DropIndex.new(@adapter, @name, name.to_s)
+          @commands << DropIndex.new(@adapter, @name, name.to_s)
+          self
+        end
+
+        def add_foreign_key(to_table, column = nil, primary_key = nil, name = nil)
+          @commands << CreateForeignKey.new(@adapter, @name, to_table.to_s, column, primary_key, name)
+          self
+        end
+
+        def drop_foreign_key(to_table, name = nil)
+          @commands << DropForeignKey.new(@adapter, @name, to_table.to_s, name)
           self
         end
 
         def process
           @drop_columns.each { |c| schema_processor.drop_column(@name, c) }
-          @fields.each { |n, opts| schema_processor.add_column(@name, n, opts) }
+          @new_columns.each { |n, opts| schema_processor.add_column(@name, n, opts) }
           @changed_columns.each do |n, opts|
             schema_processor.change_column(@name, n, opts[:new_name].as(String | Symbol), opts)
           end
-          @indexes.each(&.process)
-          @drop_index.each(&.process)
 
+          process_commands
           schema_processor.rename_table(@name, @new_table_name) unless @new_table_name.empty?
         end
       end

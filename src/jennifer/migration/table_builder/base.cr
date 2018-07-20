@@ -11,13 +11,13 @@ module Jennifer
 
         delegate schema_processor, table_exists?, index_exists?, column_exists?, to: adapter
 
-        getter fields, adapter : Adapter::Base
+        getter adapter : Adapter::Base
 
-        @name : String | Symbol
+        @name : String
 
-        def initialize(@adapter, @name)
-          @fields = {} of String => DB_OPTIONS
-          @indexes = [] of CreateIndex
+        def initialize(@adapter, name : String | Symbol)
+          @name = name.to_s
+          @commands = [] of Base
         end
 
         def name
@@ -25,6 +25,10 @@ module Jennifer
         end
 
         abstract def process
+
+        def process_commands
+          @commands.each(&.process)
+        end
 
         def to_s
           "#{@name} -> #{self.class.to_s}"

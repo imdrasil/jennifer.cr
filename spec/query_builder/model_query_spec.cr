@@ -19,6 +19,14 @@ describe Jennifer::QueryBuilder::ModelQuery do
       Address.all.destroy
       Address.destroy_counter.should eq(count + 2)
     end
+
+    it do
+      id = Factory.create_address.id
+      count = Address.destroy_counter
+      Address.destroy(id)
+      # Address.all.destroy
+      Address.destroy_counter.should eq(count + 1)
+    end
   end
 
   describe "#patch" do

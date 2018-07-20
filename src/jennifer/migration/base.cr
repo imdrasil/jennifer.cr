@@ -37,7 +37,8 @@ module Jennifer
 
       delegate create_table, create_join_table, drop_join_table, exec, drop_table,
         change_table, create_view, create_materialized_view, drop_materialized_view,
-        drop_view, add_index, create_enum, drop_enum, change_enum,
+        drop_view, add_index, drop_index, create_enum, drop_enum, change_enum,
+        add_foreign_key, drop_foreign_key,
         to: schema_processor, prefix: "build_"
 
       def adapter_class

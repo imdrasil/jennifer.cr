@@ -141,7 +141,7 @@ module Jennifer
           if !exact_fields.empty?
             exact_fields.join(", ", io) { |f| io << "#{table}.#{f}" }
           else
-            query._select_fields.not_nil!.join(", ", io) { |f| io << f.definition }
+            query._select_fields.not_nil!.join(", ", io) { |f| io << f.definition(self) }
           end
         else
           io << query._raw_select.not_nil!
@@ -240,7 +240,11 @@ module Jennifer
         value.to_s
       end
 
-      def self.escape_string(size : Int32 = 1)
+      def self.escape_string
+        ARGUMENT_ESCAPE_STRING
+      end
+
+      def self.escape_string(size : Int32)
         case size
         when 1
           ARGUMENT_ESCAPE_STRING
@@ -253,12 +257,16 @@ module Jennifer
         end
       end
 
-      def self.filter_out(arg : QueryBuilder::Criteria)
+      def self.filter_out(arg : Array, single : Bool = true)
+        single ? escape_string : arg.join(", ") { |a| filter_out(a) }
+      end
+
+      def self.filter_out(arg : QueryBuilder::SQLNode)
         arg.as_sql(self)
       end
 
       def self.filter_out(arg)
-        escape_string(1)
+        escape_string
       end
 
       # TODO: optimize array initializing

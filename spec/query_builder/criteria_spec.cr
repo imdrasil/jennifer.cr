@@ -126,13 +126,13 @@ describe Jennifer::QueryBuilder::Criteria do
   end
 
   describe "#&" do
-    it "retruns AND operator" do
+    it "returns AND operator" do
       (Factory.build_criteria & Factory.build_criteria).should be_a(Jennifer::QueryBuilder::And)
     end
   end
 
   describe "#|" do
-    it "retruns OR operator" do
+    it "returns OR operator" do
       (Factory.build_criteria | Factory.build_criteria).should be_a(Jennifer::QueryBuilder::Or)
     end
   end
@@ -172,6 +172,10 @@ describe Jennifer::QueryBuilder::Criteria do
     it "returns empty array" do
       Factory.build_criteria.sql_args.empty?.should be_true
     end
+  end
+
+  describe "#filterable?" do
+    it { Factory.build_criteria.filterable?.should be_false }
   end
 
   describe "#alias" do

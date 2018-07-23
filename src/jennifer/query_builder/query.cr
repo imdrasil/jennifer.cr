@@ -139,28 +139,15 @@ module Jennifer
         @tree ? @tree.not_nil!.sql_args : [] of DBAny
       end
 
-      def sql_args_count
-        @tree ? @tree.not_nil!.sql_args_count : 0
-      end
-
       # Returns array of query arguments.
       def select_args
         args = [] of DBAny
+        args.concat(select_filterable_arguments) if select_filterable_arguments?
         args.concat(@from.as(Query).select_args) if @from.is_a?(Query)
         _joins!.each { |join| args.concat(join.sql_args) } if @joins
         args.concat(@tree.not_nil!.sql_args) if @tree
         args.concat(@having.not_nil!.sql_args) if @having
         args
-      end
-
-      # Returns count of query arguments.
-      def select_args_count
-        count = 0
-        count += @from.as(Query).select_args_count if @from.is_a?(Query)
-        _joins!.each { |join| count += join.sql_args_count } if @joins
-        count += @tree.not_nil!.sql_args_count if @tree
-        count += @having.not_nil!.sql_args_count if @having
-        count
       end
 
       def with_relation!
@@ -329,12 +316,32 @@ module Jennifer
       end
 
       def set_tree(other : Nil)
-        raise ArgumentError.new("Condition tree couldn't be nil")
+        raise ArgumentError.new("Condition tree can't be blank.")
+      end
+
+      def filterable?
+        select_filterable_arguments? ||
+          (@from.is_a?(Query) && @from.as(Query).filterable?) ||
+          (!@joins.nil? && _joins!.any?(&.filterable?)) ||
+          (!@tree.nil? && @tree.not_nil!.filterable?) ||
+          (!@having.nil? && @having.not_nil!.filterable?)
       end
 
       #
       # private methods
       #
+
+      private def select_filterable_arguments?
+        @select_fields.any?(&.filterable?)
+      end
+
+      private def select_filterable_arguments
+        args = [] of DBAny
+        @select_fields.each do |field|
+          args.concat(field.sql_args) if field.filterable?
+        end
+        args
+      end
 
       private def _groups(name : String)
         @group[name] ||= [] of String

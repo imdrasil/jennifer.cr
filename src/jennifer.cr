@@ -80,6 +80,10 @@ end
 
 struct Time
   def_clone
+
+  struct Span
+    def_clone
+  end
 end
 
 class Time::Location

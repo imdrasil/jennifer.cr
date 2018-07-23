@@ -154,6 +154,40 @@ Contact.all.where do
 end
 ```
 
+#### Functions
+
+There is special mechanism to define sql functions like `CURRENT_DATE`, `ABS` or `CONCAT`. There is already a predefined list of such functions so you can use them in the expression builder context:
+
+```crystal
+Contact.all.where { ceil(_balance) > 10 }
+```
+
+Here is the list of such functions:
+
+* lower
+* upper
+* current_timestamp
+* current_date
+* current_time
+* now
+* concat
+* abs
+* ceil
+* floor
+* round
+
+To define own function:
+
+```crystal
+Jennifer::QueryBuilder::Function.define("ceil", arity: 1) do
+  def as_sql(generator)
+    "CEIL(#{operand_sql(operands[0], generator)})"
+  end
+end
+```
+
+It is necessary to define `#as_sql` method, which returns function sql. `#operands` is an array of given function arguments. `#operand_sql` is a helper method to automatically parse how a given argument should be inserted to the sql.
+
 #### Smart arguments parsing
 
 Next methods provide flexible api for passing arguments:

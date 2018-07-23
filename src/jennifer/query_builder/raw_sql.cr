@@ -35,8 +35,8 @@ module Jennifer
         @params
       end
 
-      def sql_args_count
-        @params.size
+      def filterable?
+        @params.any?
       end
     end
   end

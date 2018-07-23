@@ -23,4 +23,9 @@ describe Jennifer::QueryBuilder::RawSql do
       args.should eq(db_array(12))
     end
   end
+
+  describe "#filterable?" do
+    it { described_class.new("sql", [1]).filterable?.should be_true }
+    it { described_class.new("sql").filterable?.should be_false }
+  end
 end

@@ -66,7 +66,7 @@ module Jennifer
       def as_sql
         as_sql(Adapter.default_adapter.sql_generator)
       end
-      
+
       def as_sql(generator)
         @lhs.as_sql(generator) + " " + operator + " " + @rhs.as_sql(generator)
       end
@@ -75,13 +75,12 @@ module Jennifer
         @lhs.sql_args + @rhs.sql_args
       end
 
-      def sql_args_count
-        @lhs.sql_args_count + @rhs.sql_args_count
+      def filterable?
+        @lhs.filterable? || @rhs.filterable?
       end
 
       def ==(other : LogicOperator)
-        @lhs == other.lhs &&
-          @rhs == other.rhs
+        @lhs == other.lhs && @rhs == other.rhs
       end
     end
 

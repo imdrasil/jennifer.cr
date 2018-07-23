@@ -21,6 +21,10 @@ module Jennifer
         !@aliass.nil?
       end
 
+      def filterable?
+        @on.filterable? || (@table.is_a?(Query) && @table.as(Query).filterable?)
+      end
+
       def as_sql
         as_sql(Adapter.default_adapter.sql_generator)
       end
@@ -63,10 +67,6 @@ module Jennifer
 
       def sql_args
         @table.is_a?(String) ? @on.sql_args : @table.as(Query).sql_args + @on.sql_args
-      end
-
-      def sql_args_count
-        @table.is_a?(String) ? @on.sql_args_count : @table.as(Query).sql_args_count + @on.sql_args_count
       end
     end
 

@@ -1,6 +1,8 @@
 require "../spec_helper"
 
 describe Jennifer::QueryBuilder::Join do
+  expression = Factory.build_expression
+
   describe "#as_sql" do
     it "includes table name" do
       Factory.build_join.as_sql.should match(/ tests ON /)
@@ -57,6 +59,24 @@ describe Jennifer::QueryBuilder::Join do
         args[0].should eq("asd")
       end
     end
+  end
+
+  describe "#filterable?" do
+    context "with filterable condition" do
+      it { Factory.build_join(on: expression._id > 1).filterable?.should be_true }
+    end
+
+    context "with query as a source" do
+      it { Factory.build_join(table: Query["tests2"].where { _id == "asd" }).filterable?.should be_true }
+
+      it do
+        condition = expression._id == expression._id
+        table = Query["tests2"].where { _id == _age }
+        Factory.build_join(on: condition, table: table).filterable?.should be_false
+      end
+    end
+
+    it { Factory.build_join(on: expression._id == expression._id).filterable?.should be_false }
   end
 end
 

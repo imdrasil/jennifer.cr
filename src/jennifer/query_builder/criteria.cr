@@ -80,7 +80,7 @@ module Jennifer
       end
 
       def !=(value : Rightable)
-        # NOTE: here crystal improperly resolves override methods with Nilargument
+        # NOTE: here crystal improperly resolves override methods with Nil argument
         if !value.nil?
           Condition.new(self, :!=, value)
         else
@@ -137,12 +137,16 @@ module Jennifer
         @alias ? "#{identifier} AS #{@alias}" : identifier
       end
 
+      def definition(_sql_generator)
+        definition
+      end
+
       def sql_args : Array(DBAny)
         [] of DBAny
       end
 
-      def sql_args_count
-        0
+      def filterable?
+        false
       end
 
       def to_condition

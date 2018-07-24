@@ -1,18 +1,23 @@
 require "../spec_helper"
 
-def sb
-  String.build { |io| yield io }
-end
-
 describe "Jennifer::Adapter::SQLGenerator" do
   adapter = Jennifer::Adapter.adapter
   described_class = Jennifer::Adapter.adapter.sql_generator
 
   describe "::filter_out" do
-    context "is Criteria" do
+    c2 = Factory.build_criteria
+
+    context "with Criteria" do
       it "renders sql of criteria" do
-        c2 = Factory.build_criteria
         described_class.filter_out(c2).should eq(c2.as_sql)
+      end
+    end
+
+    context "with Array" do
+      it { described_class.filter_out([1, c2]).should eq("%s") }
+
+      context "as argument container" do
+        it { described_class.filter_out([1, c2], false).should eq("%s, #{c2.as_sql}") }
       end
     end
 
@@ -45,6 +50,10 @@ describe "Jennifer::Adapter::SQLGenerator" do
       # TODO: write exact value instead of method call
       sb { |io| described_class.select_clause(io, s) }.should match(/#{Regex.escape(sb { |io| described_class.from_clause(io, s) })}/)
     end
+
+    it "includes definitions of select fields" do
+      sb { |io| described_class.select_clause(io, Contact.all.select { [now.alias("now")] }) }.should match(/SELECT NOW\(\) AS now/)
+    end
   end
 
   describe "::from_clause" do
@@ -61,7 +70,7 @@ describe "Jennifer::Adapter::SQLGenerator" do
                .having { _age > 1 }
                .group(:age)
                .lock
-    # TODO: rewrite to metch with hardcoded text instead of methods calls
+    # TODO: rewrite to match text instead of methods calls
     body_section = sb { |io| described_class.body_section(io, s) }
     join_clause = sb { |io| described_class.join_clause(io, s) }
     where_clause = sb { |io| described_class.where_clause(io, s.tree) }
@@ -196,7 +205,7 @@ describe "Jennifer::Adapter::SQLGenerator" do
     end
   end
 
-  describe "#json_path" do
+  describe ".json_path" do
     criteria = Factory.build_criteria
 
     mysql_only do
@@ -276,5 +285,7 @@ describe "Jennifer::Adapter::SQLGenerator" do
     it "returns generated placeholder string" do
       described_class.escape_string(4).should eq("%s, %s, %s, %s")
     end
+
+    it { described_class.escape_string.should eq("%s") }
   end
 end

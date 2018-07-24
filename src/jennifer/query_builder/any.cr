@@ -2,11 +2,15 @@ module Jennifer
   module QueryBuilder
     class Any < SQLNode
       getter query : Query
-      delegate sql_args, sql_args_count, to: @query
+      delegate sql_args, to: @query
 
       def_clone
 
       def initialize(@query)
+      end
+
+      def filterable?
+        query.filterable?
       end
 
       def as_sql(_generator)

@@ -1,5 +1,6 @@
 module Jennifer
   module QueryBuilder
+    # Presents group of logic operations.
     class Grouping < SQLNode
       include LogicOperator::Operators
 
@@ -7,9 +8,15 @@ module Jennifer
 
       def_clone
 
-      delegate sql_args, sql_args_count, to: @condition
-
       def initialize(@condition)
+      end
+
+      def sql_args
+        condition.sql_args
+      end
+
+      def filterable?
+        condition.filterable?
       end
 
       def as_sql(generator)

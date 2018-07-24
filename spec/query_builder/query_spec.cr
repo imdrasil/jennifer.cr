@@ -35,6 +35,55 @@ describe Jennifer::QueryBuilder::Query do
     end
   end
 
+  describe "#select_args" do
+    query = Query["contacts"]
+      .select { [abs(1)] }
+      .from(Query["contacts"].where { _id > 2 })
+      .join("profiles") { _contact_id == 3 }
+      .where { _id > 4 }
+      .group(:age)
+      .having { _age > 5 }
+
+    it { query.select_args.should eq([1, 2, 3, 4, 5]) }
+
+    pending "add tests for all cases" do
+    end
+  end
+
+  describe "#filterable?" do
+    context "with arguments in SELECT clause" do
+      it { Query["contacts"].select { [abs(1)] }.filterable?.should be_true }
+    end
+
+    context "with arguments in FROM clause" do
+      it { Query["contacts"].from(Query["contacts"].where { _id > 1 }).filterable?.should be_true }
+    end
+
+    context "with arguments in JOIN clause" do
+      it { Query["contacts"].join("profiles") { _id > 1 }.filterable?.should be_true }
+    end
+
+    context "with arguments in WHERE clause" do
+      it { Query["contacts"].where { _id > 1 }.filterable?.should be_true }
+    end
+
+    context "with arguments in select clause" do
+      it { Query["contacts"].group(:age).having { _age > 10 }.filterable?.should be_true }
+    end
+
+    context "without arguments" do
+      it do
+        Query["contacts"]
+          .select { [abs(_id)] }
+          .from(Query["contacts"].where { _id > _age })
+          .join("profiles") { _contact_id == _contacts__id }
+          .where { _id > _age }
+          .group(:age).having { _age == _age }
+          .filterable?.should be_false
+      end
+    end
+  end
+
   describe "#set_tree" do
     context "argument is another query" do
       it "gets it's tree" do
@@ -66,6 +115,10 @@ describe Jennifer::QueryBuilder::Query do
         q1.set_tree(c1)
         q1.tree.as(Jennifer::QueryBuilder::Condition).lhs.should eq(c1)
       end
+    end
+
+    context "with nil" do
+      it { expect_raises(ArgumentError) { Factory.build_query.set_tree(nil) } }
     end
   end
 

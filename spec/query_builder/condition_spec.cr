@@ -1,19 +1,19 @@
 require "../spec_helper"
 
 describe Jennifer::QueryBuilder::Condition do
+  expression = Factory.build_expression
+
   describe "#as_sql" do
     {% for op in [:<, :>, :<=, :>=, :!=] %}
       context "{{op.id}} operator" do
-        it "retruns string representation" do
+        it "returns string representation" do
           Factory.build_criteria.{{op.id}}("asd").as_sql.should eq("tests.f1 {{op.id}} %s")
         end
       end
     {% end %}
 
     context "operator ==" do
-      it "returns short" do
-        (Factory.build_criteria == "asd").as_sql.should eq("tests.f1 = %s")
-      end
+      it { (Factory.build_criteria == "asd").as_sql.should eq("tests.f1 = %s") }
     end
 
     postgres_only do
@@ -50,21 +50,18 @@ describe Jennifer::QueryBuilder::Condition do
 
     context "operator =~" do
       it "returns regexp operator" do
-        cond = Factory.build_criteria =~ "asd"
+        sql = (Factory.build_criteria =~ "asd").as_sql
 
-        postgres_only do
-          cond.as_sql.should match(/~/)
-        end
-
-        mysql_only do
-          cond.as_sql.should match(/REGEXP/)
-        end
+        db_specific(
+          mysql: -> { sql.should match(/REGEXP/) },
+          postgres: -> { sql.should match(/~/) }
+        )
       end
     end
 
     context "operator between" do
       it "generates proper sql" do
-        Jennifer::Query["contacts"].where { _age.between(20, 30) }.to_sql.should match(/age BETWEEN %s AND %s/)
+        expression._age.between(20, 30).as_sql.should match(/age BETWEEN %s AND %s/)
       end
     end
 
@@ -78,7 +75,7 @@ describe Jennifer::QueryBuilder::Condition do
 
     context "operator is bool" do
       it "renders table name and field name" do
-        Factory.build_criteria.as_sql.should eq("tests.f1")
+        Factory.build_criteria.to_condition.as_sql.should eq("tests.f1")
       end
     end
 
@@ -120,78 +117,87 @@ describe Jennifer::QueryBuilder::Condition do
       end
     end
 
-    context "rhs is not criteria" do
+    context "rhs isn't a criteria" do
       it "returns rhs as element of array" do
         (Factory.build_criteria > 1).sql_args.should eq(db_array(1))
       end
     end
 
-    context "rhs is criteria" do
+    context "rhs is a criteria" do
       it "returns empty array" do
         (Factory.build_criteria > Factory.build_criteria).sql_args.empty?.should be_true
       end
 
       describe "raw sql" do
         it do
-          Contact.all.where { _name == sql("lower(%s)", ["A"]) }.tree.not_nil!.sql_args.should eq(["A"])
+          (expression._name == expression.sql("lower(%s)", ["A"])).sql_args.should eq(["A"])
         end
       end
     end
 
     context "when lhs is raw sql" do
       it do
-        Contact.all.where { sql("lower(%s)", ["A"]) }.tree.not_nil!.sql_args.should eq(["A"])
+        expression.sql("lower(%s)", ["A"]).sql_args.should eq(["A"])
       end
 
       context "when rhs is raw sql" do
         it do
-          Contact.all.where { sql("lower(%s)", ["A"]) == sql("lower(%s)", ["Q"]) }.tree.not_nil!.sql_args.should eq(%w(A Q))
+          (expression.sql("lower(%s)", ["A"]) == expression.sql("lower(%s)", ["Q"])).sql_args.should eq(%w(A Q))
         end
       end
     end
   end
 
-  describe "#sql_args_count" do
-    context "bool operator" do
-      it "returns empty array" do
-        Factory.build_criteria.sql_args_count.should eq(0)
-      end
+  describe "#filterable?" do
+    context "with filterable lhs" do
+      it { expression.sql("asd", [1]).to_condition.filterable?.should be_true }
     end
 
-    context "IN operator" do
-      it "returns array of IN args" do
-        Factory.build_criteria.in([1, "asd"]).sql_args_count.should eq(2)
-      end
+    describe "bool condition" do
+      it { expression._id.to_condition.filterable?.should be_false }
     end
 
-    context "rhs is not criteria" do
-      it "returns rhs as element of array" do
-        (Factory.build_criteria > 1).sql_args_count.should eq(1)
-      end
+    context "with lhs sql node" do
+      it { expression._id.==(expression._age).filterable?.should be_false }
+      it { expression._id.==(expression.sql("asd", [1])).filterable?.should be_true }
     end
 
-    context "rhs is criteria" do
-      it "returns empty array" do
-        (Factory.build_criteria > Factory.build_criteria).sql_args_count.should eq(0)
-      end
-
-      describe "raw sql" do
-        it do
-          Contact.all.where { _name == sql("lower(%s)", ["A"]) }.tree.not_nil!.sql_args_count.should eq(1)
-        end
-      end
+    context "with IS operator" do
+      it { expression._id.is(true).filterable?.should be_false }
     end
 
-    context "when lhs is raw sql" do
-      it do
-        Contact.all.where { sql("lower(%s)", ["A"]) }.tree.not_nil!.sql_args_count.should eq(1)
-      end
+    context "with IS NOT operator" do
+      it { expression._id.not.filterable?.should be_false }
+    end
 
-      context "when rhs is raw sql" do
-        it do
-          Contact.all.where { sql("lower(%s)", ["A"]) == sql("lower(%s)", ["Q"]) }.tree.not_nil!.sql_args_count.should eq(2)
-        end
-      end
+    context "with array rhs" do
+      # it { expression._id.in([expression._id]).filterable?.should be_false }
+      # it { expression._id.in([expression.sql("asd", [1])]).filterable?.should be_true }
+      it { expression._id.in([1, 2]).filterable?.should be_true }
+    end
+
+    context "with common argument" do
+      it { expression._id.==(1).filterable?.should be_true }
+    end
+  end
+
+  describe "#not" do
+    pending "add" do
+    end
+  end
+
+  describe "#set_relation" do
+    pending "add" do
+    end
+  end
+
+  describe "#alias_tables" do
+    pending "add" do
+    end
+  end
+
+  describe "#change_table" do
+    pending "add" do
     end
   end
 end

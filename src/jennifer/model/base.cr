@@ -4,6 +4,7 @@ require "./sti_mapping"
 require "./validation"
 require "./callback"
 require "./parameter_converter"
+require "./converters"
 
 module Jennifer
   module Model

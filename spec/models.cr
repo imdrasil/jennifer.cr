@@ -433,7 +433,7 @@ class ContactWithFloatMapping < Jennifer::Model::Base
   {% if env("DB") == "postgres" || env("DB") == nil %}
     mapping({
       id: Primary32,
-      ballance: { type: Float64?, numeric_converter: :to_f64}
+      ballance: { type: Float64?, converter: Jennifer::Model::NumericToFloat64Converter }
     }, false)
   {% else %}
     mapping({id: Primary32}, false)

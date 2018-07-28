@@ -224,7 +224,7 @@ describe Jennifer::Model::Mapping do
       end
     end
 
-    it "define default constructor if all fields are nilable or have default values" do
+    it "define default constructor if all fields are nillable or have default values" do
       Passport::WITH_DEFAULT_CONSTRUCTOR.should be_true
     end
 
@@ -305,7 +305,7 @@ describe Jennifer::Model::Mapping do
     context "data types" do
       describe "mapping types" do
         describe "Primary32" do
-          it "makes field nilable" do
+          it "makes field nillable" do
             Contact.primary_field_type.should eq(Int32?)
           end
         end
@@ -360,15 +360,15 @@ describe Jennifer::Model::Mapping do
         end
       end
 
-      context "nilable field" do
+      context "nillable field" do
         context "passed with ?" do
-          it "properly sets field as nilable" do
+          it "properly sets field as nillable" do
             typeof(ContactWithNillableName.new.name).should eq(String?)
           end
         end
 
         context "passed as union" do
-          it "properly sets field class as nilable" do
+          it "properly sets field class as nillable" do
             typeof(Factory.build_contact.created_at).should eq(Time?)
           end
         end

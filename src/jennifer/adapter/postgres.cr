@@ -217,6 +217,7 @@ module Jennifer
   end
 end
 
+require "./postgres/converters"
 require "./postgres/criteria"
 require "./postgres/numeric"
 require "./postgres/migration/table_builder/base"

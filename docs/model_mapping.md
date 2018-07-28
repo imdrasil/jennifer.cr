@@ -106,14 +106,25 @@ end
 
 | argument | description |
 | --- | --- |
-| `:type` | crystal data type (don't use question mark - for now you can use only `:null` option) |
+| `:type` | crystal data type |
 | `:primary` | mark field as primary key (default is `false`) |
 | `:null` | allows field to be `nil` (default is `false` for all fields except primary key |
-| `:default` | default value which be set during creating **new** object |
+| `:default` | default value which will be set during creating **new** object |
 | `:getter` | if getter should be created (default - `true`) |
 | `:setter` | if setter should be created (default - `true`) |
 | `:virtual` | mark field as virtual - will not be stored and retrieved from db |
-| `:numeric_converter` | **postgres only**: contains method to convert `PG::Numeric` to a used `type` |
+| `:converter` | class be used to serialize/deserialize value |
+
+To define field converter create a class which implements next methods:
+
+- `.from_db(DB::ResultSet, Bool)` - converts field reading it from db result set (second argument describes if field is nillable);
+- `.to_db(SomeType)` - converts field to the db format;
+- `.from_hash(Hash(String, Jennifer::DBAny), String)` - converts field from the given hash (second argument is a field name).
+
+There are 2 predefined converters:
+
+- `Jennifer::Model::JSONConverter` - default converter for `JSON::Any`;
+- `Jennifer::Model::NumericToFloat64Converter` - converts Postgres `PG::Numeric` to `Float64`.
 
 To make some field nillable tou can use any of the next options:
 
@@ -121,7 +132,7 @@ To make some field nillable tou can use any of the next options:
 - use `?` in type declaration (e.g. `some_field: String?` or `some_filed: {type: String?}`)
 - use union with `Nil` in the type declaration (e.g. `some_field: String | Nil` or `some_filed: {type: String | Nil}`)
 
-If you don't want to define all the table fields - pass `false` as second argument.
+If you don't want to define all the table fields - pass `false` as second argument (this will disable default strict mapping mode).
 
 `%mapping` defines next methods:
 
@@ -218,7 +229,7 @@ Existing mapping types:
 
 ### Numeric fields
 
-Crystal type of a numeric (decimal) field depends on chosen adapter: `Float64` for mysql and `PG::Numeric` for postgre. Sometimes usage of `PG::Numeric` with postgre may be annoying. To convert it to another type at the object building stage you can pass `numeric_converter` option with method to be used to convert `PG::Numeric` to the defined field `type`.
+Crystal type of a numeric (decimal) field depends on chosen adapter: `Float64` for mysql and `PG::Numeric` for Postgres. Sometimes usage of `PG::Numeric` with Postgres may be annoying. To convert it to another type at the object building stage you can pass `numeric_converter` option with method to be used to convert `PG::Numeric` to the defined field `type`.
 
 ```crystal
 class Product < Jennifer::Model::Base

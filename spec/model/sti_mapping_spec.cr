@@ -34,18 +34,18 @@ describe Jennifer::Model::STIMapping do
         end
 
         context "using :null option" do
-          it "parses type as nilable" do
+          it "parses type as nillable" do
             typeof(Factory.build_twitter_profile.email).should eq(String?)
           end
         end
       end
     end
 
-    pending "defines default constructor if all fields are nilable or have default values and superclass has default constructor" do
+    pending "defines default constructor if all fields are nillable or have default values and superclass has default constructor" do
       TwitterProfile::WITH_DEFAULT_CONSTRUCTOR.should be_true
     end
 
-    it "doesn't define default constructor if all fields are nilable or have default values" do
+    it "doesn't define default constructor if all fields are nillable or have default values" do
       TwitterProfile::WITH_DEFAULT_CONSTRUCTOR.should be_false
     end
   end

@@ -107,7 +107,7 @@ module Jennifer
       # - primary
       # - virtual
       # - default
-      # - numeric_converter (only for postgre numeric field)
+      # - converter
       private macro single_mapping(properties, strict = true)
         {%
           primary = nil
@@ -124,6 +124,7 @@ module Jennifer
             {% end %}
           {% end %}
           {% properties[key][:stringified_type] = properties[key][:type].stringify %}
+          {% if properties[key][:stringified_type] =~ Jennifer::Macros::JSON_REGEXP && properties[key][:converter] == nil %} {% properties[key][:converter] = ::Jennifer::Model::JSONConverter %} {% end %}
           {% if properties[key][:primary] %}
             {%
               primary = key
@@ -142,7 +143,6 @@ module Jennifer
 
         {% nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] } %}
 
-        # TODO: find way to allow model definition without any primary field
         {% if primary == nil %}
           {% raise "Model #{@type} has no defined primary field. For now model without primary field is not allowed" %}
         {% end %}
@@ -182,7 +182,6 @@ module Jennifer
         end
 
         # Accepts symbol hash or named tuple, stringify it and calls constructor with string-based keys hash.
-        # TODO: check how converting affects performance
         def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
           initialize(stringify_hash(values, Jennifer::DBAny))
         end
@@ -253,15 +252,12 @@ module Jennifer
                 %found{key.id} = true
                 begin
                   %var{key.id} =
-                    {% if value[:numeric_converter] %}
-                      {% if value[:null] %}
-                        pull.read(PG::Numeric?).try &.{{value[:numeric_converter].id}}
-                      {% else %}
-                        pull.read(PG::Numeric).{{value[:numeric_converter].id}}
-                      {% end %}
+                    {% if value[:converter] %}
+                      {{ value[:converter] }}.from_db(pull, {{value[:null]}})
                     {% else %}
                       pull.read({{value[:parsed_type].id}})
                     {% end %}
+                  %var{key.id} = %var{key.id}.in(::Jennifer::Config.local_time_zone) if %var{key.id}.is_a?(Time)
                 rescue e : Exception
                   raise ::Jennifer::DataTypeMismatch.build(column, {{@type}}, e)
                 end
@@ -285,8 +281,7 @@ module Jennifer
             {
             {% for key, value in properties %}
               begin
-                res = %var{key.id}.as({{value[:parsed_type].id}})
-                !res.is_a?(Time) ? res : res.in(::Jennifer::Config.local_time_zone)
+                %var{key.id}.as({{value[:parsed_type].id}})
               rescue e : Exception
                 raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
               end,
@@ -311,13 +306,12 @@ module Jennifer
           {% for key, value in properties %}
             {% column = (value[:column_name] || key).id.stringify %}
             if values.has_key?({{column}})
-              {% if value[:numeric_converter] %}
-                column_value = values[{{column}}]
                 %var{key.id} =
-                  column_value.is_a?(PG::Numeric) ? column_value.as(PG::Numeric).{{value[:numeric_converter].id}} : column_value
-              {% else %}
-                %var{key.id} = values[{{column}}]
-              {% end %}
+                  {% if value[:converter] %}
+                    {{value[:converter]}}.from_hash(values, {{column}})
+                  {% else %}
+                    values[{{column}}]
+                  {% end %}
             else
               %found{key.id} = false
             end
@@ -325,18 +319,13 @@ module Jennifer
 
           {% for key, value in properties %}
             begin
-              {% if value[:null] %}
+              %casted_var{key.id} =
                 {% if value[:default] != nil %}
-                  %casted_var{key.id} = %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
+                  %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
                 {% else %}
-                  %casted_var{key.id} = %var{key.id}.as({{value[:parsed_type].id}})
+                  __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
                 {% end %}
-              {% elsif value[:default] != nil %}
-                %casted_var{key.id} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
-              {% else %}
-                %casted_var{key.id} = __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
-              {% end %}
-              %casted_var{key.id} = !%casted_var{key.id}.is_a?(Time) ? %casted_var{key.id} : %casted_var{key.id}.in(::Jennifer::Config.local_time_zone)
+              %casted_var{key.id} = %casted_var{key.id}.in(::Jennifer::Config.local_time_zone) if %casted_var{key.id}.is_a?(Time)
             rescue e : Exception
               raise ::Jennifer::DataTypeCasting.match?(e) ? ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) : e
             end
@@ -349,8 +338,7 @@ module Jennifer
             {% end %}
             }
           {% else %}
-            {% key = properties.keys[0] %}
-            %casted_var{key}
+            %casted_var{properties.keys[0]}
           {% end %}
         end
 
@@ -385,7 +373,7 @@ module Jennifer
         def to_h
           {
             {% for key in nonvirtual_attrs %}
-              :{{key.id}} => @{{key.id}},
+              :{{key.id}} => {{key.id}},
             {% end %}
           } of Symbol => ::Jennifer::DBAny
         end
@@ -394,7 +382,7 @@ module Jennifer
         def to_str_h
           {
             {% for key in nonvirtual_attrs %}
-              {{key.stringify}} => @{{key.id}},
+              {{key.stringify}} => {{key.id}},
             {% end %}
           } of String => ::Jennifer::DBAny
         end
@@ -460,11 +448,12 @@ module Jennifer
         def arguments_to_save
           args = [] of ::Jennifer::DBAny
           fields = [] of String
-          {% for attr, options in properties %}
-            {% unless options[:primary] || options[:virtual] %}
+          {% for attr in nonvirtual_attrs %}
+            {% options = properties[attr] %}
+            {% unless options[:primary] %}
               if @{{attr.id}}_changed
-                args << {% if options[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
-                          @{{attr.id}}.to_json
+                args << {% if options[:converter] %}
+                          {{options[:converter]}}.to_db(@{{attr.id}})
                         {% else %}
                           @{{attr.id}}
                         {% end %}
@@ -481,8 +470,8 @@ module Jennifer
           fields = [] of String
           {% for attr, options in properties %}
             {% unless options[:virtual] || options[:primary] && primary_auto_incrementable %}
-              args << {% if options[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
-                        (@{{attr.id}} ? @{{attr.id}}.to_json : nil)
+              args << {% if options[:converter] %}
+                        {{options[:converter]}}.to_db(@{{attr.id}})
                       {% else %}
                         @{{attr.id}}
                       {% end %}

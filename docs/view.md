@@ -53,7 +53,7 @@ Also all defined mapping properties are accessible via `COLUMNS_METADA` constant
 
 ## Materialized
 
-> Materialized view is partially supported only by postgre adapter. MySQL doesn't provide support of materiazed view at all. This could be simulated only by using common table.
+> Materialized view is partially supported only by Postgres adapter. MySQL doesn't provide support of materialized view at all. This could be simulated only by using common table.
 
 Common migration for adding materialized view looks like this:
 

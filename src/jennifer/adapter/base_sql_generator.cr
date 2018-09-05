@@ -43,7 +43,7 @@ module Jennifer
         "TRUNCATE #{table}"
       end
 
-      # TODO: unify method generting - #parse_query should be called here or by caller
+      # TODO: unify method generating - #parse_query should be called here or by caller
       def self.delete(query)
         parse_query(
           String.build do |s|

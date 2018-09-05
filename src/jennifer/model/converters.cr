@@ -2,7 +2,6 @@ module Jennifer
   module Model
     class JSONConverter
       def self.from_db(pull, nillable)
-        puts pull.class
         nillable ? pull.read(JSON::Any?) : pull.read(JSON::Any)
       end
 

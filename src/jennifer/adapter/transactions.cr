@@ -30,7 +30,7 @@ module Jennifer
           conn = @db.checkout
           res = yield conn
           conn.release
-          res ? res : false
+          res || false
         end
       end
 

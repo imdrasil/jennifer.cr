@@ -64,9 +64,16 @@ module Jennifer
       @local_time_zone_name = Time::Location.local.name
       @local_time_zone = Time::Location.local
 
+      # NOTE: Uncomment common default values after resolving https://github.com/crystal-lang/crystal-db/issues/77
+
+      # @initial_pool_size = 1
+      # @max_pool_size = 5
+      # @max_idle_pool_size = 1
+
       @initial_pool_size = 1
-      @max_pool_size = 5
+      @max_pool_size = 1
       @max_idle_pool_size = 1
+
       @retry_attempts = 1
 
       @checkout_timeout = 5.0
@@ -153,6 +160,11 @@ module Jennifer
     def validate_config
       raise Jennifer::InvalidConfig.new("No adapter configured") if adapter.empty?
       raise Jennifer::InvalidConfig.new("No database configured") if db.empty?
+      if max_idle_pool_size != max_pool_size || max_pool_size != initial_pool_size
+        logger.warn("It is highly recommended to set max_idle_pool_size = max_pool_size = initial_pool_size to "\
+                    "prevent blowing up count of DB connections. For any details take a look at "\
+                    "https://github.com/crystal-lang/crystal-db/issues/77")
+      end
     end
 
     def self.from_uri(uri)

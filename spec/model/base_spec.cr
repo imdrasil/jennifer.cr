@@ -80,7 +80,7 @@ describe Jennifer::Model::Base do
   end
 
   describe "#new_record?" do
-    it "returns true if mrimary field nil" do
+    it "returns true if primary field nil" do
       Factory.build_contact.new_record?.should be_true
     end
 
@@ -328,7 +328,7 @@ describe Jennifer::Model::Base do
         ::Jennifer::Adapter.adapter.sql_generator.select(Contact.all.ordered).should match(/ORDER BY contacts\.name ASC/)
       end
 
-      context "without arguemnt" do
+      context "without argument" do
         it "is accessible from query object" do
           Contact.all.main.as_sql.should match(/contacts\.age >/)
         end
@@ -363,7 +363,7 @@ describe Jennifer::Model::Base do
         ::Jennifer::Adapter.adapter.sql_generator.select(Contact.johny).should match(/name =/)
       end
 
-      context "without arguemnt" do
+      context "without argument" do
         it "is accessible from query object" do
           Contact.johny.as_sql.should match(/contacts\.name =/)
         end
@@ -407,7 +407,7 @@ describe Jennifer::Model::Base do
       Contact.all.exists?.should be_false
     end
 
-    it "doen't invoke destroy callbacks" do
+    it "doesn't invoke destroy callbacks" do
       address = Factory.create_address
       count = Address.destroy_counter
       address.delete
@@ -500,7 +500,7 @@ describe Jennifer::Model::Base do
       Contact.all.count.should eq(1)
     end
 
-    it "doen't invoke destroy callbacks" do
+    it "doesn't invoke destroy callbacks" do
       address = Factory.create_address
       count = Address.destroy_counter
       Address.delete([address.id])

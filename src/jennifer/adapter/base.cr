@@ -24,9 +24,7 @@ module Jennifer
 
       extend AbstractClassMethods
 
-      @db : DB::Database
-
-      getter db
+      getter db : DB::Database
 
       def initialize
         @db = DB.open(Base.connection_string(:db))
@@ -50,6 +48,8 @@ module Jennifer
       rescue e : BaseException
         BadQuery.prepend_information(e, _query, args)
         raise e
+      rescue e : DB::Error
+        raise e
       rescue e : Exception
         raise BadQuery.new(e.message, _query, args)
       end
@@ -61,6 +61,8 @@ module Jennifer
         res
       rescue e : BaseException
         BadQuery.prepend_information(e, _query, args)
+        raise e
+      rescue e : DB::Error
         raise e
       rescue e : Exception
         raise BadQuery.new(e.message, _query, args)
@@ -74,6 +76,8 @@ module Jennifer
         res
       rescue e : BaseException
         BadQuery.prepend_information(e, _query, args)
+        raise e
+      rescue e : DB::Error
         raise e
       rescue e : Exception
         raise BadQuery.new(e.message, _query, args)

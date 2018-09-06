@@ -61,7 +61,7 @@ db_uri = "mysql://root@somehost/some_database?max_pool_size=111&initial_pool_siz
 Jennifer::Config.from_uri(db)
 ```
 
-## Supported configuation parameters
+## Supported configuration parameters
 
 | Config | Default value |
 | --- | --- |
@@ -75,7 +75,7 @@ Jennifer::Config.from_uri(db)
 | `password` | - |
 | `db` | - |
 | `adapter` | - |
-| `max_pool_size` | 5 |
+| `max_pool_size` | 1 |
 | `initial_pool_size` | 1 |
 | `max_idle_pool_size` | 1 |
 | `retry_attempts` | 1 |
@@ -87,6 +87,8 @@ Jennifer::Config.from_uri(db)
 | `docker_container` | `""` |
 | `docker_source_location` | `""` |
 | `command_shell_sudo` | `false` |
+
+> It is highly recommended to set `max_idle_pool_size = max_pool_size = initial_pool_size` to prevent blowing up count of DB connections. For any details take a look at `crystal-db` [issue](https://github.com/crystal-lang/crystal-db/issues/77).
 
 To avoid port usage set it to `-1`. For doing same with the password - assign to it blank value (`""`). Empty string also turns off `structure_folder` config.
 

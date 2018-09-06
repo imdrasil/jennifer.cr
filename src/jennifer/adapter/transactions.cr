@@ -28,8 +28,11 @@ module Jennifer
           yield @locks[fiber_id].transaction
         else
           conn = @db.checkout
-          res = yield conn
-          conn.release
+          begin
+            res = yield conn
+          ensure
+            conn.release
+          end
           res || false
         end
       end

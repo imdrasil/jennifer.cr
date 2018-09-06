@@ -229,7 +229,7 @@ describe Jennifer::Adapter::Base do
         config.db = "db"
 
         db_connection_string = "#{config.adapter}://user:password@host/db?" \
-                               "max_pool_size=5&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
+                               "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
         adapter.class.connection_string(:db).should eq(db_connection_string)
       end
 
@@ -241,7 +241,7 @@ describe Jennifer::Adapter::Base do
           config.db = "db"
           config.port = 3000
           db_connection_string = "#{config.adapter}://user:password@host:3000/db?" \
-                                 "max_pool_size=5&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
+                                 "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
           adapter.class.connection_string(:db).should eq(db_connection_string)
         end
       end
@@ -255,7 +255,7 @@ describe Jennifer::Adapter::Base do
         config.db = "db"
 
         connection_string = "#{config.adapter}://user:password@host?" \
-                            "max_pool_size=5&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
+                            "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
         adapter.class.connection_string.should eq(connection_string)
       end
     end
@@ -265,7 +265,7 @@ describe Jennifer::Adapter::Base do
         config.port = 3333
         config.password = ""
         connection_string = "#{config.adapter}://#{config.user}@#{config.host}:3333?" \
-                            "max_pool_size=5&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
+                            "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
         adapter.class.connection_string.should eq(connection_string)
       end
     end

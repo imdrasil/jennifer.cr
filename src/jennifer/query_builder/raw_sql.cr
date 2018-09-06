@@ -8,6 +8,7 @@ module Jennifer
       def_clone
 
       def initialize(@field, args : Array = [] of DBAny, @use_brackets = true)
+        raise AmbiguousSQL.new(@field) if @field =~ /%[^s]/
         @table = ""
         @params = args.map { |e| e.as(DBAny) }
       end

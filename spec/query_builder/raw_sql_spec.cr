@@ -3,6 +3,16 @@ require "../spec_helper"
 describe Jennifer::QueryBuilder::RawSql do
   described_class = Jennifer::QueryBuilder::RawSql
 
+  describe "#initialize" do
+    context "with % in raw sql" do
+      it "raises AmbiguousSQL exception" do
+        expect_raises(Jennifer::AmbiguousSQL) do
+          described_class.new("field LIKE '%asd'")
+        end
+      end
+    end
+  end
+
   describe "#identifier" do
     context "with brackets" do
       it "puts brackets by default" do

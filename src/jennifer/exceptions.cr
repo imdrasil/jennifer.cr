@@ -3,7 +3,7 @@ CallStack.skip(__FILE__)
 module Jennifer
   class AbstractMethod < Exception
     def initialize(method, klass)
-      @message = "Abstrcat method '#{method}' of '#{klass}' was invoked but it is not implemented yet."
+      @message = "Abstract method '#{method}' of '#{klass}' was invoked but it is not implemented yet."
     end
   end
 
@@ -84,7 +84,7 @@ module Jennifer
     end
   end
 
-  # Exception class to stoping model callback invoking.
+  # Exception class to stopping model callback invoking.
   class Skip < BaseException
     def initialize
       @message = ""
@@ -106,7 +106,7 @@ module Jennifer
       @message = "Column #{klass}.#{column} is expected to be a #{match[2]} but got #{match[1]}."
     end
 
-    # TODO: think about monkey patching DB::ResultSet#read for raising custome execption raather than `Exception`
+    # TODO: think about monkey patching DB::ResultSet#read for raising custom exception rather than `Exception`
     def self.match?(exception)
       exception.message =~ MATCH_REG
     end
@@ -136,6 +136,13 @@ module Jennifer
   class UnknownSTIType < BaseException
     def initialize(parent_klass, type)
       @message = "Unknown STI type \"#{type}\" for #{parent_klass}"
+    end
+  end
+
+  class AmbiguousSQL < BaseException
+    def initialize(sql)
+      @message = "Ambiguous raw SQL around '%' in '#{sql}'"\
+                 " - please pass any string including '%' via query parameters."
     end
   end
 end

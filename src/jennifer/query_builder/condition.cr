@@ -1,4 +1,4 @@
-require "./criteria"
+require "./logic_operator"
 
 module Jennifer
   module QueryBuilder

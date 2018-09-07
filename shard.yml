@@ -1,10 +1,10 @@
 name: jennifer
-version: 0.6.0
+version: 0.6.1
 
 authors:
   - Roman Kalnytskyi <moranibaca@gmail.com>
 
-crystal: 0.25.0
+crystal: 0.26.1
 
 license: MIT
 
@@ -31,4 +31,3 @@ dependencies:
   i18n:
     github: TechMagister/i18n.cr
     version: "~> 0.2.0"
-    # commit: "fc96c6b12547c84da2e76495f9c970acda64976b"

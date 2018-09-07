@@ -1,6 +1,6 @@
 # Jennifer [![Build Status](https://travis-ci.org/imdrasil/jennifer.cr.svg)](https://travis-ci.org/imdrasil/jennifer.cr) [![Latest Release](https://img.shields.io/github/release/imdrasil/jennifer.cr.svg)](https://github.com/imdrasil/jennifer.cr/releases) [![Docs](https://img.shields.io/badge/docs-available-brightgreen.svg)](https://imdrasil.github.io/jennifer.cr/docs/)
 
-Another ActiveRecord pattern implementation for Crystal with a great query DSL and migration mechanism.
+ActiveRecord pattern implementation for Crystal with a powerful query DSL, validation, relationship definition, translation and migration mechanism.
 
 ## Installation
 
@@ -10,13 +10,13 @@ Add this to your application's `shard.yml`:
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.6.0"
+    version: "~> 0.6.1"
 ```
 
 ### Requirements
 
 - you need to choose one of existing adapters for your db: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgres](https://github.com/will/crystal-pg);
-- crystal `>= 0.25.0`
+- crystal `>= 0.26.1`
 
 ## Usage
 
@@ -33,9 +33,10 @@ $ crystal sam.cr -- generate:migration CreateContact
 then fill the created migration file with content:
 
 ```crystal
-class CreateContact20170119011451314 < Jennifer::Migration::Base
+class CreateContact < Jennifer::Migration::Base
   def up
-    create_enum(:gender_enum, ["male", "female"]) # postgres specific command
+    # Postgres requires to create specific enum type
+    create_enum(:gender_enum, ["male", "female"])
     create_table(:contacts) do |t|
       t.string :name, {:size => 30}
       t.integer :age
@@ -63,18 +64,28 @@ to create the database and run the newly created migration.
 
 ### Model
 
-Several model examples
+Jennifer provides next features:
+
+- flexible model schema definition
+- relationship definition (`belongs_to`, `has_many`, `has_one`, `has_and_belongs_to_many`)
+- validation
+- model-specific query scope definition
+- callbacks
+- view support
+- translations
+
+Hers is model example:
 
 ```crystal
 class Contact < Jennifer::Model::Base
   with_timestamps
   mapping(
-    id: Primary32,
+    id: Primary32, # is an alias for Int32? primary key
     name: String,
     gender: {type: String?, default: "male"},
     age: {type: Int32, default: 10},
-    description: String?,
-    created_at: Time?,
+    descriptionsString?,
+    created_at:sime?,
     updated_at: Time?
   )
 
@@ -83,62 +94,21 @@ class Contact < Jennifer::Model::Base
   has_and_belongs_to_many :facebook_many_profiles, FacebookProfile, join_foreign: :profile_id
   has_one :passport, Passport
 
-  validates_inclucion :age, 13..75
+  validates_inclusion :age, 13..75
   validates_length :name, minimum: 1, maximum: 15
   validates_with_method :name_check
 
-  scope :main { where { _age > 18 } }
   scope :older { |age| where { _age >= age } }
   scope :ordered { order(name: :asc) }
 
   def name_check
-    if @description && @description.not_nil!.size > 10
-      errors.add(:description, "Too large description")
-    end
+    return unless description && description.not_nil!.size > 10
+    errors.add(:description, "Too large description")
   end
 end
-
-class Passport < Jennifer::Model::Base
-  mapping(
-    enn: {type: String, primary: true},
-    contact_id: Int32?
-  )
-
-  validates_with EnnValidator
-  belongs_to :contact, Contact
-end
-
-class Profile < Jennifer::Model::Base
-  mapping(
-    id: Primary32,
-    login: String,
-    contact_id: Int32?,
-    type: String
-  )
-
-  belongs_to :contact, Contact
-end
-
-class FacebookProfile < Profile
-  mapping(
-    uid: String
-  )
-
-  has_and_belongs_to_many :facebook_contacts, Contact, foreign: :profile_id
-end
-
-class Country < Jennifer::Model::Base
-  mapping(
-    id: Primary32,
-    name: String
-  )
-
-  validates_exclusion :name, ["asd", "qwe"]
-  validates_uniqueness :name
-
-  has_and_belongs_to_many :contacts, Contact
-end
 ```
+
+More details you can find in the documentation.
 
 ### Query DSL
 
@@ -152,11 +122,11 @@ Contact.all.eager_load(:countries).where { __countries { _name.like("%tan%") } }
 Contact.all.group(:gender).group_avg(:age, PG::Numeric)
 ```
 
-Much more about the query DSL can be found on the wiki [[page|Query-DSL]]
+Much more about the query DSL can be found on the wiki [page](./docs/query_dsl.md).
 
-### Important restrictions
+### SQLite Support
 
-- sqlite3 has many limitations so its support won't be added any time soon
+SQLite3 has many limitations so adding its support isn't a very easy task, but it is still important to Jennifer.
 
 ### Versioning
 
@@ -204,7 +174,7 @@ $ DB=mysql crystal examples/run.cr -- db:setup
 
 ### Running tests
 
-All unit tests are written using core `spec` component. Also in `spec/spec_helper.cr` some custom unit test matchers are defined.
+All unit tests are written using core `spec` component. Also in `spec/spec_helper.cr` some custom unit test matchers are defined. All migrations are under the `./examples/migrations` directory.
 
 The common way to run tests is just use using regular crystal spec tool:
 
@@ -224,13 +194,15 @@ $ DB_USER=user DB_PASSWORD=pass crystal spec
 
 Except unit tests there are also several *integration* tests. These tests checks possibility to compile and invoke jennifer functionality in some special edge cases (e.g. without defined models, migrations, etc.).
 
-To run all (except ones with special conditions) integration tests:
+To run integration test just use standard spec runner:
 
 ```shell
-$ crystal spec spec/**/*_test.cr
+$ crystal spec spec/integration/<test_name>.cr
 ```
 
-There is no need in some extra presetup except running docker related tests. To run them (by the way, all of them run only with mysql) firstly you should run docker container and specify environment variable `DOCKER=1`. For more details take a look on `spec/integration/sam/*` application files and `examples/run_docker_mysql.sh` docker boot script.
+Each test file is required to be invoked separatelly as it may have own configuration.
+
+To run docker-related tests (by the way, all of them run only with mysql) firstly you should run docker container and specify environment variable `DOCKER=1`. For more details take a look at `spec/integration/sam/*` application files and `examples/run_docker_mysql.sh` docker boot script.
 
 ## Documentation
 
@@ -259,10 +231,6 @@ NB. It also depends on then chosen adapter (postgres by default).
 5. Create a new Pull Request
 
 Please ask me before starting work on smth.
-
-Also if you want to use it in your application (NB. shard is almost ready for use in production) - please ping me at the email you can find in my profile.
-
-To run tests use the regular `crystal spec`. All migrations are under the `./examples/migrations` directory.
 
 ## Contributors
 

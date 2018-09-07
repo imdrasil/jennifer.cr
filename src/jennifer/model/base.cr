@@ -1,3 +1,7 @@
+require "../relation/base"
+require "../relation/*"
+require "../model/errors"
+
 require "./resource"
 require "./mapping"
 require "./sti_mapping"

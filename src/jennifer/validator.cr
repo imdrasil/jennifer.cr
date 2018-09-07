@@ -1,4 +1,5 @@
 module Jennifer
+  # Base class for custom validator.
   abstract class Validator
     getter errors : Model::Errors
 

@@ -62,6 +62,8 @@ module Jennifer
   end
 end
 
+I18n.load_path << File.join(__DIR__, "../locale")
+
 # TODO: make a PR to the i18n repo
 module I18n
   def self.exists?(key, locale = config.locale, count = nil)

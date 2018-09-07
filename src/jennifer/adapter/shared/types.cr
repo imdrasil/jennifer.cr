@@ -21,3 +21,23 @@ module PG
     {% end %}
   end
 end
+
+struct Time
+  def_clone
+
+  struct Span
+    def_clone
+  end
+end
+
+class Time::Location
+  def_clone
+
+  struct Zone
+    def_clone
+  end
+end
+
+struct JSON::Any
+  def_clone
+end

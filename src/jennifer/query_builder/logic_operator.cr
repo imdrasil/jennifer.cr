@@ -1,11 +1,5 @@
 module Jennifer
   module QueryBuilder
-    class Grouping < SQLNode
-    end
-
-    class Criteria < SQLNode
-    end
-
     abstract class LogicOperator
       module Operators
         def &(other : Criteria)

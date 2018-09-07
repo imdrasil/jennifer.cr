@@ -1,6 +1,51 @@
-# Future release (__-__-2018)
+# Changelog
 
-# 0.6.0 (06-07-2018)
+## Future release (__-__-2018)
+
+## 0.6.1 (07-09-2018)
+
+**General**
+
+* adds `Time::Span` to supported types
+
+**QueryBuilder**
+
+* allows listing any `SQLNode` instance in SELECT clause (like raw sql or functions)
+* removes redundant `SQLNode#sql_args_count`
+* adds `SQLNode#filterable?` function which presents if node has filterable sql parameter
+* refactors `Condition#sql_arg`
+* adds `Function` base abstract class for defining custom sql functions
+* adds `lower`, `upper`, `current_timestamp`, `current_date`, `current_time`, `now`, `concat`, `abs`, `ceil`, `floor`, `round`
+* adds `Join#filterable?` and `Query#filterable?`
+* raise `AmbiguousSQL` when `%` symbol is found in the raw SQL (except `%s`)
+
+**Model**
+
+* replaces mapping option `numeric_converter` with new `converter`
+* adds `NumericToFloat64Converter` and `JSONConverter`
+* now `#to_h` and `#to_str_h` use field getter methods
+* remove `puts` from `JSONConverter#from_db`
+
+**Adapter**
+
+* propagate native `DB::Error` instead of wrapping it into `BadQuery`
+* manually release a connection when an exception occurs under the transaction
+
+**Config**
+
+* set default `max_pool_size` to 1 and warn about danger of setting different `max_pool_size`, `max_idle_pool_size` and `initial_pool_size`
+
+**Migration**
+
+* adds `Migration::TableBuilder::CreateForeignKey` & `Migration::TableBuilder::DropForeignKey`
+* adds `Migration::Base#add_foreign_key` & `Migration::Base#drop_foreign_key`
+* adds `Migration::TableBuilder::ChangeTable#add_foreign_key` & `Migration::TableBuilder::ChangeTable#drop_foreign_key`
+
+**Exceptions**
+
+* add `AmbiguousSQL` - is raised when forbidden `%` symbol is used in the raw SQL
+
+## 0.6.0 (06-07-2018)
 
 **General**
 
@@ -35,7 +80,7 @@
 * now next `Resource` static methods are abstract: `actual_table_field_count`, `primary_field_name`, `build`, `all`, `superclass`
 * `Resource#inspect` returns simplified version (only class name and object id)
 * `Resource.all` now is a macro method
-* fixes `Model::Transaltion.lookup_ancestors` from breaking at compilation time
+* fixes `Model::Translation.lookup_ancestors` from breaking at compilation time
 * now all built-in validations use attribute getter methods instead of variables
 
 **View**
@@ -56,7 +101,7 @@
 * now migration version is taken from file name timestamp
 * `Jennifer::Migration::Base.migrations` returns a hash of version number => migration class instead of array of classes
 
-# 0.5.1 (02-05-2018)
+## 0.5.1 (02-05-2018)
 
 **QueryBuilder**
 
@@ -75,7 +120,7 @@
 * adds flag to skip dumping database schema after running migrations
 * fixes connection port definition (#121)
 
-# 0.5.0 (13-02-2018)
+## 0.5.0 (13-02-2018)
 
 * `ifrit/core` pact is required
 * adds `i18n` lib support
@@ -123,7 +168,7 @@
 * now several adapters could be required at the same time
 * all schema manipulation methods now in located in the `SchemaProcessor`
 
-# 0.4.3 (2-01-2018)
+## 0.4.3 (2-01-2018)
 
 * All macro methods were rewritten to new 0.24.1 crystal syntax
 
@@ -162,7 +207,7 @@
 * add `AbstractMethod` exception which represents expectation of overriding current method by parents (is useful when method can't be real abstract one)
 * add `UnknownSTIType`
 
-# 0.4.2 (24-11-2017)
+## 0.4.2 (24-11-2017)
 
 **SqlGenerator**
 
@@ -197,7 +242,7 @@
 * add `Query#except` - creates clone except given clauses
 * make `IModelQuery` class as new superclass of `ModelQuery(T)`; move all methods no depending on `T` to the new class
 
-# 0.4.1 (20-10-2017)
+## 0.4.1 (20-10-2017)
 
 **Config**
 
@@ -242,7 +287,7 @@
 
 * added `inverse_of` option to `has_many` and `has_one` relations to sets owner during relation loading
 
-# 0.4.0 (30-09-2017)
+## 0.4.0 (30-09-2017)
 
 **Exception**
 

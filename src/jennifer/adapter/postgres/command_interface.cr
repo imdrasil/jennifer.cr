@@ -45,7 +45,7 @@ module Jennifer
 
       private def default_env_variables
         env = {"PGPASSWORD" => config.password} of String => Command::Option
-        env = env.merge({"PGPORT" => config.port.to_s}) unless config.port == -1
+        env["PGPORT"] = config.port.to_s unless config.port == -1
         env
       end
     end

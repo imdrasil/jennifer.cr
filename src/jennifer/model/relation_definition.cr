@@ -19,8 +19,10 @@ module Jennifer
       macro nullify_dependency(name, relation_type, polymorphic)
         # :nodoc:
         def __nullify_callback_{{name.id}}
-          rel = self.class.relation({{name.id.stringify}})
-          {{name.id}}_query.update({rel.foreign_field => nil})
+          rel = self.class.{{name.id}}_relation
+          options = {rel.foreign_field => nil}
+          {% if polymorphic %} options[rel.foreign_type] = nil {% end %}
+          {{name.id}}_query.update(options)
         end
 
         before_destroy :__nullify_callback_{{name.id}}
@@ -37,13 +39,14 @@ module Jennifer
       end
 
       # :nodoc:
+      # TODO: add validation for cyclic destroy dependency
       macro destroy_dependency(name, relation_type, polymorphic)
         # :nodoc:
         def __destroy_callback_{{name.id}}
-          {% if !polymorphic %}
-            {{name.id}}_query.destroy
-          {% else %}
+          {% if polymorphic && relation_type.id.stringify == "belongs_to" %}
             self.class.{{name.id}}_relation.destroy(self)
+          {% else %}
+            {{name.id}}_query.destroy
           {% end %}
         end
 
@@ -80,21 +83,29 @@ module Jennifer
         {% end %}
       end
 
-      macro has_many(name, klass, request = nil, foreign = nil, primary = nil, dependent = :nullify, inverse_of = nil)
+      macro has_many(name, klass, request = nil, foreign = nil, foreign_type = nil, primary = nil, dependent = :nullify, inverse_of = nil, polymorphic = false)
         {{"{% RELATION_NAMES << #{name.id.stringify} %}".id}}
-        ::Jennifer::Model::RelationDefinition.declare_dependent({{name}}, {{dependent}}, :has_many)
+        ::Jennifer::Model::RelationDefinition.declare_dependent({{name}}, {{dependent}}, :has_many, {{polymorphic}})
 
         RELATIONS["{{name.id}}"] =
-          ::Jennifer::Relation::HasMany({{klass}}, {{@type}}).new("{{name.id}}", {{foreign}}, {{primary}},
+          {% if polymorphic %}
+            {% relation_class = "::Jennifer::Relation::PolymorphicHasMany(#{klass}, #{@type})".id %}
+            {% if inverse_of.nil? %} {% raise "`inverse_of` is required for a polymorphic has_many relation." %} {% end %}
+            {{relation_class}}.new("{{name.id}}", {{foreign}}, {{primary}},
+              {{klass}}.all{% if request %}.exec {{request}} {% end %}, foreign_type: {{foreign_type}}, inverse_of: {{inverse_of}})
+          {% else %}
+            {% relation_class = "::Jennifer::Relation::HasMany(#{klass}, #{@type})".id %}
+            {{relation_class}}.new("{{name.id}}", {{foreign}}, {{primary}},
             {{klass}}.all{% if request %}.exec {{request}} {% end %})
-
+          {% end %}
         @{{name.id}} = [] of {{klass}}
         @__{{name.id}}_retrieved = false
 
-        private def set_{{name.id}}_relation(object : Array)
+        # :nodoc:
+        private def set_{{name.id}}_relation(collection : Array)
           @__{{name.id}}_retrieved = true
-          @{{name.id}} = object
-          {% if inverse_of %} object.each(&.append_{{inverse_of.id}}(self)) {% end %}
+          @{{name.id}} = collection
+          {% if inverse_of %} collection.each(&.append_{{inverse_of.id}}(self)) {% end %}
         end
 
         private def set_{{name.id}}_relation(object)
@@ -105,7 +116,7 @@ module Jennifer
 
         # Returns {{name.id}} relation metaobject
         def self.{{name.id}}_relation
-          RELATIONS["{{name.id}}"].as(::Jennifer::Relation::HasMany({{klass}}, {{@type}}))
+          RELATIONS["{{name.id}}"].as({{relation_class}})
         end
 
         # Returns {{name.id}} relation query for the object
@@ -274,11 +285,12 @@ module Jennifer
         end
 
         {% for type in klass.type_vars[0].types %}
-          def {{name.id}}_{{type.id.underscore}}
+          {% related_name = type.id.split("::")[-1].underscore.id %}
+          def {{name.id}}_{{related_name}}
             {{name.id}}.as({{type}})
           end
 
-          def {{name.id}}_{{type.id.underscore}}?
+          def {{name.id}}_{{related_name}}?
             {{name.id}}.is_a?({{type}})
           end
         {% end %}

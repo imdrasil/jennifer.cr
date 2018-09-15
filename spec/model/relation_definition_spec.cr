@@ -1,6 +1,41 @@
 require "../spec_helper"
 
 module Jennifer::Model
+  module FacebookProfileMapping
+    macro included
+      mapping({
+        id: Primary32,
+        login: String,
+        contact_id: Int32?,
+        type: String,
+        virtual_parent_field: {type: String?, virtual: true},
+        uid: String?, # for testing purposes
+        virtual_child_field: {type: Int32?, virtual: true}
+    }, false)
+    end
+  end
+
+  class NoteWithCallback < Base
+    include Note::Mapping
+
+    self.table_name "notes"
+
+    polymorphic_belongs_to :notable, Union(User | Jennifer::Model::FacebookProfileWithDestroyNotable)
+    actual_table_field_count
+
+    after_destroy :increment_destroy_counter
+
+    @@destroy_counter = 0
+
+    def self.destroy_counter
+      @@destroy_counter
+    end
+
+    def increment_destroy_counter
+      @@destroy_counter += 1
+    end
+  end
+
   class NoteWithDestroyDependency < Base
     include Note::Mapping
 
@@ -19,6 +54,24 @@ module Jennifer::Model
     actual_table_field_count
   end
 
+  class FacebookProfileWithDestroyNotable < Base
+    include FacebookProfileMapping
+
+    self.table_name "profiles"
+
+    has_many :notes, NoteWithCallback, inverse_of: :notable, polymorphic: true, dependent: :destroy
+    actual_table_field_count
+  end
+
+  class FacebookProfileWithNullifyNotable < Base
+    include FacebookProfileMapping
+
+    self.table_name "profiles"
+
+    has_many :notes, NoteWithCallback, inverse_of: :notable, polymorphic: true, dependent: :nullify
+    actual_table_field_count
+  end
+
   describe RelationDefinition do
     describe "%nullify_dependency" do
       it "adds before_destroy callback" do
@@ -33,6 +86,25 @@ module Jennifer::Model
         c.destroy
         f = FacebookProfile.all.last!
         f.contact_id.nil?.should be_true
+      end
+
+      describe "polymorphic" do
+        describe "has_many" do
+          it "adds before_destroy callback" do
+            FacebookProfileWithNullifyNotable::CALLBACKS[:destroy][:before].includes?("__nullify_callback_notes").should be_true
+          end
+
+          it "invokes callbacks on associated model" do
+            p = FacebookProfileWithNullifyNotable.find!(Factory.create_facebook_profile(type: "Jennifer::Model::FacebookProfileWithNullifyNotable").id)
+            note = NoteWithCallback.find!(Factory.create_note.id)
+            p.add_notes(note)
+            count = NoteWithCallback.destroy_counter
+            p.destroy
+            note.reload
+            note.notable_id.should be_nil
+            note.notable_type.should be_nil
+          end
+        end
       end
     end
 
@@ -70,17 +142,35 @@ module Jennifer::Model
       end
 
       describe "polymorphic relation" do
-        it "adds before_destroy callback" do
-          NoteWithDestroyDependency::CALLBACKS[:destroy][:before].includes?("__destroy_callback_notable").should be_true
+        describe "belongs_to" do
+          it "adds before_destroy callback" do
+            NoteWithDestroyDependency::CALLBACKS[:destroy][:before].includes?("__destroy_callback_notable").should be_true
+          end
+
+          it "invokes callbacks on associated model" do
+            n = NoteWithDestroyDependency.find!(Factory.create_note.id)
+            n.add_notable(Factory.create_facebook_profile)
+            count = FacebookProfile.destroy_counter
+            n.destroy
+            FacebookProfile.all.exists?.should be_false
+            FacebookProfile.destroy_counter.should eq(count + 1)
+          end
         end
 
-        it "invokes callbacks on associated model" do
-          n = NoteWithDestroyDependency.find!(Factory.create_note.id)
-          n.add_notable(Factory.create_facebook_profile)
-          count = FacebookProfile.destroy_counter
-          n.destroy
-          FacebookProfile.all.exists?.should be_false
-          FacebookProfile.destroy_counter.should eq(count + 1)
+        describe "has_many" do
+          it "adds before_destroy callback" do
+            FacebookProfileWithDestroyNotable::CALLBACKS[:destroy][:before].includes?("__destroy_callback_notes").should be_true
+          end
+
+          it "invokes callbacks on associated model" do
+            fp = Factory.create_facebook_profile(type: "Jennifer::Model::FacebookProfileWithDestroyNotable")
+            p = FacebookProfileWithDestroyNotable.find!(fp.id)
+            p.add_notes(NoteWithCallback.find!(Factory.create_note.id))
+            count = NoteWithCallback.destroy_counter
+            p.destroy
+            NoteWithCallback.all.exists?.should be_false
+            NoteWithCallback.destroy_counter.should eq(count + 1)
+          end
         end
       end
     end

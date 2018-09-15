@@ -37,9 +37,7 @@ module Jennifer
       end
 
       def condition_clause
-        _foreign = foreign_field
-        _primary = primary_field
-        tree = T.c(_foreign, @name) == Q.c(_primary)
+        tree = T.c(foreign_field, @name) == Q.c(primary_field)
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 

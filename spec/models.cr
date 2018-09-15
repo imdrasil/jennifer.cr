@@ -189,11 +189,22 @@ class Profile < ApplicationRecord
     virtual_parent_field: {type: String?, virtual: true}
   )
 
+  @@destroy_counter = 0
+
   getter commit_callback_called = false
 
   belongs_to :contact, Contact
 
+  after_destroy :increment_destroy_counter
   after_commit :set_commit, on: :create
+
+  def self.destroy_counter
+    @@destroy_counter
+  end
+
+  def increment_destroy_counter
+    @@destroy_counter += 1
+  end
 
   def set_commit
     @commit_callback_called = true
@@ -274,6 +285,27 @@ class City < ApplicationRecord
   )
 
   belongs_to :country, Country
+end
+
+class Note < ApplicationRecord
+  module Mapping
+    macro included
+      mapping(
+        id: Primary32,
+        text: String?,
+        notable_id: Int32?,
+        notable_type: String?,
+        created_at: Time?,
+        updated_at: Time?
+      )
+
+      with_timestamps
+    end
+  end
+
+  include Mapping
+
+  polymorphic_belongs_to :notable, Union(User | Contact)
 end
 
 class OneFieldModel < Jennifer::Model::Base

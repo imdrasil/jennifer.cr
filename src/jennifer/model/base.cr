@@ -35,6 +35,8 @@ module Jennifer
       end
 
       # Represent actual amount of model's table column amount (is grepped from db).
+      # If somewhy you define model with custom table name after the place where adapter is used the first time -
+      # manually invoke this method anywhere after table name definition.
       def self.actual_table_field_count
         @@actual_table_field_count ||= adapter.table_column_count(table_name)
       end
@@ -158,9 +160,10 @@ module Jennifer
       # Returns list of available model classes.
       def self.models
         {% begin %}
-          {% if !@type.all_subclasses.empty? %}
+          {% models = @type.all_subclasses.select { |m| !m.abstract? } %}
+          {% if !models.empty? %}
             [
-              {% for model in @type.all_subclasses %}
+              {% for model in models %}
                 {{model.id}},
               {% end %}
             ]

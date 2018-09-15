@@ -45,7 +45,7 @@ module Jennifer
         {% begin %}
           io << "#<" << {{@type.name.id.stringify}} << ":0x"
           object_id.to_s(16, io)
-          {% if @type.constant("COLUMNS_METADATA") %}
+          {% if !@type.abstract? && @type.constant("COLUMNS_METADATA") %}
             io << ' '
             {% for var, i in @type.constant("COLUMNS_METADATA").keys %}
               {% if i > 0 %}

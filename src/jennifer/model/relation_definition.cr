@@ -15,59 +15,65 @@ module Jennifer
       abstract def set_inverse_of(name : String, object)
       abstract def get_relation(name : String)
 
-      macro nullify_dependency(name, relation_type)
+      # :nodoc:
+      macro nullify_dependency(name, relation_type, polymorphic)
         # :nodoc:
         def __nullify_callback_{{name.id}}
-          rel = \{{@type}}.relation({{name.id.stringify}})
+          rel = self.class.relation({{name.id.stringify}})
           {{name.id}}_query.update({rel.foreign_field => nil})
         end
 
         before_destroy :__nullify_callback_{{name.id}}
       end
 
-      macro delete_dependency(name, relation_type)
+      # :nodoc:
+      macro delete_dependency(name, relation_type, polymorphic)
         # :nodoc:
         def __delete_callback_{{name.id}}
-          rel = \{{@type}}.relation({{name.id.stringify}})
           {{name.id}}_query.delete
         end
 
         before_destroy :__delete_callback_{{name.id}}
       end
 
-      macro destroy_dependency(name, relation_type)
+      # :nodoc:
+      macro destroy_dependency(name, relation_type, polymorphic)
         # :nodoc:
         def __destroy_callback_{{name.id}}
-          rel = \{{@type}}.relation({{name.id.stringify}})
-          {{name.id}}_query.destroy
+          {% if !polymorphic %}
+            {{name.id}}_query.destroy
+          {% else %}
+            self.class.{{name.id}}_relation.destroy(self)
+          {% end %}
         end
 
         before_destroy :__destroy_callback_{{name.id}}
       end
 
-      macro restrict_with_exception_dependency(name, relation_type)
+      # :nodoc:
+      macro restrict_with_exception_dependency(name, relation_type, polymorphic)
         # :nodoc:
         def __restrict_with_exception_callback_{{name.id}}
-          rel = \{{@type}}.relation({{name.id.stringify}})
           raise ::Jennifer::RecordExists.new(self, {{name.id.stringify}}) if {{name.id}}_query.exists?
         end
 
         before_destroy :__restrict_with_exception_callback_{{name.id}}
       end
 
-      macro declare_dependent(name, type, relation_type)
+      # :nodoc:
+      macro declare_dependent(name, type, relation_type, polymorphic = false)
         {% type = type.id.stringify %}
         {% if relation_type == :belongs_to && type == "nullify" %}
           {% raise "Relation \"#{name}\" can't has belongs_to relation with dependent nullify" %}
         {% end %}
         {% if type == "nullify" %}
-          ::Jennifer::Model::RelationDefinition.nullify_dependency({{name}}, {{relation_type}})
+          ::Jennifer::Model::RelationDefinition.nullify_dependency({{name}}, {{relation_type}}, {{polymorphic}})
         {% elsif type == "delete" %}
-          ::Jennifer::Model::RelationDefinition.delete_dependency({{name}}, {{relation_type}})
+          ::Jennifer::Model::RelationDefinition.delete_dependency({{name}}, {{relation_type}}, {{polymorphic}})
         {% elsif type == "destroy" %}
-          ::Jennifer::Model::RelationDefinition.destroy_dependency({{name}}, {{relation_type}})
-        {% elsif type == "restrict_with_exception" %}\
-          ::Jennifer::Model::RelationDefinition.restrict_with_exception_dependency({{name}}, {{relation_type}})
+          ::Jennifer::Model::RelationDefinition.destroy_dependency({{name}}, {{relation_type}}, {{polymorphic}})
+        {% elsif type == "restrict_with_exception" %}
+          ::Jennifer::Model::RelationDefinition.restrict_with_exception_dependency({{name}}, {{relation_type}}, {{polymorphic}})
         {% elsif type == "none" %}
         {% else %}
           {% raise "Dependency type #{type} for relation #{name} of #{@type} is not allowed." %}
@@ -242,19 +248,90 @@ module Jennifer
         end
       end
 
-      macro belongs_to(name, klass, request = nil, foreign = nil, primary = nil, join_table = nil, join_foreign = nil, dependent = :none)
+      macro polymorphic_belongs_to(name, klass, foreign = nil, foreign_type = nil, primary = nil,  dependent = :none)
         {{"{% RELATION_NAMES << #{name.id.stringify} %}".id}}
-        ::Jennifer::Model::RelationDefinition.declare_dependent({{name}}, {{dependent}}, :belongs_to)
+        {% relation_class = "#{name.id.camelcase}Relation".id %}
+        ::Jennifer::Model::RelationDefinition.declare_dependent({{name}}, {{dependent}}, :belongs_to, true)
+
+        ::Jennifer::Relation::IPolymorphicBelongsTo.define_relation_class({{name}}, {{@type}}, {{klass}}, {{klass.type_vars[0].types}})
 
         RELATIONS["{{name.id}}"] =
-          ::Jennifer::Relation::BelongsTo({{klass}}, {{@type}}).new("{{name.id}}", {{foreign}}, {{primary}},
-            {{klass}}.all{% if request %}.exec {{request}} {% end %})
+          {{relation_class}}.new("{{name.id}}", {{foreign}}, {{foreign_type}}, {{primary}})
 
         @{{name.id}} : {{klass}}?
         @__{{name.id}}_retrieved = false
 
         def self.{{name.id}}_relation
-          RELATIONS["{{name.id}}"].as(::Jennifer::Relation::BelongsTo({{klass}}, {{@type}}))
+          RELATIONS["{{name.id}}"].as({{relation_class}})
+        end
+
+        def {{name.id}}
+          if !@__{{name.id}}_retrieved && @{{name.id}}.nil? && !new_record?
+            @__{{name.id}}_retrieved = true
+            @{{name.id}} = {{name.id}}_reload
+          end
+          @{{name.id}}
+        end
+
+        {% for type in klass.type_vars[0].types %}
+          def {{name.id}}_{{type.id.underscore}}
+            {{name.id}}.as({{type}})
+          end
+
+          def {{name.id}}_{{type.id.underscore}}?
+            {{name.id}}.is_a?({{type}})
+          end
+        {% end %}
+
+        def {{name.id}}!
+          {{name.id}}.not_nil!
+        end
+
+        def {{name.id}}_query
+          foreign_field = {{ (foreign ? foreign : "#{name.id}_id").id }}
+          polymorphic_type = {{ (foreign_type ? foreign_type : "#{name.id}_type").id }}
+
+          self.class.{{name.id}}_relation.query(foreign_field, polymorphic_type)
+        end
+
+        def {{name.id}}_reload
+          foreign_field = {{ (foreign ? foreign : "#{name.id}_id").id }}
+          polymorphic_type = {{ (foreign_type ? foreign_type : "#{name.id}_type").id }}
+
+          @{{name.id}} = self.class.{{name.id}}_relation.load(foreign_field, polymorphic_type)
+        end
+
+        def append_{{name.id}}(rel)
+          raise ::Jennifer::BaseException.new("Polymorphic relation can't be loaded dynamically.")
+        end
+
+        def remove_{{name.id}}
+          {{@type}}.{{name.id}}_relation.remove(self)
+          @{{name.id}} = nil
+        end
+
+        def add_{{name.id}}(rel : Hash)
+          @{{name.id}} = {{@type}}.{{name.id}}_relation.insert(self, rel)
+        end
+
+        def add_{{name.id}}(rel : {{klass}})
+          @{{name.id}} = {{@type}}.{{name.id}}_relation.insert(self, rel)
+        end
+      end
+
+      macro belongs_to(name, klass, request = nil, foreign = nil, primary = nil, dependent = :none)
+        {{"{% RELATION_NAMES << #{name.id.stringify} %}".id}}
+        {% relation_class = "::Jennifer::Relation::BelongsTo(#{klass}, #{@type})".id %}
+        ::Jennifer::Model::RelationDefinition.declare_dependent({{name}}, {{dependent}}, :belongs_to)
+
+        RELATIONS["{{name.id}}"] =
+            {{relation_class}}.new("{{name.id}}", {{foreign}}, {{primary}}, {{klass}}.all{% if request %}.exec {{request}} {% end %})
+
+        @{{name.id}} : {{klass}}?
+        @__{{name.id}}_retrieved = false
+
+        def self.{{name.id}}_relation
+          RELATIONS["{{name.id}}"].as({{relation_class}})
         end
 
         def {{name.id}}

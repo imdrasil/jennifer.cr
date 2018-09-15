@@ -54,6 +54,10 @@ module Jennifer
         initialize
       end
 
+      def self.null
+        new.none
+      end
+
       protected def initialize_copy_without(other, except : Array(String))
         {% for segment in %w(having limit offset raw_select from lock distinct) %}
           @{{segment.id}} = other.@{{segment.id}}.clone unless except.includes?({{segment}})

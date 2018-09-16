@@ -72,6 +72,15 @@ module Jennifer::Model
     actual_table_field_count
   end
 
+  class ProfileWithOneNote < Base
+    include FacebookProfileMapping
+
+    self.table_name "profiles"
+
+    has_one :note, NoteWithCallback, inverse_of: :notable, polymorphic: true, dependent: :nullify
+    actual_table_field_count
+  end
+
   describe RelationDefinition do
     describe "%nullify_dependency" do
       it "adds before_destroy callback" do
@@ -90,10 +99,6 @@ module Jennifer::Model
 
       describe "polymorphic" do
         describe "has_many" do
-          it "adds before_destroy callback" do
-            FacebookProfileWithNullifyNotable::CALLBACKS[:destroy][:before].includes?("__nullify_callback_notes").should be_true
-          end
-
           it "invokes callbacks on associated model" do
             p = FacebookProfileWithNullifyNotable.find!(Factory.create_facebook_profile(type: "Jennifer::Model::FacebookProfileWithNullifyNotable").id)
             note = NoteWithCallback.find!(Factory.create_note.id)
@@ -350,6 +355,35 @@ module Jennifer::Model
           a.save
           c.addresses_reload
           c.addresses[0].street.should eq("some strange street")
+        end
+      end
+
+      describe "polymorphic" do
+        relation = FacebookProfileWithDestroyNotable.relation("notes")
+
+        describe "query" do
+          it "sets correct query part" do
+            relation.condition_clause.as_sql.should eq("notes.notable_id = profiles.id AND notes.notable_type = %s")
+            relation.condition_clause.sql_args.should eq(db_array("Jennifer::Model::FacebookProfileWithDestroyNotable"))
+          end
+        end
+
+        describe "#/relation_name/_query" do
+          it "returns query object" do
+            p = FacebookProfileWithDestroyNotable.find!(Factory.create_facebook_profile(type: "Jennifer::Model::FacebookProfileWithDestroyNotable").id)
+            q = p.notes_query
+            q.as_sql.should match(/notes.notable_id = %s AND notes.notable_type = %s/)
+            q.sql_args.should eq(db_array(p.id, "Jennifer::Model::FacebookProfileWithDestroyNotable"))
+          end
+        end
+
+        describe "#/relation_name/" do
+          it "loads relation objects from db" do
+            p = FacebookProfileWithDestroyNotable.find!(Factory.create_facebook_profile(type: "Jennifer::Model::FacebookProfileWithDestroyNotable").id)
+            n = Factory.create_note(notable_id: p.id, notable_type: "Jennifer::Model::FacebookProfileWithDestroyNotable")
+            p.notes.size.should eq(1)
+            p.notes[0].id.should eq(n.id)
+          end
         end
       end
     end
@@ -648,6 +682,34 @@ module Jennifer::Model
           c.remove_passport
           c.passport.should be_nil
           Passport.find!(p.enn).contact_id.should be_nil
+        end
+      end
+
+      describe "polymorphic" do
+        relation = ProfileWithOneNote.relation("note")
+
+        describe "query" do
+          it "sets correct query part" do
+            relation.condition_clause.as_sql.should eq("notes.notable_id = profiles.id AND notes.notable_type = %s")
+            relation.condition_clause.sql_args.should eq(db_array("Jennifer::Model::ProfileWithOneNote"))
+          end
+        end
+
+        describe "#/relation_name/_query" do
+          it "returns query object" do
+            p = ProfileWithOneNote.find!(Factory.create_facebook_profile(type: "Jennifer::Model::ProfileWithOneNote").id)
+            q = p.note_query
+            q.as_sql.should match(/notes.notable_id = %s AND notes.notable_type = %s/)
+            q.sql_args.should eq(db_array(p.id, "Jennifer::Model::ProfileWithOneNote"))
+          end
+        end
+
+        describe "#/relation_name/" do
+          it "loads relation objects from db" do
+            p = ProfileWithOneNote.find!(Factory.create_facebook_profile(type: "Jennifer::Model::ProfileWithOneNote").id)
+            n = Factory.create_note(notable_id: p.id, notable_type: "Jennifer::Model::ProfileWithOneNote")
+            p.note!.id.should eq(n.id)
+          end
         end
       end
     end

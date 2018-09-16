@@ -83,6 +83,7 @@ module Jennifer
         {% end %}
       end
 
+      # Specifies a one-to-many association.
       macro has_many(name, klass, request = nil, foreign = nil, foreign_type = nil, primary = nil, dependent = :nullify, inverse_of = nil, polymorphic = false)
         {{"{% RELATION_NAMES << #{name.id.stringify} %}".id}}
         ::Jennifer::Model::RelationDefinition.declare_dependent({{name}}, {{dependent}}, :has_many, {{polymorphic}})
@@ -175,6 +176,11 @@ module Jennifer
         end
       end
 
+      # Specifies a many-to-many relationship with another class. This associates two classes via an intermediate join table.
+      # Unless the join table is explicitly specified as an option, it is guessed using the lexical order of the class names.
+      # So a join between Developer and Project will give the default join table name of "developers_projects" because "D" precedes "P" alphabetically.
+      # Note that this precedence is calculated using the < operator for String. This means that if the strings are of different lengths, and
+      # the strings are equal when compared up to the shortest length, then the longer string is considered of higher lexical precedence than the shorter one.
       macro has_and_belongs_to_many(name, klass, request = nil, foreign = nil, primary = nil, join_table = nil, association_foreign = nil)
         {{"{% RELATION_NAMES << #{name.id.stringify} %}".id}}
         RELATIONS["{{name.id}}"] =
@@ -259,6 +265,8 @@ module Jennifer
         end
       end
 
+      # Specifies a one-to-one polymorphic association with another class. This macro should only be used if this class contains the foreign key.
+      # If the other class contains the foreign key, then you should use has_one instead.
       macro polymorphic_belongs_to(name, klass, foreign = nil, foreign_type = nil, primary = nil,  dependent = :none)
         {{"{% RELATION_NAMES << #{name.id.stringify} %}".id}}
         {% relation_class = "#{name.id.camelcase}Relation".id %}
@@ -313,8 +321,18 @@ module Jennifer
           @{{name.id}} = self.class.{{name.id}}_relation.load(foreign_field, polymorphic_type)
         end
 
-        def append_{{name.id}}(rel)
+        def append_{{name.id}}(rel : Hash)
           raise ::Jennifer::BaseException.new("Polymorphic relation can't be loaded dynamically.")
+        end
+
+        def append_{{name.id}}(rel : {{klass}})
+          @__{{name.id}}_retrieved = true
+          @{{name.id}} = rel
+        end
+
+        def append_{{name.id}}(rel : Jennifer::Model::Resource)
+          @__{{name.id}}_retrieved = true
+          @{{name.id}} = rel.as({{klass}})
         end
 
         def remove_{{name.id}}
@@ -331,6 +349,8 @@ module Jennifer
         end
       end
 
+      # Specifies a one-to-one association with another class. This macro should only be used if this class contains the foreign key.
+      # If the other class contains the foreign key, then you should use has_one instead.
       macro belongs_to(name, klass, request = nil, foreign = nil, primary = nil, dependent = :none)
         {{"{% RELATION_NAMES << #{name.id.stringify} %}".id}}
         {% relation_class = "::Jennifer::Relation::BelongsTo(#{klass}, #{@type})".id %}
@@ -396,13 +416,23 @@ module Jennifer
         end
       end
 
-      macro has_one(name, klass, request = nil, foreign = nil, primary = nil, join_table = nil, join_foreign = nil, dependent = :nullify, inverse_of = nil)
+      # Specifies a one-to-one association with another class. This macro should only be used if the other class contains the foreign key.
+      # If the current class contains the foreign key, then you should use belongs_to instead.
+      macro has_one(name, klass, request = nil, foreign = nil, foreign_type = nil, primary = nil, join_foreign = nil, dependent = :nullify, inverse_of = nil, polymorphic = false)
         {{"{% RELATION_NAMES << #{name.id.stringify} %}".id}}
         ::Jennifer::Model::RelationDefinition.declare_dependent({{name}}, {{dependent}}, :has_one)
 
         RELATIONS["{{name.id}}"] =
-          ::Jennifer::Relation::HasOne({{klass}}, {{@type}}).new("{{name.id}}", {{foreign}}, {{primary}},
+          {% if polymorphic %}
+            {% relation_class = "::Jennifer::Relation::PolymorphicHasOne(#{klass}, #{@type})".id %}
+            {% if inverse_of.nil? %} {% raise "`inverse_of` is required for a polymorphic has_many relation." %} {% end %}
+            {{relation_class}}.new("{{name.id}}", {{foreign}}, {{primary}},
+              {{klass}}.all{% if request %}.exec {{request}} {% end %}, foreign_type: {{foreign_type}}, inverse_of: {{inverse_of}})
+          {% else %}
+            {% relation_class = "::Jennifer::Relation::HasOne(#{klass}, #{@type})".id %}
+            {{relation_class}}.new("{{name.id}}", {{foreign}}, {{primary}},
             {{klass}}.all{% if request %}.exec {{request}} {% end %})
+          {% end %}
 
         @{{name.id}} : {{klass}}?
         @__{{name.id}}_retrieved = false
@@ -416,7 +446,7 @@ module Jennifer
         end
 
         def self.{{name.id}}_relation
-          RELATIONS["{{name.id}}"].as(::Jennifer::Relation::HasOne({{klass}}, {{@type}}))
+          RELATIONS["{{name.id}}"].as({{relation_class}})
         end
 
         def {{name.id}}
@@ -432,10 +462,11 @@ module Jennifer
 
         def {{name.id}}_query
           primary_field = {{ (primary ? primary : "primary").id }}
-          RELATIONS["{{name.id}}"].query(primary_field).as(::Jennifer::QueryBuilder::ModelQuery({{klass}}))
+          self.class.{{name.id}}_relation.query(primary_field).as(::Jennifer::QueryBuilder::ModelQuery({{klass}}))
         end
 
         def {{name.id}}_reload
+          @__{{name.id}}_retrieved = true
           @{{name.id}} = {{name.id}}_query.first.as({{klass}}?)
         end
 

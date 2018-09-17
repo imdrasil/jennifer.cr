@@ -201,10 +201,6 @@ module Jennifer
         update_columns({name => value})
       end
 
-      private def __check_if_changed
-        raise Jennifer::Skip.new unless changed? || new_record?
-      end
-
       def save!(skip_validation : Bool = false)
         raise Jennifer::RecordInvalid.new(errors.to_a) unless save(skip_validation)
         true
@@ -262,6 +258,7 @@ module Jennifer
 
       private def update_record : Bool
         return false unless __before_update_callback
+        return true unless changed?
         res = self.class.adapter.update(self)
         __after_update_callback
         res.rows_affected == 1
@@ -346,7 +343,6 @@ module Jennifer
         ::Jennifer::Model::RelationDefinition.inherited_hook
 
         after_save :__refresh_changes
-        before_save :__check_if_changed
 
         def self.superclass
           {{@type.superclass}}

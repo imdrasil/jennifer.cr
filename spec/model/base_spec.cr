@@ -255,7 +255,7 @@ describe Jennifer::Model::Base do
       end
 
       it "returns false if record wasn't saved" do
-        Factory.create_contact.save.should be_false
+        Factory.create_address.save.should be_true
       end
 
       it "calls after_save_callback" do

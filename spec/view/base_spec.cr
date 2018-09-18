@@ -149,4 +149,35 @@ describe Jennifer::View::Base do
       Jennifer::View::Base.views.includes?(Jennifer::View::Materialized).should be_false
     end
   end
+
+  describe "::build" do
+    context "strict mapping" do
+      it "raises exception if not all fields are described" do
+        Factory.create_contact
+        executed = false
+        expect_raises(::Jennifer::BaseException) do
+          StrictMaleContactWithExtraField.all.each_result_set do |rs|
+            executed = true
+            begin
+              StrictMaleContactWithExtraField.build(rs)
+            ensure
+              rs.read_to_end
+            end
+          end
+        end
+        executed.should be_true
+      end
+    end
+
+    context "with hash" do
+      context "strict mapping" do
+        it "raises exception if some field can't be casted" do
+          error_message = "Column StrinctBrokenMaleContact.name can't be casted from Nil to it's type - String"
+          expect_raises(Jennifer::BaseException, error_message) do
+            StrinctBrokenMaleContact.build({} of String => Jennifer::DBAny)
+          end
+        end
+      end
+    end
+  end
 end

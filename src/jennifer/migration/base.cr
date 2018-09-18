@@ -2,6 +2,7 @@ module Jennifer
   module Migration
     abstract class Base
       module AbstractClassMethods
+        # Returns migration version - timestamp part of a class file name.
         abstract def version
       end
 
@@ -22,6 +23,7 @@ module Jennifer
       end
 
       macro inherited
+        # :nodoc:
         def self.version
           matched_data = File.basename(__FILE__, ".cr").match(/\A(\d)+/)
           return matched_data[0] if matched_data

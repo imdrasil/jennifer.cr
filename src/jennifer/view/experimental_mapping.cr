@@ -1,7 +1,7 @@
 module Jennifer
   module View
     module ExperimentalMapping
-      # Generates getter and setters
+      # :nodoc:
       macro __field_declaration
         {% for key, value in COLUMNS_METADATA %}
           @{{key.id}} : {{value[:parsed_type].id}}
@@ -29,18 +29,22 @@ module Jennifer
           end
 
           {% if value[:primary] %}
+            # :nodoc:
             def primary
               @{{key.id}}
             end
 
+            # :nodoc:
             def self.primary
               c({{key.stringify}})
             end
 
+            # :nodoc:
             def self.primary_field_name
               {{key.stringify}}
             end
 
+            # :nodoc:
             def self.primary_field_type
               {{value[:parsed_type].id}}
             end
@@ -48,6 +52,7 @@ module Jennifer
         {% end %}
       end
 
+      # :nodoc:
       macro __instance_methods
         # Creates object from `DB::ResultSet`
         def initialize(%pull : DB::ResultSet)
@@ -61,19 +66,19 @@ module Jennifer
         # Accepts symbol hash or named tuple, stringify it and calls
         # TODO: check how converting affects performance
         def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-          initialize(stringify_hash(values, Jennifer::DBAny))
+          initialize(Ifrit.stringify_hash(values, Jennifer::DBAny))
         end
 
         def initialize(values : Hash | NamedTuple, new_record)
           initialize(values)
         end
 
-        # Extracts arguments due to mapping from *pull* and returns tuple for
-        # fields assignment. It stands on that fact result set has all defined fields in a raw
+        # Extracts arguments due to mapping from *pull* and returns tuple for fields assignment.
+        # It stands on that fact result set has all defined fields in a raw
         # TODO: think about moving it to class scope
         # NOTE: don't use it manually - there is some dependencies on caller such as reading result set to the end
         # if eception was raised
-        def _extract_attributes(pull : DB::ResultSet)
+        private def _extract_attributes(pull : DB::ResultSet)
           {% for key in COLUMNS_METADATA.keys %}
             %var{key.id} = nil
             %found{key.id} = false
@@ -129,8 +134,8 @@ module Jennifer
           {% end %}
         end
 
-        # Extracts attributes from gien hash to the tuple. If hash has no some field - will not raise any error.
-        def _extract_attributes(values : Hash(String, ::Jennifer::DBAny))
+        # Extracts attributes from given hash to the tuple. If hash has no some field - will not raise any error.
+        private def _extract_attributes(values : Hash(String, ::Jennifer::DBAny))
           {% for key in COLUMNS_METADATA.keys %}
             %var{key.id} = nil
             %found{key.id} = true
@@ -176,7 +181,7 @@ module Jennifer
           {% end %}
         end
 
-        # Reloads all fields from db
+        # :nodoc:
         def reload
           this = self
           self.class.all.where { this.class.primary == this.primary }.each_result_set do |rs|
@@ -185,26 +190,25 @@ module Jennifer
           self
         end
 
-        # Returns hash with all attributes and symbol keys
+        # :nodoc:
         def to_h
           {
             {% for key in COLUMNS_METADATA.keys %}
-              :{{key.id}} => @{{key.id}},
+              :{{key.id}} => {{key.id}},
             {% end %}
           }
         end
 
-        # Returns hash with all attributes and string keys
+        # :nodoc:
         def to_str_h
           {
             {% for key in COLUMNS_METADATA.keys %}
-              {{key.stringify}} => @{{key.id}},
+              {{key.stringify}} => {{key.id}},
             {% end %}
           }
         end
 
-        # Returns field by given name. If object has no such field - will raise `BaseException`.
-        # To avoid raising exception set `raise_exception` to `false`.
+        # :nodoc:
         def attribute(name : String | Symbol, raise_exception = true)
           case name.to_s
           {% for key in COLUMNS_METADATA.keys %}
@@ -219,6 +223,7 @@ module Jennifer
 
       macro included
         macro inherited
+          # :nodoc:
           FIELDS = {} of String => Hash(String, String)
 
           macro finished
@@ -231,14 +236,15 @@ module Jennifer
       end
 
       macro mapping(properties, strict = true)
+        # :nodoc:
         STRICT_MAPPING = {{strict}}
 
-        # Returns field count
+        # :nodoc:
         def self.field_count
           {{properties.size}}
         end
 
-        # Returns array of field names
+        # :nodoc:
         def self.field_names
           COLUMNS_METADATA.keys.to_a.map(&.to_s)
         end
@@ -289,9 +295,10 @@ module Jennifer
           {% raise "Model #{@type} has no defined primary field. For now model without primary field is not allowed" %}
         {% end %}
 
+        # :nodoc:
         COLUMNS_METADATA = {{properties}}
 
-        # Returns named tuple of column metadata
+        # :nodoc:
         def self.columns_tuple
           COLUMNS_METADATA
         end

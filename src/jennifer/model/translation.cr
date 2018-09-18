@@ -65,6 +65,8 @@ end
 I18n.load_path << File.join(__DIR__, "../locale")
 
 # TODO: make a PR to the i18n repo
+
+# :nodoc:
 module I18n
   def self.exists?(key, locale = config.locale, count = nil)
     key += (count == 1 ? ".one" : ".other") if count

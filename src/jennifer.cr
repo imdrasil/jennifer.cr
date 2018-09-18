@@ -1,8 +1,6 @@
 require "inflector"
-
 require "ifrit/converter"
 require "ifrit/core"
-
 require "i18n"
 
 require "./jennifer/macros"
@@ -27,6 +25,7 @@ require "./jennifer/migration/*"
 
 module Jennifer
   {% if Jennifer.constant("AFTER_LOAD_SCRIPT") == nil %}
+    # :nodoc:
     AFTER_LOAD_SCRIPT = [] of String
   {% end %}
 

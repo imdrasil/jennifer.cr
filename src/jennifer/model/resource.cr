@@ -16,15 +16,25 @@ module Jennifer
         abstract def build
         abstract def all
         abstract def superclass
+        abstract def primary
+
+        # Returns field count
+        abstract def field_count
+
+        # Returns array of field names
+        abstract def field_names
+
+        # Returns named tuple of column metadata
+        abstract def columns_tuple
       end
 
       extend AbstractClassMethods
-      extend Ifrit
       extend Translation
       include Scoping
       include RelationDefinition
       include Macros
 
+      # :nodoc:
       def self.superclass; end
 
       alias Supportable = DBAny | self
@@ -135,8 +145,17 @@ module Jennifer
         raise Jennifer::UnknownRelation.new(self.class, name)
       end
 
+      # Returns value of attribute *name*
       abstract def attribute(name)
+
+      # Returns value of primary field
       abstract def primary
+
+      # Returns hash with model attributes; keys are symbols
+      abstract def to_h
+
+      # Returns hash with model attributes; keys are strings
+      abstract def to_str_h
     end
   end
 end

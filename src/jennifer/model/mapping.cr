@@ -10,8 +10,9 @@ module Jennifer
         {% end %}
       end
 
+      # TODO: remove .primary_field_type method as it isn't used anywhere
+
       # :nodoc:
-      # Generates getter and setters
       macro __field_declaration(properties, primary_auto_incrementable)
         {% for key, value in properties %}
           @{{key.id}} : {{value[:parsed_type].id}}
@@ -48,22 +49,27 @@ module Jennifer
             end
 
             {% if value[:primary] %}
+              # :nodoc:
               def primary
                 @{{key.id}}
               end
 
+              # :nodoc:
               def self.primary
                 c("{{key.id}}")
               end
 
+              # :nodoc:
               def self.primary_field_name
                 "{{key.id}}"
               end
 
+              # :nodoc:
               def self.primary_field_type
                 {{value[:parsed_type].id}}
               end
 
+              # :nodoc:
               def init_primary_field(value : Int)
                 {% if primary_auto_incrementable %}
                   raise ::Jennifer::AlreadyInitialized.new(@{{key.id}}, value) if @{{key.id}}
@@ -71,7 +77,7 @@ module Jennifer
                 {% end %}
               end
 
-              # Inits primary field
+              # :nodoc:
               def init_primary_field(value); end
             {% end %}
           {% end %}
@@ -83,7 +89,7 @@ module Jennifer
         {% if created_at %}
           before_save :__update_updated_at
 
-          # Sets `created_at` to current time
+          # :nodoc:
           def __update_created_at
             @created_at = Time.new(Jennifer::Config.local_time_zone)
           end
@@ -92,22 +98,14 @@ module Jennifer
         {% if updated_at %}
           before_create :__update_created_at
 
-          # Sets `updated_at` to current time
+          # :nodoc:
           def __update_updated_at
             @updated_at = Time.new(Jennifer::Config.local_time_zone)
           end
         {% end %}
       end
 
-      # Acceptable keys:
-      # - type
-      # - getter
-      # - setter
-      # - null
-      # - primary
-      # - virtual
-      # - default
-      # - converter
+      # :nodoc:
       private macro single_mapping(properties, strict = true)
         {%
           primary = nil
@@ -149,25 +147,27 @@ module Jennifer
 
         __field_declaration({{properties}}, {{primary_auto_incrementable}})
 
-        # Returns if primary field is autoincrementable
+        # :nodoc:
         def self.primary_auto_incrementable?
           {{primary_auto_incrementable}}
         end
 
-        # Returns field count
+        # :nodoc:
         def self.field_count
           {{properties.size}}
         end
 
+        # :nodoc:
         COLUMNS_METADATA = {{properties}}
+        # :nodoc:
         FIELD_NAMES = [{{properties.keys.map { |e| "#{e.id.stringify}" }.join(", ").id}}]
 
-        # Returns array of field names
+        # :nodoc:
         def self.field_names
           FIELD_NAMES
         end
 
-        # Returns named tuple of column metadata
+        # :nodoc:
         def self.columns_tuple
           COLUMNS_METADATA
         end
@@ -183,7 +183,7 @@ module Jennifer
 
         # Accepts symbol hash or named tuple, stringify it and calls constructor with string-based keys hash.
         def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-          initialize(stringify_hash(values, Jennifer::DBAny))
+          initialize(Ifrit.stringify_hash(values, Jennifer::DBAny))
         end
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))
@@ -195,6 +195,7 @@ module Jennifer
         end
 
         {% if add_default_constructor %}
+          # :nodoc:
           WITH_DEFAULT_CONSTRUCTOR = true
           # Default constructor without any fields
           def initialize
@@ -203,17 +204,18 @@ module Jennifer
             {% end %}
           end
 
-          # Default builder method
+          # :nodoc:
           def self.build
             o = new
             o.__after_initialize_callback
             o
           end
         {% else %}
+          # :nodoc:
           WITH_DEFAULT_CONSTRUCTOR = false
         {% end %}
 
-        # Converts String based hash to `Hash(String, Jennifer::DBAny)`
+        # :nodoc:
         def self.build_params(hash : Hash(String, String?)) : Hash(String, Jennifer::DBAny)
           converted_hash = {} of String => Jennifer::DBAny
           hash.each do |key, value|
@@ -231,12 +233,12 @@ module Jennifer
           converted_hash
         end
 
-        # Extracts arguments due to mapping from *pull* and returns tuple for
-        # fields assignment. It stands on that fact result set has all defined fields in a row
+        # Extracts arguments due to mapping from *pull* and returns tuple for fields assignment.
+        # It stands on that fact result set has all defined fields in a row
         # TODO: think about moving it to class scope
         # NOTE: don't use it manually - there is some dependencies on caller such as reading result set to the end
         # if exception was raised
-        def _extract_attributes(pull : DB::ResultSet)
+        private def _extract_attributes(pull : DB::ResultSet)
           requested_columns_count = self.class.actual_table_field_count
           ::Jennifer::BaseException.assert_column_count(requested_columns_count, pull.column_count)
           {% for key, value in properties %}
@@ -297,7 +299,7 @@ module Jennifer
           {% end %}
         end
 
-        def _extract_attributes(values : Hash(String, ::Jennifer::DBAny))
+        private def _extract_attributes(values : Hash(String, ::Jennifer::DBAny))
           {% for key, value in properties %}
             %var{key.id} = {{value[:default]}}
             %found{key.id} = true
@@ -342,7 +344,7 @@ module Jennifer
           {% end %}
         end
 
-        # Deletes object from db and calls callbacks
+        # :nodoc:
         def destroy
           return false if new_record?
           result =
@@ -360,8 +362,7 @@ module Jennifer
           result
         end
 
-        # Returns if any field was changed. If field again got first value - `true` anyway
-        # will be returned.
+        # :nodoc:
         def changed?
           {% for attr in nonvirtual_attrs %}
             @{{attr.id}}_changed ||
@@ -369,7 +370,7 @@ module Jennifer
           false
         end
 
-        # Returns hash with all attributes and symbol keys.
+        # :nodoc:
         def to_h
           {
             {% for key in nonvirtual_attrs %}
@@ -378,7 +379,7 @@ module Jennifer
           } of Symbol => ::Jennifer::DBAny
         end
 
-        # Returns hash with all attributes and string keys
+        # :nodoc:
         def to_str_h
           {
             {% for key in nonvirtual_attrs %}
@@ -387,8 +388,7 @@ module Jennifer
           } of String => ::Jennifer::DBAny
         end
 
-        # Sets given *values* to proper fields and stores them directly to db without
-        # any validation or callback
+        # :nodoc:
         def update_columns(values : Hash(String | Symbol, Jennifer::DBAny))
           values.each do |name, value|
             case name.to_s
@@ -413,7 +413,7 @@ module Jennifer
           __refresh_changes
         end
 
-        # Sets *name* field with *value*
+        # :nodoc:
         def set_attribute(name : String | Symbol, value : Jennifer::DBAny)
           case name.to_s
           {% for key, value in properties %}
@@ -431,8 +431,7 @@ module Jennifer
           end
         end
 
-        # Returns field by given name. If object has no such field - will raise `BaseException`.
-        # To avoid raising exception set `raise_exception` to `false`.
+        # :nodoc:
         def attribute(name : String, raise_exception : Bool = true)
           case name
           {% for attr in properties.keys %}
@@ -444,7 +443,7 @@ module Jennifer
           end
         end
 
-        # Returns named tuple of all fields should be saved (because they are changed).
+        # :nodoc:
         def arguments_to_save
           args = [] of ::Jennifer::DBAny
           fields = [] of String
@@ -464,6 +463,7 @@ module Jennifer
           {args: args, fields: fields}
         end
 
+        # :nodoc:
         def arguments_to_insert
           args = [] of ::Jennifer::DBAny
           # TODO: think about moving this array to constant; maybe use compile time instead of runtime
@@ -511,10 +511,22 @@ module Jennifer
         end
 
         macro inherited
+          # :nodoc:
           MODEL = true
         end
       end
 
+      # Defines model mapping.
+      #
+      # Acceptable keys:
+      # - type
+      # - getter
+      # - setter
+      # - null
+      # - primary
+      # - virtual
+      # - default
+      # - converter
       macro mapping(properties, strict = true)
         {% if !@type.constant("MODEL") %}
           single_mapping({{properties}}, {{strict}})

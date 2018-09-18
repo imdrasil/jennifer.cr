@@ -135,6 +135,47 @@ describe Jennifer::Model::Base do
         match_fields(contact, name: "Deepthi", age: 18, gender: "female")
       end
     end
+
+    context "strict mapping" do
+      it "raises exception if not all fields are described" do
+        Factory.create_contact
+        expect_raises(::Jennifer::BaseException) do
+          Contact.all.each_result_set do |rs|
+            begin
+              ContactWithNotAllFields.build(rs)
+            ensure
+              rs.read_to_end
+            end
+          end
+        end
+      end
+
+      it "raised exception includes query explanation" do
+        select_regexp = /[\S\s]*SELECT contacts\.\*/i
+        Factory.create_contact
+        expect_raises(::Jennifer::BaseException, select_regexp) do
+          Contact.all.each_result_set do |rs|
+            ContactWithNotAllFields.build(rs)
+          end
+        end
+      end
+
+      it "result set has no some field" do
+        o = OneFieldModel.create({} of String => Jennifer::DBAny)
+        error_message = "Column OneFieldModelWithExtraArgument.missing_field hasn't been found in the result set."
+        expect_raises(Jennifer::BaseException, error_message) do
+          OneFieldModelWithExtraArgument.all.to_a
+        end
+      end
+    end
+
+    context "non strict mapping" do
+      it "ignores all extra fields" do
+        ContactWithNotStrictMapping.create({name: "some name"})
+        model = ContactWithNotStrictMapping.all.last!
+        model.name.should eq("some name")
+      end
+    end
   end
 
   describe "::create!" do
@@ -196,6 +237,15 @@ describe Jennifer::Model::Base do
 
     context "from hash" do
       context "with string keys" do
+        context "strict mapping" do
+          it "raises exception if some field can't be casted" do
+            error_message = "Column OneFieldModelWithExtraArgument.missing_field can't be casted from Nil to it's type - String"
+            expect_raises(Jennifer::BaseException, error_message) do
+              OneFieldModelWithExtraArgument.build({} of String => Jennifer::DBAny)
+            end
+          end
+        end
+
         it "properly creates object" do
           contact = Contact.build({"name" => "Deepthi", "age" => 18, "gender" => "female"})
           match_fields(contact, name: "Deepthi", age: 18, gender: "female")
@@ -214,6 +264,24 @@ describe Jennifer::Model::Base do
           c = Contact.build(Contact.build_params({"name" => "a", "age" => "999", "gender" => "female", "ballance" => "12345.456"}))
           c.name.should eq("a")
           c.age.should eq(999)
+        end
+      end
+
+      context "without arguments" do
+        it "allows one field models" do
+          OneFieldModel.build
+        end
+      end
+
+      context "given result set" do
+        it "allows one field models" do
+          model = OneFieldModel.create
+          is_executed = false
+          OneFieldModel.where { _id == model.id }.each_result_set do |rs|
+            OneFieldModel.build(rs).id.should eq(model.id)
+            is_executed = true
+          end
+          is_executed.should be_true
         end
       end
     end

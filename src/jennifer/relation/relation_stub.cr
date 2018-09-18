@@ -1,5 +1,7 @@
 module Jennifer
   # This is a stub for the case when no relation has been defined yet.
+
+  # :nodoc:
   class RelationStub < ::Jennifer::Relation::IRelation
     def name
       raise "stubbed relation"

@@ -34,49 +34,11 @@ module Jennifer
         query.join(model_class, type: type, relation: @name) do |eb|
           this.condition_clause.not_nil! & (yield eb)
         end
-        # if @join_table
-        #  _foreign = foreign_field
-        #  _primary = primary_field
-        #  jt = @join_table.not_nil!
-        #  jtk = @join_foreign || T.to_s.foreign_key
-
-        #  q = query.join(jt, type: type) { Q.c(_primary) == c(_foreign) }.join(T, type: type) do |eb|
-        #    (T.c(_primary) == c(jtk, jt)) & (yield eb)
-        #  end
-        #  if @join_query
-        #    _tree = @join_query.not_nil!
-        #    q.where { _tree }
-        #  else
-        #    q
-        #  end
-        # else
-        #  query.join(model_class, type: type, relation: @name) do |eb|
-        #    this.condition_clause.not_nil! & (yield eb)
-        #  end
-        # end
       end
 
       def query(primary_value)
         condition = condition_clause(primary_value)
         T.where { condition }
-        # if @join_table
-        #  jt = @join_table.not_nil!
-        #  jtk = join_table_foreign_key
-        #  _primary_value = primary_value
-        #  _pf = primary_field
-        #  _ff = foreign_field
-        #  q = T.all.join(jt) { (c(jtk) == T.c(_pf)) & (c(_ff) == _primary_value) }
-        #
-        #  if @join_query
-        #    _tree = @join_query.not_nil!
-        #    q.where { _tree }
-        #  else
-        #    q
-        #  end
-        # else
-        #  condition = condition_clause(primary_value)
-        #  T.where { condition }
-        # end
       end
 
       def insert(obj : Q, rel : Hash(String, Jennifer::DBAny))

@@ -1,3 +1,6 @@
+require "../validations/static_validator"
+require "../validations/*"
+
 module Jennifer
   module Model
     module Validation
@@ -45,218 +48,148 @@ module Jennifer
       # :nodoc:
       macro _not_nil_validation(field, allow_blank)
         begin
-          {% if allow_blank %}
-            return if {{field.id}}.nil?
-          {% else %}
-            return errors.add({{field}}, :blank) if {{field.id}}.nil?
-          {% end %}
+          res = ::Jennifer::Validations::StaticValidator.validate(self, {{field}}, {{field.id}}, {{allow_blank}})
+          return res unless res
           {{field.id}}.not_nil!
         end
       end
 
+      # Adds a validation method to the class.
       macro validates_with_method(*names)
-        {% for method in names %}
-          {% VALIDATION_METHODS << method.id.stringify %}
-        {% end %}
+        {% names.reduce(VALIDATION_METHODS) { |arr, method| arr << method.id.stringify } %}
       end
 
+      # Passes the record off to an instance of the class specified and allows them to add errors based on more complex conditions.
       macro validates_with(klass, **options)
         validates_with_method(%validate_method)
 
         # :nodoc:
         def %validate_method
-          {% if options %}
-            {{klass}}.new(errors).validate(self, {{**options}})
-          {% else %}
-            {{klass}}.new(errors).validate(self)
-          {% end %}
+          {{klass}}.new(errors).validate(self{% if options %}, {{**options}} {% end %})
         end
       end
 
+      # Validation whether the value of the specified attribute is included in the given enumerable object.
       macro validates_inclusion(field, in, allow_blank = false)
         validates_with_method(%validate_method)
 
         # :nodoc:
         def %validate_method
-          value = _not_nil_validation({{field}}, {{allow_blank}})
-          unless ({{in}}).includes?(value)
-            errors.add({{field}}, :inclusion)
-          end
+          ::Jennifer::Validations::Inclusion.validate(self, {{field}}, {{field.id}}, {{allow_blank}}, {{in}})
         end
       end
 
+      # Validates that the value of the specified attribute is not in the given enumerable object.
       macro validates_exclusion(field, in, allow_blank = false)
         validates_with_method(%validate_method)
 
         # :nodoc:
         def %validate_method
-          value = _not_nil_validation({{field}}, {{allow_blank}})
-          if ({{in}}).includes?(value)
-            errors.add(:{{field.id}}, :exclusion)
-          end
+          ::Jennifer::Validations::Exclusion.validate(self, {{field}}, {{field.id}}, {{allow_blank}}, {{in}})
         end
       end
 
+      # Validates whether the value of the specified attribute *field* is of the correct form by matching it
+      # against the regular expression *value*.
       macro validates_format(field, value, allow_blank = false)
         validates_with_method(%validate_method)
 
         # :nodoc:
         def %validate_method
-          value = _not_nil_validation({{field}}, {{allow_blank}})
-          unless {{value}} =~ value
-            errors.add({{field}}, :invalid)
-          end
+          ::Jennifer::Validations::Format.validate(self, {{field}}, {{field.id}}, {{allow_blank}}, {{value}})
         end
       end
 
+      # Validates that the specified attribute matches the length restrictions supplied.
+      #
+      # Only one option can be used at a time:
+      # - minimum
+      # - maximum
+      # - is
+      # - in
       macro validates_length(field, **options)
+        {% options[:allow_blank] = options[:allow_blank] == nil ? false : options[:allow_blank] %}
         validates_with_method(%validate_method)
 
         # :nodoc:
         def %validate_method
-          value = _not_nil_validation({{field}}, {{options[:allow_blank] || false}})
-          size = value.size
-          {% if options[:in] %}
-            if ({{options[:in]}}).max < size
-              errors.add({{field}}, :too_long, ({{options[:in]}}).max)
-            elsif ({{options[:in]}}).min > size
-              errors.add({{field}}, :too_short, ({{options[:in]}}).min)
-            end
-          {% elsif options[:is] %}
-            if {{options[:is]}} != size
-              errors.add({{field}}, :wrong_length, {{options[:is]}})
-            end
-          {% elsif options[:minimum] %}
-            if {{options[:minimum]}} > size
-              errors.add({{field}}, :too_short, {{options[:minimum]}})
-            end
-          {% elsif options[:maximum] %}
-            if {{options[:maximum]}} < size
-              errors.add({{field}}, :too_long, {{options[:maximum]}})
-            end
-          {% end %}
+          ::Jennifer::Validations::Length.validate(self, {{field}}, {{field.id}}, {{**options}})
         end
       end
 
+      # Validates whether the value of the specified attributes are unique across the system.
+      #
+      # Because this check is performed outside the database there is still a chance that duplicate values will be
+      # inserted in two parallel transactions. To guarantee against this you should create a unique index on the field.
       # TODO: add scope
-
       macro validates_uniqueness(field, allow_blank = false)
         validates_with_method(%validate_method)
 
         # :nodoc:
         def %validate_method
-          value = _not_nil_validation({{field}}, {{allow_blank}})
-          query = self.class.where { _{{field.id}} == value }
-          unless new_record?
-            this = self
-            query = query.where { primary != this.primary }
-          end
-
-          errors.add({{field}}, :taken) if query.exists?
+          ::Jennifer::Validations::Uniqueness.validate(self, {{field}}, {{field.id}}, {{allow_blank}}, self.class.where { _{{field.id}} == {{field.id}} })
         end
       end
 
+      # Validates that the specified attributes are not blank.
       macro validates_presence(field)
         validates_with_method(%validate_method)
 
         # :nodoc:
         def %validate_method
-          value = @{{field.id}}
-          if value.blank?
-            errors.add({{field}}, :blank)
-          end
+          ::Jennifer::Validations::Presence.validate(self, {{field}}, {{field.id}}, false)
         end
       end
 
+      # Validates that the specified attribute is absent.
       macro validates_absence(field)
         validates_with_method(%validate_method)
 
         # :nodoc:
         def %validate_method
-          value = @{{field.id}}
-          if value.present?
-            errors.add({{field}}, :present)
-          end
+          ::Jennifer::Validations::Absence.validate(self, {{field}}, {{field.id}}, true)
         end
       end
 
+      # Validates whether the value of the specified attribute satisfies given comparison condition.
+      #
+      # Configuration options:
+      # - greater_than
+      # - greater_than_or_equal_to
+      # - equal_to
+      # - less_than
+      # - less_than_or_equal_to
+      # - odd
+      # - even
       macro validates_numericality(field, **options)
+        {% options[:allow_blank] = options[:allow_blank] == nil ? false : options[:allow_blank] %}
         validates_with_method(%validate_method)
 
         # :nodoc:
         def %validate_method
-          value = _not_nil_validation({{field}}, {{options[:allow_blank] || false}})
-          {% if options[:greater_than] %}
-            if {{options[:greater_than]}} >= value
-              errors.add({{field}}, :greater_than, { :value => {{options[:greater_than]}} })
-            end
-          {% end %}
-          {% if options[:greater_than_or_equal_to] %}
-            if {{options[:greater_than_or_equal_to]}} > value
-              errors.add({{field}}, :greater_than_or_equal_to, { :value => {{options[:greater_than_or_equal_to]}} })
-            end
-          {% end %}
-          {% if options[:equal_to] %}
-            if {{options[:equal_to]}} != value
-              errors.add({{field}}, :equal_to, { :value => {{options[:equal_to]}} })
-            end
-          {% end %}
-          {% if options[:less_than] %}
-            if {{options[:less_than]}} <= value
-              errors.add({{field}}, :less_than, { :value => {{options[:less_than]}} })
-            end
-          {% end %}
-          {% if options[:less_than_or_equal_to] %}
-            if {{options[:less_than_or_equal_to]}} < value
-              errors.add({{field}}, :less_than_or_equal_to, { :value => {{options[:less_than_or_equal_to]}} })
-            end
-          {% end %}
-          {% if options[:other_than] %}
-            if {{options[:other_than]}} == value
-              errors.add({{field}}, :other_than, { :value => {{options[:other_than]}} })
-            end
-          {% end %}
-          {% if options[:odd] %}
-            if value.even?
-              errors.add({{field}}, :odd)
-            end
-          {% end %}
-          {% if options[:even] %}
-            if value.odd?
-              errors.add({{field}}, :even)
-            end
-          {% end %}
+          ::Jennifer::Validations::Numericality.validate(self, {{field}}, {{field.id}}, **{{options}})
         end
       end
 
+      # Encapsulates the pattern of wanting to validate the acceptance of a terms of service check box (or similar agreement)
+      #
+      # This check is performed only if *field* is not nil.
       macro validates_acceptance(field, accept = nil)
         validates_with_method(%validate_method)
 
         # :nodoc:
         def %validate_method
-          value = @{{field.id}}
-          {% condition = accept ? "!(#{accept}).includes?(value)" : "value != true && value != '1'" %}
-          if {{condition.id}}
-            errors.add({{field}}, :accepted)
-          end
+          ::Jennifer::Validations::Acceptance.validate(self, {{field}}, {{field.id}}, false, {{accept}})
         end
       end
 
+      # Encapsulates the pattern of wanting to validate a password or email address field with a confirmation.
       macro validates_confirmation(field, case_sensitive = true)
         validates_with_method(%validate_method)
 
         # :nodoc:
         def %validate_method
-          return if @{{field.id}}_confirmation.nil?
-          value = _not_nil_validation({{field}}, false)
-
-          if value.compare(@{{field.id}}_confirmation.not_nil!, !{{case_sensitive}}) != 0
-            errors.add(
-              {{field}},
-              :confirmation,
-              options: { :attribute => self.class.human_attribute_name(:{{field.id}}) }
-            )
-          end
+          ::Jennifer::Validations::Confirmation.validate(self, {{field}}, {{field.id}}, false, {{field.id}}_confirmation, {{case_sensitive}})
         end
       end
     end

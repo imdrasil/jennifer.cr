@@ -445,7 +445,7 @@ describe Jennifer::Model::Validation do
     end
   end
 
-  describe "%validates_acceptance" do
+  describe "%validates_confirmation" do
     context "with nil confirmations" do
       it "pass validation" do
         c = ConfirmationContact.build({:name => "name"})

@@ -245,6 +245,10 @@ This validates that attribute's value is blank. It uses `#blank?` method from If
 
 ```crystal
 class SuperUser < User
+  mapping(
+    # ...
+  )
+
   validates_absence :title
 end
 ```
@@ -320,6 +324,38 @@ This option skip validation if attribute's value is `nil`. All validation method
 - `confirmation`
 
 By default it is set to `false`.
+
+### `if` validation option
+
+Sometimes it will make sense to validate an object only when a given predicate is satisfied. You can do that by using the :if option, which can take a symbol or an expression. You may use the :if option when you want to specify when the validation should happen.
+
+The symbol value of :if options corresponds to the method name that will get called right before validation happens.
+
+```crystal
+class Player < Jennifer::Model::Base
+  mapping(
+    # ...
+    health: Float64,
+    live_creature: { type: Bool, default: true, virtual: true}
+  )
+
+  validates_numericality :health, greater_than: 0, if: :live_creature
+end
+```
+
+An expression may be used to simulate *unless* behavior of simple condition without wrapping it into a method.
+
+```crystal
+class Player < Jennifer::Model::Base
+  mapping(
+    # ...
+    health: Float64,
+    undead: { type: Bool, default: false, virtual: true}
+  )
+
+  validates_numericality :health, greater_than: 0, if: !undead
+end
+```
 
 ## Custom validation
 

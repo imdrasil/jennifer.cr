@@ -308,7 +308,7 @@ describe Jennifer::Adapter::Base do
   describe "#table_column_count" do
     context "given table name" do
       it "returns amount of table fields" do
-        adapter.table_column_count("addresses").should eq(5)
+        adapter.table_column_count("addresses").should eq(7)
       end
     end
 

@@ -166,10 +166,10 @@ Before development create the db user (see `/spec/config.cr` file) and database:
 
 ```shell
 # Postgres
-$ crystal examples/run.cr -- db:setup
+$ make sam db:setup
 
 # Mysql
-$ DB=mysql crystal examples/run.cr -- db:setup
+$ DB=mysql make same db:setup
 ```
 
 ### Running tests
@@ -200,7 +200,7 @@ To run integration test just use standard spec runner:
 $ crystal spec spec/integration/<test_name>.cr
 ```
 
-Each test file is required to be invoked separatelly as it may have own configuration.
+Each test file is required to be invoked separately as it may have own configuration.
 
 To run docker-related tests (by the way, all of them run only with mysql) firstly you should run docker container and specify environment variable `DOCKER=1`. For more details take a look at `spec/integration/sam/*` application files and `examples/run_docker_mysql.sh` docker boot script.
 

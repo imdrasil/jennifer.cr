@@ -6,6 +6,8 @@ class CreateAddress20170119011507724 < Jennifer::Migration::Base
       t.bool :main, {:default => false}
 
       t.foreign_key :contacts
+
+      t.timestamps
     end
 
     # add_foreign_key :addresses, :contacts

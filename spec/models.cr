@@ -122,13 +122,18 @@ class Contact < ApplicationRecord
 end
 
 class Address < Jennifer::Model::Base
+  with_timestamps
+
   mapping(
     id: {type: Int32, primary: true},
     main: Bool,
     street: String,
     contact_id: Int32?,
-    details: JSON::Any?
+    details: JSON::Any?,
+    created_at: Time?,
+    updated_at: Time?
   )
+
   validates_format :street, /st\.|street/
 
   belongs_to :contact, Contact

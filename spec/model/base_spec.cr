@@ -614,6 +614,7 @@ describe Jennifer::Model::Base do
       it "imports objects" do
         void_transaction do
           objects = [Factory.build_address(enn: "qwer"), Factory.build_address(enn: "zxcc")]
+          objects.each { |o| o.created_at = o.updated_at = Time.new }
           Address.import(objects)
           Address.all.count.should eq(2)
         end
@@ -741,7 +742,7 @@ describe Jennifer::Model::Base do
     it {
       address = Factory.build_address
       address.inspect.should eq("#<Address:0x#{address.object_id.to_s(16)} id: nil, main: false, street: \"#{address.street}\","\
-        " contact_id: nil, details: nil>")
+        " contact_id: nil, details: nil, created_at: nil, updated_at: nil>")
     }
 
     it {

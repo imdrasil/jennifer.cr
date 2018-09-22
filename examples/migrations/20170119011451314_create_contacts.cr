@@ -8,7 +8,7 @@ class CreateContacts20170119011451314 < Jennifer::Migration::Base
         t.integer :tags, {:array => true}
         t.decimal :ballance
         t.field :gender, :gender_enum
-        t.timestamps
+        t.timestamps true
       end
       change_enum(:gender_enum, {:add_values => ["unknown"]})
       change_enum(:gender_enum, {:rename_values => ["unknown", "other"]})
@@ -19,7 +19,7 @@ class CreateContacts20170119011451314 < Jennifer::Migration::Base
         t.integer :age
         t.decimal :ballance
         t.enum :gender, ["male", "female"], {:default => "male"}
-        t.timestamps
+        t.timestamps true
       end
     {% end %}
   end

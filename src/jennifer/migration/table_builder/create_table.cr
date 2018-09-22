@@ -20,7 +20,7 @@ module Jennifer
         {% end %}
 
         def enum(name, values = [] of String, options = DB_OPTIONS.new)
-          hash = ({ :type => :enum, :values => typed_array_cast(values, EAllowedTypes) } of Symbol => AAllowedTypes).merge(options)
+          hash = ({ :type => :enum, :values => Ifrit.typed_array_cast(values, EAllowedTypes) } of Symbol => AAllowedTypes).merge(options)
           @fields[name.to_s] = hash
           self
         end

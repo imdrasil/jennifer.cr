@@ -7,8 +7,6 @@ module Jennifer
         alias AAllowedTypes = EAllowedTypes | Array(EAllowedTypes)
         alias DB_OPTIONS = Hash(Symbol, EAllowedTypes | Array(EAllowedTypes))
 
-        extend Ifrit
-
         delegate schema_processor, table_exists?, index_exists?, column_exists?, to: adapter
 
         getter adapter : Adapter::Base

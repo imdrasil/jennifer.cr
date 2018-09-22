@@ -1,18 +1,22 @@
 module Jennifer
   module Model
     module STIMapping
+      # :nodoc:
       # Defines mapping using single table inheritance. Is automatically called by `%mapping` macro.
       private macro sti_mapping(properties)
+        # :nodoc:
         STI = true
 
         def self.sti_condition
           c("type") == {{@type.id.stringify}}
         end
 
+        # :nodoc:
         def self.table_name
           superclass.table_name
         end
 
+        # :nodoc:
         def self.table_name(name)
           raise "You can't specify table name using STI on subclasses"
         end
@@ -41,7 +45,7 @@ module Jennifer
 
         __field_declaration({{properties}}, false)
 
-        def _sti_extract_attributes(values : Hash(String, ::Jennifer::DBAny))
+        private def _sti_extract_attributes(values : Hash(String, ::Jennifer::DBAny))
           {% for key, value in properties %}
             %var{key.id} = {{value[:default]}}
             %found{key.id} = true
@@ -87,13 +91,13 @@ module Jennifer
           {% end %}
         end
 
-        # creates object from db tuple
+        # Creates object from db tuple
         def initialize(%pull : DB::ResultSet)
           initialize(self.class.adapter.result_to_hash(%pull), false)
         end
 
         def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-          initialize(stringify_hash(values, Jennifer::DBAny))
+          initialize(Ifrit.stringify_hash(values, Jennifer::DBAny))
         end
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))
@@ -108,15 +112,18 @@ module Jennifer
         end
 
         {% if add_default_constructor %}
+          # :nodoc:
           WITH_DEFAULT_CONSTRUCTOR = true
 
           def initialize
             initialize({} of String => ::Jennifer::DBAny)
           end
         {% else %}
+          # :nodoc:
           WITH_DEFAULT_CONSTRUCTOR = false
         {% end %}
 
+        # :nodoc:
         def changed?
           super ||
           {% for key in nonvirtual_attrs %}
@@ -125,22 +132,25 @@ module Jennifer
           false
         end
 
+        # :nodoc:
         def to_h
           hash = super
           {% for key in nonvirtual_attrs %}
-            hash[:{{key.id}}] = @{{key.id}}
+            hash[:{{key.id}}] = {{key.id}}
           {% end %}
           hash
         end
 
+        # :nodoc:
         def to_str_h
           hash = super
           {% for key in nonvirtual_attrs %}
-            hash[{{key.stringify}}] = @{{key.id}}
+            hash[{{key.stringify}}] = {{key.id}}
           {% end %}
           hash
         end
 
+        # :nodoc:
         def update_columns(values : Hash(String | Symbol, Jennifer::DBAny))
           missing_values = {} of String | Symbol => Jennifer::DBAny
           values.each do |name, value|
@@ -164,6 +174,7 @@ module Jennifer
           super(missing_values)
         end
 
+        # :nodoc:
         def set_attribute(name, value)
           case name.to_s
           {% for key, value in properties %}
@@ -181,6 +192,7 @@ module Jennifer
           end
         end
 
+        # :nodoc:
         def attribute(name : String, raise_exception = true)
           if raise_exception && !self.class.field_names.includes?(name)
             raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}")
@@ -195,6 +207,7 @@ module Jennifer
           end
         end
 
+        # :nodoc:
         def arguments_to_save
           res = super
           args = res[:args]
@@ -214,6 +227,7 @@ module Jennifer
           {args: args, fields: fields}
         end
 
+        # :nodoc:
         def arguments_to_insert
           res = super
           args = res[:args]
@@ -232,6 +246,7 @@ module Jennifer
           { args: args, fields: fields }
         end
 
+        # :nodoc:
         def self.all : ::Jennifer::QueryBuilder::ModelQuery({{@type}})
           ::Jennifer::QueryBuilder::ModelQuery({{@type}}).build(table_name).where { _type == {{@type.stringify}} }
         end
@@ -259,18 +274,42 @@ module Jennifer
           {% end %}
         {% end %}
 
+        # :nodoc:
+        def self.build_params(hash : Hash(String, String?)) : Hash(String, Jennifer::DBAny)
+          converted_hash = {} of String => Jennifer::DBAny
+          hash.each do |key, value|
+            case key.to_s
+            {% for field, opts in all_properties %}
+            when {{field.id.stringify}}
+              if value.nil? || value.empty?
+                converted_hash[key] = nil
+              else
+                converted_hash[key] = parameter_converter.parse(value, {{opts[:stringified_type]}})
+              end
+            {% end %}
+            end
+          end
+          converted_hash
+        end
+
+        # :nodoc:
         COLUMNS_METADATA = {{all_properties}}
+        # :nodoc:
         PRIMARY_AUTO_INCREMENTABLE = {{@type.superclass.constant("PRIMARY_AUTO_INCREMENTABLE")}}
+        # :nodoc:
         FIELD_NAMES = [{{all_properties.keys.map { |e| "#{e.id.stringify}" }.join(", ").id}}]
 
+        # :nodoc:
         def self.columns_tuple
           COLUMNS_METADATA
         end
 
+        # :nodoc:
         def self.field_count
           {{all_properties.size}}
         end
 
+        # :nodoc:
         def self.field_names
           FIELD_NAMES
         end

@@ -41,7 +41,7 @@ module Jennifer
           end
 
           def add_values
-            typed_array_cast(@options[:add_values].as(Array), String).each do |field|
+            Ifrit.typed_array_cast(@options[:add_values].as(Array), String).each do |field|
               adapter.exec "ALTER TYPE #{@name} ADD VALUE '#{field}'"
             end
           end

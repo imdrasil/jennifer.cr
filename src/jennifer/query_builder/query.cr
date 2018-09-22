@@ -7,7 +7,6 @@ require "./executables"
 module Jennifer
   module QueryBuilder
     class Query
-      extend Ifrit
       include Aggregations
       include Ordering
       include Joining

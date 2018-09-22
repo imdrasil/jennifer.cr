@@ -25,10 +25,13 @@ module Jennifer
         true
       end
 
+      # :nodoc:
       macro inherited_hook
+        # :nodoc:
         VALIDATION_METHODS = [] of String
       end
 
+      # :nodoc:
       macro finished_hook
         def validate(skip = false)
           return if skip
@@ -39,6 +42,7 @@ module Jennifer
         end
       end
 
+      # :nodoc:
       macro _not_nil_validation(field, allow_blank)
         begin
           {% if allow_blank %}
@@ -59,6 +63,7 @@ module Jennifer
       macro validates_with(klass, **options)
         validates_with_method(%validate_method)
 
+        # :nodoc:
         def %validate_method
           {% if options %}
             {{klass}}.new(errors).validate(self, {{**options}})
@@ -71,6 +76,7 @@ module Jennifer
       macro validates_inclusion(field, in, allow_blank = false)
         validates_with_method(%validate_method)
 
+        # :nodoc:
         def %validate_method
           value = _not_nil_validation({{field}}, {{allow_blank}})
           unless ({{in}}).includes?(value)
@@ -82,6 +88,7 @@ module Jennifer
       macro validates_exclusion(field, in, allow_blank = false)
         validates_with_method(%validate_method)
 
+        # :nodoc:
         def %validate_method
           value = _not_nil_validation({{field}}, {{allow_blank}})
           if ({{in}}).includes?(value)
@@ -93,6 +100,7 @@ module Jennifer
       macro validates_format(field, value, allow_blank = false)
         validates_with_method(%validate_method)
 
+        # :nodoc:
         def %validate_method
           value = _not_nil_validation({{field}}, {{allow_blank}})
           unless {{value}} =~ value
@@ -104,6 +112,7 @@ module Jennifer
       macro validates_length(field, **options)
         validates_with_method(%validate_method)
 
+        # :nodoc:
         def %validate_method
           value = _not_nil_validation({{field}}, {{options[:allow_blank] || false}})
           size = value.size
@@ -134,6 +143,7 @@ module Jennifer
       macro validates_uniqueness(field, allow_blank = false)
         validates_with_method(%validate_method)
 
+        # :nodoc:
         def %validate_method
           value = _not_nil_validation({{field}}, {{allow_blank}})
           query = self.class.where { _{{field.id}} == value }
@@ -149,6 +159,7 @@ module Jennifer
       macro validates_presence(field)
         validates_with_method(%validate_method)
 
+        # :nodoc:
         def %validate_method
           value = @{{field.id}}
           if value.blank?
@@ -160,6 +171,7 @@ module Jennifer
       macro validates_absence(field)
         validates_with_method(%validate_method)
 
+        # :nodoc:
         def %validate_method
           value = @{{field.id}}
           if value.present?
@@ -171,6 +183,7 @@ module Jennifer
       macro validates_numericality(field, **options)
         validates_with_method(%validate_method)
 
+        # :nodoc:
         def %validate_method
           value = _not_nil_validation({{field}}, {{options[:allow_blank] || false}})
           {% if options[:greater_than] %}
@@ -219,6 +232,7 @@ module Jennifer
       macro validates_acceptance(field, accept = nil)
         validates_with_method(%validate_method)
 
+        # :nodoc:
         def %validate_method
           value = @{{field.id}}
           {% condition = accept ? "!(#{accept}).includes?(value)" : "value != true && value != '1'" %}
@@ -231,6 +245,7 @@ module Jennifer
       macro validates_confirmation(field, case_sensitive = true)
         validates_with_method(%validate_method)
 
+        # :nodoc:
         def %validate_method
           return if @{{field.id}}_confirmation.nil?
           value = _not_nil_validation({{field}}, false)

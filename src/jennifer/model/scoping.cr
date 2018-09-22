@@ -3,7 +3,7 @@ module Jennifer
     module Scoping
       macro scope(name, &block)
         {% underscored_arg_list = block.args.map(&.stringify).map { |e| "__" + e }.join(", ").id %}
-
+        # :nodoc:
         class Jennifer::QueryBuilder::ModelQuery(T)
           def {{name.id}}({{ block.args.splat }})
             # NOTE: this is workaround for #responds_to?
@@ -29,6 +29,7 @@ module Jennifer
       end
 
       macro scope(name, klass)
+        # :nodoc:
         class Jennifer::QueryBuilder::ModelQuery(T)
           def {{name.id}}(*args)
             T.{{name.id}}(self, *args)

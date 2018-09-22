@@ -28,13 +28,13 @@ describe Jennifer::Model::Mapping do
   end
 
   describe "::build_params" do
-    it do
+    it "correctly converts arguments hash with maybe Nil types" do
       hash = Contact.build_params({"name" => "asd", "age" => "20".as(String?)})
       hash["name"].should eq("asd")
       hash["age"].should eq(20)
     end
 
-    it do
+    it "correctly converts nil values" do
       hash = Contact.build_params({"name" => "asd", "age" => nil})
       hash["name"].should eq("asd")
       hash["age"].should be_nil
@@ -79,127 +79,35 @@ describe Jennifer::Model::Mapping do
     end
   end
 
-  describe "#_extract_attributes" do
-    postgres_only do
-      context "with casting from PG::Numeric" do
-        it "allows passing PG::Numeric" do
-          ballance = PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
-          c = ContactWithFloatMapping.build(ballance: ballance)
-          c.ballance.should eq(1.0f64)
-          c.ballance.is_a?(Float64)
-        end
-
-        it "properly creates using provided field instead of numeric" do
-          ballance = 10f64
-          c = ContactWithFloatMapping.build(ballance: ballance)
-          c.ballance.should eq(10f64)
-          c.ballance.is_a?(Float64).should be_true
-        end
-
-        it "properly loads data from db" do
-          ballance = PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
-          c = ContactWithFloatMapping.create(ballance: ballance)
-          contact_with_float = ContactWithFloatMapping.find!(c.id)
-          contact_with_float.ballance.should eq(1.0f64)
-          contact_with_float.ballance.is_a?(Float64).should be_true
-        end
-
-        it "properly stores modified numeric field" do
-          ballance = PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
-          c = ContactWithFloatMapping.create(ballance: ballance)
-          c.ballance = c.ballance! + 10.25f64
-          c.save
-          c.reload
-          c.ballance.should eq(11.25f64)
-        end
-      end
-    end
-
-    it "returns tuple with values" do
-      ballance = postgres_only do
-        PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
-      end
-      mysql_only do
-        10f64
-      end
-      c1 = Factory.create_contact(ballance: ballance)
-      Contact.all.where { _id == c1.id }.each_result_set do |rs|
-        res = c1._extract_attributes(rs)
-        res.is_a?(Tuple).should be_true
-        res[0].should eq(c1.id)
-        res[1].should eq("Deepthi")
-        res[2].should eq(ballance)
-        res[3].should eq(28)
-        res[4].should eq("male")
-        res[6].is_a?(Time).should be_true
-        res[7].is_a?(Time).should be_true
-      end
-    end
-
-    it "allows one field models" do
-      model = OneFieldModel.create
-      is_executed = false
-      OneFieldModel.where { _id == model.id }.each_result_set do |rs|
-        res = model._extract_attributes(rs)
-        res.should eq(model.id)
-        is_executed = true
-      end
-      is_executed.should be_true
-    end
-
-    context "strict mapping" do
-      it "raises exception if not all fields are described" do
-        Factory.create_contact
-        expect_raises(::Jennifer::BaseException) do
-          Contact.all.each_result_set do |rs|
-            begin
-              ContactWithNotAllFields.build(rs)
-            ensure
-              rs.read_to_end
-            end
-          end
-        end
-      end
-
-      it "raised exception includes query explanation" do
-        Factory.create_contact
-        expect_raises(::Jennifer::BaseException, select_regexp) do
-          Contact.all.each_result_set do |rs|
-            ContactWithNotAllFields.build(rs)
-          end
-        end
-      end
-
-      it "result set has no some field" do
-        o = OneFieldModel.create({} of String => Jennifer::DBAny)
-        error_message = "Column OneFieldModelWithExtraArgument.missing_field hasn't been found in the result set."
-        expect_raises(Jennifer::BaseException, error_message) do
-          OneFieldModelWithExtraArgument.all.to_a
-        end
-      end
-    end
-
-    context "non strict mapping" do
-      it "ignores all extra fields" do
-        ContactWithNotStrictMapping.create({name: "some name"})
-        model = ContactWithNotStrictMapping.all.last!
-        model.name.should eq("some name")
-      end
-    end
-
-    context "with hash" do
-      context "strict mapping" do
-        it "raises exception if some field can't be casted" do
-          error_message = "Column OneFieldModelWithExtraArgument.missing_field can't be casted from Nil to it's type - String"
-          expect_raises(Jennifer::BaseException, error_message) do
-            OneFieldModelWithExtraArgument.build({} of String => Jennifer::DBAny)
-          end
-        end
-      end
-    end
-  end
-
   describe "%mapping" do
+    describe "converter" do
+      postgres_only do
+        describe PG::Numeric do
+          it "allows passing PG::Numeric" do
+            ballance = PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
+            c = ContactWithFloatMapping.build(ballance: ballance)
+            c.ballance.should eq(1.0f64)
+            c.ballance.is_a?(Float64)
+          end
+
+          it "correctly creates using provided field instead of numeric" do
+            ballance = 10f64
+            c = ContactWithFloatMapping.build(ballance: ballance)
+            c.ballance.should eq(10f64)
+            c.ballance.is_a?(Float64).should be_true
+          end
+
+          it "correctly loads data from db" do
+            ballance = PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
+            c = ContactWithFloatMapping.create(ballance: ballance)
+            contact_with_float = ContactWithFloatMapping.find!(c.id)
+            contact_with_float.ballance.should eq(1.0f64)
+            contact_with_float.ballance.is_a?(Float64).should be_true
+          end
+        end
+      end
+    end
+
     describe "::columns_tuple" do
       it "returns named tuple mith column metedata" do
         metadata = Contact.columns_tuple
@@ -302,7 +210,7 @@ describe Jennifer::Model::Mapping do
       end
     end
 
-    context "data types" do
+    describe "data types" do
       describe "mapping types" do
         describe "Primary32" do
           it "makes field nillable" do
@@ -374,7 +282,7 @@ describe Jennifer::Model::Mapping do
         end
       end
 
-      describe "ENUM" do
+      describe "ENUM (database)" do
         it "properly loads enum" do
           c = Factory.create_contact(name: "sam", age: 18)
           Contact.find!(c.id).gender.should eq("male")
@@ -433,7 +341,7 @@ describe Jennifer::Model::Mapping do
       end
 
       postgres_only do
-        describe "Array" do
+        describe Array do
           it "properly load array" do
             c = Factory.create_contact({:name => "sam", :age => 18, :gender => "male", :tags => [1, 2]})
             c.tags!.should eq([1, 2])

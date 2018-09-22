@@ -26,7 +26,7 @@ module Jennifer
 
         def change_column(old_name, new_name, type : Symbol? = nil, options = DB_OPTIONS.new)
           @changed_columns[old_name.to_s] =
-            sym_hash_cast(options, AAllowedTypes).merge(
+            Ifrit.sym_hash_cast(options, AAllowedTypes).merge(
             {
               :new_name => new_name,
               :type     => type,
@@ -36,7 +36,7 @@ module Jennifer
 
         def add_column(name, type : Symbol, options = DB_OPTIONS.new)
           @new_columns[name.to_s] =
-            sym_hash_cast(options, AAllowedTypes).merge({ :type => type } of Symbol => AAllowedTypes)
+            Ifrit.sym_hash_cast(options, AAllowedTypes).merge({ :type => type } of Symbol => AAllowedTypes)
           self
         end
 
@@ -45,8 +45,12 @@ module Jennifer
           self
         end
 
+        # Adds index.
+        #
+        # ```
         # add_index("index_name", [:field1, :field2], { :length => { :field1 => 2, :field2 => 3 }, :order => { :field1 => :asc }})
         # add_index("index_name", [:field1], { :length => { :field1 => 2, :field2 => 3 }, :order => { :field1 => :asc }})
+        # ```
         def add_index(name : String, fields : Array(Symbol), type : Symbol? = nil, lengths : Hash(Symbol, Int32) = {} of Symbol => Int32, orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
           @commands << CreateIndex.new(@adapter, @name, name, fields, type, lengths, orders)
           self

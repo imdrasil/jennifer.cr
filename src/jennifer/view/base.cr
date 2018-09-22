@@ -19,7 +19,7 @@ module Jennifer
         @@view_name = value
       end
 
-      # NOTE: is used for query generating
+      # NOTE: it is used for query generating
       def self.table_name
         view_name
       end
@@ -48,7 +48,7 @@ module Jennifer
         {% end %}
       end
 
-      def __after_initialize_callback
+      protected def __after_initialize_callback
         true
       end
 
@@ -57,27 +57,33 @@ module Jennifer
       end
 
       macro inherited
+        # :nodoc:
         AFTER_INITIALIZE_CALLBACKS = [] of String
+        # :nodoc:
         RELATIONS = {} of String => ::Jennifer::Relation::IRelation
 
+        # :nodoc:
         def self.relation(name : String)
           RELATIONS[name]
         rescue e : KeyError
           super(name)
         end
 
+        # :nodoc:
         # NOTE: override regular behavior - used fields count instead of
         # querying db
         def self.actual_table_field_count
           COLUMNS_METADATA.size
         end
 
+        # :nodoc:
         def self.superclass
           {{@type.superclass}}
         end
 
         macro finished
-          def __after_initialize_callback
+          # :nodoc:
+          protected def __after_initialize_callback
             return false unless super
             \{{AFTER_INITIALIZE_CALLBACKS.join("\n").id}}
             true

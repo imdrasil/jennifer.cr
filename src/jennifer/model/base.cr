@@ -13,6 +13,15 @@ require "./converters"
 module Jennifer
   module Model
     abstract class Base < Resource
+      module AbstractClassMethods
+        # Returns if primary field is autoincrementable
+        abstract def primary_auto_incrementable?
+
+        # Converts String based hash to `Hash(String, Jennifer::DBAny)`
+        abstract def build_params(hash)
+      end
+
+      extend AbstractClassMethods
       include Mapping
       include STIMapping
       include Validation
@@ -65,6 +74,10 @@ module Jennifer
         @@converter ||= ParameterConverter.new
       end
 
+      # Initializes new object based on given arguments.
+      #
+      # `after_initialize` callbacks are invoked. If model mapping allows creating an object
+      # without passing any argument - relevant `#build` method will be generated for such model.
       def self.build(values : Hash | NamedTuple, new_record : Bool)
         o = new(values, new_record)
         o.__after_initialize_callback
@@ -121,10 +134,30 @@ module Jennifer
       private abstract def __refresh_changes
       private abstract def __refresh_relation_retrieves
 
+      # Sets *name* field with *value*
       abstract def set_attribute(name, value)
+
+      # Sets given *values* to proper fields and stores them directly to db without
+      # any validation or callback
       abstract def update_columns(values)
-      abstract def changed?
+
+      # Returns if any field was changed. If field again got first value - `true` anyway
+      # will be returned.
+      abstract def changed? : Bool
+
+      # Returns field by given name. If object has no such field - will raise `BaseException`.
+      #
+      # To avoid raising exception set `raise_exception` to `false`.
       abstract def attribute(name : String, raise_exception : Bool)
+
+      # Deletes object from db and calls callbacks
+      abstract def destroy : Bool
+
+      # Returns named tuple of all fields should be saved (because they are changed).
+      abstract def arguments_to_save
+
+      # Returns named tuple of all model fields to insert.
+      abstract def arguments_to_insert
 
       def self.models
         {% begin %}
@@ -344,6 +377,7 @@ module Jennifer
 
         after_save :__refresh_changes
 
+        # :nodoc:
         def self.superclass
           {{@type.superclass}}
         end
@@ -352,6 +386,7 @@ module Jennifer
           ::Jennifer::Model::Validation.finished_hook
           ::Jennifer::Model::Callback.finished_hook
 
+          # :nodoc:
           def self.relation(name : String)
             RELATIONS[name]
           rescue e : KeyError

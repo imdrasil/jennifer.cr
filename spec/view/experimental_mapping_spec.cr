@@ -12,61 +12,6 @@ describe Jennifer::View::ExperimentalMapping do
     end
   end
 
-  describe "#_extract_attributes" do
-    it "returns tuple with values" do
-      ballance = postgres_only do
-        PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16])
-      end
-      mysql_only do
-        10f64
-      end
-      executed = false
-      c1 = Factory.create_contact(ballance: ballance)
-      MaleContact.all.where { _id == c1.id }.each_result_set do |rs|
-        executed = true
-        res = c1._extract_attributes(rs)
-        res.is_a?(Tuple).should be_true
-        res[0].should eq(c1.id)
-        res[1].should eq("Deepthi")
-        res[2].should eq(ballance)
-        res[3].should eq(28)
-        res[4].should eq("male")
-        res[6].is_a?(Time).should be_true
-        res[7].is_a?(Time).should be_true
-      end
-      executed.should be_true
-    end
-
-    context "strict mapping" do
-      it "raises exception if not all fields are described" do
-        Factory.create_contact
-        executed = false
-        expect_raises(::Jennifer::BaseException) do
-          StrictMaleContactWithExtraField.all.each_result_set do |rs|
-            executed = true
-            begin
-              StrictMaleContactWithExtraField.build(rs)
-            ensure
-              rs.read_to_end
-            end
-          end
-        end
-        executed.should be_true
-      end
-    end
-
-    context "with hash" do
-      context "strict mapping" do
-        it "raises exception if some field can't be casted" do
-          error_message = "Column StrinctBrokenMaleContact.name can't be casted from Nil to it's type - String"
-          expect_raises(Jennifer::BaseException, error_message) do
-            StrinctBrokenMaleContact.build({} of String => Jennifer::DBAny)
-          end
-        end
-      end
-    end
-  end
-
   describe "%mapping" do
     describe "::columns_tuple" do
       it "returns named tuple with column metedata" do

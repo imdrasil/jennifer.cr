@@ -1,8 +1,6 @@
 module Jennifer
   module Relation
     abstract class IRelation
-      extend Ifrit
-
       abstract def name
       abstract def table_name
       abstract def model_class
@@ -16,8 +14,8 @@ module Jennifer
       abstract def preload_relation(collection, out_collection, pk_repo)
     end
 
-    # T - related model
-    # Q - parent model
+    # *T* - related model
+    # *Q* - parent model
     class Base(T, Q) < IRelation
       getter join_query : QueryBuilder::Condition | QueryBuilder::LogicOperator?
       getter foreign : String?, primary : String?, through : Symbol?
@@ -74,7 +72,7 @@ module Jennifer
       end
 
       def insert(obj : Q, rel : Hash(Symbol, Jennifer::DBAny))
-        insert(obj, stringify_hash(rel, Jennifer::DBAny))
+        insert(obj, Ifrit.stringify_hash(rel, Jennifer::DBAny))
       end
 
       def insert(obj : Q, rel : T)

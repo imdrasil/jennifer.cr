@@ -16,6 +16,7 @@ module Jennifer
       abstract def get_relation(name : String)
 
       macro nullify_dependency(name, relation_type)
+        # :nodoc:
         def __nullify_callback_{{name.id}}
           rel = \{{@type}}.relation({{name.id.stringify}})
           {{name.id}}_query.update({rel.foreign_field => nil})
@@ -25,6 +26,7 @@ module Jennifer
       end
 
       macro delete_dependency(name, relation_type)
+        # :nodoc:
         def __delete_callback_{{name.id}}
           rel = \{{@type}}.relation({{name.id.stringify}})
           {{name.id}}_query.delete
@@ -34,6 +36,7 @@ module Jennifer
       end
 
       macro destroy_dependency(name, relation_type)
+        # :nodoc:
         def __destroy_callback_{{name.id}}
           rel = \{{@type}}.relation({{name.id.stringify}})
           {{name.id}}_query.destroy
@@ -43,6 +46,7 @@ module Jennifer
       end
 
       macro restrict_with_exception_dependency(name, relation_type)
+        # :nodoc:
         def __restrict_with_exception_callback_{{name.id}}
           rel = \{{@type}}.relation({{name.id.stringify}})
           raise ::Jennifer::RecordExists.new(self, {{name.id.stringify}}) if {{name.id}}_query.exists?
@@ -81,32 +85,30 @@ module Jennifer
         @{{name.id}} = [] of {{klass}}
         @__{{name.id}}_retrieved = false
 
-        # :nodoc:
         private def set_{{name.id}}_relation(object : Array)
           @__{{name.id}}_retrieved = true
           @{{name.id}} = object
           {% if inverse_of %} object.each(&.append_{{inverse_of.id}}(self)) {% end %}
         end
 
-        # :nodoc:
         private def set_{{name.id}}_relation(object)
           @__{{name.id}}_retrieved = true
           @{{name.id}} << object
           {% if inverse_of %} object.append_{{inverse_of.id}}(self) {% end %}
         end
 
-        # returns relation metaobject
+        # Returns {{name.id}} relation metaobject
         def self.{{name.id}}_relation
           RELATIONS["{{name.id}}"].as(::Jennifer::Relation::HasMany({{klass}}, {{@type}}))
         end
 
-        # returns relation query for the object
+        # Returns {{name.id}} relation query for the object
         def {{name.id}}_query
           primary_value = {{ primary ? primary.id : "primary".id }}
           {{@type}}.{{name.id}}_relation.query(primary_value).as(::Jennifer::QueryBuilder::ModelQuery({{klass}}))
         end
 
-        # returns array of related objects
+        # Returns array of related objects
         def {{name.id}}
           if !@__{{name.id}}_retrieved && @{{name.id}}.empty? && !new_record?
             set_{{name.id}}_relation({{name.id}}_query.to_a.as(Array({{klass}})))
@@ -114,7 +116,7 @@ module Jennifer
           @{{name.id}}
         end
 
-        # builds related object from hash and adds to relation
+        # Builds related object from hash and adds to relation
         def append_{{name.id}}(rel : Hash)
           obj = {{klass}}.build(rel, false)
           set_{{name.id}}_relation(obj)
@@ -132,7 +134,7 @@ module Jennifer
           obj
         end
 
-        # removes given object from relation array
+        # Removes given object from relation array
         def remove_{{name.id}}(rel : {{klass}})
           index = @{{name.id}}.index { |e| e.primary == rel.primary }
           if index
@@ -164,7 +166,7 @@ module Jennifer
 
         before_destroy :__{{name.id}}_clean
 
-        # Cleans up all join table records for given relation
+        # :nodoc:
         def __{{name.id}}_clean
           relation = self.class.{{name.id}}_relation
           this = self
@@ -176,13 +178,11 @@ module Jennifer
         @{{name.id}} = [] of {{klass}}
         @__{{name.id}}_retrieved = false
 
-        # :nodoc:
         private def set_{{name.id}}_relation(object : Array)
           @__{{name.id}}_retrieved = true
           @{{name.id}} = object
         end
 
-        # :nodoc:
         private def set_{{name.id}}_relation(object)
           @__{{name.id}}_retrieved = true
           @{{name.id}} << object
@@ -229,7 +229,6 @@ module Jennifer
           rel
         end
 
-        # ... ; doesn't support `inverse_of` option
         def add_{{name.id}}(rel : Hash)
           @{{name.id}} << {{@type}}.{{name.id}}_relation.insert(self, rel)
         end
@@ -319,7 +318,6 @@ module Jennifer
         @{{name.id}} : {{klass}}?
         @__{{name.id}}_retrieved = false
 
-        # :nodoc:
         private def set_{{name.id}}_relation(object)
           @__{{name.id}}_retrieved = true
           @{{name.id}} = object
@@ -382,11 +380,15 @@ module Jennifer
         end
       end
 
+      # :nodoc:
       macro inherited_hook
+        # :nodoc:
         RELATION_NAMES = [] of String
+        # :nodoc:
         RELATIONS = {} of String => ::Jennifer::Relation::IRelation
 
         {% verbatim do %}
+          # :nodoc:
           def append_relation(name : String, hash_or_object)
             {% if !RELATION_NAMES.empty? %}
               case name
@@ -402,6 +404,7 @@ module Jennifer
             {% end %}
           end
 
+          # :nodoc:
           def relation_retrieved(name : String)
             {% if !RELATION_NAMES.empty? %}
               case name
@@ -417,6 +420,7 @@ module Jennifer
             {% end %}
           end
 
+          # :nodoc:
           def get_relation(name : String)
             {% relations = RELATION_NAMES %}
             {% if relations.size > 0 %}

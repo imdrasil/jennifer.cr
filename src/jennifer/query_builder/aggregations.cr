@@ -30,7 +30,7 @@ module Jennifer
         @raw_select = "MAX(#{field}) as m"
         result = to_a.map(&.["m"])
         @raw_select = _select
-        typed_array_cast(result, T)
+        Ifrit.typed_array_cast(result, T)
       end
 
       def group_min(field, klass : T.class) : Array(T) forall T
@@ -38,7 +38,7 @@ module Jennifer
         @raw_select = "MIN(#{field}) as m"
         result = to_a.map(&.["m"])
         @raw_select = _select
-        typed_array_cast(result, T)
+        Ifrit.typed_array_cast(result, T)
       end
 
       def group_sum(field, klass : T.class) : Array(T) forall T
@@ -46,7 +46,7 @@ module Jennifer
         @raw_select = "SUM(#{field}) as m"
         result = to_a.map(&.["m"])
         @raw_select = _select
-        typed_array_cast(result, T)
+        Ifrit.typed_array_cast(result, T)
       end
 
       def group_avg(field, klass : T.class) : Array(T) forall T
@@ -54,7 +54,7 @@ module Jennifer
         @raw_select = "AVG(#{field}) as m"
         result = to_a.map(&.["m"])
         @raw_select = _select
-        typed_array_cast(result, T)
+        Ifrit.typed_array_cast(result, T)
       end
 
       def group_count(field)

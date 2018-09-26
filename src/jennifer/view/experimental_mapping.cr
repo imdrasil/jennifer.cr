@@ -54,6 +54,18 @@ module Jennifer
 
       # :nodoc:
       macro __instance_methods
+        private def inspect_attributes(io) : Nil
+          io << ' '
+          {% for var, i in COLUMNS_METADATA.keys %}
+            {% if i > 0 %}
+              io << ", "
+            {% end %}
+            io << "{{var.id}}: "
+            @{{var.id}}.inspect(io)
+          {% end %}
+          nil
+        end
+
         # Creates object from `DB::ResultSet`
         def initialize(%pull : DB::ResultSet)
           {{COLUMNS_METADATA.keys.map { |f| "@#{f.id}" }.join(", ").id}} = _extract_attributes(%pull)

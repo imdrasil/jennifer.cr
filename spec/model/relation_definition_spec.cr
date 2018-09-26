@@ -1,47 +1,12 @@
 require "../spec_helper"
 
 module Jennifer::Model
-  module FacebookProfileMapping
-    macro included
-      mapping({
-        id: Primary32,
-        login: String,
-        contact_id: Int32?,
-        type: String,
-        virtual_parent_field: {type: String?, virtual: true},
-        uid: String?, # for testing purposes
-        virtual_child_field: {type: Int32?, virtual: true}
-    }, false)
-    end
-  end
-
-  class NoteWithCallback < Base
-    include Note::Mapping
-
-    self.table_name "notes"
-
-    polymorphic_belongs_to :notable, Union(User | Jennifer::Model::FacebookProfileWithDestroyNotable)
-    actual_table_field_count
-
-    after_destroy :increment_destroy_counter
-
-    @@destroy_counter = 0
-
-    def self.destroy_counter
-      @@destroy_counter
-    end
-
-    def increment_destroy_counter
-      @@destroy_counter += 1
-    end
-  end
-
   class NoteWithDestroyDependency < Base
     include Note::Mapping
 
     self.table_name "notes"
 
-    polymorphic_belongs_to :notable, Union(User | FacebookProfile), dependent: :destroy
+    belongs_to :notable, Union(User | FacebookProfile), dependent: :destroy, polymorphic: true
     actual_table_field_count
   end
 
@@ -50,34 +15,16 @@ module Jennifer::Model
 
     self.table_name "notes"
 
-    polymorphic_belongs_to :notable, Union(User | FacebookProfile), dependent: :restrict_with_exception
-    actual_table_field_count
-  end
-
-  class FacebookProfileWithDestroyNotable < Base
-    include FacebookProfileMapping
-
-    self.table_name "profiles"
-
-    has_many :notes, NoteWithCallback, inverse_of: :notable, polymorphic: true, dependent: :destroy
+    belongs_to :notable, Union(User | FacebookProfile), dependent: :restrict_with_exception, polymorphic: true
     actual_table_field_count
   end
 
   class FacebookProfileWithNullifyNotable < Base
-    include FacebookProfileMapping
+    include ::FacebookProfileWithDestroyNotable::Mapping
 
     self.table_name "profiles"
 
     has_many :notes, NoteWithCallback, inverse_of: :notable, polymorphic: true, dependent: :nullify
-    actual_table_field_count
-  end
-
-  class ProfileWithOneNote < Base
-    include FacebookProfileMapping
-
-    self.table_name "profiles"
-
-    has_one :note, NoteWithCallback, inverse_of: :notable, polymorphic: true, dependent: :nullify
     actual_table_field_count
   end
 
@@ -99,7 +46,7 @@ module Jennifer::Model
 
       describe "polymorphic" do
         describe "has_many" do
-          it "invokes callbacks on associated model" do
+          it "doesn't invoke callbacks on associated model" do
             p = FacebookProfileWithNullifyNotable.find!(Factory.create_facebook_profile(type: "Jennifer::Model::FacebookProfileWithNullifyNotable").id)
             note = NoteWithCallback.find!(Factory.create_note.id)
             p.add_notes(note)
@@ -108,6 +55,7 @@ module Jennifer::Model
             note.reload
             note.notable_id.should be_nil
             note.notable_type.should be_nil
+            NoteWithCallback.destroy_counter.should eq(count)
           end
         end
       end
@@ -202,22 +150,24 @@ module Jennifer::Model
       end
 
       describe "polymorphic relation" do
-        it "adds before_destroy callback" do
-          NoteWithExceptionDependency::CALLBACKS[:destroy][:before].includes?("__restrict_with_exception_callback_notable").should be_true
-        end
+        describe "belongs_to" do
+          it "adds before_destroy callback" do
+            NoteWithExceptionDependency::CALLBACKS[:destroy][:before].includes?("__restrict_with_exception_callback_notable").should be_true
+          end
 
-        it "raises exception if any associated record exists" do
-          n = NoteWithExceptionDependency.find!(Factory.create_note.id)
-          n.add_notable(Factory.create_facebook_profile)
-          expect_raises(::Jennifer::RecordExists) do
+          it "raises exception if any associated record exists" do
+            n = NoteWithExceptionDependency.find!(Factory.create_note.id)
+            n.add_notable(Factory.create_facebook_profile)
+            expect_raises(::Jennifer::RecordExists) do
+              n.destroy
+            end
+            FacebookProfile.all.count.should eq(1)
+          end
+
+          it "passes if no associated object exists" do
+            n = NoteWithExceptionDependency.find!(Factory.create_note.id)
             n.destroy
           end
-          FacebookProfile.all.count.should eq(1)
-        end
-
-        it "passes if no associated object exists" do
-          n = NoteWithExceptionDependency.find!(Factory.create_note.id)
-          n.destroy
         end
       end
     end
@@ -364,23 +314,23 @@ module Jennifer::Model
         describe "query" do
           it "sets correct query part" do
             relation.condition_clause.as_sql.should eq("notes.notable_id = profiles.id AND notes.notable_type = %s")
-            relation.condition_clause.sql_args.should eq(db_array("Jennifer::Model::FacebookProfileWithDestroyNotable"))
+            relation.condition_clause.sql_args.should eq(db_array("FacebookProfileWithDestroyNotable"))
           end
         end
 
         describe "#/relation_name/_query" do
           it "returns query object" do
-            p = FacebookProfileWithDestroyNotable.find!(Factory.create_facebook_profile(type: "Jennifer::Model::FacebookProfileWithDestroyNotable").id)
+            p = FacebookProfileWithDestroyNotable.find!(Factory.create_facebook_profile(type: "FacebookProfileWithDestroyNotable").id)
             q = p.notes_query
             q.as_sql.should match(/notes.notable_id = %s AND notes.notable_type = %s/)
-            q.sql_args.should eq(db_array(p.id, "Jennifer::Model::FacebookProfileWithDestroyNotable"))
+            q.sql_args.should eq(db_array(p.id, "FacebookProfileWithDestroyNotable"))
           end
         end
 
         describe "#/relation_name/" do
           it "loads relation objects from db" do
-            p = FacebookProfileWithDestroyNotable.find!(Factory.create_facebook_profile(type: "Jennifer::Model::FacebookProfileWithDestroyNotable").id)
-            n = Factory.create_note(notable_id: p.id, notable_type: "Jennifer::Model::FacebookProfileWithDestroyNotable")
+            p = FacebookProfileWithDestroyNotable.find!(Factory.create_facebook_profile(type: "FacebookProfileWithDestroyNotable").id)
+            n = Factory.create_note(notable_id: p.id, notable_type: "FacebookProfileWithDestroyNotable")
             p.notes.size.should eq(1)
             p.notes[0].id.should eq(n.id)
           end
@@ -486,7 +436,7 @@ module Jennifer::Model
             n = Factory.create_note([:with_user])
             q = n.notable_query
             q.as_sql.should match(/users.id = %s/)
-            q.sql_args.should eq(db_array(n.notable!.id))
+            q.sql_args.should eq(db_array(n.notable!.id, "%on"))
           end
         end
 
@@ -691,23 +641,23 @@ module Jennifer::Model
         describe "query" do
           it "sets correct query part" do
             relation.condition_clause.as_sql.should eq("notes.notable_id = profiles.id AND notes.notable_type = %s")
-            relation.condition_clause.sql_args.should eq(db_array("Jennifer::Model::ProfileWithOneNote"))
+            relation.condition_clause.sql_args.should eq(db_array("ProfileWithOneNote"))
           end
         end
 
         describe "#/relation_name/_query" do
           it "returns query object" do
-            p = ProfileWithOneNote.find!(Factory.create_facebook_profile(type: "Jennifer::Model::ProfileWithOneNote").id)
+            p = ProfileWithOneNote.find!(Factory.create_facebook_profile(type: "ProfileWithOneNote").id)
             q = p.note_query
             q.as_sql.should match(/notes.notable_id = %s AND notes.notable_type = %s/)
-            q.sql_args.should eq(db_array(p.id, "Jennifer::Model::ProfileWithOneNote"))
+            q.sql_args.should eq(db_array(p.id, "ProfileWithOneNote"))
           end
         end
 
         describe "#/relation_name/" do
           it "loads relation objects from db" do
-            p = ProfileWithOneNote.find!(Factory.create_facebook_profile(type: "Jennifer::Model::ProfileWithOneNote").id)
-            n = Factory.create_note(notable_id: p.id, notable_type: "Jennifer::Model::ProfileWithOneNote")
+            p = ProfileWithOneNote.find!(Factory.create_facebook_profile(type: "ProfileWithOneNote").id)
+            n = Factory.create_note(notable_id: p.id, notable_type: "ProfileWithOneNote")
             p.note!.id.should eq(n.id)
           end
         end

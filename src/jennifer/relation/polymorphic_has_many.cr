@@ -15,12 +15,12 @@ module Jennifer
       end
 
       def condition_clause(id)
-        tree = (T.c(foreign_field) == id) & (T.c(foreign_type, @name) == polymorphic_type_value)
+        tree = (T.c(foreign_field, @name) == id) & (T.c(foreign_type, @name) == polymorphic_type_value)
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
       def condition_clause(ids : Array)
-        tree = (T.c(foreign_field).in(ids)) & (T.c(foreign_type, @name) == polymorphic_type_value)
+        tree = (T.c(foreign_field, @name).in(ids)) & (T.c(foreign_type, @name) == polymorphic_type_value)
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 

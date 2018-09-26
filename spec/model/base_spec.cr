@@ -731,17 +731,17 @@ describe Jennifer::Model::Base do
   end
 
   describe "#inspect" do
-    it {
+    it do
       address = Factory.build_address
       address.inspect.should eq("#<Address:0x#{address.object_id.to_s(16)} id: nil, main: false, street: \"#{address.street}\","\
         " contact_id: nil, details: nil, created_at: nil, updated_at: nil>")
-    }
+    end
 
-    it {
+    it do
       profile = Factory.build_facebook_profile
-      profile.inspect.should eq("#<FacebookProfile:0x#{profile.object_id.to_s(16)} uid: \"1234\", "\
-        "virtual_child_field: nil, id: nil, login: \"some_login\", contact_id: nil, type: \"FacebookProfile\", "\
-        "virtual_parent_field: nil>")
-    }
+      profile.inspect.should eq("#<FacebookProfile:0x#{profile.object_id.to_s(16)} id: nil, login: \"some_login\", "\
+        "contact_id: nil, type: \"FacebookProfile\", virtual_parent_field: nil, uid: \"1234\", "\
+        "virtual_child_field: nil>")
+    end
   end
 end

@@ -90,6 +90,12 @@ module Jennifer
         @destroyed
       end
 
+      # Returns `true` if the record is persisted, i.e. it’s not a new record and
+      # it was not destroyed, otherwise returns `false`.
+      def persisted?
+        !(new_record? || destroyed?)
+      end
+
       def self.create(values : Hash | NamedTuple)
         o = build(values)
         o.save
@@ -157,7 +163,7 @@ module Jennifer
       # Returns named tuple of all model fields to insert.
       abstract def arguments_to_insert
 
-      # Returns list of available model classes.
+      # Returns array of all non-abstract subclasses of *Jennifer::Model::Base*.
       def self.models
         {% begin %}
           {% models = @type.all_subclasses.select { |m| !m.abstract? } %}

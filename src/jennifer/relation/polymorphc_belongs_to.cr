@@ -2,20 +2,20 @@ module Jennifer
   module Relation
     abstract class IPolymorphicBelongsTo < IRelation
       getter foreign : String, primary : String
-      getter name : String, type_field : String
+      getter name : String, foreign_type : String
 
-      def initialize(@name, foreign : String | Symbol?, foreign_type : String | Symbol?, primary : String | Symbol?)
-        @type_field = foreign_type ? foreign_type.to_s : "#{name}_type"
+      def initialize(@name, foreign : String | Symbol?, primary : String | Symbol?, foreign_type : String | Symbol?)
+        @foreign_type = foreign_type ? foreign_type.to_s : "#{name}_type"
         @foreign = foreign ? foreign.to_s : "#{name}_id"
         @primary = primary ? primary.to_s : "id"
       end
 
-      abstract def related_model(arg)
-      abstract def table_name(type)
+      private abstract def related_model(arg)
+      private abstract def table_name(type)
 
       def condition_clause(id, polymorphic_type : String?)
         model = related_model(polymorphic_type)
-        _tree = model.c(primary_field) == id
+        _tree = model.c(primary_field, @name) == id
         _tree
       end
 
@@ -36,17 +36,18 @@ module Jennifer
         @primary
       end
 
-      macro define_relation_class(name, klass, related_class, types)
+      macro define_relation_class(name, klass, related_class, types, request)
+        # :nodoc:
         class {{name.id.camelcase}}Relation < ::Jennifer::Relation::IPolymorphicBelongsTo
           def initialize(*opts)
             super
           end
 
-          def related_model(obj : {{klass}})
-            related_model(obj.attribute(type_field))
+          private def related_model(obj : {{klass}})
+            related_model(obj.attribute(foreign_type).as(String))
           end
 
-          def related_model(type : String)
+          private def related_model(type : String)
             case type
             {% for type in types %}
             when {{type.stringify}}
@@ -57,7 +58,7 @@ module Jennifer
             end
           end
 
-          def table_name(type : String)
+          private def table_name(type : String)
             case type
             {% for type in types %}
             when {{type.stringify}}
@@ -67,6 +68,13 @@ module Jennifer
               raise ::Jennifer::BaseException.new("Unknown polymorphic type #{type}")
             end
           end
+
+          {% if request %}
+            def query(id, polymorphic_type : String)
+              condition = condition_clause(id, polymorphic_type)
+              Query[table_name(polymorphic_type)].where { condition }.exec {{request}}
+            end
+          {% end %}
 
           def build(opts : Hash, polymorphic_type)
             case polymorphic_type
@@ -103,9 +111,10 @@ module Jennifer
             end
           end
 
+          # Destroys related to *obj* object. Is called on `dependent: :destroy`.
           def destroy(obj : {{klass}})
             foreign_field = obj.attribute(foreign)
-            polymorphic_type = obj.attribute(type_field).as(String?)
+            polymorphic_type = obj.attribute(foreign_type).as(String?)
             return if foreign_field.nil? || polymorphic_type.nil?
 
             condition = condition_clause(foreign_field, polymorphic_type)
@@ -120,21 +129,22 @@ module Jennifer
           end
 
           def insert(obj : {{klass}}, rel : Hash(String, Jennifer::DBAny))
-            foreign_type = rel[type_field].as(String)
-            main_obj = create!(rel, foreign_type)
-            obj.update_columns({ foreign_field => main_obj.attribute(primary_field), type_field => foreign_type })
+            raise ::Jennifer::BaseException.new("Given hash has no #{foreign_type} field.") unless rel.has_key?(foreign_type)
+            type_field = rel[foreign_type].as(String)
+            main_obj = create!(rel, type_field)
+            obj.update_columns({ foreign_field => main_obj.attribute(primary_field), foreign_type => type_field })
             main_obj
           end
 
           def insert(obj : {{klass}}, rel : {{related_class}})
             raise ::Jennifer::BaseException.new("Object already belongs to another object") unless obj.attribute(foreign_field).nil?
-            obj.update_columns({ foreign_field => rel.attribute(primary_field), type_field => rel.class.to_s })
+            obj.update_columns({ foreign_field => rel.attribute(primary_field), foreign_type => rel.class.to_s })
             rel.save! if rel.new_record?
             rel
           end
 
           def remove(obj : {{klass}})
-            obj.update_columns({ foreign_field => nil, type_field => nil })
+            obj.update_columns({ foreign_field => nil, foreign_type => nil })
           end
         end
       end

@@ -44,6 +44,16 @@ module Jennifer
 
         __field_declaration({{properties}}, false)
 
+        private def inspect_attributes(io) : Nil
+          super
+          {% for var, i in properties.keys %}
+            io << ", "
+            io << "{{var.id}}: "
+            @{{var.id}}.inspect(io)
+          {% end %}
+          nil
+        end
+
         private def _sti_extract_attributes(values : Hash(String, ::Jennifer::DBAny))
           {% for key, value in properties %}
             %var{key.id} = {{value[:default]}}

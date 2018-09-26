@@ -149,6 +149,18 @@ module Jennifer
 
         __field_declaration({{properties}}, {{primary_auto_incrementable}})
 
+        private def inspect_attributes(io) : Nil
+          io << ' '
+          {% for var, i in properties.keys %}
+            {% if i > 0 %}
+              io << ", "
+            {% end %}
+            io << "{{var.id}}: "
+            @{{var.id}}.inspect(io)
+          {% end %}
+          nil
+        end
+
         # :nodoc:
         def self.primary_auto_incrementable?
           {{primary_auto_incrementable}}
@@ -386,12 +398,12 @@ module Jennifer
                     @{{key.id}} = local
                     @{{key.id}}_changed = true
                   else
-                    raise ::Jennifer::BaseException.new("Wrong type for #{name} : #{value.class}")
+                    raise ::Jennifer::BaseException.new("Wrong type for #{self.class}##{name} : #{value.class}")
                   end
               {% end %}
             {% end %}
             else
-              raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}")
+              raise ::Jennifer::BaseException.new("Unknown model attribute - #{self.class}##{name}")
             end
           end
 

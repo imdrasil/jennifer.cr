@@ -1,6 +1,6 @@
 # Pagination & Ordering
 
-#### Pagination
+## Pagination
 
 For now you can only specify `limit` and `offset`:
 
@@ -8,15 +8,26 @@ For now you can only specify `limit` and `offset`:
 Contact.all.limit(10).offset(10)
 ```
 
-#### Order
+## Order
 
-You can specifies orders to sort:
+You can specifies orders to sort by:
+
 ```crystal
+# named tuple
 Contact.all.order(name: :asc, id: "desc")
-Contact.all.order{ { _name => :asc, _id => "desc" } }
+# symbol key hash
+Contact.all.order({ :name => :asc })
+# string key hash
+Contact.all.order({ "name" => :asc })
+# with block returning array of OrderItem
+Contact.all.order{ [_name.asc] }
+# or pass it as an argument
+Contact.all.order(Contact._name.asc)
 ```
 
-##### Reorder
+Any symbol-based names are considered as a column names. Any string-based - as raw sql.
+
+### Reorder
 
 To avoid all existing ordering and assign new one:
 

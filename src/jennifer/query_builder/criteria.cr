@@ -1,5 +1,5 @@
 require "./json_selector"
-require "./criteria_container"
+require "./order_item"
 
 module Jennifer
   module QueryBuilder
@@ -16,6 +16,13 @@ module Jennifer
       end
 
       def_hash @field, @table
+
+      def eql?(other : Criteria)
+        field == other.field &&
+          table == other.table &&
+          relation == other.relation &&
+          self.alias == other.alias
+      end
 
       def set_relation(table : String, name : String)
         @relation = name if @relation.nil? && @table == table
@@ -139,6 +146,20 @@ module Jennifer
 
       def definition(_sql_generator)
         definition
+      end
+
+      def order(direction : String | Symbol)
+        order = asc
+        order.direction = direction
+        order
+      end
+
+      def asc
+        OrderItem.new(self, OrderItem::Direction::ASC)
+      end
+
+      def desc
+        OrderItem.new(self, OrderItem::Direction::DESC)
       end
 
       def sql_args : Array(DBAny)

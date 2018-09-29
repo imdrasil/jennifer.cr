@@ -74,7 +74,11 @@ module Jennifer
       end
 
       def ==(other : LogicOperator)
-        @lhs == other.lhs && @rhs == other.rhs
+        eql?(other)
+      end
+
+      def eql?(other : LogicOperator)
+        @lhs.eql?(other.lhs) && @rhs.eql?(other.rhs)
       end
     end
 

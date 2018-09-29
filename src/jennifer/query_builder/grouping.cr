@@ -11,6 +11,10 @@ module Jennifer
       def initialize(@condition)
       end
 
+      def eql?(other : Grouping)
+        condition.eql?(other.condition)
+      end
+
       def sql_args
         condition.sql_args
       end

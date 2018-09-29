@@ -27,6 +27,25 @@ module Jennifer
         @negative = other.@negative
       end
 
+      def ==(other)
+        eql?(other)
+      end
+
+      def eql?(other : Condition)
+        lhs.eql?(other.lhs) &&
+          operator == other.operator &&
+          @negative == other.@negative &&
+          if rhs.is_a?(SQLNode) && other.rhs.is_a?(SQLNode)
+            rhs.as(SQLNode).eql?(other.rhs.as(SQLNode))
+          elsif !rhs.is_a?(SQLNode) && !other.rhs.is_a?(SQLNode)
+            rhs.as(DBAny | Array(DBAny)) == other.rhs.as(DBAny | Array(DBAny))
+          end
+      end
+
+      def eql?(other : SQLNode)
+        false
+      end
+
       def set_relation(table, name)
         @lhs.set_relation(table, name)
         @rhs.as(SQLNode).set_relation(table, name) if @rhs.is_a?(SQLNode)

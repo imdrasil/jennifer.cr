@@ -182,16 +182,6 @@ describe "Jennifer::Adapter::SQLGenerator" do
       query = Contact.all
       sb { |s| described_class.lock_clause(s, query) }.should eq("")
     end
-
-    it "render custom query part if specified" do
-      {% if env("DB") == "postgres" %}
-        query = Contact.all.lock("FOR NO KEY UPDATE")
-        sb { |s| described_class.lock_clause(s, query) }.should match(/FOR NO KEY UPDATE/)
-      {% else %}
-        query = Contact.all.lock("LOCK IN SHARE MODE")
-        sb { |s| described_class.lock_clause(s, query) }.should match(/LOCK IN SHARE MODE/)
-      {% end %}
-    end
   end
 
   describe "::union_clause" do
@@ -205,68 +195,7 @@ describe "Jennifer::Adapter::SQLGenerator" do
     end
   end
 
-  describe ".json_path" do
-    criteria = Factory.build_criteria
-
-    mysql_only do
-      context "array index" do
-        it "converts number to proper selector" do
-          s = criteria.take(1)
-          described_class.json_path(s).should eq("tests.f1->\"$[1]\"")
-        end
-      end
-
-      it "quotes path" do
-        s = criteria.path("$[1][2]")
-        described_class.json_path(s).should eq("tests.f1->\"$[1][2]\"")
-      end
-    end
-
-    postgres_only do
-      context "array index" do
-        it "paste number without escaping" do
-          s = criteria.take(1)
-          described_class.json_path(s).should eq("tests.f1->1")
-        end
-      end
-
-      context "path" do
-        it "wraps path into quotes" do
-          s = criteria.path("{a, 1}")
-          described_class.json_path(s).should eq("tests.f1#>'{a, 1}'")
-        end
-
-        it "use arrow operator if need just first level extraction" do
-          s = criteria["a"]
-          described_class.json_path(s).should eq("tests.f1->'a'")
-        end
-      end
-    end
-  end
-
   describe "::parse_query" do
-    postgres_only do
-      it "replase placeholders with dollar numbers" do
-        described_class.parse_query("asd %s qwe %s", [1, 2] of Jennifer::DBAny).should eq({"asd $1 qwe $2", [1, 2]})
-      end
-
-      it "replaces user provided argument symbols with database specific" do
-        query = Contact.where { _name == sql("lower(%s)", ["john"], false) }
-        described_class.parse_query(described_class.select(query), query.sql_args)[0].should match(/name = lower\(\$1\)/m)
-      end
-    end
-
-    mysql_only do
-      it "replace placeholders with question marks" do
-        described_class.parse_query("asd %s qwe %s", [1, 2] of Jennifer::DBAny).should eq({"asd ? qwe ?", [1, 2]})
-      end
-
-      it "replaces user provided argument symbols with database specific" do
-        query = Contact.where { _name == sql("lower(%s)", ["john"], false) }
-        described_class.parse_query(described_class.select(query), query.sql_args)[0].should match(/name = lower\(\?\)/m)
-      end
-    end
-
     context "with given Time object" do
       it do
         with_time_zone("Etc/GMT+1") do
@@ -287,5 +216,21 @@ describe "Jennifer::Adapter::SQLGenerator" do
     end
 
     it { described_class.escape_string.should eq("%s") }
+  end
+
+  describe ".order_expression" do
+    context "without specifying position of null" do
+      context "with raw sql" do
+        it do
+          Factory.build_expression.sql("some sql").asc.as_sql.should eq("some sql ASC")
+          Factory.build_expression.sql("some sql").desc.as_sql.should eq("some sql DESC")
+        end
+      end
+
+      it do
+        Factory.build_criteria.asc.as_sql.should eq("tests.f1 ASC")
+        Factory.build_criteria.desc.as_sql.should eq("tests.f1 DESC")
+      end
+    end
   end
 end

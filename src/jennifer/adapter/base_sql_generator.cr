@@ -199,13 +199,17 @@ module Jennifer
       end
 
       def self.order_clause(io : String::Builder, query)
-        return if !query._order || query._order.empty?
+        return if query._order.blank?
         io << "ORDER BY "
-        query._order.join(", ", io) { |(k, v), _| io.print k.as_sql(self), ' ', v.upcase }
+        query._order.join(", ", io) { |expression| io.print expression.as_sql(self) }
         io << ' '
       end
 
       # ======== utils
+
+      def self.order_expression(expression : QueryBuilder::OrderItem)
+        "#{expression.criteria.identifier} #{expression.direction}"
+      end
 
       def self.operator_to_sql(operator : Symbol)
         case operator

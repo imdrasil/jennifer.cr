@@ -41,6 +41,14 @@ module Jennifer
 
       # =================== utils
 
+      def self.order_expression(expression : QueryBuilder::OrderItem)
+        if expression.null_position.none?
+          super
+        else
+          super + " NULLS #{expression.null_position}"
+        end
+      end
+
       def self.operator_to_sql(operator)
         case operator
         when :like

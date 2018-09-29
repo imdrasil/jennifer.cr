@@ -41,7 +41,7 @@ module Jennifer
       def initialize
         @do_nothing = false
         @expression = ExpressionBuilder.new(@table)
-        @order = CriteriaContainer.new
+        @order = [] of OrderItem
         @relations = [] of String
         @groups = [] of Criteria
         @relation_used = false
@@ -58,7 +58,7 @@ module Jennifer
           @{{segment.id}} = other.@{{segment.id}}.clone unless except.includes?({{segment}})
         {% end %}
 
-        @order = except.includes?("order") ? CriteriaContainer.new : other.@order.clone
+        @order = except.includes?("order") ? [] of OrderItem : other.@order.clone
         @joins = other.@joins.clone unless except.includes?("join")
         @unions = other.@unions.clone unless except.includes?("union")
         @groups = except.includes?("group") ? [] of Criteria : other.@groups.clone

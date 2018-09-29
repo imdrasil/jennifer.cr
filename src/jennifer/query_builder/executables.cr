@@ -153,7 +153,7 @@ module Jennifer
 
       def find_in_batches(primary_key : Criteria, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
         Config.logger.warn("#find_in_batches is invoked with already ordered query - it will be reordered") if ordered?
-        request = clone.reorder({primary_key => direction.to_s}).limit(batch_size)
+        request = clone.reorder(primary_key.order(direction)).limit(batch_size)
 
         records = start ? request.clone.where { primary_key >= start }.to_a : request.to_a
         while records.any?
@@ -170,7 +170,7 @@ module Jennifer
         Config.logger.warn("#find_in_batches methods was invoked without passing primary_key" \
                           " key field name which may results in not proper records extraction; 'start' argument" \
                           " was realized as page number.")
-        request = clone.reorder({} of String => String).limit(batch_size)
+        request = clone.reorder.limit(batch_size)
 
         records = request.offset(start * batch_size).to_a
         while records.any?

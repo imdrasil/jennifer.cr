@@ -58,6 +58,29 @@ module Spec
     end
   end
 
+  struct EqlExpectation(T)
+    def initialize(@expected_value : T)
+    end
+
+    def match(actual_value)
+      actual_value.eql?(@expected_value)
+    end
+
+    def failure_message(actual_value)
+      expected = @expected_value.inspect
+      got = actual_value.inspect
+      if expected == got
+        expected += " : #{@expected_value.class}"
+        got += " : #{actual_value.class}"
+      end
+      "Expected: #{expected}\n     got: #{got}"
+    end
+
+    def negative_failure_message(actual_value)
+      "Expected: actual_value != #{@expected_value.inspect}\n     got: #{actual_value.inspect}"
+    end
+  end
+
   module Expectations
     macro expect_queries_to_be_executed(amount)
       %count = query_count
@@ -72,6 +95,10 @@ module Spec
       expect_queries_to_be_executed(0) do
         {{yield}}
       end
+    end
+
+    def eql(value)
+      EqlExpectation.new(value)
     end
 
     def be_valid

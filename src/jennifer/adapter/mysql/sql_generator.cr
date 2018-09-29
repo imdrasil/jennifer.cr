@@ -47,6 +47,21 @@ module Jennifer
         "#{path.identifier}->#{value}"
       end
 
+      def self.order_expression(expression : QueryBuilder::OrderItem)
+        if expression.null_position.none?
+          super
+        else
+          String.build do |io|
+            io << "CASE WHEN " <<
+              expression.criteria.is(nil).as_sql(self) <<
+              " THEN 0 ELSE 1 " <<
+              (expression.null_position.last? ? "DESC" : "ASC") <<
+              " END, " <<
+              super
+          end
+        end
+      end
+
       def self.quote(value : String)
         "\"#{value.gsub(/\\/, "\&\&").gsub(/"/, "\"\"")}\""
       end

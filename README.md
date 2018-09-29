@@ -82,10 +82,10 @@ class Contact < Jennifer::Model::Base
   mapping(
     id: Primary32, # is an alias for Int32? primary key
     name: String,
-    gender: {type: String?, default: "male"},
-    age: {type: Int32, default: 10},
-    descriptionsString?,
-    created_at:sime?,
+    gender: { type: String?, default: "male" },
+    age: { type: Int32, default: 10 },
+    description: String?,
+    created_at: Time?,
     updated_at: Time?
   )
 
@@ -216,7 +216,6 @@ NB. It also depends on then chosen adapter (postgres by default).
 
 ## Similar shards
 
-- [active_record.cr](https://github.com/waterlink/active_record.cr) - small simple AR realization
 - [crecto](https://github.com/vladfaust/core.cr) - based on Phoenix's Ecto lib and follows the repository pattern
 - [granite-orm](https://github.com/amberframework/granite-orm) - light weight orm focusing on mapping fields from request to your objects
 - [topaz](https://github.com/topaz-crystal/topaz) - inspired by AR ORM with migration mechanism

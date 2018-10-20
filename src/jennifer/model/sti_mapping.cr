@@ -58,13 +58,21 @@ module Jennifer
           {% end %}
 
           {% for key, value in properties %}
-            {% column = (value[:column_name] || key).id.stringify %}
-            if values.has_key?({{column}})
+            {% column1 = key.id.stringify %}
+            {% column2 = value[:column] %}
+            if values.has_key?({{column1}})
               %var{key.id} =
                 {% if value[:converter] %}
-                  {{value[:converter]}}.from_hash(values, {{column}})
+                  {{value[:converter]}}.from_hash(values, {{column1}})
                 {% else %}
-                  values[{{column}}]
+                  values[{{column1}}]
+                {% end %}
+            elsif values.has_key?({{column2}})
+              %var{key.id} =
+                {% if value[:converter] %}
+                  {{value[:converter]}}.from_hash(values, {{column2}})
+                {% else %}
+                  values[{{column2}}]
                 {% end %}
             else
               %found{key.id} = false
@@ -187,7 +195,7 @@ module Jennifer
             case name.to_s
             {% for key, value in properties %}
               {% if !value[:virtual] %}
-                when "{{key.id}}"
+                when {{value[:column]}}
                   if value.is_a?({{value[:parsed_type].id}})
                     local = value.as({{value[:parsed_type].id}})
                     @{{key.id}} = local
@@ -244,7 +252,7 @@ module Jennifer
               if @{{attr.id}}_changed
                 args <<
                   {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
-                fields << "{{attr.id}}"
+                fields << {{options[:column]}}
               end
             {% end %}
           {% end %}
@@ -260,7 +268,7 @@ module Jennifer
             {% unless options[:virtual] %}
               args <<
                 {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
-              fields << "{{attr.id}}"
+              fields << {{options[:column]}}
             {% end %}
           {% end %}
           named_tuple

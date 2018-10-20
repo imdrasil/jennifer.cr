@@ -33,6 +33,25 @@ describe Jennifer::View::Mapping do
       c2.reload
       c2.age.should eq(55)
     end
+
+    it "correctly assigns mapped column names" do
+      b = Book.create(
+        name:       "RememberSammieJenkins",
+        version:    600,
+        publisher:  "NolanBros",
+        pages:      394
+      )
+
+      p = PrintPublication.all.first!
+      b.name = "RememberSammyJenkins"
+      b.version = 601
+      b.pages = 397
+      b.save!
+      p.reload
+      p.title.should eq "RememberSammyJenkins"
+      p.v.should eq 601
+      p.pages.should eq 397
+    end
   end
 
   describe "%mapping" do
@@ -43,6 +62,14 @@ describe Jennifer::View::Mapping do
         metadata[:id].is_a?(NamedTuple).should be_true
         metadata[:id][:type].should eq(Int32)
         metadata[:id][:parsed_type].should eq("Int32?")
+      end
+
+      it "correctly maps column aliases" do
+        metadata = PrintPublication.columns_tuple
+        metadata.is_a?(NamedTuple).should be_true
+        metadata[:v].is_a?(NamedTuple).should be_true
+        metadata[:v][:type].should eq Int32
+        metadata[:v][:parsed_type].should eq "Int32"
       end
     end
 
@@ -75,10 +102,50 @@ describe Jennifer::View::Mapping do
         end
       end
 
+      context "from result set with mapped columns" do
+        it "properly creates the object" do
+          Article.create(
+            name:       "ItsNoFunTillSomeoneDies",
+            version:    11235,
+            publisher:  "HarryManback",
+            size:       10000
+          )
+
+          count = 0
+          PrintPublication.all.each_result_set do |rs|
+            record = PrintPublication.build(rs)
+            record.title.should eq "ItsNoFunTillSomeoneDies"
+            record.v.should eq 11235
+            record.pages.should eq 10000
+            record.type.should eq "Article"
+            count += 1
+          end
+
+          count.should eq 1
+        end
+      end
+
       context "from hash" do
         it "properly creates object" do
           MaleContact.build({"name" => "Deepthi", "age" => 18, "gender" => "female"})
           MaleContact.build({:name => "Deepthi", :age => 18, :gender => "female"})
+        end
+
+        it "properly maps aliased columns" do
+          PrintPublication.build({
+            "title"     => "OverthinkingOveranalying",
+            "v"         => 4,
+            "publisher" => "SeparatesTheBodyFromTheMind",
+            "pages"     => 924,
+            "type"      => "Book"
+          })
+          PrintPublication.build({
+            :title      => "OverthinkingOveranalying",
+            :v          => 4,
+            :publisher  => "SeparatesTheBodyFromTheMind",
+            :pages      => 924,
+            :type       => "Book"
+          })
         end
       end
 
@@ -86,12 +153,26 @@ describe Jennifer::View::Mapping do
         it "properly creates object" do
           MaleContact.build({name: "Deepthi", age: 18, gender: "female"})
         end
+
+        it "properly maps aliased columns" do
+          PrintPublication.build({
+            title:      "AndTheWind",
+            v:          2,
+            publisher:  "ShallScreamMyName",
+            pages:      9,
+            type:       "Article"
+          })
+        end
       end
     end
 
     describe "::field_count" do
       it "returns correct number of model fields" do
         MaleContact.field_count.should eq(5)
+      end
+
+      it "only counts aliased columns once" do
+        PrintPublication.field_count.should eq 7
       end
     end
 
@@ -116,7 +197,7 @@ describe Jennifer::View::Mapping do
 
       describe "user-defined mapping types" do
         it "is accessible if defined in parent class" do
-          FemaleContact::COLUMNS_METADATA[:name].should eq({type: String, null: true, parsed_type: "String?"})
+          FemaleContact::COLUMNS_METADATA[:name].should eq({type: String, column: "name", null: true, parsed_type: "String?"})
         end
 
         pending "allows to add extra options" do
@@ -179,6 +260,19 @@ describe Jennifer::View::Mapping do
           c = Factory.build_male_contact(name: "a")
           c.name.should eq("a")
         end
+
+        it "provides getters for aliased columns" do
+          pb = PrintPublication.build(
+            title:      "PrintPublicationsAreTheFutureOfTheInternet",
+            v:          71,
+            publisher:  "AVerySeriousProvider",
+            pages:      13,
+            type:       "Article"
+          )
+
+          pb.title.should eq "PrintPublicationsAreTheFutureOfTheInternet"
+          pb.v.should eq 71
+        end
       end
 
       describe "attribute setter" do
@@ -187,12 +281,29 @@ describe Jennifer::View::Mapping do
           c.name = "b"
           c.name.should eq("b")
         end
+
+        it "provides setters for aliased columns" do
+          pb = PrintPublication.build(
+            title:      "PrintPublicationsAreTheFutureOfTheInternet",
+            v:          71,
+            publisher:  "AVerySeriousProvider",
+            pages:      13,
+            type:       "Article"
+          )
+
+          pb.title = "ProbablyALittleOverexaggerated"
+          pb.title.should eq "ProbablyALittleOverexaggerated"
+          pb.v.should eq 71
+        end
       end
 
       describe "::_{{attribute}}" do
         c = MaleContact._name
+        pb = PrintPublication._v
         it { c.table.should eq(MaleContact.view_name) }
         it { c.field.should eq("name") }
+        it { pb.table.should eq(PrintPublication.view_name) }
+        it { pb.field.should eq "version" }
       end
     end
 
@@ -220,6 +331,18 @@ describe Jennifer::View::Mapping do
         c.attribute("name").should eq("Jessy")
         c.attribute(:name).should eq("Jessy")
       end
+
+      it "returns attribute values of mapped fields" do
+        pb = PrintPublication.build(
+          title:      "PrintPublicationsAreTheFutureOfTheInternet",
+          v:          71,
+          publisher:  "AVerySeriousProvider",
+          pages:      13,
+          type:       "Article"
+        )
+        pb.attribute("v").should eq 71
+        pb.attribute(:v).should eq 71
+      end
     end
 
     describe "#to_h" do
@@ -227,12 +350,32 @@ describe Jennifer::View::Mapping do
         Factory.create_contact(age: 19, gender: "male")
         MaleContact.all.first!.to_h[:age].should eq(19)
       end
+
+      it "creates a hash with symbol keys and mapped columns" do
+        Article.create(
+          name:       "PrintPublicationsAreTheFutureOfTheInternet",
+          version:    71,
+          publisher:  "AVerySeriousProvider",
+          pages:      13,
+        )
+        PrintPublication.all.first!.to_h[:v].should eq 71
+      end
     end
 
     describe "#to_str_h" do
       it "creates hash with string keys" do
         Factory.create_contact(age: 19, gender: "male")
         MaleContact.all.first!.to_str_h["age"].should eq(19)
+      end
+
+      it "creates a hash with string keys and mapped columns" do
+        Article.create(
+          name:       "PrintPublicationsAreTheFutureOfTheInternet",
+          version:    71,
+          publisher:  "AVerySeriousProvider",
+          pages:      13,
+        )
+        PrintPublication.all.first!.to_str_h["v"].should eq 71
       end
     end
 
@@ -243,12 +386,32 @@ describe Jennifer::View::Mapping do
         c.attribute("name").should eq("Jessy")
         c.attribute(:name).should eq("Jessy")
       end
+
+      # TODO somehow enable
+      pending "returns attribute values of mapped fields by the given name" do
+        # TODO this does not work since Article#name is mapped to Article#title
+        # and PrintPublication does not know about this mapping
+        pb = PrintPublication.build(
+          Article.build(
+            name:       "PrintPublicationsAreTheFutureOfTheInternet",
+            version:    71,
+            publisher:  "AVerySeriousProvider",
+            pages:      13,
+          ).to_h
+        )
+        pb.attribute("v").should eq 71
+        pb.attribute(:v).should eq 71
+      end
     end
   end
 
   describe "::field_names" do
     it "returns array of defined fields" do
       MaleContact.field_names.should eq(%w(id name gender age created_at))
+    end
+
+    it "only returns the actual field names of aliased columns" do
+      PrintPublication.field_names.should eq %w(id title v publisher pages url type)
     end
   end
 end

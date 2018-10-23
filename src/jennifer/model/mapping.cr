@@ -115,35 +115,37 @@ module Jennifer
 
         # generates hash with options
         {% for key, value in properties %}
-          {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %} {% properties[key] = {type: value} %} {% end %}
-          {% if properties[key][:type].is_a?(Path) && TYPES.includes?(properties[key][:type].stringify) %}
-            {% for tkey, tvalue in properties[key][:type].resolve %}
-              {% if tkey == :type || properties[key][tkey] == nil %} {% properties[key][tkey] = tvalue %} {% end %}
+          {%
+            properties[key] = {type: value} unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral)
+            options = properties[key]
+          %}
+          {% if options[:type].is_a?(Path) && TYPES.includes?(options[:type].stringify) %}
+            {% for tkey, tvalue in options[:type].resolve %}
+              {% options[tkey] = tvalue if tkey == :type || options[tkey] == nil %}
             {% end %}
           {% end %}
-          {% properties[key][:stringified_type] = properties[key][:type].stringify %}
-          {% if properties[key][:stringified_type] =~ Jennifer::Macros::JSON_REGEXP && properties[key][:converter] == nil %} {% properties[key][:converter] = ::Jennifer::Model::JSONConverter %} {% end %}
-          {% if properties[key][:primary] %}
-            {%
+          {%
+            options[:stringified_type] = options[:type].stringify
+            options[:converter] = ::Jennifer::Model::JSONConverter if options[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP && options[:converter] == nil
+            if options[:primary]
               primary = key
-              primary_type = properties[key][:type]
-              primary_auto_incrementable = AUTOINCREMENTABLE_STR_TYPES.includes?(properties[key][:stringified_type])
-            %}
-          {% end %}
-          {% properties[key][:parsed_type] = properties[key][:stringified_type] %}
-          {% if properties[key][:stringified_type] =~ NILLABLE_REGEXP %}
-            {% properties[key][:null] = true %}
-          {% elsif properties[key][:null] || properties[key][:primary] %}
-            {% properties[key][:parsed_type] = properties[key][:stringified_type] + "?" %}
-          {% end %}
-          {% add_default_constructor = add_default_constructor && (properties[key][:primary] || properties[key][:null] || properties[key].keys.includes?(:default)) %}
+              primary_type = options[:type]
+              primary_auto_incrementable = AUTOINCREMENTABLE_STR_TYPES.includes?(options[:stringified_type])
+            end
+            options[:parsed_type] = options[:stringified_type]
+            if options[:stringified_type] =~ NILLABLE_REGEXP
+              options[:null] = true
+            elsif options[:null] || options[:primary]
+              options[:parsed_type] = options[:stringified_type] + "?"
+            end
+            add_default_constructor = add_default_constructor && (options[:primary] || options[:null] || options.keys.includes?(:default))
+          %}
         {% end %}
 
-        {% nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] } %}
-
-        {% if primary == nil %}
-          {% raise "Model #{@type} has no defined primary field. For now model without primary field is not allowed" %}
-        {% end %}
+        {%
+          nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] }
+          raise "Model #{@type} has no defined primary field. For now model without primary field is not allowed" if primary == nil
+        %}
 
         __field_declaration({{properties}}, {{primary_auto_incrementable}})
 

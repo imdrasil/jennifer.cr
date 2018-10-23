@@ -6,22 +6,22 @@ module Jennifer
       end
 
       def max(field, klass : T.class) : T forall T
-        raise ArgumentError.new("Cannot use with grouping") unless @groups.empty?
+        raise ArgumentError.new("Cannot be used with grouping") unless @groups.empty?
         group_max(field, klass)[0]
       end
 
       def min(field, klass : T.class) : T forall T
-        raise ArgumentError.new("Cannot use with grouping") unless @groups.empty?
+        raise ArgumentError.new("Cannot be used with grouping") unless @groups.empty?
         group_min(field, klass)[0]
       end
 
       def sum(field, klass : T.class) : T forall T
-        raise ArgumentError.new("Cannot use with grouping") unless @groups.empty?
+        raise ArgumentError.new("Cannot be used with grouping") unless @groups.empty?
         group_sum(field, klass)[0]
       end
 
       def avg(field, klass : T.class) : T forall T
-        raise ArgumentError.new("Cannot use with grouping") unless @groups.empty?
+        raise ArgumentError.new("Cannot be used with grouping") unless @groups.empty?
         group_avg(field, klass)[0]
       end
 

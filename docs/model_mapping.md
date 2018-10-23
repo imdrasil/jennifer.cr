@@ -149,7 +149,7 @@ If you don't want to define all the table fields - pass `false` as second argume
 | `#{{field_name}}_changed?` | | shows if field was changed |
 | `#changed?` | | shows if any field was changed |
 | `#primary` | | value of primary key field |
-| `::primary` | | returns criteria for primary field (query dsl) |
+| `::primary` | | returns criterion for primary field (query dsl) |
 | `::primary_field_name` | | name of primary field |
 | `::primary_field_type` | | type of primary key |
 | `#new_record?` | | returns `true` if record has `nil` primary key (is not stored to db) |
@@ -167,6 +167,8 @@ If you don't want to define all the table fields - pass `false` as second argume
 | `#changed?` | | check if any field was changed |
 | `#set_attribute` | `String \| Symbol`, `DB::Any` | sets attribute by given name |
 | `#attribute` | `String \| Symbol` | returns attribute value by it's name |
+
+> `::build_params` is deprecated and will be removed in `0.7.0`. For the web argument parse tasks please use [form_object](https://github.com/imdrasil/form_object) shard.
 
 All allowed types are listed on the [Migration](https://imdrasil.github.io/jennifer.cr/docs/migration) page.
 

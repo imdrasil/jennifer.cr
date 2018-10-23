@@ -438,8 +438,8 @@ describe Jennifer::Model::Base do
       end
 
       context "with argument" do
-        it "is accessible from query object" do
-          Contact.by_age(12).as_sql.should match(/contacts\.age =/)
+        it do
+          Contact.by_gender("female").as_sql.should match(/contacts\.gender =/)
         end
       end
 

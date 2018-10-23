@@ -8,6 +8,7 @@ module Jennifer
 
       extend AbstractClassMethods
 
+      # :nodoc:
       macro delegate(*methods, to object, prefix pref = "")
         {% for method in methods %}
           def {{method.id}}(*args, **options)
@@ -50,20 +51,25 @@ module Jennifer
       abstract def up
       abstract def down
 
+      # After failed #up method invocation.
       def after_up_failure
       end
 
+      # After failed #down method invocation.
       def after_down_failure
       end
 
+      # Returns migration timestamp.
       def self.version
         raise AbstractMethod.new(self, :version)
       end
 
+      # Returns all existing migration timestamps based on available classes.
       def self.versions
         migrations.keys
       end
 
+      # Returns all available migration classes.
       def self.migrations
         {% begin %}
           {% if @type.all_subclasses.size > 0 %}

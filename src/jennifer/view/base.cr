@@ -70,9 +70,9 @@ module Jennifer
         end
 
         # :nodoc:
-        # NOTE: override regular behavior - used fields count instead of
-        # querying db
         def self.actual_table_field_count
+          # NOTE: override regular behavior - used fields count instead of
+          # querying db
           COLUMNS_METADATA.size
         end
 

@@ -1,16 +1,21 @@
 require "./views"
 require "../src/jennifer/model/authentication"
 
-struct JohnyQuery < Jennifer::QueryBuilder::QueryObject
+class JohnyQuery < Jennifer::QueryBuilder::QueryObject
   def call
     relation.where { _name == "Johny" }
   end
 end
 
-struct WithArgumentQuery < Jennifer::QueryBuilder::QueryObject
+class WithOwnArguments < Jennifer::QueryBuilder::QueryObject
+  private getter gender : String
+
+  def initialize(relation, @gender)
+    super(relation)
+  end
+
   def call
-    this = self
-    relation.where { _age == this.params[0] }
+    relation.where { _gender == gender }
   end
 end
 
@@ -112,7 +117,7 @@ class Contact < ApplicationRecord
   scope :ordered { order(name: :asc) }
   scope :with_main_address { relation(:addresses).where { _addresses__main } }
   scope :johny, JohnyQuery
-  scope :by_age, WithArgumentQuery
+  scope :by_gender, WithOwnArguments
 
   def name_check
     if @description && @description.not_nil!.size > 10

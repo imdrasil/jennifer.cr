@@ -65,7 +65,7 @@ Postgres specific:
 | `contained` |`<@` |
 | `overlap` | `&&` |
 
-Also Jennifer supports json field path methods for criterias: `Criteria#take` (also accessible as `Criteria#[]`) and `Criteria#path`.
+Also Jennifer supports json field path methods for criteria: `Criteria#take` (also accessible as `Criteria#[]`) and `Criteria#path`.
 
 ### MySQL
 
@@ -124,7 +124,7 @@ Contact.all.where { _id == any(nested_query) }
 To specify exact SQL query use `#sql` method:
 
 ```crystal
-# it behaves like regular criteria
+# it behaves like regular criterion
 Contact.all.where { sql("age > ?",  [15]) & (_name == "Stephan") }
 ```
 

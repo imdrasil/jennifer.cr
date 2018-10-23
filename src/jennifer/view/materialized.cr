@@ -1,6 +1,7 @@
 module Jennifer
   module View
     abstract class Materialized < Base
+      # Refresh materialized view data in th DB.
       def self.refresh
         adapter.refresh_materialized_view(view_name)
       end

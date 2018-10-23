@@ -6,6 +6,7 @@ module Jennifer
     module Translation
       alias LocalizeableTypes = Int32 | Int64 | Nil | Float32 | Float64 | Time | String | Symbol | Bool
 
+      # Default global translation scope.
       GLOBAL_SCOPE = "jennifer"
 
       # Search translation for given attribute.
@@ -36,6 +37,7 @@ module Jennifer
         name
       end
 
+      # Returns the i18n scope for the class.
       def i18n_scope
         :models
       end
@@ -46,7 +48,7 @@ module Jennifer
         @@i18n_key = Inflector.underscore(Inflector.demodulize(to_s)).downcase
       end
 
-      # Yields all ancestors which respond to `.superclass`.
+      # Yields all ancestors until `Base`.
       def lookup_ancestors(&block)
         klass = self
         while klass

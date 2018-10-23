@@ -9,7 +9,6 @@ require "./jennifer/exceptions"
 require "./jennifer/adapter"
 require "./jennifer/adapter/record"
 require "./jennifer/config"
-require "./jennifer/version"
 
 require "./jennifer/query_builder"
 
@@ -24,6 +23,8 @@ require "./jennifer/view/base"
 require "./jennifer/migration/*"
 
 module Jennifer
+  VERSION = "0.6.2"
+
   {% if Jennifer.constant("AFTER_LOAD_SCRIPT") == nil %}
     # :nodoc:
     AFTER_LOAD_SCRIPT = [] of String
@@ -40,5 +41,5 @@ end
 
 # NOTE: This is needed to compile query generic class, otherwise
 # `!query` at src/jennifer/adapter/base_sql_generator.cr:137:12 has no type
-# is raised
+# exception is raised
 Jennifer::Migration::Version.all

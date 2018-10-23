@@ -2,6 +2,62 @@
 
 ## Future release (__-__-2018)
 
+## 0.6.2 (23-10-2018)
+
+**General**
+
+* add `:nodoc:` to all internal constants and generated methods (implementing standard ORM methods) from the macros
+
+**QueryBuilder**
+
+* `Query` isn't extended by `Ifrit`
+* add `OrderItem` to describe order direction
+* add `Criteria#order`, `Criteria#asc` and `Criteria#desc` to create `OrderItem`
+* add `Condition#eql?` to compare with other condition or `SQLNode` (returns `false`)
+* add `Criteria#eql?`, `Grouping#eql?`, `LogicOperator#eql?`
+* add `Query#order` and `Query#reorder` with accepting `OrderItem`
+* now `Query#order` with block to expect a `OrderItem`
+* remove `CriteriaContainer`
+* `QueryObject` now is an abstract class
+* changed wording for the `ArgumentError` in `#max`, `#min`, `#sum`, `#avg` methods of `Aggregation` to "Cannot be used with grouping"
+* change `Query#from(_from : String | Query)` signature to `Query#from(from : String | Query)`
+
+**Model**
+
+* `#save` and `#update` will return `true` when is called on an object with no changed fields (all before callbacks are invoked)
+* next `Base` methods become abstract: `.primary_auto_incrementable?`, `.build_params`, `#destroy`, `#arguments_to_save`, `#arguments_to_insert`
+* `Base#_extract_attributes` and `Base#_sti_extract_attributes` become **private**
+* all callback invocation methods become **protected**
+* next `Resource` methods become abstract: `.primary`, `.field_count`, `.field_names`, `.columns_tuple`, `#to_h`, `#to_str_h`
+* `Resource` isn't extended by `Ifrit`
+* regenerate `.build_params` for STI models
+* `Scoping.scope(Symbol,QueryObject)` now checks in runtime whether `T` of `Jennifer::QueryBuilder::ModelQuery(T)` responds to method named after the scope
+
+**View**
+
+* `Base#_after_initialize_callback` becomes **protected**
+* `Base#_extract_attributes` becomes **private**
+
+**Adapter**
+
+* fix custom port not used when accessing the Postgres database
+
+**Migration**
+
+* `TableBuilder::Base` isn't extended by `Ifrit`
+* rename `TableBuilder::ChangeTable#new_table_rename` getter to `#new_table_name`
+* fix misuse of local variable in `TableBuilder::ChangeTable#rename_table`
+* `TableBuilder::ChangeTable#change_column` has next changes:
+  * `old_name` argument renamed to `name`
+  * `new_name` argument is replaced with option in `options` arguemnt hash
+  * raise `ArgumentError` if both `type` and `options[:sql_type]` are `nil`
+* `TableBuilder::ChangeTable#change_column` raises `ArgumentError` if both `type` and `options[:sql_type]` are `nil`
+* `TableBuilder::CreateTable#field` `data_type` argument renamed to `type`
+* `TableBuilder::CreateTable#timestamps` creates fields with `null: false` by default
+* `TableBuilder::CreateTable#add_index` is removed in favour of `#index`
+* `.pending_versions`, `.assert_outdated_pending_migrations` and `.default_adapter` methods of `Runner`become private
+* `Runner.config` is removed
+
 ## 0.6.1 (07-09-2018)
 
 **General**

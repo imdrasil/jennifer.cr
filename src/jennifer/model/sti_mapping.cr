@@ -26,19 +26,18 @@ module Jennifer
 
         # generates hash with options
         {% for key, value in properties %}
-          {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
-            {% properties[key] = {type: value} %}
-          {% end %}
-          {% properties[key][:stringified_type] = properties[key][:type].stringify %}
-          {% if properties[key][:stringified_type] =~ Jennifer::Macros::NILLABLE_REGEXP %}
-            {%
-              properties[key][:null] = true
-              properties[key][:parsed_type] = properties[key][:stringified_type]
-            %}
-          {% else %}
-            {% properties[key][:parsed_type] = properties[key][:null] ? properties[key][:stringified_type] + "?" : properties[key][:stringified_type] %}
-          {% end %}
-          {% add_default_constructor = add_default_constructor && (properties[key][:null] || properties[key].keys.includes?(:default)) %}
+          {%
+            properties[key] = {type: value} unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral)
+            options = properties[key]
+            options[:stringified_type] = options[:type].stringify
+            if options[:stringified_type] =~ Jennifer::Macros::NILLABLE_REGEXP
+              options[:null] = true
+              options[:parsed_type] = options[:stringified_type]
+            else
+              options[:parsed_type] = options[:null] ? options[:stringified_type] + "?" : options[:stringified_type]
+            end
+            add_default_constructor = add_default_constructor && (options[:null] || options.keys.includes?(:default))
+          %}
         {% end %}
 
         {% nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] } %}
@@ -269,9 +268,7 @@ module Jennifer
 
         {% all_properties = properties %}
         {% for key, value in @type.superclass.constant("COLUMNS_METADATA") %}
-          {% if !properties[key] %}
-            {% all_properties[key] = value %}
-          {% end %}
+          {% all_properties[key] = value if !properties[key] %}
         {% end %}
 
         # :nodoc:

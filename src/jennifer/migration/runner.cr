@@ -1,14 +1,10 @@
 module Jennifer
   module Migration
     module Runner
+      # Migration file name timestamp format.
       MIGRATION_DATE_FORMAT = "%Y%m%d%H%M%S%L"
 
       @@pending_versions = [] of String
-
-      def self.pending_versions
-        @@pending_versions = (Base.versions - Version.list).sort! if @@pending_versions.empty?
-        @@pending_versions
-      end
 
       # Invokes migrations. *count* with negative or zero value will invoke all pending migrations.
       def self.migrate(count : Int)
@@ -31,22 +27,30 @@ module Jennifer
         default_adapter.class.generate_schema if performed
       end
 
+      # Invokes all migrations.
       def self.migrate
         migrate(-1)
       end
 
+      # Creates database.
       def self.create
         # TODO: allow to specify adapter
         r = default_adapter_class.create_database
         puts "DB is created!"
       end
 
+      # Drops database.
       def self.drop
         # TODO: allow to specify adapter
         r = default_adapter_class.drop_database
         puts "DB is dropped!"
       end
 
+      # Rollbacks migrations.
+      #
+      # Allowed options:
+      # - *count*
+      # - *to*
       def self.rollback(options : Hash(Symbol, DBAny))
         processed = true
         default_adapter.ready_to_migrate!
@@ -74,26 +78,15 @@ module Jennifer
         default_adapter_class.generate_schema if processed
       end
 
-      def self.assert_outdated_pending_migrations
-        return unless Version.all.exists?
-        db_version = Version.all.order(version: :desc).limit(1).pluck(:version)[0].as(String)
-        broken = pending_versions.select { |version| version < db_version }
-        unless broken.empty?
-          raise <<-MESSAGE
-          Can't run migrations because some of them are older then release version.
-          They are:
-          #{broken.map { |v| "- #{v}" }.join("\n")}
-          MESSAGE
-        end
-      end
-
+      # Loads schema from the SQL schema file.
       def self.load_schema
-        return if config.skip_dumping_schema_sql
+        return if Config.skip_dumping_schema_sql
         # TODO: load schema for each adapter
         default_adapter_class.load_schema
         puts "Schema loaded"
       end
 
+      # Generates an empty migration file template.
       def self.generate(name : String)
         time = Time.now.to_s(MIGRATION_DATE_FORMAT)
         migration_name = name.camelcase
@@ -111,15 +104,17 @@ module Jennifer
         puts "Migration #{migration_name.underscore} was generated"
       end
 
-      def self.config
-        Config.instance
-      end
-
-      def self.default_adapter
+      private def self.default_adapter
         Adapter.default_adapter
       end
 
-      def self.default_adapter_class
+      # NOTE: pending versions are memorized so reloading should be performed manually.
+      private def self.pending_versions
+        @@pending_versions = (Base.versions - Version.list).sort! if @@pending_versions.empty?
+        @@pending_versions
+      end
+
+      private def self.default_adapter_class
         Adapter.default_adapter_class
       end
 
@@ -148,7 +143,7 @@ module Jennifer
           transaction { migration.down }
           Version.all.where { _version == migration.class.version }.delete
           migration_processed = true
-          puts "Droped migration #{migration.class}"
+          puts "Dropped migration #{migration.class}"
         ensure
           transaction do
             case Config.migration_failure_handler_method
@@ -158,6 +153,19 @@ module Jennifer
               migration.after_down_failure
             end
           end
+        end
+      end
+
+      private def self.assert_outdated_pending_migrations
+        return unless Version.all.exists?
+        db_version = Version.all.order(version: :desc).limit(1).pluck(:version)[0].as(String)
+        broken = pending_versions.select { |version| version < db_version }
+        unless broken.empty?
+          raise <<-MESSAGE
+          Can't run migrations because some of them are older then release version.
+          They are:
+          #{broken.map { |v| "- #{v}" }.join("\n")}
+          MESSAGE
         end
       end
 

@@ -17,6 +17,7 @@ module Jennifer
           @{{method.id}}
         end
 
+        # :nodoc:
         def _{{method.id}}!
           @{{method.id}}.not_nil!
         end
@@ -75,6 +76,7 @@ module Jennifer
       end
 
       # Compare current object with given comparing generated sql query and parameters.
+      #
       # Is mostly used for testing
       def eql?(other : Query)
         sql_args == other.sql_args && to_sql == other.to_sql
@@ -105,11 +107,6 @@ module Jennifer
         else
           @select_fields
         end
-      end
-
-      protected def add_union(value : Query)
-        @unions ||= [] of Query
-        @unions.not_nil! << value
       end
 
       def self.build(*opts)
@@ -162,33 +159,45 @@ module Jennifer
           (@joins.nil? || @joins.not_nil!.empty?) && @order.empty? && @relations.empty?
       end
 
+      # Allows executing a block in query context.
       def exec(&block)
         with self yield
         self
       end
 
+      # Mutates query applying all modification from the block.
+      #
+      # ```
+      # User.where { _email == "example@test.com" }
+      # ```
       def where(&block)
         other = (with @expression yield)
         set_tree(other)
         self
       end
 
+      # Specifies raw SELECT clause value.
       def select(raw_sql : String)
         @raw_select = raw_sql
         self
       end
 
+      # Specifies criterion to be used in SELECT clause.
       def select(field : Criteria)
         @select_fields << field
         field.as(RawSql).without_brackets if field.is_a?(RawSql)
         self
       end
 
+      # Specifies column name to be used in SELECT clause.
+      #
+      # TODO: remove as deprecated.
       def select(field_name : Symbol)
         @select_fields << @expression.c(field_name.to_s)
         self
       end
 
+      # Specifies column names to be used in SELECT clause.
       def select(*fields : Symbol)
         fields.each { |f| @select_fields << @expression.c(f.to_s) }
         self
@@ -211,16 +220,23 @@ module Jennifer
         self
       end
 
-      def from(_from : String | Query)
-        @from = _from
+      # Specifies table *from* which the records will be fetched.
+      #
+      # Can accept other query object.
+      def from(from : String | Query)
+        @from = from
         self
       end
 
+      # Returns a chainable query with zero records.
       def none
         @do_nothing = true
         self
       end
 
+      # Allows to specify a HAVING clause.
+      #
+      # Note that you can’t use HAVING without also specifying a GROUP clause.
       def having
         other = with @expression yield
         if @having.nil?
@@ -232,10 +248,11 @@ module Jennifer
       end
 
       def union(query)
-        add_union(query)
+        (@unions ||= [] of Query) << query
         self
       end
 
+      # Specifies whether the records should be unique or not.
       def distinct
         @distinct = true
         self
@@ -278,16 +295,21 @@ module Jennifer
         self
       end
 
+      # Specifies a limit for the number of records to retrieve.
       def limit(count : Int32)
         @limit = count
         self
       end
 
+      # Specifies the number of rows to skip before returning rows.
       def offset(count : Int32)
         @offset = count
         self
       end
 
+      # Specifies locking settings.
+      #
+      # `true` is default value. Also string declaration can be provide.
       def lock(type : String | Bool = true)
         @lock = type
         self
@@ -297,8 +319,9 @@ module Jennifer
         to_sql
       end
 
+      # Joins given *other* condition statement to the main condition tree.
       def set_tree(other : LogicOperator | Condition)
-        @tree = if !@tree.nil? && !other.nil?
+        @tree = if !@tree.nil?
                   @tree.as(Condition | LogicOperator) & other
                 else
                   other
@@ -306,14 +329,17 @@ module Jennifer
         self
       end
 
+      # ditto
       def set_tree(other : Query)
         set_tree(other.tree)
       end
 
+      # ditto
       def set_tree(other : Criteria)
         set_tree(Condition.new(other))
       end
 
+      # ditto
       def set_tree(other : Nil)
         raise ArgumentError.new("Condition tree can't be blank.")
       end
@@ -352,5 +378,6 @@ module Jennifer
     end
   end
 
+  # Shortcut for the query class name.
   alias Query = QueryBuilder::Query
 end

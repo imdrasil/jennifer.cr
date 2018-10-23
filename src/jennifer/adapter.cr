@@ -38,7 +38,7 @@ module Jennifer
       adapter.query(_query, args) { |rs| yield rs }
     end
 
-    # Allows to assign newly created adapter and call setupe methods with existing adapter
+    # Allows to assign newly created adapter and call setup methods with existing adapter
     private def self.adapter=(_adapter)
       @@adapter = _adapter
     end
@@ -59,6 +59,7 @@ module Jennifer
       adapter
     end
 
+    # Returns default adapter class.
     def self.default_adapter_class
       adapter_class
     end
@@ -67,10 +68,12 @@ module Jennifer
       @@adapter_class ||= adapters[Config.adapter]
     end
 
+    # Returns hash with all registered adapter classes
     def self.adapters
       @@adapters
     end
 
+    # Registers adapter class *adapter* with name *name*.
     def self.register_adapter(name, adapter)
       adapters[name] = adapter
     end

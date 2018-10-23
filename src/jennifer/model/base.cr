@@ -18,6 +18,8 @@ module Jennifer
         abstract def primary_auto_incrementable?
 
         # Converts String based hash to `Hash(String, Jennifer::DBAny)`
+        #
+        # NOTE: Deprecated - will be removed in 0.7.0. Please, use https://github.com/imdrasil/form_object instead
         abstract def build_params(hash)
       end
 
@@ -32,12 +34,10 @@ module Jennifer
       @@actual_table_field_count : Int32?
       @@has_table : Bool?
 
+      # Returns whether model has a table.
       def self.has_table?
-        if @@has_table.nil?
-          @@has_table = adapter.table_exists?(table_name).as(Bool)
-        else
-          @@has_table
-        end
+        @@has_table = adapter.table_exists?(table_name).as(Bool) if @@has_table.nil?
+        @@has_table
       end
 
       # Represent actual amount of model's table column amount (is grepped from db).
@@ -45,12 +45,14 @@ module Jennifer
         @@actual_table_field_count ||= adapter.table_column_count(table_name)
       end
 
+      # Sets custom table name.
       def self.table_name(value : String | Symbol)
         @@table_name = value.to_s
         @@actual_table_field_count = nil
         @@has_table = nil
       end
 
+      # Returns table name.
       def self.table_name : String
         @@table_name ||=
           begin
@@ -61,15 +63,18 @@ module Jennifer
           end
       end
 
+      # Sets custom model foreign key name.
       def self.foreign_key_name(value : String | Symbol)
         @@foreign_key_name = value.to_s
         @@foreign_key_name = nil
       end
 
+      # Returns model foreign key name.
       def self.foreign_key_name
         @@foreign_key_name ||= Inflector.singularize(table_name) + "_id"
       end
 
+      # Returns default model parameter converter.
       def self.parameter_converter
         @@converter ||= ParameterConverter.new
       end
@@ -84,10 +89,12 @@ module Jennifer
         o
       end
 
+      # Returns if record isn't persisted
       def new_record?
         @new_record
       end
 
+      # Returns if record isn't deleted.
       def destroyed?
         @destroyed
       end
@@ -159,6 +166,7 @@ module Jennifer
       # Returns named tuple of all model fields to insert.
       abstract def arguments_to_insert
 
+      # Returns list of available model classes.
       def self.models
         {% begin %}
           {% if !@type.all_subclasses.empty? %}

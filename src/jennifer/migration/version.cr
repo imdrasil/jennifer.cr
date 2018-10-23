@@ -1,5 +1,6 @@
 module Jennifer
   module Migration
+    # :nodoc:
     class Version < Model::Base
       table_name "migration_versions"
       mapping(
@@ -7,6 +8,7 @@ module Jennifer
         version: String
       )
 
+      # :nodoc:
       def self.has_table?
         false
       end

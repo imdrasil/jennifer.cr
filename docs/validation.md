@@ -9,7 +9,7 @@ class User < Jennifer::Model::Base
     login: String
   })
 
-  validates_length :login, in: [8..16]
+  validates_length :login, in: 8..16
 end
 
 user = User.build(login: "login")

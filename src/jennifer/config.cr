@@ -2,6 +2,37 @@ require "yaml"
 require "logger"
 
 module Jennifer
+  # Configuration container.
+  #
+  # At the moment it implements singleton pattern but can be scaled to support several
+  # configuration instances per application.
+  #
+  # Supported configurations:
+  #
+  # | Config | Default value |
+  # | --- | --- |
+  # | `migration_files_path` | `"./db/migrations"` |
+  # | `structure_folder` | parent folder of `migration_files_path` |
+  # | `host` | `"localhost"` |
+  # | `port` | -1 |
+  # | `logger` | `Logger.new(STDOUT)` |
+  # | `schema` | `"public"` |
+  # | `user` | - |
+  # | `password` | - |
+  # | `db` | - |
+  # | `adapter` | - |
+  # | `max_pool_size` | 1 |
+  # | `initial_pool_size` | 1 |
+  # | `max_idle_pool_size` | 1 |
+  # | `retry_attempts` | 1 |
+  # | `checkout_timeout` | 5.0 |
+  # | `retry_delay` | 1.0 |
+  # | `local_time_zone_name` | default time zone name |
+  # | `skip_dumping_schema_sql` | `false` |
+  # | `command_shell` | `"bash"` |
+  # | `docker_container` | `""` |
+  # | `docker_source_location` | `""` |
+  # | `command_shell_sudo` | `false` |
   class Config
     CONNECTION_URI_PARAMS = [
       :max_pool_size, :initial_pool_size, :max_idle_pool_size,

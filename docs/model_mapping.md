@@ -193,7 +193,7 @@ end
 - Models currently must have a `primary` field.
 
 - If your model also uses `JSON.mapping`, `JSON::Serializable`, or other kinds of mapping macros, you must be careful
-  Jennifer's `mapping` macro last in order for all model features to work correctly.
+  to use Jennifer's `mapping` macro last in order for all model features to work correctly.
 
 ```crystal
 class User < Jennifer::Model::Base

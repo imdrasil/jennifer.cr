@@ -174,8 +174,6 @@ All allowed types are listed on the [Migration](https://imdrasil.github.io/jenni
 
 All defined mapping properties are accessible via `COLUMNS_METADATA` constant and `::columns_tuple` method.
 
-**Important restriction** - model with no primary field is not allowed for now.
-
 It may be useful to have one parent class for all your models - just make it abstract and everything will work well:
 
 ```crystal
@@ -187,6 +185,23 @@ class SomeModel < ApplicationRecord
     id: Int32,
     name: String
   )
+end
+```
+
+**Important restrictions:**
+
+- Models currently must have a `primary` field.
+
+- If your model also uses `JSON.mapping`, `JSON::Serializable`, or other kinds of mapping macros, you must be careful
+  Jennifer's `mapping` macro last in order for all model features to work correctly.
+
+```crystal
+class User < Jennifer::Model::Base
+  # JSON.mapping used *before* model mapping:
+  JSON.mapping(id: Int32, name: String)
+
+  # Model mapping used last:
+  mapping(id: Primary32, name: String)
 end
 ```
 

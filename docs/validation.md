@@ -87,6 +87,8 @@ The `#clear!` method is used when all error messages should be removed. It is au
 
 ## Validation macros
 
+Please take into account that all validators described below implement singleton pattern - there is only one instance of each of them in application.
+
 ### `acceptance`
 
 This macro validates that a given field equals to true or be one of given values. This is useful for validating checkbox value:
@@ -275,10 +277,10 @@ end
 This passes the record to a new instance of given validator class to be validated.
 
 ```crystal
-class EnnValidator < Jennifer::Validator
-  def validate(subject : Passport)
-    if subject.enn!.size < 4 && subject.enn![0].downcase == 'a'
-      errors.add(:enn, "Invalid enn")
+class EnnValidator < Jennifer::Validations::Validator
+  def validate(record : Passport)
+    if record.enn!.size < 4 && record.enn![0].downcase == 'a'
+      record.errors.add(:enn, "Invalid enn")
     end
   end
 end
@@ -361,7 +363,7 @@ end
 
 ### Custom validators
 
-Custom validators are classes that inherit from `Jennifer::Validator` and implement `#validate` method.
+Custom validators are classes that inherit from `Jennifer::Validations::Validator` and implement `#validate` method.
 
 ```crystal
 class Passport < Jennifer::Model::Base
@@ -372,10 +374,10 @@ class Passport < Jennifer::Model::Base
   validates_with EnnValidator
 end
 
-class EnnValidator < Jennifer::Validator
-  def validate(subject)
-    if subject.enn!.size < 4 && subject.enn![0].downcase == 'a'
-      errors.add(:enn, "Invalid enn")
+class EnnValidator < Jennifer::Validations::Validator
+  def validate(record)
+    if record.enn!.size < 4 && record.enn![0].downcase == 'a'
+      record.errors.add(:enn, "Invalid enn")
     end
   end
 end
@@ -393,10 +395,23 @@ class Passport < Jennifer::Model::Base
 end
 
 class EnnValidator < Jennifer::Validator
-  def validate(subject, length)
-    if subject.enn!.size < length && subject.enn![0].downcase == 'a'
-      errors.add(:enn, "Invalid enn")
+  def validate(record, length)
+    if record.enn!.size < length && record.enn![0].downcase == 'a'
+      record.errors.add(:enn, "Invalid enn")
     end
+  end
+end
+```
+
+To override default singleton behavior of validator define `.instance` method this way:
+
+```crystal
+class CustomValidator < Jennifer::Validations::Validator
+  def self.instance
+    new
+  end
+
+  def validate(record)
   end
 end
 ```

@@ -1,7 +1,7 @@
 module Jennifer
   module Validations
-    class Length < StaticValidator
-      def self.validate(record, field : Symbol, value, allow_blank : Bool, in = nil, is = nil, minimum = nil, maximum = nil)
+    class Length < Validator
+      def validate(record, field : Symbol, value, allow_blank : Bool, in = nil, is = nil, minimum = nil, maximum = nil)
         with_blank_validation do
           size = value.not_nil!.size
           errors = record.errors

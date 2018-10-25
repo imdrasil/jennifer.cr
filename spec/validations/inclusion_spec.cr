@@ -5,14 +5,14 @@ describe Jennifer::Validations::Inclusion do
 
   describe ".validate" do
     it do
-      instance = Factory.build_contact
-      described_class.validate(instance, :name, "John", false, ["Sam"])
-      instance.should be_valid
+      c = Factory.build_contact
+      described_class.instance.validate(c, :name, "John", false, ["Sam"])
+      c.should be_valid
     end
 
     it do
       instance = Factory.build_contact
-      described_class.validate(instance, :name, nil, true, [1.2])
+      described_class.instance.validate(instance, :name, nil, true, [1.2])
       instance.should be_valid
     end
   end

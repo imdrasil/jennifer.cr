@@ -1,7 +1,7 @@
 module Jennifer
   module Validations
-    class Numericality < StaticValidator
-      def self.validate(record, field : Symbol, value, allow_blank : Bool, greater_than = nil, greater_than_or_equal_to = nil, equal_to = nil,
+    class Numericality < Validator
+      def validate(record, field : Symbol, value, allow_blank : Bool, greater_than = nil, greater_than_or_equal_to = nil, equal_to = nil,
                         less_than = nil, less_than_or_equal_to = nil, other_than = nil, odd = nil, even = nil)
         with_blank_validation do
           value = value.not_nil!

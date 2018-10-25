@@ -1,7 +1,7 @@
 module Jennifer
   module Validations
-    class Absence < StaticValidator
-      def self.validate(record, field : Symbol, value, _allow_blank : Bool)
+    class Absence < Validator
+      def validate(record, field, value, allow_blank)
         record.errors.add(field, :present) if value.present?
       end
     end

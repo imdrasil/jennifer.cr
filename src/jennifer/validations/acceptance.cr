@@ -1,7 +1,7 @@
 module Jennifer
   module Validations
-    class Acceptance < StaticValidator
-      def self.validate(record, field : Symbol, value, _allow_blank : Bool, accept : Array? = nil)
+    class Acceptance < Validator
+      def validate(record, field : Symbol, value, _allow_blank : Bool, accept : Array? = nil)
         return true if value.nil?
         invalid =
           if accept.nil?

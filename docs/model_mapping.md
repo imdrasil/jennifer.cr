@@ -158,7 +158,6 @@ If you don't want to define all the table fields - pass `false` as second argume
 | `::build` | `Hash(String \| Symbol, DB::Any), NamedTuple` | builds object |
 | `::create` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with all callbacks |
 | `::create!` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with callbacks or raise exception |
-| `::build_params` | `Hash(String, String?)` | converts given string-based hash using field mapping |
 | `#save` | | saves object to db; returns `true` if success and `false` elsewhere |
 | `#save!` | | saves object to db; returns `true` if success or rise exception otherwise |
 | `#to_h` | | returns hash with all attributes |
@@ -167,8 +166,6 @@ If you don't want to define all the table fields - pass `false` as second argume
 | `#changed?` | | check if any field was changed |
 | `#set_attribute` | `String \| Symbol`, `DB::Any` | sets attribute by given name |
 | `#attribute` | `String \| Symbol` | returns attribute value by it's name |
-
-> `::build_params` is deprecated and will be removed in `0.7.0`. For the web argument parse tasks please use [form_object](https://github.com/imdrasil/form_object) shard.
 
 All allowed types are listed on the [Migration](https://imdrasil.github.io/jennifer.cr/docs/migration) page.
 
@@ -294,20 +291,6 @@ end
 User.create!(password: "qwe", password_confirmation: "qwe")
 ```
 
-## Converting form options
+## Converting form Web options
 
-In the Web world all data got submitted forms will be recognized as `Hash(String, String)` which is not acceptable by your models. To resolve this case `.build_params` may be used - just pass received string based hash and all fields will be converted respectively to the class mapping.
-
-```crystal
-class Post < Jennifer::Model::Base
-  mapping(
-    id: Primary32,
-    name: String,
-    age: Int32
-  )
-end
-
-opts = { "name" => "Jason", "age" => "23" }
-
-Post.build_params(opts) # { "name" => "Jason", "age" => 23 } of String => Jennifer::DBAny
-```
+In the Web world all data got submitted forms will be recognized as `Hash(String, String)` which is not acceptable by your models. To resolve this use [form_object](https://github.com/imdrasil/form_object) shard.

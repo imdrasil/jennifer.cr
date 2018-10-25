@@ -275,24 +275,6 @@ module Jennifer
         {% end %}
 
         # :nodoc:
-        def self.build_params(hash : Hash(String, String?)) : Hash(String, Jennifer::DBAny)
-          converted_hash = {} of String => Jennifer::DBAny
-          hash.each do |key, value|
-            case key.to_s
-            {% for field, opts in all_properties %}
-            when {{field.id.stringify}}
-              if value.nil? || value.empty?
-                converted_hash[key] = nil
-              else
-                converted_hash[key] = parameter_converter.parse(value, {{opts[:stringified_type]}})
-              end
-            {% end %}
-            end
-          end
-          converted_hash
-        end
-
-        # :nodoc:
         COLUMNS_METADATA = {{all_properties}}
         # :nodoc:
         PRIMARY_AUTO_INCREMENTABLE = {{@type.superclass.constant("PRIMARY_AUTO_INCREMENTABLE")}}

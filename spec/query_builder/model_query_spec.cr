@@ -326,8 +326,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
     postgres_only do
       it "allows custom select with grouping" do
         Factory.create_contact
-        Contact
-          .all
+        Contact.all
           .select { [sql("count(*)").alias("stat_count"), sql("date_trunc('year', created_at)").alias("period")] }
           .group("period")
           .order({"period" => :desc})
@@ -335,9 +334,9 @@ describe Jennifer::QueryBuilder::ModelQuery do
       end
 
       it "allows to use float for filtering decimal fields" do
-        converter = Jennifer::Model::ParameterConverter.new
-        c = Factory.create_contact
-        c.ballance = converter.parse("15.1", "Numeric").as(PG::Numeric)
+        c = Factory.build_contact
+        ballance = PG::Numeric.new(2i16, 0i16, 0i16, 1i16, [15i16, 1000i16])
+        c.ballance = ballance
         c.save
         Contact.all.where { _ballance == 15.1 }.count.should eq(1)
       end

@@ -7,7 +7,6 @@ require "./mapping"
 require "./sti_mapping"
 require "./validation"
 require "./callback"
-require "./parameter_converter"
 require "./converters"
 
 module Jennifer
@@ -16,11 +15,6 @@ module Jennifer
       module AbstractClassMethods
         # Returns if primary field is autoincrementable
         abstract def primary_auto_incrementable?
-
-        # Converts String based hash to `Hash(String, Jennifer::DBAny)`
-        #
-        # NOTE: Deprecated - will be removed in 0.7.0. Please, use https://github.com/imdrasil/form_object instead
-        abstract def build_params(hash)
       end
 
       extend AbstractClassMethods
@@ -72,11 +66,6 @@ module Jennifer
       # Returns model foreign key name.
       def self.foreign_key_name
         @@foreign_key_name ||= Inflector.singularize(table_name) + "_id"
-      end
-
-      # Returns default model parameter converter.
-      def self.parameter_converter
-        @@converter ||= ParameterConverter.new
       end
 
       # Initializes new object based on given arguments.

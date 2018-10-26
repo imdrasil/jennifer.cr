@@ -42,6 +42,7 @@ module Jennifer
       end
 
       # Iterates through each error key, value pair in the error messages hash.
+      #
       # Yields the attribute and the error for that attribute. If the attribute
       # has more than one error message, yields once for each error message.
       def each
@@ -88,6 +89,7 @@ module Jennifer
       end
 
       # Adds `message` to the error messages and used validator type to `details` on `attribute`.
+      #
       # More than one error can be added to the same `attribute`.
       # If no `message` is supplied, `:invalid` is assumed.
       def add(attribute : Symbol, message : String | Symbol = :invalid, count : Int? = nil, options : Hash = {} of String => String)

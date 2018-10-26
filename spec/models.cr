@@ -19,10 +19,10 @@ class WithOwnArguments < Jennifer::QueryBuilder::QueryObject
   end
 end
 
-class EnnValidator < Jennifer::Validator
-  def validate(subject : Passport)
-    if subject.enn!.size < 4 && subject.enn![0].downcase == 'a'
-      errors.add(:enn, "Invalid enn")
+class EnnValidator < Jennifer::Validations::Validator
+  def validate(record : Passport, **opts)
+    if record.enn!.size < 4 && record.enn![0].downcase == 'a'
+      record.errors.add(:enn, "Invalid enn")
     end
   end
 end

@@ -6,7 +6,7 @@ module Spec
     end
 
     def failure_message(object)
-      "Expected: #{object.inspect} to be valid"
+      "Expected: #{object.inspect} to be valid but got errors: #{object.errors.full_messages.inspect}"
     end
 
     def negative_failure_message(object)

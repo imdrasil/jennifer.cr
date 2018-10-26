@@ -12,6 +12,8 @@ Please fill the corresponding section regarding this pull request notes below in
 
 **Model**
 
+**Validation**
+
 **View**
 
 **Adapter**

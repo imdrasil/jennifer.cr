@@ -16,8 +16,6 @@ require "./jennifer/adapter/base"
 
 require "./jennifer/model/base"
 
-require "./jennifer/validator"
-
 require "./jennifer/view/base"
 
 require "./jennifer/migration/*"

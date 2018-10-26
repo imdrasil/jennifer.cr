@@ -27,20 +27,6 @@ describe Jennifer::Model::Mapping do
     end
   end
 
-  describe "::build_params" do
-    it "correctly converts arguments hash with maybe Nil types" do
-      hash = Contact.build_params({"name" => "asd", "age" => "20".as(String?)})
-      hash["name"].should eq("asd")
-      hash["age"].should eq(20)
-    end
-
-    it "correctly converts nil values" do
-      hash = Contact.build_params({"name" => "asd", "age" => nil})
-      hash["name"].should eq("asd")
-      hash["age"].should be_nil
-    end
-  end
-
   describe "#reload" do
     it "assign all values from db to existing object" do
       c1 = Factory.create_contact

@@ -259,14 +259,6 @@ describe Jennifer::Model::Base do
         end
       end
 
-      context "with string encoded values" do
-        it "builds object with converted values" do
-          c = Contact.build(Contact.build_params({"name" => "a", "age" => "999", "gender" => "female", "ballance" => "12345.456"}))
-          c.name.should eq("a")
-          c.age.should eq(999)
-        end
-      end
-
       context "without arguments" do
         it "allows one field models" do
           OneFieldModel.build

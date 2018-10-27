@@ -216,8 +216,8 @@ NB. It also depends on then chosen adapter (postgres by default).
 
 ## Similar shards
 
-- [crecto](https://github.com/vladfaust/core.cr) - based on Phoenix's Ecto lib and follows the repository pattern
-- [granite-orm](https://github.com/amberframework/granite-orm) - light weight orm focusing on mapping fields from request to your objects
+- [crecto](https://github.com/Crecto/crecto) - based on Phoenix's Ecto lib and follows the repository pattern
+- [granite-orm](https://github.com/amberframework/granite) - lightweight ORM focusing on mapping fields from request to your objects
 - [topaz](https://github.com/topaz-crystal/topaz) - inspired by AR ORM with migration mechanism
 - [micrate](https://github.com/juanedi/micrate) - standalone database migration tool for crystal
 

@@ -76,25 +76,13 @@ require "../src/jennifer"
 
 def set_default_configuration
   Jennifer::Config.reset_config
+  Jennifer::Config.read(File.join(__DIR__, "..", "examples", "database.yml"), Spec.adapter)
+
   Jennifer::Config.configure do |conf|
     conf.logger = Spec.logger
     conf.logger.level = Logger::DEBUG
-    conf.host = "localhost"
-    conf.adapter = Spec.adapter
-    conf.migration_files_path = "./examples/migrations"
-    conf.db = "jennifer_test"
-
-    case Spec.adapter
-    when "mysql"
-      conf.user = ENV["DB_USER"]? || "root"
-      conf.password = ""
-    when "postgres"
-      conf.user = ENV["DB_USER"]? || "developer"
-      conf.password = ENV["DB_PASSWORD"]? || "1qazxsw2"
-    # when "sqlite3"
-    #   conf.host = "./spec/fixtures"
-    #   conf.db = "jennifer_test.db"
-    end
+    conf.user = ENV["DB_USER"] if ENV["DB_USER"]?
+    conf.password = ENV["DB_PASSWORD"] if ENV["DB_PASSWORD"]?
   end
 end
 

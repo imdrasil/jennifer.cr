@@ -11,4 +11,5 @@ if [ "$DB" == 'mysql' ] || [ "$PAIR" == '1' ]; then
     sudo service mysql restart
 fi
 
+./examples/setup.sh
 crystal ./examples/run.cr -- db:setup

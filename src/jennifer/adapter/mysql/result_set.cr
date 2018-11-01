@@ -1,3 +1,4 @@
+# :nodoc:
 module MySql
   class ResultSet
     getter column_index, columns

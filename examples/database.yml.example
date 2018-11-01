@@ -1,0 +1,18 @@
+default: &default
+  host: localhost
+  migration_files_path: "./examples/migrations"
+  db: jennifer_test
+  # command_shell: docker
+
+postgres:
+  <<: *default
+  adapter: postgres
+  user: developer
+  password: 1qazxsw2
+  # docker_container: postgres
+
+mysql:
+  <<: *default
+  adapter: mysql
+  user: root
+  # docker_container: mysql

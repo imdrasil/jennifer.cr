@@ -27,7 +27,7 @@ module Jennifer
       getter db : DB::Database
 
       def initialize
-        @db = DB.open(Base.connection_string(:db))
+        @db = DB.open(self.class.connection_string(:db))
       end
 
       def self.build

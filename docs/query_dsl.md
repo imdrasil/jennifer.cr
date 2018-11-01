@@ -43,7 +43,15 @@ Supported operators:
 | `|` | `OR` |
 | `xor` | `XOR` |
 
-And operator-like methods:
+Also there are shortcuts for `AND`, `OR` and `XOR` operators to emit extra brackets around operands and wraps the result into them:
+
+```crystal
+Post.all.where { _active & (_likes > 10) } # WHERE posts.active AND users.likes > 10
+
+Post.all.where { and(_active, _likes > 10) } # WHERE (posts.active AND users.likes > 10)
+```
+
+Operator-like methods:
 
 | Method | SQL variant |
 | --- | --- |

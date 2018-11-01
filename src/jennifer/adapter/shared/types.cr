@@ -1,7 +1,8 @@
 # Stubs for all adapters. Is added here to allow making general DBAny alias for
 # all adapters.
+
+# :nodoc:
 module PG
-  # :nodoc:
   struct Numeric
     def_clone
 
@@ -12,7 +13,6 @@ module PG
 
   module Geo
     {% for type in %w(Point Line Circle LineSegment Box Path Polygon) %}
-      # :nodoc:
       struct {{type.id}}
         def_clone
 
@@ -24,27 +24,22 @@ module PG
   end
 end
 
-# :nodoc:
 struct Time
   def_clone
 
-  # :nodoc:
   struct Span
     def_clone
   end
 end
 
-# :nodoc:
 class Time::Location
   def_clone
 
-  # :nodoc:
   struct Zone
     def_clone
   end
 end
 
-# :nodoc:
 struct JSON::Any
   def_clone
 end

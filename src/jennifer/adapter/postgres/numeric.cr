@@ -1,3 +1,4 @@
+# :nodoc:
 module PG
   struct Numeric
     include Comparable(Float64)

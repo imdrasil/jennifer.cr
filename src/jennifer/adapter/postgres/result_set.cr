@@ -1,3 +1,4 @@
+# :nodoc:
 class PG::ResultSet
   getter column_index
   @fields : Array(PQ::Field)?

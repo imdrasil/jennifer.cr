@@ -87,6 +87,7 @@ Jennifer::Config.from_uri(db)
 | `docker_container` | `""` |
 | `docker_source_location` | `""` |
 | `command_shell_sudo` | `false` |
+| `migration_failure_handler_method` | `"none"` |
 
 > It is highly recommended to set `max_idle_pool_size = max_pool_size = initial_pool_size` to prevent blowing up count of DB connections. For any details take a look at `crystal-db` [issue](https://github.com/crystal-lang/crystal-db/issues/77).
 
@@ -104,8 +105,7 @@ Also take into account - some configs can't be initialized using URI string or y
 | Config | YAML | URI |
 | --- | --- | --- |
 | `logger` | ❌ | ❌ |
-| `migration_file_path` | ✔ | ❌ |
-| `schema` | ✔ | ❌ |
+| `migration_files_path` | ✔ | ❌ |
 | `local_time_zone_name` | ✔ | ❌ |
 | `schema` | ✔ | ❌ |
 | `structure_folder` | ✔ | ❌ |
@@ -113,6 +113,7 @@ Also take into account - some configs can't be initialized using URI string or y
 | `docker_container` | ✔ | ❌ |
 | `docker_source_location` | ✔ | ❌ |
 | `command_shell_sudo` | ✔ | ❌ |
+| `migration_failure_handler_method` | ✔ | ❌ |
 
 From `0.5.1` `Jennifer::Config` has started working under singleton pattern instead of using class as a container for all configuration properties.
 

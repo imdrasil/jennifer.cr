@@ -59,10 +59,6 @@ require "../src/jennifer"
 {% else %}
   require "../src/jennifer/adapter/postgres"
   Spec.adapter = "postgres"
-
-  {% if env("LEGACY_INSERT") == "1" %}
-    require "../src/jennifer/adapter/postgres/legacy_insert"
-  {% end %}
 {% end %}
 
 {% if env("PAIR") == "1" %}

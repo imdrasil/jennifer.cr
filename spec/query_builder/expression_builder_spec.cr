@@ -123,4 +123,67 @@ describe ::Jennifer::QueryBuilder::ExpressionBuilder do
       g.is_a?(Jennifer::QueryBuilder::Grouping).should be_true
     end
   end
+
+  describe "#and" do
+    context "with 2 criteria" do
+      it do
+        c1 = Factory.build_criteria
+        c2 = Factory.build_criteria
+        e = Factory.build_expression
+        e.and(c1, c2).as_sql.should eq(e.g(c1 & c2).as_sql)
+      end
+    end
+
+    context "with 3 criteria" do
+      it do
+        c1 = Factory.build_criteria(field: "f1")
+        c2 = Factory.build_criteria(field: "f2")
+        c3 = Factory.build_criteria(field: "f3")
+        e = Factory.build_expression
+        e.and(c1, c2, c3).as_sql.should eq(e.g(c1 & c2 & c3).as_sql)
+      end
+    end
+  end
+
+  describe "#or" do
+    context "with 2 criteria" do
+      it do
+        c1 = Factory.build_criteria
+        c2 = Factory.build_criteria
+        e = Factory.build_expression
+        e.or(c1, c2).as_sql.should eq(e.g(c1 | c2).as_sql)
+      end
+    end
+
+    context "with 3 criteria" do
+      it do
+        c1 = Factory.build_criteria(field: "f1")
+        c2 = Factory.build_criteria(field: "f2")
+        c3 = Factory.build_criteria(field: "f3")
+        e = Factory.build_expression
+        e.or(c1, c2, c3).as_sql.should eq(e.g(c1 | c2 | c3).as_sql)
+      end
+    end
+  end
+
+  describe "#xor" do
+    context "with 2 criteria" do
+      it do
+        c1 = Factory.build_criteria
+        c2 = Factory.build_criteria
+        e = Factory.build_expression
+        e.xor(c1, c2).as_sql.should eq(e.g(c1.xor(c2)).as_sql)
+      end
+    end
+
+    context "with 3 criteria" do
+      it do
+        c1 = Factory.build_criteria(field: "f1")
+        c2 = Factory.build_criteria(field: "f2")
+        c3 = Factory.build_criteria(field: "f3")
+        e = Factory.build_expression
+        e.xor(c1, c2, c3).as_sql.should eq(e.g(c1.xor(c2.xor(c3))).as_sql)
+      end
+    end
+  end
 end

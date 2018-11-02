@@ -109,7 +109,7 @@ module Jennifer
       end
 
       def not
-        Condition.new(self).not
+        to_condition.not
       end
 
       def in(arr : Array)
@@ -118,11 +118,11 @@ module Jennifer
       end
 
       def &(other : LogicOperator::Operandable)
-        Condition.new(self) & other
+        to_condition & other
       end
 
       def |(other : LogicOperator::Operandable)
-        Condition.new(self) | other
+        to_condition | other
       end
 
       def xor(other : LogicOperator::Operandable)

@@ -9,7 +9,7 @@ Both adapters support non materialized view. Here is an example of migration:
 ```crystal
 class AddView20170916095004544 < Jennifer::Migration::Base
   def up
-    create_view(:male_contacts, Jennifer::Query["contacts"].where { sql("gender = 'male'") })
+    create_view(:male_contacts, Jennifer::Query["contacts"].where { _gender == sql("'male'") })
   end
 
   def down

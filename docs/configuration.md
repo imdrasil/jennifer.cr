@@ -65,8 +65,6 @@ Jennifer::Config.from_uri(db)
 
 | Config | Default value |
 | --- | --- |
-| `migration_files_path` | `"./db/migrations"` |
-| `structure_folder` | parent folder of `migration_files_path` |
 | `host` | `"localhost"` |
 | `port` | -1 |
 | `logger` | `Logger.new(STDOUT)` |
@@ -88,6 +86,9 @@ Jennifer::Config.from_uri(db)
 | `docker_source_location` | `""` |
 | `command_shell_sudo` | `false` |
 | `migration_failure_handler_method` | `"none"` |
+| `migration_files_path` | `"./db/migrations"` |
+| `model_files_path` | `"./src/models"` |
+| `structure_folder` | parent folder of `migration_files_path` |
 
 > It is highly recommended to set `max_idle_pool_size = max_pool_size = initial_pool_size` to prevent blowing up count of DB connections. For any details take a look at `crystal-db` [issue](https://github.com/crystal-lang/crystal-db/issues/77).
 
@@ -106,6 +107,7 @@ Also take into account - some configs can't be initialized using URI string or y
 | --- | --- | --- |
 | `logger` | ❌ | ❌ |
 | `migration_files_path` | ✔ | ❌ |
+| `model_files_path` | ✔ | ❌ |
 | `local_time_zone_name` | ✔ | ❌ |
 | `schema` | ✔ | ❌ |
 | `structure_folder` | ✔ | ❌ |

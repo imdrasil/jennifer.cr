@@ -10,6 +10,7 @@ module Jennifer
   # Supported configurations:
   #
   # * `migration_files_path = "./db/migrations"`
+  # * `model_files_path = "./src/models"`
   # * `structure_folder` parent folder of `migration_files_path`
   # * `host = "localhost"`
   # * `port = -1`
@@ -42,7 +43,7 @@ module Jennifer
     STRING_FIELDS = {
       :user, :password, :db, :host, :adapter, :migration_files_path, :schema,
       :structure_folder, :local_time_zone_name, :command_shell, :docker_container, :docker_source_location,
-      :migration_failure_handler_method
+      :migration_failure_handler_method, :model_files_path
     }
     # :nodoc:
     INT_FIELDS    = {:port, :max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
@@ -103,6 +104,7 @@ module Jennifer
       @host = "localhost"
       @port = -1
       @migration_files_path = "./db/migrations"
+      @model_files_path = "./src/models"
       @schema = "public"
       @local_time_zone_name = Time::Location.local.name
       @local_time_zone = Time::Location.local

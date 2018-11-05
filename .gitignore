@@ -15,3 +15,4 @@ jennifer.code-workspace
 /examples/test.cr
 /examples/test.db
 /examples/database.yml
+/examples/models

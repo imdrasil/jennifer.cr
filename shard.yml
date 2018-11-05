@@ -21,7 +21,7 @@ development_dependencies:
 dependencies:
   sam:
     github: imdrasil/sam.cr
-    version: "~> 0.2.4"
+    version: "~> 0.3.0"
   inflector:
     github: phoffer/inflector.cr
     version: "~> 0.1.8"

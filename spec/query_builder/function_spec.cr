@@ -115,7 +115,7 @@ describe Jennifer::QueryBuilder::Function do
 
     it do
       Factory.create_contact
-      Jennifer::Query["contacts"].select { [current_date.alias("current_d")] }.first!.current_d(Time).should eq(Time.epoch(Time.now.epoch).date)
+      Jennifer::Query["contacts"].select { [current_date.alias("current_d")] }.first!.current_d(Time).should eq(Time.unix(Time.now.to_unix).date)
     end
   end
 

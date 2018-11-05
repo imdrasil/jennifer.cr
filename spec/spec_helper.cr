@@ -27,6 +27,7 @@ end
 Spec.after_each do
   Jennifer::Adapter.adapter.rollback_transaction
   Spec.logger.clear
+  Spec.file_system.clean
 end
 
 # Helper methods ================

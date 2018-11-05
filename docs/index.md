@@ -6,6 +6,7 @@
 ## Content
 
 * [Configuration](./configuration.md)
+* [Command Line](./command_line.md)
 * [Migration](./migration.md)
 * [Model. Mapping](./model_mapping.md)
 * [Model. STI](./model_sti.md)

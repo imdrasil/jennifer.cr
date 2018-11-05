@@ -1,0 +1,21 @@
+class <%= class_name %> < Jennifer::Model::Base
+  with_timestamps
+
+  mapping(
+    id: <%= fields.id.cr_type %>,
+    <%- fields.common_fields.each do |field| -%>
+    <%= field.field_name %>: <%= field.cr_type %>,
+    <%- end -%>
+    <%- fields.references.each do |field| -%>
+    <%= field.field_name %>: <%= field.cr_type %>,
+    <%- end -%>
+    <%- fields.timestamps.each do |field| -%>
+    <%= field.field_name %>: <%= field.cr_type %>,
+    <%- end -%>
+  )
+  <%- if fields.references.any? %>
+  <%- fields.references.each do |reference| -%>
+  belongs_to :<%= reference.name %>, <%= reference.reference_class %>
+  <%- end -%>
+  <%- end -%>
+end

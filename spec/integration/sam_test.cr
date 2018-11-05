@@ -32,7 +32,7 @@ describe "Blank application" do
   end
 
   {% if env("DOCKER") == "1" %}
-    context "with dockerize mysql db" do
+    context "with dockerized mysql db" do
       it do
         clean(:docker) do
           execute("crystal spec/integration/sam/docker_blank_application.cr", ["db:create"]).should succeed

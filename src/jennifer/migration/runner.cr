@@ -1,9 +1,6 @@
 module Jennifer
   module Migration
     module Runner
-      # Migration file name timestamp format.
-      MIGRATION_DATE_FORMAT = "%Y%m%d%H%M%S%L"
-
       @@pending_versions = [] of String
 
       # Invokes migrations. *count* with negative or zero value will invoke all pending migrations.
@@ -84,24 +81,6 @@ module Jennifer
         # TODO: load schema for each adapter
         default_adapter_class.load_schema
         puts "Schema loaded"
-      end
-
-      # Generates an empty migration file template.
-      def self.generate(name : String)
-        time = Time.now.to_s(MIGRATION_DATE_FORMAT)
-        migration_name = name.camelcase
-        str = <<-MIGRATION
-        class #{migration_name} < Jennifer::Migration::Base
-          def up
-          end
-
-          def down
-          end
-        end
-
-        MIGRATION
-        File.write(File.join(Config.migration_files_path.to_s, "#{time}_#{migration_name.underscore}.cr"), str)
-        puts "Migration #{migration_name.underscore} was generated"
       end
 
       private def self.default_adapter

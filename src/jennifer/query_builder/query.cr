@@ -335,8 +335,8 @@ module Jennifer
       end
 
       # ditto
-      def set_tree(other : Criteria)
-        set_tree(Condition.new(other))
+      def set_tree(other : SQLNode)
+        set_tree(other.to_condition)
       end
 
       # ditto

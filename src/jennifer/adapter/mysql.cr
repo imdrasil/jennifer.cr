@@ -79,6 +79,12 @@ module Jennifer
           .exists?
       end
 
+      def view_exists?(name)
+        Query["information_schema.TABLES"]
+          .where { (_table_schema == Config.db) & (_table_type == "VIEW") & (_table_name == name) }
+          .exists?
+      end
+
       def index_exists?(table, name)
         Query["information_schema.statistics"].where do
           (_table_name == table) &
@@ -95,9 +101,14 @@ module Jennifer
         end.exists?
       end
 
-      def view_exists?(name)
-        Query["information_schema.TABLES"]
-          .where { (_table_schema == Config.db) & (_table_type == "VIEW") & (_table_name == name) }
+      def foreign_key_exists?(from_table, to_table)
+        name = self.class.foreign_key_name(from_table, to_table)
+        foreign_key_exists?(name)
+      end
+
+      def foreign_key_exists?(name)
+        Query["information_schema.KEY_COLUMN_USAGE"]
+          .where { and(_constraint_name == name, _table_schema == Config.db) }
           .exists?
       end
 

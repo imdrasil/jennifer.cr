@@ -10,6 +10,10 @@ module Jennifer
       # Returns whether node has an argument to be added to sql statement arguments.
       abstract def filterable?
 
+      def to_condition
+        Condition.new(self)
+      end
+
       def eql?(other)
         false
       end

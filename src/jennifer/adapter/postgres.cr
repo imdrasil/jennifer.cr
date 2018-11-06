@@ -141,10 +141,15 @@ module Jennifer
         end.exists?
       end
 
-      # Returns if table exists.
       def table_exists?(table)
         Query["information_schema.tables"]
           .where { _table_name == table }
+          .exists?
+      end
+
+      def view_exists?(name)
+        Query["information_schema.views"]
+          .where { (_table_schema == Config.schema) & (_table_name == name) }
           .exists?
       end
 
@@ -161,9 +166,14 @@ module Jennifer
           .exists?
       end
 
-      def view_exists?(name)
-        Query["information_schema.views"]
-          .where { (_table_schema == Config.schema) & (_table_name == name) }
+      def foreign_key_exists?(from_table, to_table)
+        name = self.class.foreign_key_name(from_table, to_table)
+        foreign_key_exists?(name)
+      end
+
+      def foreign_key_exists?(name)
+        Query["information_schema.table_constraints"]
+          .where { and(_constraint_name == name, _table_schema == Config.schema) }
           .exists?
       end
 

@@ -248,8 +248,20 @@ module Jennifer
       abstract def update(obj)
       abstract def update(q, h)
       abstract def insert(obj)
+
+      # Returns where table with given *table* name exists.
       abstract def table_exists?(table)
+
+      # Returns whether foreign key between *from_table* and *to_table* exists.
+      abstract def foreign_key_exists?(from_table, to_table)
+
+      # Returns whether foreign key with given *name* exists.
+      abstract def foreign_key_exists?(name)
+
+      # Returns whether index for the *table` with *name* exists.
       abstract def index_exists?(table, name)
+
+      # Returns whether column of *table* with *name* exists.
       abstract def column_exists?(table, name)
       abstract def translate_type(name)
       abstract def default_type_size(name)

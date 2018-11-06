@@ -170,10 +170,6 @@ module Jennifer
       def filterable?
         false
       end
-
-      def to_condition
-        Condition.new(self)
-      end
     end
   end
 end

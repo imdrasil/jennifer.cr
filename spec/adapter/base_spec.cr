@@ -169,6 +169,26 @@ describe Jennifer::Adapter::Base do
     end
   end
 
+  describe "#foreign_key_exists?" do
+    context "with given connected tables names" do
+      it do
+        adapter.foreign_key_exists?(:addresses, :contacts).should be_true
+      end
+    end
+
+    context "with given foreign key name" do
+      it do
+        adapter.foreign_key_exists?("fk_cr_addresses_contacts").should be_true
+      end
+    end
+
+    context "with invalid name" do
+      it do
+        adapter.foreign_key_exists?("fk_cr_contacts_addresses").should be_false
+      end
+    end
+  end
+
   describe "#bulk_insert" do
     it "do nothing if empty array was given" do
       expect_query_silence do

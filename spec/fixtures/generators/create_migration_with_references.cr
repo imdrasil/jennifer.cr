@@ -11,6 +11,7 @@ class CreateArticles < Jennifer::Migration::Base
   end
 
   def down
+    drop_foreign_key :articles, :authors if foreign_key_exists? :articles, :authors
     drop_table :articles if table_exists? :articles
   end
 end

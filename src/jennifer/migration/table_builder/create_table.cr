@@ -43,9 +43,10 @@ module Jennifer
         # Adds a reference.
         #
         # Defines foreign key field based on given relation name (*name*). By default it is integer and null value is allowed.
-        # TODO: add a foreign key
-        def reference(name)
-          integer(name.to_s + "_id", {:type => :integer, :null => true})
+        def reference(name, to_table = Inflector.pluralize(name), primary_key = nil, key_name = nil)
+          column = Inflector.foreign_key(name)
+          integer(column, { :type => :integer, :null => true })
+          foreign_key(to_table, column, primary_key, key_name)
         end
 
         # Defines `created_at` and `updated_at` timestamp fields.

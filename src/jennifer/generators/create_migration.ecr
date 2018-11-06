@@ -16,6 +16,11 @@ class <%= class_name %> < Jennifer::Migration::Base
   end
 
   def down
+    <%- if fields.references.any? -%>
+    <%- fields.references.each do |reference| -%>
+    drop_foreign_key :<%= table_name %>, :<%= Inflector.pluralize(reference.name) %> if foreign_key_exists? :<%= table_name %>, :<%= Inflector.pluralize(reference.name) %>
+    <%- end -%>
+    <%- end -%>
     drop_table :<%= table_name %> if table_exists? :<%= table_name %>
   end
 end

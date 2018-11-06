@@ -20,7 +20,9 @@ Regular example for creating table:
 
 ```crystal
 create_table(:addresses) do |t|
-  t.reference :contact # creates field contact_id with Int type and allows null values
+  # creates field contact_id with Int type, allows null values and creates foreign key
+  t.reference :contact
+
   t.string :street, {:size => 20, :sql_type => "char"} # creates string field with CHAR(20) db type
   t.bool :main, {:default => false} # sets false as default value
 end
@@ -116,6 +118,7 @@ Also next support methods are available:
 - `#table_exists?(name)`
 - `#index_exists?(table, name)`
 - `#column_exists?(table, name)`
+- `#foreign_key_exists?(from_table, to_table)`
 - `#data_type_exists?(name)` for postgres ENUM
 - `#material_view_exists?(name)`
 

@@ -7,6 +7,7 @@ class AddPassport < Jennifer::Migration::Base
   end
 
   def down
+    drop_foreign_key(:passports, :contacts)
     drop_table(:passports)
   end
 end

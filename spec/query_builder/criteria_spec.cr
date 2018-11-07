@@ -11,6 +11,22 @@ describe Jennifer::QueryBuilder::Criteria do
         cond.should be_a Jennifer::QueryBuilder::Condition
         cond.operator.should eq({{op}})
       end
+
+      context "with model query" do
+        it do
+          c = Factory.build_criteria
+          query = grouping(Contact.all.select { [_id] })
+          c.{{op.id}}(query).rhs.as(Jennifer::QueryBuilder::Grouping).should eql(query)
+        end
+      end
+
+      context "with query" do
+        it do
+          c = Factory.build_criteria
+          query = grouping(Query["contacts"].select { [_id] })
+          c.{{op.id}}(query).rhs.as(Jennifer::QueryBuilder::Grouping).should eql(query)
+        end
+      end
     end
   {% end %}
 
@@ -122,6 +138,22 @@ describe Jennifer::QueryBuilder::Criteria do
     it "sets operator as :in" do
       c = Factory.build_criteria
       c.in([1]).operator.should eq(:in)
+    end
+
+    context "with model query" do
+      it do
+        c = Factory.build_criteria
+        query = grouping(Contact.all.select { [_id] })
+        c.in(query).rhs.as(Jennifer::QueryBuilder::Grouping).should eql(query)
+      end
+    end
+
+    context "with query" do
+      it do
+        c = Factory.build_criteria
+        query = grouping(Query["contacts"].select { [_id] })
+        c.in(query).rhs.as(Jennifer::QueryBuilder::Grouping).should eql(query)
+      end
     end
   end
 

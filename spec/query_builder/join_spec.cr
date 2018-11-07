@@ -8,7 +8,7 @@ describe Jennifer::QueryBuilder::Join do
       Factory.build_join.as_sql.should match(/ tests ON /)
     end
 
-    it "calls to_sql on @on" do
+    it "calls as_sql on @on" do
       c = Factory.build_criteria
       Factory.build_join(on: c).as_sql.should match(/ON #{c.as_sql}$/)
     end
@@ -88,7 +88,7 @@ describe Jennifer::QueryBuilder::LateralJoin do
       lateral_join.as_sql.should match(/ \(SELECT tests\.\* FROM tests WHERE tests\.id = %s \) ON /m)
     end
 
-    it "calls to_sql on @on" do
+    it "calls as_sql on @on" do
       c = Factory.build_criteria
       lateral_join(on: c).as_sql.should match(/ON #{c.as_sql}$/)
     end

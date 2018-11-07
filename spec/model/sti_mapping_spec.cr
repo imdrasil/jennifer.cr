@@ -80,7 +80,7 @@ describe Jennifer::Model::STIMapping do
   describe "::all" do
     it "generates correct query" do
       q = FacebookProfile.all
-      q.as_sql.should eq("profiles.type = %s")
+      q.as_sql.should match(/profiles\.type = %s/)
       q.sql_args.should eq(db_array("FacebookProfile"))
     end
   end

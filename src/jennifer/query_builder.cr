@@ -1,3 +1,4 @@
+require "./query_builder/statement"
 require "./query_builder/sql_node"
 
 module Jennifer

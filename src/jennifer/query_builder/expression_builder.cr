@@ -55,11 +55,11 @@ module Jennifer
       end
 
       # Creates grouping for the given *condition*.
-      def g(condition : LogicOperator)
+      def g(condition)
         Grouping.new(condition)
       end
 
-      def group(condition : LogicOperator)
+      def group(condition)
         g(condition)
       end
 

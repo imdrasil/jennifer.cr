@@ -5,6 +5,15 @@ describe Jennifer::QueryBuilder::Grouping do
   c1 = Factory.build_criteria
   c2 = Factory.build_criteria == 2
 
+  describe ".new" do
+    context "with query" do
+      it do
+        g = described_class.new(Query["contacts"].where { _id == 2 })
+        g.as_sql.should eq("(SELECT contacts.* FROM contacts WHERE contacts.id = %s )")
+      end
+    end
+  end
+
   describe "#as_sql" do
     it "wrap sql with parenthesis" do
       g = described_class.new(c1 & c2)

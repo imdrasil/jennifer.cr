@@ -126,13 +126,13 @@ describe Jennifer::QueryBuilder::Executables do
     end
   end
 
-  describe "#modify" do
-    it "performs provided operations" do
-      c = Factory.create_contact(age: 13)
-      Contact.all.modify({:age => {value: 2, operator: :+}})
-      c.reload.age.should eq(15)
-    end
-  end
+  # describe "#modify" do
+  #   it "performs provided operations" do
+  #     c = Factory.create_contact(age: 13)
+  #     Contact.all.modify({:age => {value: 2, operator: :+}})
+  #     c.reload.age.should eq(15)
+  #   end
+  # end
 
   describe "#update" do
     it "updates given fields in all matched rows" do
@@ -143,19 +143,38 @@ describe Jennifer::QueryBuilder::Executables do
       Contact.where { _age < 15 }.update({:age => 20, :name => "b"})
       Contact.where { (_age == 20) & (_name == "b") }.count.should eq(2)
     end
+
+    context "with block" do
+      it do
+        c1 = Factory.create_contact(age: 13, name: "a")
+        c2 = Factory.create_contact(age: 14, name: "a")
+        c3 = Factory.create_contact(age: 15, name: "a")
+
+        Contact.where { _age < 15 }.update do
+          {
+            :age => _age - 1,
+            :name => "b"
+          }
+        end
+
+        c1.reload
+        c1.name.should eq("b")
+        c1.age.should eq(12)
+      end
+    end
   end
 
   describe "#increment" do
     it "accepts hash" do
       c = Factory.create_contact(name: "asd", gender: "male", age: 18)
       Contact.where { _id == c.id }.increment({:age => 2})
-      Contact.find!(c.id).age.should eq(20)
+      c.reload.age.should eq(20)
     end
 
     it "accepts named tuple literal" do
       c = Factory.create_contact(name: "asd", gender: "male", age: 18)
       Contact.where { _id == c.id }.increment(age: 2)
-      Contact.find!(c.id).age.should eq(20)
+      c.reload.age.should eq(20)
     end
   end
 
@@ -163,13 +182,13 @@ describe Jennifer::QueryBuilder::Executables do
     it "accepts hash" do
       c = Factory.create_contact(name: "asd", gender: "male", age: 20)
       Contact.where { _id == c.id }.decrement({:age => 2})
-      Contact.find!(c.id).age.should eq(18)
+      c.reload.age.should eq(18)
     end
 
     it "accepts named tuple literal" do
       c = Factory.create_contact({:name => "asd", :gender => "male", :age => 20})
       Contact.where { _id == c.id }.decrement(age: 2)
-      Contact.find!(c.id).age.should eq(18)
+      c.reload.age.should eq(18)
     end
   end
 

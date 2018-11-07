@@ -305,6 +305,14 @@ module Jennifer
       # Specifies locking settings.
       #
       # `true` is default value. Also string declaration can be provide.
+      #
+      # Also `SKIP LOCKED` construction can be used with manual mode:
+      #
+      # ```
+      # Queue.all.where do
+      #   _id == g(Queue.all.limit(1).lock("FOR UPDATE SKIP LOCKED"))
+      # end.delete
+      # ```
       def lock(type : String | Bool = true)
         @lock = type
         self

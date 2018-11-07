@@ -22,36 +22,38 @@ user.valid? # true
 
 ## Trigger validation
 
-The following methods triggers validations and will save the object only if all validations will pass:
+The following model methods triggers validations in a scope of own execution:
 
-- validate
-- validate!
-- valid?
-- create
-- create!
-- save
-- save_without_transaction
-- save!
-- update
-- update!
+- `#validate`
+- `#validate!`
+- `#valid?`
+- `.create`
+- `.create!`
+- `#save`
+- `#save_without_transaction`
+- `#save!`
+- `#update`
+- `#update!`
 
 > NOTE: Bang method version will raise an exception if record is invalid.
 >
 > NOTE: `#valid?` is an alias for `#validate!`.
+>
+> `Jennifer::Query#patch` also invokes validation (and callbacks) for each matched record.
 
-`#validate!` method will also invoke validation callbacks. Be aware: `after_validation` callbacks may not be triggered if record is invalid or `before_validation` has raised `Jennifer::Skip` exception.
+`#validate!` method invokes validation callbacks. Be aware: `after_validation` callbacks may not be triggered if record is invalid or `before_validation` has raised `Jennifer::Skip` exception.
 
 ## Skip validation
 
-Not all methods which hit db perform validation. They are:
+Some methods skip validation on invocation:
 
-- invalid?
-- save(skip_validation: true)
-- update_column
-- update_columns
-- modify
-- increment
-- decrement
+- `Model::Base#invalid?`
+- `Model::Base#save(skip_validation: true)`
+- `Model::Base#update_column`
+- `Model::Base#update_columns`
+- `QueryBuilder::Query#update`
+- `QueryBuilder::Query#increment`
+- `QueryBuilder::Query#decrement`
 
 > NOTE: `#invalid?` method will only check if `#errors` is empty.
 

@@ -4,6 +4,7 @@ module Jennifer
   module QueryBuilder
     class Condition
       include LogicOperator::Operators
+      include Statement
 
       getter lhs : SQLNode, rhs : Criteria::Rightable?, operator : Symbol = :bool
       @negative = false

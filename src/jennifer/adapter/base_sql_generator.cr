@@ -99,10 +99,12 @@ module Jennifer
       end
 
       def self.modify(q, modifications : Hash)
-        esc = escape_string(1)
         String.build do |s|
           s << "UPDATE " << q.table << " SET "
-          modifications.map { |field, value| "#{field.to_s} = #{field.to_s} #{value[:operator]} #{esc}" }.join(", ", s)
+          modifications.each_with_index do |(field, value), i|
+            s << ", " if i != 0
+            s << field_assign_statement(field.to_s, value)
+          end
           s << ' '
           body_section(s, q)
         end
@@ -130,7 +132,9 @@ module Jennifer
 
       def self.lock_clause(io : String::Builder, query)
         return if query._lock.nil?
-        io << (query._lock.is_a?(String) ? query._lock : " FOR UPDATE ")
+        io << ' '
+        io << (query._lock.is_a?(String) ? query._lock : "FOR UPDATE")
+        io << ' '
       end
 
       # Renders SELECT and FROM parts
@@ -278,6 +282,14 @@ module Jennifer
           args[i] = arg.as(Time).to_utc if arg.is_a?(Time)
         end
         {query % Array.new(args.size, "?"), args}
+      end
+
+      private def self.field_assign_statement(field, _value : DBAny)
+        "#{field} = #{escape_string(1)}"
+      end
+
+      private def self.field_assign_statement(field, value : QueryBuilder::Statement)
+        "#{field} = #{value.as_sql}"
       end
     end
   end

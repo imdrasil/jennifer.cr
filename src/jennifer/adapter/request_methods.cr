@@ -32,8 +32,8 @@ module Jennifer
       def modify(q, modifications : Hash)
         query = sql_generator.modify(q, modifications)
         args = [] of DBAny
-        modifications.each do |k, v|
-          args << v[:value]
+        modifications.each do |_, v|
+          add_field_assign_arguments(args, v)
         end
         args.concat(q.sql_args)
         exec(*parse_query(query, args))
@@ -68,6 +68,14 @@ module Jennifer
         body = sql_generator.select(q)
         args = q.sql_args
         query(*parse_query(body, args)) { |rs| yield rs }
+      end
+
+      private def add_field_assign_arguments(container : Array, value : DBAny)
+        container << value
+      end
+
+      private def add_field_assign_arguments(container : Array, value : QueryBuilder::Statement)
+        container.concat(value.sql_args)
       end
     end
   end

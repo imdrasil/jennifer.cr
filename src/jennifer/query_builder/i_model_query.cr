@@ -33,12 +33,12 @@ module Jennifer
         super(model_class.primary, batch_size, start, direction) { |record| yield record }
       end
 
-      # Triggers `#destroy` on the each matched object
+      # Triggers `#destroy` on the each matched object.
       def destroy
         find_each(&.destroy)
       end
 
-      # Triggers `#update` on the each matched object
+      # Triggers `#update` on the each matched object.
       def patch(options : Hash | NamedTuple)
         find_each(&.update(options))
       end
@@ -47,11 +47,12 @@ module Jennifer
         patch(opts)
       end
 
-      # Triggers `#update!` on the each matched object
+      # Triggers `#update!` on the each matched object.
       def patch!(options : Hash | NamedTuple)
         find_each(&.update!(options))
       end
 
+      # ditto
       def patch!(**opts)
         patch!(opts)
       end

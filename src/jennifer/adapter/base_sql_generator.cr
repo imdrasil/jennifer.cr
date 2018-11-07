@@ -132,7 +132,9 @@ module Jennifer
 
       def self.lock_clause(io : String::Builder, query)
         return if query._lock.nil?
-        io << (query._lock.is_a?(String) ? query._lock : " FOR UPDATE ")
+        io << ' '
+        io << (query._lock.is_a?(String) ? query._lock : "FOR UPDATE")
+        io << ' '
       end
 
       # Renders SELECT and FROM parts

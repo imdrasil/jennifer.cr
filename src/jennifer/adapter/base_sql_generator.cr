@@ -35,6 +35,7 @@ module Jennifer
       def self.select(query, exact_fields = [] of String)
         String.build do |s|
           select_clause(s, query, exact_fields)
+          from_clause(s, query)
           body_section(s, query)
         end
       end
@@ -51,7 +52,7 @@ module Jennifer
             from_clause(s, query)
             body_section(s, query)
           end,
-          query.select_args
+          query.sql_args
         )
       end
 
@@ -63,7 +64,7 @@ module Jennifer
             body_section(s, query)
             s << ")"
           end,
-          query.select_args
+          query.sql_args
         )
       end
 
@@ -74,7 +75,7 @@ module Jennifer
             from_clause(s, query)
             body_section(s, query)
           end,
-          query.select_args
+          query.sql_args
         )
       end
 
@@ -147,8 +148,6 @@ module Jennifer
           io << query._raw_select.not_nil!
         end
         io << ' '
-
-        from_clause(io, query)
       end
 
       def self.from_clause(io : String::Builder, query, from = nil)

@@ -56,7 +56,7 @@ module Jennifer
         if @table.is_a?(String)
           @table.as(String)
         else
-          "(" + @table.as(Query).to_sql + ")"
+          "(" + @table.as(Query).as_sql(generator) + ")"
         end
       end
 

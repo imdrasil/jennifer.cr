@@ -1,4 +1,3 @@
-require "./expression_builder"
 require "./aggregations"
 require "./ordering"
 require "./joining"
@@ -7,6 +6,7 @@ require "./executables"
 module Jennifer
   module QueryBuilder
     class Query
+      include Statement
       include Aggregations
       include Ordering
       include Joining
@@ -79,7 +79,11 @@ module Jennifer
       #
       # Is mostly used for testing
       def eql?(other : Query)
-        sql_args == other.sql_args && to_sql == other.to_sql
+        sql_args == other.sql_args && as_sql == other.as_sql
+      end
+
+      def eql?(other : Statement | LogicOperator)
+        false
       end
 
       def clone
@@ -119,27 +123,18 @@ module Jennifer
         build(*opts)
       end
 
-      def to_sql
-        adapter.sql_generator.select(self)
-      end
-
       def as_sql
-        @tree ? @tree.not_nil!.as_sql(adapter.sql_generator) : ""
+        as_sql(adapter.sql_generator)
       end
 
-      def as_sql(_generator)
-        @tree ? @tree.not_nil!.as_sql(adapter.sql_generator) : ""
+      def as_sql(generator)
+        generator.select(self)
       end
 
       def sql_args
-        @tree ? @tree.not_nil!.sql_args : [] of DBAny
-      end
-
-      # Returns array of query arguments.
-      def select_args
         args = [] of DBAny
         args.concat(select_filterable_arguments) if select_filterable_arguments?
-        args.concat(@from.as(Query).select_args) if @from.is_a?(Query)
+        args.concat(@from.as(Query).sql_args) if @from.is_a?(Query)
         _joins!.each { |join| args.concat(join.sql_args) } if @joins
         args.concat(@tree.not_nil!.sql_args) if @tree
         args.concat(@having.not_nil!.sql_args) if @having

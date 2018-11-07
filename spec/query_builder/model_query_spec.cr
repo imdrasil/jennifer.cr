@@ -58,9 +58,9 @@ describe Jennifer::QueryBuilder::ModelQuery do
     end
   end
 
-  describe "#select_args" do
+  describe "#sql_args" do
     it "returns array of join and condition args" do
-      Contact.where { _id == 2 }.join(Address) { _name == "asd" }.select_args.should eq(db_array("asd", 2))
+      Contact.where { _id == 2 }.join(Address) { _name == "asd" }.sql_args.should eq(db_array("asd", 2))
     end
   end
 
@@ -282,7 +282,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
     it "excludes where if given" do
       q = Contact.where { _age < 99 }
       clone = q.except(["where"])
-      clone.to_sql.should_not match(/WHERE/)
+      clone.as_sql.should_not match(/WHERE/)
     end
 
     it "expression builder follow newly created object" do
@@ -311,12 +311,13 @@ describe Jennifer::QueryBuilder::ModelQuery do
       .eager_load(:addresses)
       .includes(:addresses)
       .clone
+    query = clone.as_sql
 
-    it { clone.to_sql.should match(/WHERE/) }
-    it { clone.to_sql.should match(/GROUP/) }
-    it { clone.to_sql.should match(/ORDER/) }
-    it { clone.to_sql.should match(/JOIN/) }
-    it { clone.to_sql.should match(/UNION/) }
+    it { query.should match(/WHERE/) }
+    it { query.should match(/GROUP/) }
+    it { query.should match(/ORDER/) }
+    it { query.should match(/JOIN/) }
+    it { query.should match(/UNION/) }
     it { clone._select_fields[0].should_not be_a(Jennifer::QueryBuilder::Star) }
     it { clone.with_relation?.should be_true }
     pending "add more precise testing" {}

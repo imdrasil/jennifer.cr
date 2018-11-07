@@ -38,6 +38,10 @@ describe "Jennifer::Adapter::SQLGenerator" do
       select_query.should match(/#{Regex.escape(sb { |io| described_class.select_clause(io, s) })}/)
     end
 
+    it "includes from clause" do
+      select_query.should match(/#{Regex.escape(sb { |io| described_class.from_clause(io, s) })}/)
+    end
+
     it "includes body section" do
       select_query.should match(/#{Regex.escape(sb { |io| described_class.body_section(io, s) })}/)
     end
@@ -45,11 +49,6 @@ describe "Jennifer::Adapter::SQLGenerator" do
 
   describe "::select_clause" do
     s = Contact.all.join(Address) { _id == Contact._id }.with(:addresses)
-
-    it "includes from clause" do
-      # TODO: write exact value instead of method call
-      sb { |io| described_class.select_clause(io, s) }.should match(/#{Regex.escape(sb { |io| described_class.from_clause(io, s) })}/)
-    end
 
     it "includes definitions of select fields" do
       sb { |io| described_class.select_clause(io, Contact.all.select { [now.alias("now")] }) }.should match(/SELECT NOW\(\) AS now/)
@@ -127,7 +126,7 @@ describe "Jennifer::Adapter::SQLGenerator" do
   end
 
   describe "::join_clause" do
-    it "calls #to_sql on all parts" do
+    it "calls #as_sql on all parts" do
       res = Contact.all.join(Address) { _id == Address._contact_id }
                        .join(Passport) { _id == Passport._contact_id }
       sb { |io| described_class.join_clause(io, res) }.split("JOIN").size.should eq(3)

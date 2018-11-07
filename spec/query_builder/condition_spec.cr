@@ -10,10 +10,42 @@ describe Jennifer::QueryBuilder::Condition do
           Factory.build_criteria.{{op.id}}("asd").as_sql.should eq("tests.f1 {{op.id}} %s")
         end
       end
+
+      context "with model query" do
+        it do
+          c = Factory.build_criteria
+          query = grouping(Contact.all.where { _age > 12 }.select { [_id] })
+          c.{{op.id}}(query).as_sql.should eq("tests.f1 {{op.id}} #{query.as_sql}")
+        end
+      end
+
+      context "with query" do
+        it do
+          c = Factory.build_criteria
+          query = grouping(Query["contacts"].where { _age > 12 }.select { [_id] })
+          c.{{op.id}}(query).as_sql.should eq("tests.f1 {{op.id}} #{query.as_sql}")
+        end
+      end
     {% end %}
 
     context "operator ==" do
       it { (Factory.build_criteria == "asd").as_sql.should eq("tests.f1 = %s") }
+
+      context "with model query" do
+        it do
+          c = Factory.build_criteria
+          query = grouping(Contact.all.where { _age > 12 }.select { [_id] })
+          c.==(query).as_sql.should eq("tests.f1 = #{query.as_sql}")
+        end
+      end
+
+      context "with query" do
+        it do
+          c = Factory.build_criteria
+          query = grouping(Query["contacts"].where { _age > 12 }.select { [_id] })
+          c.==(query).as_sql.should eq("tests.f1 = #{query.as_sql}")
+        end
+      end
     end
 
     postgres_only do
@@ -87,6 +119,22 @@ describe Jennifer::QueryBuilder::Condition do
       it "correctly renders IN part (mysql)" do
         Factory.build_criteria.in([1, "asd"]).as_sql.should match(/IN\(%s\, %s\)/)
       end
+
+      context "with model query" do
+        it do
+          c = Factory.build_criteria
+          query = grouping(Contact.all.where { _age > 12 }.select { [_id] })
+          c.in(query).as_sql.should eq("tests.f1 IN(#{query.as_sql})")
+        end
+      end
+
+      context "with query" do
+        it do
+          c = Factory.build_criteria
+          query = grouping(Query["contacts"].where { _age > 12 }.select { [_id] })
+          c.in(query).as_sql.should eq("tests.f1 IN(#{query.as_sql})")
+        end
+      end
     end
 
     context "regular operator" do
@@ -107,13 +155,29 @@ describe Jennifer::QueryBuilder::Condition do
   describe "#sql_args" do
     context "bool operator" do
       it "returns empty array" do
-        Factory.build_criteria.sql_args.empty?.should be_true
+        Factory.build_criteria.to_condition.sql_args.empty?.should be_true
       end
     end
 
     context "IN operator" do
       it "returns array of IN args" do
         Factory.build_criteria.in([1, "asd"]).sql_args.should eq(db_array(1, "asd"))
+      end
+
+      context "with model query" do
+        it do
+          c = Factory.build_criteria
+          query = grouping(Contact.all.where { _age > 12 }.select { [_id] })
+          c.in(query).sql_args.should eq(db_array(12))
+        end
+      end
+
+      context "with query" do
+        it do
+          c = Factory.build_criteria
+          query = grouping(Query["contacts"].where { _age > 12 }.select { [_id] })
+          c.in(query).sql_args.should eq(db_array(12))
+        end
       end
     end
 

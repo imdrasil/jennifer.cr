@@ -4,7 +4,7 @@ module Jennifer
     class Grouping < SQLNode
       include LogicOperator::Operators
 
-      getter condition : LogicOperator
+      getter condition : LogicOperator | Statement
 
       def_clone
 

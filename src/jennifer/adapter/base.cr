@@ -92,17 +92,17 @@ module Jennifer
       end
 
       def delete(query : QueryBuilder::Query)
-        args = query.select_args
+        args = query.sql_args
         exec *sql_generator.delete(query)
       end
 
       def exists?(query : QueryBuilder::Query)
-        args = query.select_args
+        args = query.sql_args
         scalar(*sql_generator.exists(query)) == 1
       end
 
       def count(query : QueryBuilder::Query)
-        args = query.select_args
+        args = query.sql_args
         scalar(*sql_generator.count(query)).as(Int64).to_i
       end
 

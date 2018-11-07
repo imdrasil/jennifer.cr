@@ -117,6 +117,10 @@ module Jennifer
         Condition.new(self, :in, arr.map { |e| e.as(DBAny) })
       end
 
+      def in(arr : SQLNode)
+        Condition.new(self, :in, arr)
+      end
+
       def &(other : LogicOperator::Operandable)
         to_condition & other
       end

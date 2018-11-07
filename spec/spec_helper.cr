@@ -51,6 +51,10 @@ macro void_transaction
   end
 end
 
+def grouping(exp)
+  Jennifer::QueryBuilder::Grouping.new(exp)
+end
+
 def select_clause(query)
   String.build { |s| ::Jennifer::Adapter.adapter.sql_generator.select_clause(s, query) }
 end

@@ -1,4 +1,32 @@
 module Spec
+  module Methods
+    # The following construction
+    #
+    # ```
+    # begin
+    #   processor.method_name(argument)
+    # rescue e
+    #   e.message.should match(/query/)
+    #   next
+    # end
+    # fail "Block wasn't executed"
+    # ```
+    #
+    # uses such `argument` that it makes DB to raise an exception because something doesn't exist (e.g. index name
+    # is missing or table). As Jennifer::BadQuery exception includes query this allows testing it until FakeAdapter
+    # is not ready.
+    macro match_query_from_exception(regex)
+      begin
+        {{yield}}
+        processor.drop_column("table_name", "column")
+      rescue e
+        e.message.should match({{regex}})
+        next
+      end
+      fail "Block wasn't executed"
+    end
+  end
+
   # :nodoc:
   struct BeValidExpectation
     def match(object)

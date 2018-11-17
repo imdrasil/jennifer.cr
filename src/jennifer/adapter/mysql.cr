@@ -3,6 +3,7 @@ require "./base"
 
 require "./mysql/sql_generator"
 require "./mysql/command_interface"
+require "./mysql/schema_processor"
 
 module Jennifer
   module Mysql
@@ -51,6 +52,10 @@ module Jennifer
 
       def sql_generator
         SQLGenerator
+      end
+
+      def schema_processor
+        @schema_processor ||= SchemaProcessor.new(self)
       end
 
       def translate_type(name : Symbol)
@@ -118,13 +123,6 @@ module Jennifer
                               " Instead of this only transaction was started.")
           yield t
         end
-        # transaction do |t|
-        #   exec "LOCK TABLES #{table} #{TABLE_LOCK_TYPES[type]}"
-        #   yield t
-        #   exec "UNLOCK TABLES"
-        # end
-        # rescue e : KeyError
-        # raise BaseException.new("MySQL don't support table lock type '#{type}'.")
       end
 
       def self.command_interface

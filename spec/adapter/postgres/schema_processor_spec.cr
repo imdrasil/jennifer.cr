@@ -27,6 +27,15 @@ postgres_only do
     end
 
     describe "#change_column" do
+      pending "add"
+    end
+
+    describe "#rename_table" do
+      it do
+        match_query_from_exception(/ALTER TABLE old_name RENAME TO new_name/) do
+          processor.rename_table("old_name", "new_name")
+        end
+      end
     end
   end
 end

@@ -46,6 +46,10 @@ module Jennifer
         adapter.exec "DROP INDEX #{name}"
       end
 
+      def rename_table(old_name, new_name)
+        adapter.exec "ALTER TABLE #{old_name.to_s} RENAME TO #{new_name.to_s}"
+      end
+
       # =========== overrides
 
       def add_index(table, name, fields : Array, type : Symbol? = nil, order : Hash? = nil, length : Hash? = nil)

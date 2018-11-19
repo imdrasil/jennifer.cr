@@ -1,8 +1,7 @@
 module Jennifer
   module Model
     module STIMapping
-      # :nodoc:
-      # Defines mapping using single table inheritance. Is automatically called by `%mapping` macro.
+      # Defines mapping using single table inheritance. Is automatically called by `.mapping` macro.
       private macro sti_mapping(properties)
         # :nodoc:
         STI = true
@@ -29,14 +28,15 @@ module Jennifer
           {%
             properties[key] = {type: value} unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral)
             options = properties[key]
-            options[:stringified_type] = options[:type].stringify
-            if options[:stringified_type] =~ Jennifer::Macros::NILLABLE_REGEXP
+            stringified_type = options[:type].stringify
+            options[:converter] = ::Jennifer::Model::JSONConverter if stringified_type =~ Jennifer::Macros::JSON_REGEXP && options[:converter] == nil
+            if stringified_type =~ Jennifer::Macros::NILLABLE_REGEXP
               options[:null] = true
-              options[:parsed_type] = options[:stringified_type]
+              options[:parsed_type] = stringified_type
             else
-              options[:parsed_type] = options[:null] ? options[:stringified_type] + "?" : options[:stringified_type]
+              options[:parsed_type] = options[:null] ? stringified_type + "?" : stringified_type
             end
-            add_default_constructor = add_default_constructor && (options[:null] || options.keys.includes?(:default))
+            add_default_constructor = add_default_constructor && (options[:null] || options.keys.includes?(:default.id))
           %}
         {% end %}
 
@@ -211,15 +211,12 @@ module Jennifer
           res = super
           args = res[:args]
           fields = res[:fields]
-          {% for key, value in properties %}
-            {% unless value[:virtual] %}
-              if @{{key.id}}_changed
-                args << {% if value[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
-                          @{{key.id}}.to_json
-                        {% else %}
-                          @{{key.id}}
-                        {% end %}
-                fields << "{{key.id}}"
+          {% for attr, options in properties %}
+            {% unless options[:virtual] %}
+              if @{{attr.id}}_changed
+                args <<
+                  {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
+                fields << "{{attr.id}}"
               end
             {% end %}
           {% end %}
@@ -231,14 +228,11 @@ module Jennifer
           res = super
           args = res[:args]
           fields = res[:fields]
-          {% for key, value in properties %}
-            {% unless value[:virtual] %}
-              args << {% if value[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
-                        (@{{key.id}} ? @{{key.id}}.to_json : nil)
-                      {% else %}
-                        @{{key.id}}
-                      {% end %}
-              fields << {{key.stringify}}
+          {% for attr, options in properties %}
+            {% unless options[:virtual] %}
+              args <<
+                {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
+              fields << "{{attr.id}}"
             {% end %}
           {% end %}
 

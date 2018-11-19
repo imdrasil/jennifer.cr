@@ -449,3 +449,11 @@ class ContactWithFloatMapping < Jennifer::Model::Base
     mapping({id: Primary32}, false)
   {% end %}
 end
+
+class CountryWithDefault < Jennifer::Model::Base
+  mapping(
+    id: Primary32,
+    virtual: { type: Bool, default: true, virtual: true },
+    name: String?
+  )
+end

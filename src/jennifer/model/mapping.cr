@@ -125,20 +125,20 @@ module Jennifer
             {% end %}
           {% end %}
           {%
-            options[:stringified_type] = options[:type].stringify
-            options[:converter] = ::Jennifer::Model::JSONConverter if options[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP && options[:converter] == nil
+            stringified_type = options[:type].stringify
+            options[:converter] = ::Jennifer::Model::JSONConverter if stringified_type =~ Jennifer::Macros::JSON_REGEXP && options[:converter] == nil
             if options[:primary]
               primary = key
               primary_type = options[:type]
-              primary_auto_incrementable = AUTOINCREMENTABLE_STR_TYPES.includes?(options[:stringified_type])
+              primary_auto_incrementable = AUTOINCREMENTABLE_STR_TYPES.includes?(stringified_type)
             end
-            options[:parsed_type] = options[:stringified_type]
-            if options[:stringified_type] =~ NILLABLE_REGEXP
+            options[:parsed_type] = stringified_type
+            if stringified_type =~ NILLABLE_REGEXP
               options[:null] = true
             elsif options[:null] || options[:primary]
-              options[:parsed_type] = options[:stringified_type] + "?"
+              options[:parsed_type] = stringified_type + "?"
             end
-            add_default_constructor = add_default_constructor && (options[:primary] || options[:null] || options.keys.includes?(:default))
+            add_default_constructor = add_default_constructor && (options[:primary] || options[:null] || options.keys.includes?(:default.id))
           %}
         {% end %}
 
@@ -192,6 +192,7 @@ module Jennifer
           {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
+        # :nodoc:
         def initialize(values : Hash | NamedTuple, @new_record)
           initialize(values)
         end
@@ -199,6 +200,7 @@ module Jennifer
         {% if add_default_constructor %}
           # :nodoc:
           WITH_DEFAULT_CONSTRUCTOR = true
+
           # Default constructor without any fields
           def initialize
             {% for key, value in properties %}
@@ -435,11 +437,8 @@ module Jennifer
             {% options = properties[attr] %}
             {% unless options[:primary] %}
               if @{{attr.id}}_changed
-                args << {% if options[:converter] %}
-                          {{options[:converter]}}.to_db(@{{attr.id}})
-                        {% else %}
-                          @{{attr.id}}
-                        {% end %}
+                args <<
+                  {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
                 fields << "{{attr.id}}"
               end
             {% end %}
@@ -450,15 +449,11 @@ module Jennifer
         # :nodoc:
         def arguments_to_insert
           args = [] of ::Jennifer::DBAny
-          # TODO: think about moving this array to constant; maybe use compile time instead of runtime
           fields = [] of String
           {% for attr, options in properties %}
             {% unless options[:virtual] || options[:primary] && primary_auto_incrementable %}
-              args << {% if options[:converter] %}
-                        {{options[:converter]}}.to_db(@{{attr.id}})
-                      {% else %}
-                        @{{attr.id}}
-                      {% end %}
+              args <<
+                {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
               fields << "{{attr.id}}"
             {% end %}
           {% end %}
@@ -519,6 +514,7 @@ module Jennifer
         {% end %}
       end
 
+      # ditto
       macro mapping(**properties)
         mapping({{properties}})
       end

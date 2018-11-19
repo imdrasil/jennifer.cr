@@ -176,6 +176,12 @@ describe Jennifer::Model::Mapping do
           country.id.should be_nil
           country.name.should be_nil
         end
+
+        it "works with default values" do
+          c = CountryWithDefault.new
+          c.name.should be_nil
+          c.virtual.should be_true
+        end
       end
 
       context "model has only id field" do
@@ -212,8 +218,8 @@ describe Jennifer::Model::Mapping do
 
         describe "user-defined mapping types" do
           it "is accessible if defined in parent class" do
-            User::COLUMNS_METADATA[:password_digest].should eq({type: String, default: "", stringified_type: "String", parsed_type: "String"})
-            User::COLUMNS_METADATA[:email].should eq({type: String, default: "", stringified_type: "String", parsed_type: "String"})
+            User::COLUMNS_METADATA[:password_digest].should eq({type: String, default: "", parsed_type: "String"})
+            User::COLUMNS_METADATA[:email].should eq({type: String, default: "", parsed_type: "String"})
           end
 
           pending "allows to add extra options" do

@@ -126,6 +126,7 @@ describe Jennifer::QueryBuilder::Function do
       end
     end
 
+    # NOTE: next spec fails on high performance computers
     it do
       Factory.create_contact
       time = Time.now

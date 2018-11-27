@@ -29,7 +29,7 @@ module Jennifer
       end
 
       extend AbstractClassMethods
-      extend Translation
+      include Translation
       include Scoping
       include RelationDefinition
       include Macros

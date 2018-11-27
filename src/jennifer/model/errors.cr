@@ -1,7 +1,36 @@
 module Jennifer
   module Model
+    # Container that you can include in your object for handling error messages.
+    #
+    # An example of a minimal implementation could be:
+    #
+    # ```
+    # class Post
+    #   include Jennifer::Model::Translation
+    #
+    #   property title : String?
+    #   getter errors
+    #
+    #   def initialize
+    #     @errors = Jennifer::Model::Errors.new(self)
+    #   end
+    #
+    #   def validate
+    #     errors.add(:title, :blank) if title.nil?
+    #   end
+    #
+    #   # The following method is needed to be minimally implemented
+    #
+    #   def self.superclass; end
+    # end
+    # ```
+    #
+    # The last method in the described class is required to be implemented to allow Jennifer::Model::Errors to
+    # correctly work with class translation lookup. `nil` return value presents that class has no lookup.
     class Errors
-      getter base : Base
+      # :nodoc:
+      getter base : Translation
+      # :nodoc:
       getter messages : Hash(Symbol, Array(String))
 
       def initialize(@base)
@@ -15,8 +44,7 @@ module Jennifer
         @base = other.@base
       end
 
-      # Returns `true` if the error messages include an error for the given key
-      # `attribute`, `false` otherwise.
+      # Returns whether error messages include an error for the given key `attribute`.
       def include?(attribute : Symbol)
         messages.has_key?(attribute) && messages[attribute].present?
       end

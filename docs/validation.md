@@ -87,6 +87,36 @@ user.errors.add(:login, "Some custom message")
 
 The `#clear!` method is used when all error messages should be removed. It is automatically invoked by `#validate!`.
 
+### Non-model usage
+
+It is possible to use `Jennifer::Model::Errors` for handling errors of any class that includes `Jennifer::Model::Translation` and implements `.superclass` method.
+
+```crystal
+class Post
+  include Jennifer::Model::Translation
+
+  property title : String?
+  getter errors
+
+  def initialize
+    @errors = Jennifer::Model::Errors.new(self)
+  end
+
+  def validate
+    errors.clear
+    errors.add(:title, :blank) if title.nil?
+  end
+
+  # The following method is needed to be minimally implemented
+
+  def self.superclass; end
+end
+
+post = Post.new
+post.validate
+post.errors[:title] # "can't be blank"
+```
+
 ## Validation macros
 
 Please take into account that all validators described below implement singleton pattern - there is only one instance of each of them in application.

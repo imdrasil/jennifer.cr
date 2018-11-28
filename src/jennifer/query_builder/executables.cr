@@ -66,11 +66,13 @@ module Jennifer
       #
       # No callbacks or validation will be executed.
       def delete
+        return if @do_nothing
         adapter.delete(self)
       end
 
       # Returns whether any record satisfying given conditions exists.
       def exists?
+        return false if @do_nothing
         adapter.exists?(self)
       end
 

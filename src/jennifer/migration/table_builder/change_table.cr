@@ -69,12 +69,13 @@ module Jennifer
           self
         end
 
+        # TODO: add more documentation.
+
         # Adds index.
         #
         # ```
         # t.add_index("index_name", [:field1, :field2], length: { :field1 => 2, :field2 => 3 }, orders: { :field1 => :asc }})
         # ```
-        # TODO: add more documentation.
         def add_index(name : String, fields : Array(Symbol), type : Symbol? = nil, lengths : Hash(Symbol, Int32) = {} of Symbol => Int32, orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
           @commands << CreateIndex.new(@adapter, @name, name, fields, type, lengths, orders)
           self
@@ -90,6 +91,7 @@ module Jennifer
           )
         end
 
+        # Drops index by given *name*.
         def drop_index(name)
           @commands << DropIndex.new(@adapter, @name, name.to_s)
           self
@@ -106,6 +108,7 @@ module Jennifer
           self
         end
 
+        # Drops foreign key of *to_table*.
         def drop_foreign_key(to_table, name = nil)
           @commands << DropForeignKey.new(@adapter, @name, to_table.to_s, name)
           self

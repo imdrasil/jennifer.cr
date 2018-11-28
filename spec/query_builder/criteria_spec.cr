@@ -2,10 +2,11 @@ require "../spec_helper"
 
 describe Jennifer::QueryBuilder::Criteria do
   described_class = Jennifer::QueryBuilder::Criteria
+
   # all sql checks are in operator_spec.cr
   {% for op in [:==, :<, :>, :<=, :>=, :!=] %}
     describe "#{{{op.stringify}}}" do
-      it "retruns condition" do
+      it "returns condition" do
         c = Factory.build_criteria
         cond = (c {{op.id}} "a")
         cond.should be_a Jennifer::QueryBuilder::Condition
@@ -31,7 +32,7 @@ describe Jennifer::QueryBuilder::Criteria do
   {% end %}
 
   describe "#=~" do
-    it "retruns condition" do
+    it "returns condition" do
       c = Factory.build_criteria
       cond = (c =~ "a")
       cond.should be_a Jennifer::QueryBuilder::Condition

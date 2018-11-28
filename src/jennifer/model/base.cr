@@ -35,6 +35,8 @@ module Jennifer
       end
 
       # Represent actual amount of model's table column amount (is grepped from db).
+      # If somewhy you define model with custom table name after the place where adapter is used the first time -
+      # manually invoke this method anywhere after table name definition.
       def self.actual_table_field_count
         @@actual_table_field_count ||= adapter.table_column_count(table_name)
       end
@@ -86,6 +88,12 @@ module Jennifer
       # Returns if record isn't deleted.
       def destroyed?
         @destroyed
+      end
+
+      # Returns `true` if the record is persisted, i.e. it’s not a new record and
+      # it was not destroyed, otherwise returns `false`.
+      def persisted?
+        !(new_record? || destroyed?)
       end
 
       def self.create(values : Hash | NamedTuple)
@@ -155,12 +163,13 @@ module Jennifer
       # Returns named tuple of all model fields to insert.
       abstract def arguments_to_insert
 
-      # Returns list of available model classes.
+      # Returns array of all non-abstract subclasses of *Jennifer::Model::Base*.
       def self.models
         {% begin %}
-          {% if !@type.all_subclasses.empty? %}
+          {% models = @type.all_subclasses.select { |m| !m.abstract? } %}
+          {% if !models.empty? %}
             [
-              {% for model in @type.all_subclasses %}
+              {% for model in models %}
                 {{model.id}},
               {% end %}
             ]

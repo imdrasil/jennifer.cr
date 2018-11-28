@@ -54,6 +54,14 @@ module Jennifer
         initialize
       end
 
+      def do_nothing?
+        @do_nothing
+      end
+
+      def self.null
+        new.none
+      end
+
       protected def initialize_copy_without(other, except : Array(String))
         {% for segment in %w(having limit offset raw_select from lock distinct) %}
           @{{segment.id}} = other.@{{segment.id}}.clone unless except.includes?({{segment}})
@@ -319,7 +327,7 @@ module Jennifer
       end
 
       def to_s
-        to_sql
+        as_sql
       end
 
       # Joins given *other* condition statement to the main condition tree.

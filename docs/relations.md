@@ -59,3 +59,37 @@ Also `mas_many`, `belongs_to` and `has_one` relations have `dependent` parameter
 ## Inverse of
 
 `has_many` and `has_one` relations also accepts `inverse_of` option which represents inverse relation name. Specifying this option will automatically load owner object during any relation loading (because of `ModelQuery#includes` or `ModelQuery#eager_load` or even plaint `SomeModel#relation_name` method call).
+
+## Polymorphic Relations
+
+Polymorphic relation can be easily configured:
+
+```crystal
+class Photo < Jennifer::Model::Base
+  mapping(
+    # ...
+    attachable_type: String?,
+    attachable_id: int32?
+  )
+
+  # Klass options specifies the exact union of models allowed to use this one
+  belongs_to :attachable, Union(Post | Comment), polymorphic: true
+end
+
+class Post < Jennifer::Model::Base
+  # ...
+
+  # The :inverse_of option here specifies the polymorphic interface and is required
+  has_many :photos, Photo, polymorphic: true, inverse_of: :attachable
+end
+```
+
+This works by using a type column in addition to a foreign key to specify the associated record. In the `Photo` example, you'd need an `attachable_id` integer column and an `attachable_type` string column.
+
+**Important restriction**: Polymorphic belongs_to relation can't be loaded dynamically. E.g., based on the previous example:
+
+```crystal
+Photo.all.includes(:attachable) # This is forbidden
+# and
+photo.attachable_query # => Jennifer::QueryBuilder::Query instead of Jennifer::QueryBuilder::ModelQuery
+```

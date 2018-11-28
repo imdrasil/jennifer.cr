@@ -12,4 +12,4 @@ if [ "$DB" == 'mysql' ] || [ "$PAIR" == '1' ]; then
 fi
 
 ./examples/setup.sh
-crystal ./examples/run.cr -- db:setup
+make sam db:setup

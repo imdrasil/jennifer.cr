@@ -43,10 +43,17 @@ module Jennifer
         # Adds a reference.
         #
         # Defines foreign key field based on given relation name (*name*). By default it is integer and null value is allowed.
-        def reference(name, to_table = Inflector.pluralize(name), primary_key = nil, key_name = nil)
+        #
+        # If *polymorphic* is `true` - additional string field `"#{name}_type"` is created and foreign key is not added.
+        def reference(name, to_table = Inflector.pluralize(name), primary_key = nil, key_name = nil, polymorphic : Bool = false)
           column = Inflector.foreign_key(name)
           integer(column, { :type => :integer, :null => true })
-          foreign_key(to_table, column, primary_key, key_name)
+          if polymorphic
+            string("#{name}_type", { :null => true })
+          else
+            foreign_key(to_table, column, primary_key, key_name)
+          end
+          self
         end
 
         # Defines `created_at` and `updated_at` timestamp fields.

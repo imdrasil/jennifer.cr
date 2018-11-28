@@ -42,22 +42,15 @@ module Jennifer
       @@expression_builder : QueryBuilder::ExpressionBuilder?
 
       def inspect(io) : Nil
-        {% begin %}
-          io << "#<" << {{@type.name.id.stringify}} << ":0x"
-          object_id.to_s(16, io)
-          {% if @type.constant("COLUMNS_METADATA") %}
-            io << ' '
-            {% for var, i in @type.constant("COLUMNS_METADATA").keys %}
-              {% if i > 0 %}
-                io << ", "
-              {% end %}
-              io << "{{var.id}}: "
-              @{{var.id}}.inspect(io)
-            {% end %}
-          {% end %}
-          io << '>'
-          nil
-        {% end %}
+        io << "#<" << {{@type.name.id.stringify}} << ":0x"
+        object_id.to_s(16, io)
+        inspect_attributes(io)
+        io << '>'
+        nil
+      end
+
+      private def inspect_attributes(io) : Nil
+        nil
       end
 
       def self.build(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
@@ -117,12 +110,12 @@ module Jennifer
         result
       end
 
-      def self.c(name : String)
-        context.c(name)
+      def self.c(name : String | Symbol)
+        context.c(name.to_s)
       end
 
       def self.c(name : String | Symbol, relation)
-        ::Jennifer::QueryBuilder::Criteria.new(name, table_name, relation)
+        ::Jennifer::QueryBuilder::Criteria.new(name.to_s, table_name, relation)
       end
 
       def self.star

@@ -93,6 +93,7 @@ module Jennifer
       # - *name* - relation name
       # - *klass* - specify the class name of the association
       # - *request* - extra request scope to retrieve a specific set of records when access the associated collection
+      # (ATM only `WHERE` conditions are respected)
       # - *foreign* - specify the foreign key used for the association
       # - *foreign_type* - specify the column used to store  the associated object's type,
       # if this is a polymorphic relation
@@ -222,6 +223,7 @@ module Jennifer
       # - *name* - relation name
       # - *klass* - specify the class name of the association
       # - *request* - extra request scope to retrieve a specific set of records when access the associated collection
+      # (ATM only `WHERE` conditions are respected)
       # - *foreign* - specify the foreign key used for the association
       # - *primary* - specify the name of the column to use as the primary key for the relation
       # - *join_table* - specifies the name of the join table if the default based on lexical order isn't what you want
@@ -388,6 +390,7 @@ module Jennifer
       # - *name* - relation name
       # - *klass* - specify the class name of the association; in case of polymorphic relation use `Union(Class1 | Class2)` syntax
       # - *request* - extra request scope to retrieve a specific set of records when access the associated collection
+      # (ATM only `WHERE` conditions are respected)
       # - *foreign* - specify the foreign key used for the association
       # - *primary* - specify the name of the column to use as the primary key for the relation
       # - *dependent* - specify the destroy strategy of the associated objects when their owner is destroyed;
@@ -503,6 +506,7 @@ module Jennifer
       # - *name* - relation name
       # - *klass* - specify the class name of the association
       # - *request* - extra request scope to retrieve a specific set of records when access the associated collection
+      # (ATM only `WHERE` conditions are respected)
       # - *foreign* - specify the foreign key used for the association
       # - *foreign_type* - specify the column used to store  the associated object's type,
       # if this is a polymorphic relation

@@ -679,7 +679,7 @@ module Jennifer::Model
           q = c.countries_query
           select_query(q)
             .should match(/JOIN contacts_countries ON contacts_countries\.country_id = countries\.id AND contacts_countries\.contact_id = %s/)
-          q.select_args.should eq(db_array(c.id))
+          q.sql_args.should eq(db_array(c.id))
         end
 
         context "relation is a sti subclass" do
@@ -690,7 +690,7 @@ module Jennifer::Model
               .should match(/JOIN contacts_profiles ON contacts_profiles\.profile_id = profiles\.id AND contacts_profiles\.contact_id = %s/)
             select_query(q)
               .should match(/profiles\.type = %s/)
-            q.select_args.includes?("FacebookProfile").should be_true
+            q.sql_args.includes?("FacebookProfile").should be_true
           end
 
           it "works as well in inverse direction" do
@@ -698,7 +698,7 @@ module Jennifer::Model
             q = c.facebook_contacts_query
             select_query(q)
               .should match(/JOIN contacts_profiles ON contacts_profiles\.contact_id = contacts\.id AND contacts_profiles\.profile_id = %s/)
-            q.select_args.should eq(db_array(c.id))
+            q.sql_args.should eq(db_array(c.id))
           end
         end
       end

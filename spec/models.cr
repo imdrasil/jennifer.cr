@@ -71,32 +71,38 @@ end
 class Contact < ApplicationRecord
   with_timestamps
 
-  {% if env("DB") == "postgres" || env("DB") == nil %}
-    mapping(
-      id:          Primary32,
-      name:        String,
-      ballance:    PG::Numeric?,
-      age:         {type: Int32, default: 10},
-      gender:      {type: String?, default: "male"},
-      description: String?,
-      created_at:  Time?,
-      updated_at:  Time?,
-      user_id:     Int32?,
-      tags:        Array(Int32)?
-    )
-  {% else %}
-    mapping(
-      id:          Primary32,
-      name:        String,
-      ballance:    Float64?,
-      age:         {type: Int32, default: 10},
-      gender:      {type: String?, default: "male"},
-      description: String?,
-      created_at:  Time?,
-      updated_at:  Time?,
-      user_id:     Int32?
-    )
-  {% end %}
+  module Mapping
+    macro included
+      {% if env("DB") == "postgres" || env("DB") == nil %}
+        mapping(
+          id:          Primary32,
+          name:        String,
+          ballance:    PG::Numeric?,
+          age:         {type: Int32, default: 10},
+          gender:      {type: String?, default: "male"},
+          description: String?,
+          created_at:  Time?,
+          updated_at:  Time?,
+          user_id:     Int32?,
+          tags:        Array(Int32)?
+        )
+      {% else %}
+        mapping(
+          id:          Primary32,
+          name:        String,
+          ballance:    Float64?,
+          age:         {type: Int32, default: 10},
+          gender:      {type: String?, default: "male"},
+          description: String?,
+          created_at:  Time?,
+          updated_at:  Time?,
+          user_id:     Int32?
+        )
+      {% end %}
+    end
+  end
+
+  include Mapping
 
   has_many :addresses, Address, inverse_of: :contact
   has_many :facebook_profiles, FacebookProfile, inverse_of: :contact

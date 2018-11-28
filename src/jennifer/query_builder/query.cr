@@ -327,7 +327,7 @@ module Jennifer
       end
 
       def to_s
-        to_sql
+        as_sql
       end
 
       # Joins given *other* condition statement to the main condition tree.

@@ -1,6 +1,6 @@
 module Jennifer
   module QueryBuilder
-    abstract class LogicOperator < SQLNode
+    abstract class LogicOperator
       module Operators
         def &(other : Criteria)
           And.new(self, other.to_condition)

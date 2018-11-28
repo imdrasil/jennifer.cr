@@ -70,7 +70,7 @@ describe Jennifer::Relation::Base do
         profile.all.join(note, type: :left, relation: "notable") do
           example_relation.condition_clause.not_nil!
         end
-      example_relation.join_condition(profile.all, :left).to_sql.should eq(expected_query.to_sql)
+      example_relation.join_condition(profile.all, :left).as_sql.should eq(expected_query.as_sql)
     end
   end
 

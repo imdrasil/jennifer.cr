@@ -10,7 +10,8 @@ module Jennifer
       abstract def condition_clause
       abstract def condition_clause(a)
       abstract def join_condition(a, b)
-      abstract def query(a)
+      # Returns query for given primary field values
+      abstract def query(primary_value)
       abstract def insert(a, b)
       # Preloads relation into *collection* from *out_collection* depending on keys from *pk_repo*.
       abstract def preload_relation(collection, out_collection, pk_repo)
@@ -62,7 +63,6 @@ module Jennifer
         end
       end
 
-      # Returns query for given primary field values
       def query(primary_value)
         condition = condition_clause(primary_value)
         T.where { condition }

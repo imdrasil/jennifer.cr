@@ -16,6 +16,7 @@ module Jennifer
       macro __field_declaration(properties, primary_auto_incrementable)
         {% for key, value in properties %}
           @{{key.id}} : {{value[:parsed_type].id}}
+          @[JSON::Field(ignore: true)]
           @{{key.id}}_changed = false
 
           {% if value[:setter] != false %}
@@ -186,7 +187,9 @@ module Jennifer
           COLUMNS_METADATA
         end
 
+        @[JSON::Field(ignore: true)]
         @new_record = true
+        @[JSON::Field(ignore: true)]
         @destroyed = false
 
         # Creates object from `DB::ResultSet`

@@ -5,6 +5,9 @@ module Jennifer
     module Validation
       include Validations::Macros
 
+      @[JSON::Field(ignore: true)]
+      @errors : Errors?
+
       def errors
         @errors ||= Errors.new(self)
       end

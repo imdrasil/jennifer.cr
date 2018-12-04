@@ -130,7 +130,9 @@ module Jennifer
             {{relation_class}}.new("{{name.id}}", {{foreign}}, {{primary}},
             {{klass}}.all{% if request %}.exec {{request}} {% end %})
           {% end %}
+        @[JSON::Field(ignore: true)]
         @{{name.id}} = [] of {{klass}}
+        @[JSON::Field(ignore: true)]
         @__{{name.id}}_retrieved = false
 
         private def set_{{name.id}}_relation(collection : Array)
@@ -257,7 +259,9 @@ module Jennifer
           end)
         end
 
+        @[JSON::Field(ignore: true)]
         @{{name.id}} = [] of {{klass}}
+        @[JSON::Field(ignore: true)]
         @__{{name.id}}_retrieved = false
 
         private def set_{{name.id}}_relation(object : Array)
@@ -420,7 +424,9 @@ module Jennifer
         {{"{% RELATION_NAMES << #{name.id.stringify} %}".id}}
         ::Jennifer::Model::RelationDefinition.declare_dependent({{name}}, {{dependent}}, :belongs_to, {{polymorphic}})
 
+        @[JSON::Field(ignore: true)]
         @{{name.id}} : {{klass}}?
+        @[JSON::Field(ignore: true)]
         @__{{name.id}}_retrieved = false
 
         def {{name.id}}
@@ -470,7 +476,7 @@ module Jennifer
           {% relation_class = "::Jennifer::Relation::BelongsTo(#{klass}, #{@type})".id %}
 
           RELATIONS["{{name.id}}"] =
-              {{relation_class}}.new("{{name.id}}", {{foreign}}, {{primary}}, {{klass}}.all{% if request %}.exec {{request}} {% end %})
+            {{relation_class}}.new("{{name.id}}", {{foreign}}, {{primary}}, {{klass}}.all{% if request %}.exec {{request}} {% end %})
 
           # :nodoc:
           def self.{{name.id}}_relation
@@ -545,7 +551,9 @@ module Jennifer
             {{klass}}.all{% if request %}.exec {{request}} {% end %})
           {% end %}
 
+        @[JSON::Field(ignore: true)]
         @{{name.id}} : {{klass}}?
+        @[JSON::Field(ignore: true)]
         @__{{name.id}}_retrieved = false
 
         private def set_{{name.id}}_relation(object)

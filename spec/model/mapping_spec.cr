@@ -350,6 +350,12 @@ describe Jennifer::Model::Mapping do
       end
     end
 
+    describe "predicate method" do
+      it { AddressWithNilableBool.new({main: true}).main?.should be_true }
+      it { AddressWithNilableBool.new({main: false}).main?.should be_false }
+      it { AddressWithNilableBool.new({main: nil}).main?.should be_false }
+    end
+
     describe "attribute setter" do
       it "provides setters" do
         c = Factory.build_contact(name: "a")

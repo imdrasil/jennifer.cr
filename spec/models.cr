@@ -554,3 +554,12 @@ class ProfileWithOneNote < Jennifer::Model::Base
 
   has_one :note, NoteWithCallback, inverse_of: :notable, polymorphic: true, dependent: :nullify
 end
+
+class AddressWithNilableBool < Jennifer::Model::Base
+  with_timestamps
+
+  mapping({
+    id: {type: Int32, primary: true},
+    main: Bool?
+  }, false)
+end

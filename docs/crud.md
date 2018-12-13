@@ -51,7 +51,7 @@ puts c1.age # 30
 There are several ways which allows to update object. Some of them were mentioned in mapping section. There are few extra methods to do this:
 - `#update_column(name, value)` - sets directly attribute and store it to db without any callback
 - `#update_columns(values)` - same for several ones
-- `#update_attributes(values)` - just set attributes
+- `#set_attributes(values)` - just set attributes
 - `#set_attribute(name, value)` - set attribute by given name
 
 You can provide hash or named tuple with new field values to update all records satisfying given conditions:

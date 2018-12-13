@@ -1,7 +1,19 @@
 require "../spec_helper"
 
 describe Jennifer::QueryBuilder::Join do
+  described_class = Jennifer::QueryBuilder::Join
   expression = Factory.build_expression
+
+  describe ".new" do
+    context "with Grouping" do
+      it do
+        q = Jennifer::QueryBuilder::Query["tests"]
+        condition = Factory.build_criteria(table: "t1") == 2
+        on_condition = Jennifer::QueryBuilder::Grouping.new(condition)
+        described_class.new(q, on_condition, :inner).on.should eq(on_condition.to_condition)
+      end
+    end
+  end
 
   describe "#as_sql" do
     it "includes table name" do

@@ -362,6 +362,34 @@ describe Jennifer::Model::Mapping do
         c.name = "b"
         c.name.should eq("b")
       end
+
+      context "with DBAny" do
+        it do
+          hash = { :name => "new_name" } of Symbol => Jennifer::DBAny
+          c = Factory.build_contact(name: "a")
+          c.name = hash[:name]
+          c.name.should eq("new_name")
+        end
+      end
+
+      context "with subset of DBAny" do
+        it do
+          hash = { :name => "new_name", :age => 12 }
+          c = Factory.build_contact(name: "a")
+          c.name = hash[:name]
+          c.name.should eq("new_name")
+        end
+
+        context "with wrong type" do
+          it do
+            hash = { :name => "new_name", :age => 12 }
+            c = Factory.build_contact(name: "a")
+            expect_raises(TypeCastError) do
+              c.name = hash[:age]
+            end
+          end
+        end
+      end
     end
 
     describe "criteria attribute class shortcut" do

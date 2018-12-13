@@ -26,6 +26,13 @@ module Jennifer
               {% end %}
               @{{key.id}} = _{{key.id}}
             end
+
+            def {{key.id}}=(_{{key.id}} : ::Jennifer::DBAny)
+              {% if !value[:virtual] %}
+                @{{key.id}}_changed = true if _{{key.id}} != @{{key.id}}
+              {% end %}
+              @{{key.id}} = _{{key.id}}.as({{value[:parsed_type].id}})
+            end
           {% end %}
 
           {% if value[:getter] != false %}

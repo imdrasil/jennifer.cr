@@ -167,6 +167,8 @@ If you don't want to define all the table fields - pass `false` as second argume
 | `#set_attribute` | `String \| Symbol`, `DB::Any` | sets attribute by given name |
 | `#attribute` | `String \| Symbol` | returns attribute value by it's name |
 
+Also `#{{field_name}}?` predicate method for the case when it is boolean.
+
 All allowed types are listed on the [Migration](https://imdrasil.github.io/jennifer.cr/docs/migration) page.
 
 All defined mapping properties are accessible via `COLUMNS_METADATA` constant and `::columns_tuple` method.

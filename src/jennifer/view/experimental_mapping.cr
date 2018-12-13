@@ -17,6 +17,12 @@ module Jennifer
               @{{key.id}}
             end
 
+            {% if value[:type].is_a?(Generic) ? value[:type].resolve.union_types[0] == Bool : value[:type].resolve == Bool %}
+              def {{key.id}}?
+                {{key.id}} == true
+              end
+            {% end %}
+
             {% if value[:null] != false %}
               def {{key.id}}!
                 @{{key.id}}.not_nil!
@@ -279,10 +285,10 @@ module Jennifer
           {% if options[:type].is_a?(Path) && Jennifer::Macros::TYPES.includes?(str_properties["type"]) %}
             {% for tkey, tvalue in options[:type].resolve %}
               {% if tkey == :type || options[tkey] == nil %}
-                  {%
-                    options[tkey] = tvalue
-                    str_properties[tkey.stringify] = tvalue.stringify
-                  %}
+                {%
+                  options[tkey] = tvalue
+                  str_properties[tkey.stringify] = tvalue.stringify
+                %}
               {% end %}
             {% end %}
           {% end %}

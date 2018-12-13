@@ -38,6 +38,12 @@ module Jennifer
                 @{{key.id}}.not_nil!
               end
             {% end %}
+
+            {% if value[:type].is_a?(Generic) ? value[:type].resolve.union_types[0] == Bool : value[:type].resolve == Bool %}
+              def {{key.id}}?
+                {{key.id}} == true
+              end
+            {% end %}
           {% end %}
 
           {% if !value[:virtual] %}
@@ -511,6 +517,8 @@ module Jennifer
       end
 
       # Defines model mapping.
+      #
+      # For the detailed description take a look at `.md` documentation file.
       #
       # Acceptable keys:
       # - type

@@ -36,8 +36,12 @@ Sam.namespace "db" do
     Jennifer::Migration::Runner.create
   end
 
-  desc "Runs db:create and db:migrate"
-  task "setup", ["create", "migrate"] do
+  desc "Populate database with default entities."
+  task "seed" do
+  end
+
+  desc "Runs db:create, db:migrate and db:seed"
+  task "setup", %w(create migrate seed) do
   end
 
   namespace "schema" do

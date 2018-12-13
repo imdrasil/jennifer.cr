@@ -81,7 +81,13 @@ module Jennifer
 
         # :nodoc:
         def %validate_method
-          ::Jennifer::Validations::Uniqueness.instance.validate(self, {{field}}, {{field.id}}, {{allow_blank}}, self.class.where { _{{field.id}} == {{field.id}} })
+          ::Jennifer::Validations::Uniqueness.instance.validate(
+            self,
+            {{field}},
+            {{field.id}},
+            {{allow_blank}},
+            self.class.all.where { _{{field.id}} == {{field.id}} }
+          )
         end
       end
 
@@ -125,7 +131,8 @@ module Jennifer
         end
       end
 
-      # Encapsulates the pattern of wanting to validate the acceptance of a terms of service check box (or similar agreement)
+      # Encapsulates the pattern of wanting to validate the acceptance of a terms of service check
+      # box (or similar agreement).
       #
       # This check is performed only if *field* is not nil.
       macro validates_acceptance(field, accept = nil, if if_value = nil)
@@ -143,7 +150,14 @@ module Jennifer
 
         # :nodoc:
         def %validate_method
-          ::Jennifer::Validations::Confirmation.instance.validate(self, {{field}}, {{field.id}}, false, {{field.id}}_confirmation, {{case_sensitive}})
+          ::Jennifer::Validations::Confirmation.instance.validate(
+            self,
+            {{field}},
+            {{field.id}},
+            false,
+            {{field.id}}_confirmation,
+            {{case_sensitive}}
+          )
         end
       end
     end

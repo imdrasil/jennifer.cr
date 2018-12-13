@@ -35,7 +35,7 @@ $ crystal sam.cr -- db:drop
 
 ### db:setup
 
-Creates database and invoke all pending migrations.
+Creates database, invokes all pending migrations and populate database with seeds.
 
 ```shell
 $ crystal sam.cr -- db:setup
@@ -84,6 +84,15 @@ Outputs current database version.
 
 ```shell
 $ crystal sam.cr -- db:version
+```
+
+### db:seed
+
+Populates database with seeds. By default this task is empty and should be defined per project
+bases.
+
+```shell
+$ crystal sam.cr -- db:seed
 ```
 
 ### db:schema:load

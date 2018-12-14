@@ -208,8 +208,9 @@ module Jennifer
         attribute(name.to_s, raise_exception)
       end
 
+      # Sets attributes base on given *hash* and saves the object.
       def update(hash : Hash | NamedTuple)
-        update_attributes(hash)
+        set_attributes(hash)
         save
       end
 
@@ -217,8 +218,9 @@ module Jennifer
         update(opts)
       end
 
+      # Sets attributes base on given *hash* and saves the object (using `#save!`).
       def update!(hash : Hash | NamedTuple)
-        update_attributes(hash)
+        set_attributes(hash)
         save!
       end
 
@@ -226,12 +228,17 @@ module Jennifer
         update!(opts)
       end
 
-      def update_attributes(hash : Hash | NamedTuple)
+      # Sets attributes based on `hash` where keys are attribute names.
+      #
+      # ```
+      # post.set_attributes({ :title => "New Title", :created_at => Time.now })
+      # ```
+      def set_attributes(hash : Hash | NamedTuple)
         hash.each { |k, v| set_attribute(k, v) }
       end
 
-      def update_attributes(**opts)
-        update_attributes(opts)
+      def set_attributes(**opts)
+        set_attributes(opts)
       end
 
       # Sets *value* to field with name *name* and stores them directly to db without

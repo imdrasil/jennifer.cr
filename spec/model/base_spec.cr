@@ -614,18 +614,18 @@ describe Jennifer::Model::Base do
     end
   end
 
-  describe "#update_attributes" do
+  describe "#set_attributes" do
     context "when given attribute exists" do
       it "raises exception if value has wrong type" do
         c = Factory.build_contact
         expect_raises(::Jennifer::BaseException) do
-          c.update_attributes({:name => 123})
+          c.set_attributes({:name => 123})
         end
       end
 
       it "marks changed field as modified" do
         c = Factory.build_contact
-        c.update_attributes({"name" => "asd"})
+        c.set_attributes({"name" => "asd"})
         c.name.should eq("asd")
         c.name_changed?.should be_true
       end
@@ -635,7 +635,7 @@ describe Jennifer::Model::Base do
       it "raises exception" do
         c = Factory.build_contact
         expect_raises(::Jennifer::BaseException) do
-          c.update_attributes({:asd => 123})
+          c.set_attributes({:asd => 123})
         end
       end
     end
@@ -643,7 +643,7 @@ describe Jennifer::Model::Base do
     context "with named tuple" do
       it do
         c = Factory.build_contact
-        c.update_attributes({name: "asd"})
+        c.set_attributes({name: "asd"})
         c.name.should eq("asd")
       end
     end
@@ -651,13 +651,13 @@ describe Jennifer::Model::Base do
     context "with splatted named tuple" do
       it do
         c = Factory.build_contact
-        c.update_attributes(name: "asd")
+        c.set_attributes(name: "asd")
         c.name.should eq("asd")
       end
 
       it do
         subject = ModelWithIntName.build(name: 1)
-        subject.update_attributes(name: 2)
+        subject.set_attributes(name: 2)
         subject.name.should eq(2)
       end
     end

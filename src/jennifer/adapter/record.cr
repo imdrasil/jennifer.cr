@@ -18,6 +18,7 @@ module Jennifer
       @attributes.keys
     end
 
+    # Alias for #attribute.
     def [](name : Symbol | String)
       attribute(name)
     end

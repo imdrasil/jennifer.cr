@@ -31,56 +31,55 @@ module Jennifer
       end
 
       def self.build
-        a = new
-        a
+        new
       end
 
       def prepare
         ::Jennifer::Model::Base.models.each(&.actual_table_field_count)
       end
 
-      def exec(_query, args : ArgsType = [] of DBAny)
+      def exec(query : String, args : ArgsType = [] of DBAny)
         time = Time.monotonic
-        res = with_connection { |conn| conn.exec(_query, args) }
+        res = with_connection { |conn| conn.exec(query, args) }
         time = Time.monotonic - time
-        Config.logger.debug { regular_query_message(time, _query, args) }
+        Config.logger.debug { regular_query_message(time, query, args) }
         res
       rescue e : BaseException
-        BadQuery.prepend_information(e, _query, args)
+        BadQuery.prepend_information(e, query, args)
         raise e
       rescue e : DB::Error
         raise e
       rescue e : Exception
-        raise BadQuery.new(e.message, _query, args)
+        raise BadQuery.new(e.message, query, args)
       end
 
-      def query(_query, args : ArgsType = [] of DBAny)
+      def query(query : String, args : ArgsType = [] of DBAny)
         time = Time.monotonic
-        res = with_connection { |conn| conn.query(_query, args) { |rs| time = Time.monotonic - time; yield rs } }
-        Config.logger.debug { regular_query_message(time, _query, args) }
+        res = with_connection { |conn| conn.query(query, args) { |rs| time = Time.monotonic - time; yield rs } }
+        Config.logger.debug { regular_query_message(time, query, args) }
         res
       rescue e : BaseException
-        BadQuery.prepend_information(e, _query, args)
+        BadQuery.prepend_information(e, query, args)
         raise e
       rescue e : DB::Error
         raise e
       rescue e : Exception
-        raise BadQuery.new(e.message, _query, args)
+        raise BadQuery.new(e.message, query, args)
       end
 
-      def scalar(_query, args : ArgsType = [] of DBAny)
+      def scalar(query : String, args : ArgsType = [] of DBAny)
         time = Time.monotonic
-        res = with_connection { |conn| conn.scalar(_query, args) }
+        res = with_connection { |conn| conn.scalar(query, args) }
         time = Time.monotonic - time
-        Config.logger.debug { regular_query_message(time, _query, args) }
+        Config.logger.debug { regular_query_message(time, query, args) }
         res
       rescue e : BaseException
-        BadQuery.prepend_information(e, _query, args)
+        BadQuery.prepend_information(e, query, args)
         raise e
       rescue e : DB::Error
         raise e
       rescue e : Exception
-        raise BadQuery.new(e.message, _query, args)
+        raise BadQuery.new(e.message, query, args)
       end
 
       def truncate(klass : Class)
@@ -92,18 +91,15 @@ module Jennifer
       end
 
       def delete(query : QueryBuilder::Query)
-        args = query.sql_args
-        exec *sql_generator.delete(query)
+        exec(*parse_query(sql_generator.delete(query), query.sql_args))
       end
 
       def exists?(query : QueryBuilder::Query)
-        args = query.sql_args
-        scalar(*sql_generator.exists(query)) == 1
+        scalar(*parse_query(sql_generator.exists(query), query.sql_args)) == 1
       end
 
       def count(query : QueryBuilder::Query)
-        args = query.sql_args
-        scalar(*sql_generator.count(query)).as(Int64).to_i
+        scalar(*parse_query(sql_generator.count(query), query.sql_args)).as(Int64).to_i
       end
 
       def bulk_insert(collection : Array(Model::Base))
@@ -166,6 +162,7 @@ module Jennifer
         raise e
       end
 
+      # Generates name for join table.
       def self.join_table_name(table1 : String | Symbol, table2 : String | Symbol)
         [table1.to_s, table2.to_s].sort.join("_")
       end
@@ -194,16 +191,6 @@ module Jennifer
           ].join("&", s)
           {% end %}
         end
-      end
-
-      def self.extract_arguments(hash : Hash) : NamedTuple(args: ArgsType, fields: Array(String))
-        args = [] of DBAny
-        fields = [] of String
-        hash.each do |key, value|
-          fields << key.to_s
-          args << value
-        end
-        {args: args, fields: fields}
       end
 
       # filter out value; should be refactored

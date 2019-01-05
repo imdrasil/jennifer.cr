@@ -29,7 +29,7 @@ Contact.import(objects)
 
 #### Read
 
-Object could be retrieved by id using `#find` (returns `T?`) and `#find!` (returns `T` or raise `RecordNotFound` exception) methods.
+Object could be retrieved by id using `#find` (returns `T?`) and `#find!` (returns `T` or raises `RecordNotFound` exception) methods.
 
 ```crystal
 Contact.find!(1)

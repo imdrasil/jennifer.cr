@@ -10,7 +10,6 @@ module Jennifer
         super
       end
 
-      # TODO: find way to update exactly one record, not all
       def remove(obj : Q)
         this = self
         _pf = obj.attribute(primary_field)

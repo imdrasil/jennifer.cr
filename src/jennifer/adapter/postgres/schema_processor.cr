@@ -34,8 +34,8 @@ module Jennifer
       # ============================
 
       # TODO: sanitize query
-      def define_enum(name, values)
-        adapter.exec "CREATE TYPE #{name} AS ENUM(#{values.as(Array).map { |e| "'#{e}'" }.join(", ")})"
+      def define_enum(name : String | Symbol, values : Array)
+        adapter.exec "CREATE TYPE #{name} AS ENUM(#{values.map { |e| adapter.sql_generator.quote(e) }.join(", ")})"
       end
 
       def drop_enum(name)
@@ -46,8 +46,8 @@ module Jennifer
         adapter.exec "DROP INDEX #{name}"
       end
 
-      def rename_table(old_name, new_name)
-        adapter.exec "ALTER TABLE #{old_name.to_s} RENAME TO #{new_name.to_s}"
+      def rename_table(old_name : String | Symbol, new_name : String | Symbol)
+        adapter.exec "ALTER TABLE #{old_name} RENAME TO #{new_name}"
       end
 
       # =========== overrides
@@ -59,7 +59,7 @@ module Jennifer
           s << index_type_translate(type) if type
 
           s << "INDEX " << name << " ON " << table
-          # TODO: add using option to migration
+          # TODO: add USING support
           # s << " USING " << options[:using] if options.has_key?(:using)
           s << " ("
           fields.each_with_index do |f, i|
@@ -85,12 +85,8 @@ module Jennifer
           end
           if opts[:null]?
             s << column_name_part
-            if opts[:null]
-              s << " DROP NOT NULL"
-            else
-              s << " SET NOT NULL"
-            end
-            s << ","
+            s << opts[:null] ? " DROP" : " SET"
+            s << " NOT NULL,"
           end
           if opts[:default]?
             s << column_name_part

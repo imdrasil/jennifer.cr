@@ -27,8 +27,10 @@ describe Jennifer::QueryBuilder::Executables do
     end
 
     it "raises error if there is no such records" do
-      expect_raises(Jennifer::RecordNotFound) do
-        Contact.all.first!
+      arg = db_specific(mysql: -> { "?" }, postgres: -> { "$1" })
+      message = "There is no record by given query:\nSELECT contacts.* FROM contacts WHERE contacts.id > #{arg}  | [2]"
+      expect_raises(Jennifer::RecordNotFound, message) do
+        Contact.all.where { _id > 2 }.first!
       end
     end
   end

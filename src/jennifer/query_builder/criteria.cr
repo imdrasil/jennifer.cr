@@ -3,6 +3,8 @@ require "./order_item"
 
 module Jennifer
   module QueryBuilder
+    # Basic class describing table field.
+    #
     # TODO: rename to Criterion
     class Criteria < SQLNode
       alias Rightable = SQLNode | DBAny | Array(DBAny)

@@ -209,19 +209,8 @@ module Jennifer
         ExecResult.new(id, affected)
       end
 
-      def self.bulk_insert(collection : Array(Model::Base))
-        opts = collection.flat_map(&.arguments_to_insert[:args])
-        # TODO: unify parse_query
-        query_opts = parse_query(sql_generator.bulk_insert(collection))
-        # TODO: change to checking for autoincrementability
-        affected = exec(qyery, opts).rows_affected
-        if affected != collection.size
-          raise ::Jennifer::BaseException.new("Bulk insert failed with #{collection.size - affected} records.")
-        end
-      end
-
       def exists?(query)
-        scalar(*sql_generator.exists(query))
+        scalar(*parse_query(sql_generator.exists(query), query.sql_args))
       end
     end
   end

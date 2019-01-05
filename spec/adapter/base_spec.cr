@@ -299,18 +299,6 @@ describe Jennifer::Adapter::Base do
     end
   end
 
-  describe "::extract_arguments" do
-    res = described_class.extract_arguments({:asd => 1, "qwe" => "2"})
-
-    it "converts all field names to string" do
-      res[:fields].should eq(%w(asd qwe))
-    end
-
-    it "extracts all values to :args" do
-      res[:args].should eq(db_array(1, "2"))
-    end
-  end
-
   describe "#query_array" do
     it "returns array of given type" do
       Factory.create_contact

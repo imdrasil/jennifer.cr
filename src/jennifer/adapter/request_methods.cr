@@ -51,7 +51,7 @@ module Jennifer
         result
       end
 
-      def pluck(query, field)
+      def pluck(query, field : String | Symbol)
         result = [] of DBAny
         fields = [field.to_s]
         body = sql_generator.select(query, fields)

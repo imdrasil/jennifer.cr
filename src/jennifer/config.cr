@@ -197,10 +197,7 @@ module Jennifer
     def self.migration_failure_handler_method=(value)
       parsed_value = value.to_s
       unless ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS.includes?(parsed_value)
-        allowed_methods = ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS.map { |e| %("#{e}") }.join(" ")
-        raise Jennifer::InvalidConfig.new(
-          %(migration_failure_handler_method config may be only #{allowed_methods})
-        )
+        raise Jennifer::InvalidConfig.bad_migration_failure_handler(ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS)
       end
       @@migration_failure_handler_method = parsed_value
     end
@@ -299,8 +296,8 @@ module Jennifer
     end
 
     protected def validate_config
-      raise Jennifer::InvalidConfig.new("No adapter configured") if adapter.empty?
-      raise Jennifer::InvalidConfig.new("No database configured") if db.empty?
+      raise Jennifer::InvalidConfig.bad_adapter if adapter.empty?
+      raise Jennifer::InvalidConfig.bad_database if db.empty?
       if max_idle_pool_size != max_pool_size || max_pool_size != initial_pool_size
         logger.warn("It is highly recommended to set max_idle_pool_size = max_pool_size = initial_pool_size to "\
                     "prevent blowing up count of DB connections. For any details take a look at "\

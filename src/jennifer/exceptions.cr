@@ -1,12 +1,17 @@
 CallStack.skip(__FILE__)
 
 module Jennifer
+  # Is raised when pseudo-abstract method is invoked.
+  #
+  # Pseudo-abstract method - method that can't be marked as abstract but for current level of abstraction
+  # it still can't be used.
   class AbstractMethod < Exception
     def initialize(method, klass)
       @message = "Abstract method '#{method}' of '#{klass}' was invoked but it is not implemented yet."
     end
   end
 
+  # Base Jennifer exception.
   class BaseException < Exception
     setter message
 
@@ -30,6 +35,7 @@ module Jennifer
     end
   end
 
+  # Wraps native query driver exception adding query information.
   class BadQuery < BaseException
     def initialize(original_message, query, args)
       @message = "#{original_message}.\nOriginal query was:\n#{BadQuery.format_query(query, args)}"
@@ -48,15 +54,34 @@ module Jennifer
     end
   end
 
+  # Presents Jennifer configuration invalidity.
   class InvalidConfig < BaseException
     def initialize(message)
       @message = message
     end
+
+    def self.bad_adapter
+      new("No adapter configured")
+    end
+
+    def self.bad_database
+      new("No database configured")
+    end
+
+    def self.bad_migration_failure_handler(allowed)
+      formatted = allowed.map { |e| %("#{e}") }.join(" ")
+      new("migration_failure_handler_method config may be only #{formatted}")
+    end
   end
 
+  # Presents case when record is expected but is not found.
   class RecordNotFound < BaseException
     def initialize(query)
       @message = "There is no record by given query:\n#{query}"
+    end
+
+    def self.from_query(query, adapter)
+      new(BadQuery.format_query(*adapter.parse_query(adapter.sql_generator.select(query), query.sql_args)))
     end
   end
 

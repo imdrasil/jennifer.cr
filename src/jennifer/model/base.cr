@@ -247,11 +247,15 @@ module Jennifer
         update_columns({name => value})
       end
 
+      # Saves record or raises RecordInvalid exception.
       def save!(skip_validation : Bool = false)
         raise Jennifer::RecordInvalid.new(errors.to_a) unless save(skip_validation)
         true
       end
 
+      # Saves record.
+      #
+      # *skip_validation* allows to skip validation for current invocation.
       def save(skip_validation : Bool = false) : Bool
         unless self.class.adapter.under_transaction?
           self.class.transaction do
@@ -337,22 +341,28 @@ module Jennifer
         adapter.with_table_lock(table_name, type.to_s) { |t| yield t }
       end
 
+      # Returns record by given primary field.
       def self.find(id)
         _id = id
         this = self
         all.where { this.primary == _id }.first
       end
 
+      # Returns record by given primary field or raises RecordNotFound exception.
       def self.find!(id)
         _id = id
         this = self
         all.where { this.primary == _id }.first!
       end
 
+      # Destroys records by given ids.
+      #
+      # All `destroy` callbacks will be invoked for each record. All records are loaded in batches.
       def self.destroy(*ids)
         destroy(ids.to_a)
       end
 
+      # ditto
       def self.destroy(ids : Array)
         _ids = ids
         all.where do
@@ -364,10 +374,12 @@ module Jennifer
         end.destroy
       end
 
+      # Deletes records by given ids.
       def self.delete(*ids)
         delete(ids.to_a)
       end
 
+      # ditto
       def self.delete(ids : Array)
         _ids = ids
         all.where do
@@ -379,6 +391,7 @@ module Jennifer
         end.delete
       end
 
+      # Performs bulk import of given collection.
       def self.import(collection : Array(self))
         adapter.bulk_insert(collection)
       end

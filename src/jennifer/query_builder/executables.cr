@@ -24,7 +24,7 @@ module Jennifer
         result = to_a
         reverse_order
         @limit = old_limit
-        raise RecordNotFound.new(adapter.sql_generator.select(self)) if result.empty?
+        raise RecordNotFound.from_query(self, adapter) if result.empty?
         result[0]
       end
 
@@ -46,7 +46,7 @@ module Jennifer
         old_limit = @limit
         result = to_a
         @limit = old_limit
-        raise RecordNotFound.new(adapter.sql_generator.select(self)) if result.empty?
+        raise RecordNotFound.from_query(self, adapter) if result.empty?
         result[0]
       end
 
@@ -240,14 +240,14 @@ module Jennifer
         end
       end
 
-      def find_each(batch_size : Int32 = 1000, start : Int32 = 0, direction : String | Symbol = "asc", &block)
-        find_in_batches(batch_size, start) do |records|
+      def find_each(primary_key : String, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
+        find_in_batches(primary_key, batch_size, start, direction) do |records|
           records.each { |rec| yield rec }
         end
       end
 
-      def find_each(primary_key : String, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
-        find_in_batches(primary_key, batch_size, start, direction) do |records|
+      def find_each(batch_size : Int32 = 1000, start : Int32 = 0, direction : String | Symbol = "asc", &block)
+        find_in_batches(batch_size, start) do |records|
           records.each { |rec| yield rec }
         end
       end

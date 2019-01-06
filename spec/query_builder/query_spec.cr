@@ -176,6 +176,18 @@ describe Jennifer::QueryBuilder::Query do
       q1 = Query["contacts"].where { (_name == "John") & sql("age > %s", [12]) }
       q1.tree.to_s.should eq("contacts.name = %s AND (age > %s)")
     end
+
+    postgres_only do
+      it "gracefully handle argument type mismatch" do
+        void_transaction do
+          expect_raises(Jennifer::BadQuery) do
+            Query["contacts"].where { _id == 1.0 }.to_a
+          end
+          # Next request should be executed without any error
+          Query["contacts"].where { _id == 1 }.to_a
+        end
+      end
+    end
   end
 
   describe "#having" do

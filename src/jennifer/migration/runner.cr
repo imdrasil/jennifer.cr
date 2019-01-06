@@ -21,7 +21,7 @@ module Jennifer
         puts e.backtrace.join("\n")
       ensure
         # TODO: generate schema for each adapter
-        default_adapter.class.generate_schema if performed
+        default_adapter.class.generate_schema if performed && !Config.skip_dumping_schema_sql
       end
 
       # Invokes all migrations.
@@ -72,7 +72,7 @@ module Jennifer
         puts e.message
       ensure
         # TODO: generate schema for each adapter
-        default_adapter_class.generate_schema if processed
+        default_adapter_class.generate_schema if processed && !Config.skip_dumping_schema_sql
       end
 
       # Loads schema from the SQL schema file.

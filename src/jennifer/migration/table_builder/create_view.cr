@@ -8,8 +8,6 @@ module Jennifer
           initialize(adapter, name)
         end
 
-        # TODO: move query generating to SqlGenerator class and make
-        # table builder classes to call executions by themselves
         def process
           schema_processor.create_view(@name, @query)
         end

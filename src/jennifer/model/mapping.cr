@@ -16,6 +16,7 @@ module Jennifer
       macro __field_declaration(properties, primary_auto_incrementable)
         {% for key, value in properties %}
           @{{key.id}} : {{value[:parsed_type].id}}
+          @[JSON::Field(ignore: true)]
           @{{key.id}}_changed = false
 
           {% if value[:setter] != false %}
@@ -24,6 +25,13 @@ module Jennifer
                 @{{key.id}}_changed = true if _{{key.id}} != @{{key.id}}
               {% end %}
               @{{key.id}} = _{{key.id}}
+            end
+
+            def {{key.id}}=(_{{key.id}} : ::Jennifer::DBAny)
+              {% if !value[:virtual] %}
+                @{{key.id}}_changed = true if _{{key.id}} != @{{key.id}}
+              {% end %}
+              @{{key.id}} = _{{key.id}}.as({{value[:parsed_type].id}})
             end
           {% end %}
 
@@ -35,6 +43,12 @@ module Jennifer
             {% if value[:null] != false %}
               def {{key.id}}!
                 @{{key.id}}.not_nil!
+              end
+            {% end %}
+
+            {% if value[:type].is_a?(Generic) ? value[:type].resolve.union_types[0] == Bool : value[:type].resolve == Bool %}
+              def {{key.id}}?
+                {{key.id}} == true
               end
             {% end %}
           {% end %}
@@ -115,37 +129,51 @@ module Jennifer
 
         # generates hash with options
         {% for key, value in properties %}
-          {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %} {% properties[key] = {type: value} %} {% end %}
-          {% if properties[key][:type].is_a?(Path) && TYPES.includes?(properties[key][:type].stringify) %}
-            {% for tkey, tvalue in properties[key][:type].resolve %}
-              {% if tkey == :type || properties[key][tkey] == nil %} {% properties[key][tkey] = tvalue %} {% end %}
+          {%
+            properties[key] = {type: value} unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral)
+            options = properties[key]
+          %}
+          {% if options[:type].is_a?(Path) && TYPES.includes?(options[:type].stringify) %}
+            {% for tkey, tvalue in options[:type].resolve %}
+              {% options[tkey] = tvalue if tkey == :type || options[tkey] == nil %}
             {% end %}
           {% end %}
-          {% properties[key][:stringified_type] = properties[key][:type].stringify %}
-          {% if properties[key][:stringified_type] =~ Jennifer::Macros::JSON_REGEXP && properties[key][:converter] == nil %} {% properties[key][:converter] = ::Jennifer::Model::JSONConverter %} {% end %}
-          {% if properties[key][:primary] %}
-            {%
+          {%
+            stringified_type = options[:type].stringify
+            options[:converter] = ::Jennifer::Model::JSONConverter if stringified_type =~ Jennifer::Macros::JSON_REGEXP && options[:converter] == nil
+            if options[:primary]
               primary = key
-              primary_type = properties[key][:type]
-              primary_auto_incrementable = AUTOINCREMENTABLE_STR_TYPES.includes?(properties[key][:stringified_type])
-            %}
-          {% end %}
-          {% properties[key][:parsed_type] = properties[key][:stringified_type] %}
-          {% if properties[key][:stringified_type] =~ NILLABLE_REGEXP %}
-            {% properties[key][:null] = true %}
-          {% elsif properties[key][:null] || properties[key][:primary] %}
-            {% properties[key][:parsed_type] = properties[key][:stringified_type] + "?" %}
-          {% end %}
-          {% add_default_constructor = add_default_constructor && (properties[key][:primary] || properties[key][:null] || properties[key].keys.includes?(:default)) %}
+              primary_type = options[:type]
+              primary_auto_incrementable = AUTOINCREMENTABLE_STR_TYPES.includes?(stringified_type)
+            end
+            options[:parsed_type] = stringified_type
+            if stringified_type =~ NILLABLE_REGEXP
+              options[:null] = true
+            elsif options[:null] || options[:primary]
+              options[:parsed_type] = stringified_type + "?"
+            end
+            add_default_constructor = add_default_constructor && (options[:primary] || options[:null] || options.keys.includes?(:default.id))
+          %}
         {% end %}
 
-        {% nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] } %}
-
-        {% if primary == nil %}
-          {% raise "Model #{@type} has no defined primary field. For now model without primary field is not allowed" %}
-        {% end %}
+        {%
+          nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] }
+          raise "Model #{@type} has no defined primary field. For now model without primary field is not allowed" if primary == nil
+        %}
 
         __field_declaration({{properties}}, {{primary_auto_incrementable}})
+
+        private def inspect_attributes(io) : Nil
+          io << ' '
+          {% for var, i in properties.keys %}
+            {% if i > 0 %}
+              io << ", "
+            {% end %}
+            io << "{{var.id}}: "
+            @{{var.id}}.inspect(io)
+          {% end %}
+          nil
+        end
 
         # :nodoc:
         def self.primary_auto_incrementable?
@@ -172,7 +200,9 @@ module Jennifer
           COLUMNS_METADATA
         end
 
+        @[JSON::Field(ignore: true)]
         @new_record = true
+        @[JSON::Field(ignore: true)]
         @destroyed = false
 
         # Creates object from `DB::ResultSet`
@@ -190,6 +220,7 @@ module Jennifer
           {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
+        # :nodoc:
         def initialize(values : Hash | NamedTuple, @new_record)
           initialize(values)
         end
@@ -197,6 +228,7 @@ module Jennifer
         {% if add_default_constructor %}
           # :nodoc:
           WITH_DEFAULT_CONSTRUCTOR = true
+
           # Default constructor without any fields
           def initialize
             {% for key, value in properties %}
@@ -214,24 +246,6 @@ module Jennifer
           # :nodoc:
           WITH_DEFAULT_CONSTRUCTOR = false
         {% end %}
-
-        # :nodoc:
-        def self.build_params(hash : Hash(String, String?)) : Hash(String, Jennifer::DBAny)
-          converted_hash = {} of String => Jennifer::DBAny
-          hash.each do |key, value|
-            case key.to_s
-            {% for field, opts in properties %}
-            when {{field.id.stringify}}
-              if value.nil? || value.empty?
-                converted_hash[key] = nil
-              else
-                converted_hash[key] = parameter_converter.parse(value, {{opts[:stringified_type]}})
-              end
-            {% end %}
-            end
-          end
-          converted_hash
-        end
 
         # Extracts arguments due to mapping from *pull* and returns tuple for fields assignment.
         # It stands on that fact result set has all defined fields in a row
@@ -400,12 +414,12 @@ module Jennifer
                     @{{key.id}} = local
                     @{{key.id}}_changed = true
                   else
-                    raise ::Jennifer::BaseException.new("Wrong type for #{name} : #{value.class}")
+                    raise ::Jennifer::BaseException.new("Wrong type for #{self.class}##{name} : #{value.class}")
                   end
               {% end %}
             {% end %}
             else
-              raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}")
+              raise ::Jennifer::BaseException.new("Unknown model attribute - #{self.class}##{name}")
             end
           end
 
@@ -451,11 +465,8 @@ module Jennifer
             {% options = properties[attr] %}
             {% unless options[:primary] %}
               if @{{attr.id}}_changed
-                args << {% if options[:converter] %}
-                          {{options[:converter]}}.to_db(@{{attr.id}})
-                        {% else %}
-                          @{{attr.id}}
-                        {% end %}
+                args <<
+                  {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
                 fields << "{{attr.id}}"
               end
             {% end %}
@@ -466,15 +477,11 @@ module Jennifer
         # :nodoc:
         def arguments_to_insert
           args = [] of ::Jennifer::DBAny
-          # TODO: think about moving this array to constant; maybe use compile time instead of runtime
           fields = [] of String
           {% for attr, options in properties %}
             {% unless options[:virtual] || options[:primary] && primary_auto_incrementable %}
-              args << {% if options[:converter] %}
-                        {{options[:converter]}}.to_db(@{{attr.id}})
-                      {% else %}
-                        @{{attr.id}}
-                      {% end %}
+              args <<
+                {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
               fields << "{{attr.id}}"
             {% end %}
           {% end %}
@@ -518,6 +525,8 @@ module Jennifer
 
       # Defines model mapping.
       #
+      # For the detailed description take a look at `.md` documentation file.
+      #
       # Acceptable keys:
       # - type
       # - getter
@@ -535,6 +544,7 @@ module Jennifer
         {% end %}
       end
 
+      # ditto
       macro mapping(**properties)
         mapping({{properties}})
       end

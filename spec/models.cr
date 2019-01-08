@@ -19,10 +19,10 @@ class WithOwnArguments < Jennifer::QueryBuilder::QueryObject
   end
 end
 
-class EnnValidator < Jennifer::Validator
-  def validate(subject : Passport)
-    if subject.enn!.size < 4 && subject.enn![0].downcase == 'a'
-      errors.add(:enn, "Invalid enn")
+class EnnValidator < Jennifer::Validations::Validator
+  def validate(record : Passport, **opts)
+    if record.enn!.size < 4 && record.enn![0].downcase == 'a'
+      record.errors.add(:enn, "Invalid enn")
     end
   end
 end
@@ -71,32 +71,38 @@ end
 class Contact < ApplicationRecord
   with_timestamps
 
-  {% if env("DB") == "postgres" || env("DB") == nil %}
-    mapping(
-      id:          Primary32,
-      name:        String,
-      ballance:    PG::Numeric?,
-      age:         {type: Int32, default: 10},
-      gender:      {type: String?, default: "male"},
-      description: String?,
-      created_at:  Time?,
-      updated_at:  Time?,
-      user_id:     Int32?,
-      tags:        Array(Int32)?
-    )
-  {% else %}
-    mapping(
-      id:          Primary32,
-      name:        String,
-      ballance:    Float64?,
-      age:         {type: Int32, default: 10},
-      gender:      {type: String?, default: "male"},
-      description: String?,
-      created_at:  Time?,
-      updated_at:  Time?,
-      user_id:     Int32?
-    )
-  {% end %}
+  module Mapping
+    macro included
+      {% if env("DB") == "postgres" || env("DB") == nil %}
+        mapping(
+          id:          Primary32,
+          name:        String,
+          ballance:    PG::Numeric?,
+          age:         {type: Int32, default: 10},
+          gender:      {type: String?, default: "male"},
+          description: String?,
+          created_at:  Time?,
+          updated_at:  Time?,
+          user_id:     Int32?,
+          tags:        Array(Int32)?
+        )
+      {% else %}
+        mapping(
+          id:          Primary32,
+          name:        String,
+          ballance:    Float64?,
+          age:         {type: Int32, default: 10},
+          gender:      {type: String?, default: "male"},
+          description: String?,
+          created_at:  Time?,
+          updated_at:  Time?,
+          user_id:     Int32?
+        )
+      {% end %}
+    end
+  end
+
+  include Mapping
 
   has_many :addresses, Address, inverse_of: :contact
   has_many :facebook_profiles, FacebookProfile, inverse_of: :contact
@@ -189,11 +195,22 @@ class Profile < ApplicationRecord
     virtual_parent_field: {type: String?, virtual: true}
   )
 
+  @@destroy_counter = 0
+
   getter commit_callback_called = false
 
   belongs_to :contact, Contact
 
+  after_destroy :increment_destroy_counter
   after_commit :set_commit, on: :create
+
+  def self.destroy_counter
+    @@destroy_counter
+  end
+
+  def increment_destroy_counter
+    @@destroy_counter += 1
+  end
 
   def set_commit
     @commit_callback_called = true
@@ -274,6 +291,27 @@ class City < ApplicationRecord
   )
 
   belongs_to :country, Country
+end
+
+class Note < ApplicationRecord
+  module Mapping
+    macro included
+      mapping(
+        id: Primary32,
+        text: String?,
+        notable_id: Int32?,
+        notable_type: String?,
+        created_at: Time?,
+        updated_at: Time?
+      )
+
+      with_timestamps
+    end
+  end
+
+  include Mapping
+
+  belongs_to :notable, Union(User | Contact), { where { _name.like("%on") } }, polymorphic: true
 end
 
 class OneFieldModel < Jennifer::Model::Base
@@ -448,4 +486,80 @@ class ContactWithFloatMapping < Jennifer::Model::Base
   {% else %}
     mapping({id: Primary32}, false)
   {% end %}
+end
+
+class CountryWithDefault < Jennifer::Model::Base
+  mapping(
+    id: Primary32,
+    virtual: { type: Bool, default: true, virtual: true },
+    name: String?
+  )
+end
+
+class NoteWithCallback < ApplicationRecord
+  include Note::Mapping
+
+  self.table_name "notes"
+
+  belongs_to :notable, Union(User | FacebookProfileWithDestroyNotable), polymorphic: true
+
+  after_destroy :increment_destroy_counter
+
+  @@destroy_counter = 0
+
+  def self.destroy_counter
+    @@destroy_counter
+  end
+
+  def increment_destroy_counter
+    @@destroy_counter += 1
+  end
+end
+
+class FacebookProfileWithDestroyNotable < Jennifer::Model::Base
+  module Mapping
+    macro included
+      mapping({
+        id: Primary32,
+        login: String,
+        contact_id: Int32?,
+        type: String,
+        uid: String?
+    }, false)
+    end
+  end
+  include Mapping
+
+  table_name "profiles"
+
+  has_many :notes, NoteWithCallback, inverse_of: :notable, polymorphic: true, dependent: :destroy
+
+  after_destroy :increment_destroy_counter
+
+  @@destroy_counter = 0
+
+  def self.destroy_counter
+    @@destroy_counter
+  end
+
+  def increment_destroy_counter
+    @@destroy_counter += 1
+  end
+end
+
+class ProfileWithOneNote < Jennifer::Model::Base
+  include FacebookProfileWithDestroyNotable::Mapping
+
+  table_name "profiles"
+
+  has_one :note, NoteWithCallback, inverse_of: :notable, polymorphic: true, dependent: :nullify
+end
+
+class AddressWithNilableBool < Jennifer::Model::Base
+  with_timestamps
+
+  mapping({
+    id: {type: Int32, primary: true},
+    main: Bool?
+  }, false)
 end

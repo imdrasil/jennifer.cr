@@ -35,7 +35,7 @@ module Jennifer
       delegate adapter, to: Adapter
 
       delegate create_data_type, to: adapter
-      delegate table_exists?, index_exists?, column_exists?, view_exists?, to: adapter
+      delegate :table_exists?, :index_exists?, :column_exists?, :view_exists?, :foreign_key_exists?, to: adapter
       delegate schema_processor, to: adapter
 
       delegate create_table, create_join_table, drop_join_table, exec, drop_table,

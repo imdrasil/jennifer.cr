@@ -80,7 +80,7 @@ describe Jennifer::Model::STIMapping do
   describe "::all" do
     it "generates correct query" do
       q = FacebookProfile.all
-      q.as_sql.should eq("profiles.type = %s")
+      q.as_sql.should match(/profiles\.type = %s/)
       q.sql_args.should eq(db_array("FacebookProfile"))
     end
   end
@@ -226,28 +226,6 @@ describe Jennifer::Model::STIMapping do
       p1.uid = "2222"
       p1.save!
       p.reload.uid.should eq("2222")
-    end
-  end
-
-  describe "::build_params" do
-    it "correctly converts arguments hash with maybe Nil types" do
-      params = {
-        "login" => "login".as(String?),
-        "contact_id" => "1234"
-      }
-      hash = FacebookProfile.build_params(params)
-      hash["login"].should eq("login")
-      hash["contact_id"].should eq(1234)
-    end
-
-    it "correctly converts nil values" do
-      params = {
-        "login" => "login",
-        "contact_id" => nil
-      }
-      hash = FacebookProfile.build_params(params)
-      hash["login"].should eq("login")
-      hash["contact_id"].should be_nil
     end
   end
 end

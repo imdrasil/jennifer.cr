@@ -1,4 +1,3 @@
-require "./expression_builder"
 require "./aggregations"
 require "./ordering"
 require "./joining"
@@ -7,6 +6,7 @@ require "./executables"
 module Jennifer
   module QueryBuilder
     class Query
+      include Statement
       include Aggregations
       include Ordering
       include Joining
@@ -54,6 +54,14 @@ module Jennifer
         initialize
       end
 
+      def do_nothing?
+        @do_nothing
+      end
+
+      def self.null
+        new.none
+      end
+
       protected def initialize_copy_without(other, except : Array(String))
         {% for segment in %w(having limit offset raw_select from lock distinct) %}
           @{{segment.id}} = other.@{{segment.id}}.clone unless except.includes?({{segment}})
@@ -79,7 +87,11 @@ module Jennifer
       #
       # Is mostly used for testing
       def eql?(other : Query)
-        sql_args == other.sql_args && to_sql == other.to_sql
+        sql_args == other.sql_args && as_sql == other.as_sql
+      end
+
+      def eql?(other : Statement | LogicOperator)
+        false
       end
 
       def clone
@@ -119,27 +131,18 @@ module Jennifer
         build(*opts)
       end
 
-      def to_sql
-        adapter.sql_generator.select(self)
-      end
-
       def as_sql
-        @tree ? @tree.not_nil!.as_sql(adapter.sql_generator) : ""
+        as_sql(adapter.sql_generator)
       end
 
-      def as_sql(_generator)
-        @tree ? @tree.not_nil!.as_sql(adapter.sql_generator) : ""
+      def as_sql(generator)
+        generator.select(self)
       end
 
       def sql_args
-        @tree ? @tree.not_nil!.sql_args : [] of DBAny
-      end
-
-      # Returns array of query arguments.
-      def select_args
         args = [] of DBAny
         args.concat(select_filterable_arguments) if select_filterable_arguments?
-        args.concat(@from.as(Query).select_args) if @from.is_a?(Query)
+        args.concat(@from.as(Query).sql_args) if @from.is_a?(Query)
         _joins!.each { |join| args.concat(join.sql_args) } if @joins
         args.concat(@tree.not_nil!.sql_args) if @tree
         args.concat(@having.not_nil!.sql_args) if @having
@@ -310,13 +313,21 @@ module Jennifer
       # Specifies locking settings.
       #
       # `true` is default value. Also string declaration can be provide.
+      #
+      # Also `SKIP LOCKED` construction can be used with manual mode:
+      #
+      # ```
+      # Queue.all.where do
+      #   _id == g(Queue.all.limit(1).lock("FOR UPDATE SKIP LOCKED"))
+      # end.delete
+      # ```
       def lock(type : String | Bool = true)
         @lock = type
         self
       end
 
       def to_s
-        to_sql
+        as_sql
       end
 
       # Joins given *other* condition statement to the main condition tree.
@@ -335,8 +346,8 @@ module Jennifer
       end
 
       # ditto
-      def set_tree(other : Criteria)
-        set_tree(Condition.new(other))
+      def set_tree(other : SQLNode)
+        set_tree(other.to_condition)
       end
 
       # ditto

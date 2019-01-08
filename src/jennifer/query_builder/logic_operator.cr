@@ -73,12 +73,16 @@ module Jennifer
         @lhs.filterable? || @rhs.filterable?
       end
 
-      def ==(other : LogicOperator)
+      def ==(other)
         eql?(other)
       end
 
       def eql?(other : LogicOperator)
         @lhs.eql?(other.lhs) && @rhs.eql?(other.rhs)
+      end
+
+      def eql?(other)
+        false
       end
     end
 

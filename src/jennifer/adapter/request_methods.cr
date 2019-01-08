@@ -25,24 +25,24 @@ module Jennifer
         options.each do |k, v|
           args << v
         end
-        args.concat(query.select_args)
+        args.concat(query.sql_args)
         exec(*parse_query(sql_generator.update(query, options), args))
       end
 
       def modify(q, modifications : Hash)
         query = sql_generator.modify(q, modifications)
         args = [] of DBAny
-        modifications.each do |k, v|
-          args << v[:value]
+        modifications.each do |_, v|
+          add_field_assign_arguments(args, v)
         end
-        args.concat(q.select_args)
+        args.concat(q.sql_args)
         exec(*parse_query(query, args))
       end
 
       def pluck(query, fields : Array)
         result = [] of Array(DBAny)
         body = sql_generator.select(query, fields)
-        args = query.select_args
+        args = query.sql_args
         query(*parse_query(body, args)) do |rs|
           rs.each do
             result << result_to_array_by_names(rs, fields)
@@ -51,11 +51,11 @@ module Jennifer
         result
       end
 
-      def pluck(query, field)
+      def pluck(query, field : String | Symbol)
         result = [] of DBAny
         fields = [field.to_s]
         body = sql_generator.select(query, fields)
-        args = query.select_args
+        args = query.sql_args
         query(*parse_query(body, args)) do |rs|
           rs.each do
             result << result_to_array_by_names(rs, fields)[0]
@@ -66,8 +66,16 @@ module Jennifer
 
       def select(q)
         body = sql_generator.select(q)
-        args = q.select_args
+        args = q.sql_args
         query(*parse_query(body, args)) { |rs| yield rs }
+      end
+
+      private def add_field_assign_arguments(container : Array, value : DBAny)
+        container << value
+      end
+
+      private def add_field_assign_arguments(container : Array, value : QueryBuilder::Statement)
+        container.concat(value.sql_args)
       end
     end
   end

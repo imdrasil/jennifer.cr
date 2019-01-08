@@ -13,8 +13,8 @@ module Jennifer
         query.filterable?
       end
 
-      def as_sql(_sql_generator)
-        "ALL (#{@query.to_sql})"
+      def as_sql(generator)
+        "ALL (#{@query.as_sql(generator)})"
       end
     end
   end

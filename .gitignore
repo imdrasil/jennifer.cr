@@ -4,6 +4,7 @@
 /bin/
 /.shards/
 .idea
+.vscode
 jennifer.code-workspace
 /spec/fixtures/*.db
 
@@ -13,3 +14,5 @@ jennifer.code-workspace
 /examples/structure.sql
 /examples/test.cr
 /examples/test.db
+/examples/database.yml
+/examples/models

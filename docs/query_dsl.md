@@ -43,7 +43,15 @@ Supported operators:
 | `|` | `OR` |
 | `xor` | `XOR` |
 
-And operator-like methods:
+Also there are shortcuts for `AND`, `OR` and `XOR` operators to emit extra brackets around operands and wraps the result into them:
+
+```crystal
+Post.all.where { _active & (_likes > 10) } # WHERE posts.active AND users.likes > 10
+
+Post.all.where { and(_active, _likes > 10) } # WHERE (posts.active AND users.likes > 10)
+```
+
+Operator-like methods:
 
 | Method | SQL variant |
 | --- | --- |
@@ -106,17 +114,21 @@ where { _field_name.take(1) }
 * use parenthesis with binary operators (`&` and `|`);
 * `nil` given to `!=` and `==` will be transformed to `IS NOT NULL` and `IS NULL`;
 * `is` and `not` operator accepts next values: `nil`, `:unknown`, `true` and `false`;
-* `ANY` and `ALL` statement allow to path nested query.
+* `ANY` and `ALL` statement allow to path nested query;
+* you can also use query instance (wrapped into `Grouping` object) as condition argument
 
 Several examples:
 
 ```crystal
-Contact.where { (_id > 40) & _name.regexp("^[a-d]") }
+Contact.all.where { (_id > 40) & _name.regexp("^[a-d]") }
+Contact.all.where { and(_id > 40, _name.regexp("^[a-d]")) }
 
 Address.where { _contact_id.is(nil) }
 
 nested_query = Address.all.where { _main }.select(:contact_id)
 Contact.all.where { _id == any(nested_query) }
+
+Contact.all.where { _id.in(g(Contact.all.where { _name.like("%ohn") })) }
 ```
 
 #### Raw query

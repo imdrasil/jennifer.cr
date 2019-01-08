@@ -1,69 +1,6 @@
 # Migration
 
-For command management Jennifer now uses [Sam](https://github.com/imdrasil/sam.cr). So in your `sam.cr` just add loading migrations and Jennifer hooks.
-
-```crystal
-require "./your_configuration_folder/*" # with requiring jennifer and her adapter
-require "./migrations/*"
-require "sam"
-load_dependencies "jennifer"
-# your another tasks here
-Sam.help
-```
-
-#### Commands
-Now you can use next commands:
-
-- create database
-```shell
-$ crystal sam.cr -- db:create
-```
-- drop database
-```shell
-$ crystal sam.cr -- db:drop
-```
-- run all migrations (only new ones will be run)
-```shell
-$ crystal sam.cr -- db:migrate
-```
-
-- run several migrations
-```shell
-$ crystal sam.cr -- db:step
-$ crystal sam.cr -- db:step 2
-```
-
-- create db and run all migrations (only new ones will be run)
-```shell
-$ crystal sam.cr -- db:setup
-```
-- rollback last migration
-```shell
-$ crystal sam.cr -- db:rollback
-```
-- rollback `n` migrations
-```shell
-$ crystal sam.cr -- db:rollback n
-```
-- rollback until version `a`
-```shell
-$ crystal sam.cr -- db:rollback -v a
-```
-- generate new migration file
-```shell
-$ crystal sam.cr -- generate:migration your_migration_name
-```
-- get last migration version
-```shell
-$ crystal sam.cr -- db:version
-```
-
-- load schema
-```shell
-$ crystal sam.cr -- db:schema:load
-```
-
-#### Migration DSL
+## DSL
 
 Generator will create template file for you with next name  pattern "timestamp_your_underscored_migration_name.cr". Empty file looks like this:
 
@@ -75,7 +12,6 @@ class YourCamelcasedMigrationName20170119011451314 < Jennifer::Migration::Base
   def down
   end
 end
-
 ```
 
 `up` method is needed for placing your db changes there, `down` - for reverting your changes back.
@@ -84,7 +20,9 @@ Regular example for creating table:
 
 ```crystal
 create_table(:addresses) do |t|
-  t.reference :contact # creates field contact_id with Int type and allows null values
+  # creates field contact_id with Int type, allows null values and creates foreign key
+  t.reference :contact
+
   t.string :street, {:size => 20, :sql_type => "char"} # creates string field with CHAR(20) db type
   t.bool :main, {:default => false} # sets false as default value
 end
@@ -149,7 +87,7 @@ Also there is `#field` method which allows to directly define sql type.
 To drop table just write:
 
 ```crystal
-drop_table(:addresses) # drops if exists
+drop_table(:addresses)
 ```
 
 To create materialized view (postgres only):
@@ -180,6 +118,7 @@ Also next support methods are available:
 - `#table_exists?(name)`
 - `#index_exists?(table, name)`
 - `#column_exists?(table, name)`
+- `#foreign_key_exists?(from_table, to_table)`
 - `#data_type_exists?(name)` for postgres ENUM
 - `#material_view_exists?(name)`
 

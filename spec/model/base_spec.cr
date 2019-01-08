@@ -259,14 +259,6 @@ describe Jennifer::Model::Base do
         end
       end
 
-      context "with string encoded values" do
-        it "builds object with converted values" do
-          c = Contact.build(Contact.build_params({"name" => "a", "age" => "999", "gender" => "female", "ballance" => "12345.456"}))
-          c.name.should eq("a")
-          c.age.should eq(999)
-        end
-      end
-
       context "without arguments" do
         it "allows one field models" do
           OneFieldModel.build
@@ -622,18 +614,18 @@ describe Jennifer::Model::Base do
     end
   end
 
-  describe "#update_attributes" do
+  describe "#set_attributes" do
     context "when given attribute exists" do
       it "raises exception if value has wrong type" do
         c = Factory.build_contact
         expect_raises(::Jennifer::BaseException) do
-          c.update_attributes({:name => 123})
+          c.set_attributes({:name => 123})
         end
       end
 
       it "marks changed field as modified" do
         c = Factory.build_contact
-        c.update_attributes({"name" => "asd"})
+        c.set_attributes({"name" => "asd"})
         c.name.should eq("asd")
         c.name_changed?.should be_true
       end
@@ -643,7 +635,7 @@ describe Jennifer::Model::Base do
       it "raises exception" do
         c = Factory.build_contact
         expect_raises(::Jennifer::BaseException) do
-          c.update_attributes({:asd => 123})
+          c.set_attributes({:asd => 123})
         end
       end
     end
@@ -651,7 +643,7 @@ describe Jennifer::Model::Base do
     context "with named tuple" do
       it do
         c = Factory.build_contact
-        c.update_attributes({name: "asd"})
+        c.set_attributes({name: "asd"})
         c.name.should eq("asd")
       end
     end
@@ -659,13 +651,13 @@ describe Jennifer::Model::Base do
     context "with splatted named tuple" do
       it do
         c = Factory.build_contact
-        c.update_attributes(name: "asd")
+        c.set_attributes(name: "asd")
         c.name.should eq("asd")
       end
 
       it do
         subject = ModelWithIntName.build(name: 1)
-        subject.update_attributes(name: 2)
+        subject.set_attributes(name: 2)
         subject.name.should eq(2)
       end
     end
@@ -739,17 +731,17 @@ describe Jennifer::Model::Base do
   end
 
   describe "#inspect" do
-    it {
+    it do
       address = Factory.build_address
       address.inspect.should eq("#<Address:0x#{address.object_id.to_s(16)} id: nil, main: false, street: \"#{address.street}\","\
         " contact_id: nil, details: nil, created_at: nil, updated_at: nil>")
-    }
+    end
 
-    it {
+    it do
       profile = Factory.build_facebook_profile
-      profile.inspect.should eq("#<FacebookProfile:0x#{profile.object_id.to_s(16)} uid: \"1234\", "\
-        "virtual_child_field: nil, id: nil, login: \"some_login\", contact_id: nil, type: \"FacebookProfile\", "\
-        "virtual_parent_field: nil>")
-    }
+      profile.inspect.should eq("#<FacebookProfile:0x#{profile.object_id.to_s(16)} id: nil, login: \"some_login\", "\
+        "contact_id: nil, type: \"FacebookProfile\", virtual_parent_field: nil, uid: \"1234\", "\
+        "virtual_child_field: nil>")
+    end
   end
 end

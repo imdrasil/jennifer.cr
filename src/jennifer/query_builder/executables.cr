@@ -1,6 +1,9 @@
 module Jennifer
   module QueryBuilder
     module Executables
+      # Returns last matched record or `nil`.
+      #
+      # Doesn't affect query instance.
       def last
         reverse_order
         old_limit = @limit
@@ -11,6 +14,9 @@ module Jennifer
         r
       end
 
+      # Returns last matched record or raise `RecordNotFound` exception otherwise.
+      #
+      # Doesn't affect query instance.
       def last!
         old_limit = @limit
         @limit = 1
@@ -18,10 +24,13 @@ module Jennifer
         result = to_a
         reverse_order
         @limit = old_limit
-        raise RecordNotFound.new(adapter.sql_generator.select(self)) if result.empty?
+        raise RecordNotFound.from_query(self, adapter) if result.empty?
         result[0]
       end
 
+      # Returns first matched record or `nil`.
+      #
+      # Doesn't affect query instance.
       def first
         old_limit = @limit
         @limit = 1
@@ -30,11 +39,14 @@ module Jennifer
         r
       end
 
+      # Returns first matched record or raise `RecordNotFound` exception otherwise.
+      #
+      # Doesn't affect query instance.
       def first!
         old_limit = @limit
         result = to_a
         @limit = old_limit
-        raise RecordNotFound.new(adapter.sql_generator.select(self)) if result.empty?
+        raise RecordNotFound.from_query(self, adapter) if result.empty?
         result[0]
       end
 
@@ -50,17 +62,30 @@ module Jennifer
         adapter.pluck(self, fields.to_a.map(&.to_s))
       end
 
+      # Delete all records which satisfy given conditions.
+      #
+      # No callbacks or validation will be executed.
       def delete
+        return if @do_nothing
         adapter.delete(self)
       end
 
+      # Returns whether any record satisfying given conditions exists.
       def exists?
+        return false if @do_nothing
         adapter.exists?(self)
       end
 
-      # skips any callbacks and validations
-      def modify(options : Hash)
-        adapter.modify(self, options)
+      # Updates specified fields by given value retrieved from the block.
+      #
+      # Expects block to return `Hash(Symbol, DBAny | Jennifer::QueryBuilder::Statement)`.
+      #
+      # ```
+      # Contact.all.where { and(_name == "Jon", age > 100) }.update { { name: "John", age: _age - 15 } }
+      # ```
+      def update
+        definition = (with @expression yield)
+        adapter.modify(self, definition)
       end
 
       def update(options : Hash)
@@ -71,40 +96,46 @@ module Jennifer
         update(options.to_h)
       end
 
-      # skips all callbacks and validations
-      def increment(fields : Hash)
-        hash = {} of Symbol | String => NamedTuple(value: DBAny, operator: Symbol)
-        fields.each do |k, v|
-          hash[k] = {value: v, operator: :+}
+      # Increments specified fields by given value.
+      #
+      # ```
+      # Contact.all.increment({ :likes => 1 })
+      # ```
+      #
+      # No validation or callback is invoked.
+      def increment(fields : Hash(Symbol, _))
+        hash = {} of Symbol => Condition
+        update do
+          fields.each { |field, value| hash[field] = c(field.to_s) + value.as(DBAny) }
+          hash
         end
-        modify(hash)
       end
 
-      # skips all callbacks and validations
+      # Increments specified fields by given value.
+      #
+      # ```
+      # Contact.all.increment(likes: 1)
+      # ```
+      #
+      # No validation or callback is invoked.
       def increment(**fields)
-        hash = {} of Symbol | String => NamedTuple(value: DBAny, operator: Symbol)
-        fields.each do |k, v|
-          hash[k] = {value: v, operator: :+}
-        end
-        modify(hash)
+        increment(fields.to_h)
       end
 
-      # skips any callbacks and validations
-      def decrement(fields : Hash)
-        hash = {} of Symbol | String => NamedTuple(value: DBAny, operator: Symbol)
-        fields.each do |k, v|
-          hash[k] = {value: v, operator: :-}
+      # Decrements specified fields by given value.
+      #
+      # For more details take a look at #increment.
+      def decrement(fields : Hash(Symbol, _))
+        hash = {} of Symbol => Condition
+        update do
+          fields.each { |field, value| hash[field] = c(field.to_s) - value.as(DBAny) }
+          hash
         end
-        modify(hash)
       end
 
-      # skips any callbacks and validations
+      # ditto
       def decrement(**fields)
-        hash = {} of Symbol | String => NamedTuple(value: DBAny, operator: Symbol)
-        fields.each do |k, v|
-          hash[k] = {value: v, operator: :-}
-        end
-        modify(hash)
+        decrement(fields.to_h)
       end
 
       def to_a
@@ -127,17 +158,24 @@ module Jennifer
         result
       end
 
-      # works only if there is id field and it is covertable to Int32
+      # Returns array of record ids.
+      #
+      # This method requires model to have field `id : Int32`.
       def ids
         pluck(:id).map(&.as(Int32))
       end
 
+      # Yields each matched record to a block.
+      #
+      # To iterate over records they are loaded from the DB so this may effect memory usage.
+      # Prefer #find_each.
       def each
         to_a.each do |e|
           yield e
         end
       end
 
+      # Yields each result set object to a block.
       def each_result_set(&block)
         adapter.select(self) do |rs|
           begin
@@ -202,14 +240,14 @@ module Jennifer
         end
       end
 
-      def find_each(batch_size : Int32 = 1000, start : Int32 = 0, direction : String | Symbol = "asc", &block)
-        find_in_batches(batch_size, start) do |records|
+      def find_each(primary_key : String, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
+        find_in_batches(primary_key, batch_size, start, direction) do |records|
           records.each { |rec| yield rec }
         end
       end
 
-      def find_each(primary_key : String, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
-        find_in_batches(primary_key, batch_size, start, direction) do |records|
+      def find_each(batch_size : Int32 = 1000, start : Int32 = 0, direction : String | Symbol = "asc", &block)
+        find_in_batches(batch_size, start) do |records|
           records.each { |rec| yield rec }
         end
       end

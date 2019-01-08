@@ -27,6 +27,7 @@ end
 Spec.after_each do
   Jennifer::Adapter.adapter.rollback_transaction
   Spec.logger.clear
+  Spec.file_system.clean
 end
 
 # Helper methods ================
@@ -48,6 +49,10 @@ macro void_transaction
     clean_db
     Jennifer::Adapter.adapter.begin_transaction
   end
+end
+
+def grouping(exp)
+  Jennifer::QueryBuilder::Grouping.new(exp)
 end
 
 def select_clause(query)

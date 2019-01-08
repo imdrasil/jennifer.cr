@@ -3,6 +3,8 @@ require "./order_item"
 
 module Jennifer
   module QueryBuilder
+    # Basic class describing table field.
+    #
     # TODO: rename to Criterion
     class Criteria < SQLNode
       alias Rightable = SQLNode | DBAny | Array(DBAny)
@@ -109,7 +111,7 @@ module Jennifer
       end
 
       def not
-        Condition.new(self).not
+        to_condition.not
       end
 
       def in(arr : Array)
@@ -117,12 +119,16 @@ module Jennifer
         Condition.new(self, :in, arr.map { |e| e.as(DBAny) })
       end
 
+      def in(arr : SQLNode)
+        Condition.new(self, :in, arr)
+      end
+
       def &(other : LogicOperator::Operandable)
-        Condition.new(self) & other
+        to_condition & other
       end
 
       def |(other : LogicOperator::Operandable)
-        Condition.new(self) | other
+        to_condition | other
       end
 
       def xor(other : LogicOperator::Operandable)
@@ -169,10 +175,6 @@ module Jennifer
 
       def filterable?
         false
-      end
-
-      def to_condition
-        Condition.new(self)
       end
     end
   end

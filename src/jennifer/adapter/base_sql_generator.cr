@@ -35,6 +35,7 @@ module Jennifer
       def self.select(query, exact_fields = [] of String)
         String.build do |s|
           select_clause(s, query, exact_fields)
+          from_clause(s, query)
           body_section(s, query)
         end
       end
@@ -43,39 +44,29 @@ module Jennifer
         "TRUNCATE #{table}"
       end
 
-      # TODO: unify method generating - #parse_query should be called here or by caller
       def self.delete(query)
-        parse_query(
-          String.build do |s|
-            s << "DELETE "
-            from_clause(s, query)
-            body_section(s, query)
-          end,
-          query.select_args
-        )
+        String.build do |s|
+          s << "DELETE "
+          from_clause(s, query)
+          body_section(s, query)
+        end
       end
 
       def self.exists(query)
-        parse_query(
-          String.build do |s|
-            s << "SELECT EXISTS(SELECT 1 "
-            from_clause(s, query)
-            body_section(s, query)
-            s << ")"
-          end,
-          query.select_args
-        )
+        String.build do |s|
+          s << "SELECT EXISTS(SELECT 1 "
+          from_clause(s, query)
+          body_section(s, query)
+          s << ")"
+        end
       end
 
       def self.count(query)
-        parse_query(
-          String.build do |s|
-            s << "SELECT COUNT(*) "
-            from_clause(s, query)
-            body_section(s, query)
-          end,
-          query.select_args
-        )
+        String.build do |s|
+          s << "SELECT COUNT(*) "
+          from_clause(s, query)
+          body_section(s, query)
+        end
       end
 
       def self.update(obj : Model::Base)
@@ -98,10 +89,12 @@ module Jennifer
       end
 
       def self.modify(q, modifications : Hash)
-        esc = escape_string(1)
         String.build do |s|
           s << "UPDATE " << q.table << " SET "
-          modifications.map { |field, value| "#{field.to_s} = #{field.to_s} #{value[:operator]} #{esc}" }.join(", ", s)
+          modifications.each_with_index do |(field, value), i|
+            s << ", " if i != 0
+            s << field_assign_statement(field.to_s, value)
+          end
           s << ' '
           body_section(s, q)
         end
@@ -129,10 +122,12 @@ module Jennifer
 
       def self.lock_clause(io : String::Builder, query)
         return if query._lock.nil?
-        io << (query._lock.is_a?(String) ? query._lock : " FOR UPDATE ")
+        io << ' '
+        io << (query._lock.is_a?(String) ? query._lock : "FOR UPDATE")
+        io << ' '
       end
 
-      # Renders SELECT and FROM parts
+      # Generates `SELECT` query clause.
       def self.select_clause(io : String::Builder, query, exact_fields : Array = [] of String)
         io << "SELECT "
         io << "DISTINCT " if query._distinct
@@ -147,10 +142,9 @@ module Jennifer
           io << query._raw_select.not_nil!
         end
         io << ' '
-
-        from_clause(io, query)
       end
 
+      # Generates `FROM` query clause.
       def self.from_clause(io : String::Builder, query, from = nil)
         io << "FROM "
         return io << (from || query._table) << ' ' unless query._from
@@ -167,6 +161,7 @@ module Jennifer
         io << " ) "
       end
 
+      # Generates `GROUP BY` query clause.
       def self.group_clause(io : String::Builder, query)
         return if !query._groups || query._groups.empty?
         io << "GROUP BY "
@@ -174,30 +169,36 @@ module Jennifer
         io << ' '
       end
 
+      # Generates `HAVING` query clause.
       def self.having_clause(io : String::Builder, query)
         return unless query._having
         io << "HAVING " << query._having.not_nil!.as_sql(self) << ' '
       end
 
+      # Generates `JOIN` query clause.
       def self.join_clause(io : String::Builder, query)
         return unless query._joins
         query._joins.not_nil!.join(" ", io) { |j| io << j.as_sql(self) }
       end
 
+      # Generates `WHERE` query clause.
       def self.where_clause(io : String::Builder, query : QueryBuilder::Query | QueryBuilder::ModelQuery)
         where_clause(io, query.tree.not_nil!) if query.tree
       end
 
+      # ditto
       def self.where_clause(io : String::Builder, tree)
         return unless tree
         io << "WHERE " << tree.not_nil!.as_sql(self) << ' '
       end
 
+      # Generates `LIMIT` clause.
       def self.limit_clause(io : String::Builder, query)
         io.print "LIMIT ", query._limit.not_nil!, ' ' if query._limit
         io.print "OFFSET ", query._offset.not_nil!, ' ' if query._offset
       end
 
+      # Generates `ORDER BY` clause.
       def self.order_clause(io : String::Builder, query)
         return if query._order.blank?
         io << "ORDER BY "
@@ -211,6 +212,7 @@ module Jennifer
         "#{expression.criteria.identifier} #{expression.direction}"
       end
 
+      # Converts operator to SQL.
       def self.operator_to_sql(operator : Symbol)
         case operator
         when :like, :ilike
@@ -279,6 +281,14 @@ module Jennifer
           args[i] = arg.as(Time).to_utc if arg.is_a?(Time)
         end
         {query % Array.new(args.size, "?"), args}
+      end
+
+      private def self.field_assign_statement(field, _value : DBAny)
+        "#{field} = #{escape_string(1)}"
+      end
+
+      private def self.field_assign_statement(field, value : QueryBuilder::Statement)
+        "#{field} = #{value.as_sql}"
       end
     end
   end

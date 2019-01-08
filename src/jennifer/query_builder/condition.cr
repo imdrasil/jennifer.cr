@@ -4,6 +4,7 @@ module Jennifer
   module QueryBuilder
     class Condition
       include LogicOperator::Operators
+      include Statement
 
       getter lhs : SQLNode, rhs : Criteria::Rightable?, operator : Symbol = :bool
       @negative = false
@@ -42,7 +43,7 @@ module Jennifer
           end
       end
 
-      def eql?(other : SQLNode)
+      def eql?(other)
         false
       end
 
@@ -81,7 +82,13 @@ module Jennifer
           when :bool
             _lhs
           when :in
-            "#{_lhs} IN(#{generator.filter_out(@rhs.as(Array), false)})"
+            value =
+              if @rhs.is_a?(Array)
+                generator.filter_out(@rhs.as(Array), false)
+              else
+                @rhs.as(SQLNode).as_sql(generator)
+              end
+            "#{_lhs} IN(#{value})"
           when :between
             rhs = @rhs.as(Array)
             "#{_lhs} BETWEEN #{generator.filter_out(rhs[0])} AND #{generator.filter_out(rhs[1])}"

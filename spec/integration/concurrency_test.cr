@@ -2,30 +2,23 @@ require "./shared_helpers"
 require "./spec_helper"
 
 POOL_SIZE = 3
+TIME_TO_SLEEP = 2
 
-exit 0 if Spec.adapter != "mysql"
+if Spec.adapter != "mysql"
+  puts "This test only available for mysql adapter"
+  exit 0
+end
 
+Jennifer::Config.read(File.join(__DIR__, "..", "..", "examples", "database.yml"), Spec.adapter)
 Jennifer::Config.configure do |conf|
   conf.logger.level = Logger::INFO
-  conf.host = "localhost"
-  conf.adapter = Spec.adapter
-  conf.migration_files_path = "./examples/migrations"
-  conf.db = "jennifer_test"
   conf.max_pool_size = POOL_SIZE
   conf.initial_pool_size = POOL_SIZE
   conf.max_idle_pool_size = POOL_SIZE
   conf.checkout_timeout = 1.0
 
-  case Spec.adapter
-  when "mysql"
-    conf.user = ENV["DB_USER"]? || "root"
-    conf.password = ""
-  when "postgres"
-    conf.user = ENV["DB_USER"]? || "developer"
-    conf.password = ENV["DB_PASSWORD"]? || "1qazxsw2"
-  else
-    raise "Unknown adapter #{Spec.adapter}"
-  end
+  conf.user = ENV["DB_USER"] if ENV["DB_USER"]?
+  conf.password = ENV["DB_PASSWORD"] if ENV["DB_PASSWORD"]?
 end
 
 Spec.before_each do
@@ -40,9 +33,9 @@ describe "Concurrent execution" do
     sleep_command =
       case Spec.adapter
       when "mysql"
-        "SELECT SLEEP(2)"
+        "SLEEP(#{TIME_TO_SLEEP})"
       when "postgres"
-        "SELECT pg_sleep(2)"
+        "pg_sleep(#{TIME_TO_SLEEP})"
       else
         raise "Unknown adapter #{Spec.adapter}"
       end
@@ -53,7 +46,7 @@ describe "Concurrent execution" do
         tread_count.times do
           spawn do
             begin
-              adapter.exec(sleep_command)
+              adapter.exec("CREATE temporary table table1 select #{sleep_command} as col")
               ch.send("")
             rescue e : Exception
               ch.send(e.class.to_s)
@@ -72,7 +65,7 @@ describe "Concurrent execution" do
         tread_count.times do
           spawn do
             begin
-              adapter.query(sleep_command) do |rs|
+              adapter.query("SELECT #{sleep_command}") do |rs|
                 rs.each do
                   rs.columns.size.times do
                     rs.read
@@ -98,7 +91,7 @@ describe "Concurrent execution" do
         tread_count.times do
           spawn do
             begin
-              adapter.scalar(sleep_command)
+              adapter.scalar("SELECT MAX(#{sleep_command})")
               ch.send("")
             rescue e : Exception
               ch.send(e.class.to_s)

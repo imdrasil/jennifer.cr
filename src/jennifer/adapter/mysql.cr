@@ -3,6 +3,7 @@ require "./base"
 
 require "./mysql/sql_generator"
 require "./mysql/command_interface"
+require "./mysql/schema_processor"
 
 module Jennifer
   module Mysql
@@ -33,7 +34,6 @@ module Jennifer
 
         :blob => "blob",
         :json => "json",
-
       }
 
       DEFAULT_SIZES = {
@@ -51,6 +51,10 @@ module Jennifer
 
       def sql_generator
         SQLGenerator
+      end
+
+      def schema_processor
+        @schema_processor ||= SchemaProcessor.new(self)
       end
 
       def translate_type(name : Symbol)
@@ -79,6 +83,12 @@ module Jennifer
           .exists?
       end
 
+      def view_exists?(name)
+        Query["information_schema.TABLES"]
+          .where { (_table_schema == Config.db) & (_table_type == "VIEW") & (_table_name == name) }
+          .exists?
+      end
+
       def index_exists?(table, name)
         Query["information_schema.statistics"].where do
           (_table_name == table) &
@@ -95,9 +105,14 @@ module Jennifer
         end.exists?
       end
 
-      def view_exists?(name)
-        Query["information_schema.TABLES"]
-          .where { (_table_schema == Config.db) & (_table_type == "VIEW") & (_table_name == name) }
+      def foreign_key_exists?(from_table, to_table)
+        name = self.class.foreign_key_name(from_table, to_table)
+        foreign_key_exists?(name)
+      end
+
+      def foreign_key_exists?(name)
+        Query["information_schema.KEY_COLUMN_USAGE"]
+          .where { and(_constraint_name == name, _table_schema == Config.db) }
           .exists?
       end
 
@@ -107,13 +122,6 @@ module Jennifer
                               " Instead of this only transaction was started.")
           yield t
         end
-        # transaction do |t|
-        #   exec "LOCK TABLES #{table} #{TABLE_LOCK_TYPES[type]}"
-        #   yield t
-        #   exec "UNLOCK TABLES"
-        # end
-        # rescue e : KeyError
-        # raise BaseException.new("MySQL don't support table lock type '#{type}'.")
       end
 
       def self.command_interface

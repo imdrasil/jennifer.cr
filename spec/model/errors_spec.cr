@@ -1,10 +1,24 @@
 require "../spec_helper"
 
+class Spec::TestClassForError
+  include Jennifer::Model::Translation
+
+  def self.superclass; end
+end
+
 describe Jennifer::Model::Errors do
   # TODO: add test case descriptions
 
   described_class = Jennifer::Model::Errors
   facebook_profile = Factory.build_facebook_profile
+
+  describe ".new" do
+    context "with custom class" do
+      it do
+        described_class.new(Spec::TestClassForError.new).base.is_a?(Spec::TestClassForError).should be_true
+      end
+    end
+  end
 
   describe "#include?" do
     errors = described_class.new(facebook_profile)
@@ -34,16 +48,40 @@ describe Jennifer::Model::Errors do
   end
 
   describe "#[]" do
-    it do
-      errors = described_class.new(facebook_profile)
-      errors.add(:uid, "some message")
-      errors.add(:uid, :exclusion)
-      errors[:uid].should eq(["some message", "is reserved"])
+    context "with existing key" do
+      it do
+        errors = described_class.new(facebook_profile)
+        errors.add(:uid, "some message")
+        errors.add(:uid, :exclusion)
+        errors[:uid].should eq(["some message", "is reserved"])
+      end
+    end
+
+    context "without key" do
+      it do
+        errors = described_class.new(facebook_profile)
+        errors.add(:uid, "some message")
+        errors[:id].should eq([] of String)
+      end
     end
   end
 
   describe "#[]?" do
-    pending "add" do
+    context "with existing key" do
+      it do
+        errors = described_class.new(facebook_profile)
+        errors.add(:uid, "some message")
+        errors.add(:uid, :exclusion)
+        errors[:uid]?.should eq(["some message", "is reserved"])
+      end
+    end
+
+    context "without key" do
+      it do
+        errors = described_class.new(facebook_profile)
+        errors.add(:uid, "some message")
+        errors[:id]?.should be_nil
+      end
     end
   end
 
@@ -146,6 +184,14 @@ describe Jennifer::Model::Errors do
         errors.add(:uid, :exclusion)
         errors[:uid][0].should eq("is reserved")
       end
+
+      context "with custom class" do
+        it do
+          errors = described_class.new(Spec::TestClassForError.new)
+          errors.add(:uid)
+          errors[:uid][0].should eq("is invalid")
+        end
+      end
     end
 
     context "with count" do
@@ -172,6 +218,18 @@ describe Jennifer::Model::Errors do
       errors.add(:uid, :exclusion)
       errors.add(:id)
       errors.full_messages.should eq(["Uid is invalid", "Uid is reserved", "Id is invalid"])
+    end
+
+    context "with custom class" do
+      it do
+        errors = described_class.new(Spec::TestClassForError.new)
+        errors.add(:uid)
+        errors.add(:uid, :exclusion)
+        errors.add(:id)
+        errors.full_messages.should eq(["Uid is invalid", "Uid is reserved", "Id is invalid"])
+      end
+
+      pending "with custom context"
     end
   end
 

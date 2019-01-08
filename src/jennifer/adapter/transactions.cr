@@ -5,59 +5,41 @@ module Jennifer
     module Transactions
       @locks = {} of UInt64 => TransactionObserver
 
+      # Yields current connection or checkout a new one.
       def with_connection(&block)
         if under_transaction?
           yield @locks[fiber_id].connection
         else
           conn = @db.checkout
-          res = yield conn
-          conn.release
-          res
-        end
-      end
-
-      def with_manual_connection(&block)
-        conn = @db.checkout
-        res = yield conn
-        conn.release
-        res
-      end
-
-      def with_transactionable(&block)
-        if under_transaction?
-          yield @locks[fiber_id].transaction
-        else
-          conn = @db.checkout
           begin
-            res = yield conn
+            yield conn
           ensure
             conn.release
           end
-          res || false
         end
       end
 
-      def lock_connection(transaction : DB::Transaction)
-        if @locks[fiber_id]?
-          @locks[fiber_id].transaction = transaction
-        else
-          @locks[fiber_id] = TransactionObserver.new(transaction)
+      # Yields new checkout connection.
+      def with_manual_connection(&block)
+        conn = @db.checkout
+        begin
+          yield conn
+        ensure
+          conn.release
         end
       end
 
-      def lock_connection(transaction : Nil)
-        @locks[fiber_id].update
-        @locks.delete(fiber_id)
-      end
-
+      # Returns current transaction or `nil`.
       def current_transaction
         @locks[fiber_id]?.try(&.transaction)
       end
 
+      # Returns whether current context has opened transaction.
       def under_transaction?
         @locks.has_key?(fiber_id)
       end
 
+      # Starts a transaction and yields it to the given block.
       def transaction(&block)
         previous_transaction = current_transaction
         res = nil
@@ -80,22 +62,24 @@ module Jennifer
         res
       end
 
+      # Subscribes given *block* to `commit` current transaction event.
       def subscribe_on_commit(block : -> Bool)
         @locks[fiber_id].observe_commit(block)
       end
 
+      # Subscribes given *block* to `rollback` current transaction event.
       def subscribe_on_rollback(block : -> Bool)
         @locks[fiber_id].observe_rollback(block)
       end
 
-      # Starts manual transaction for current fiber. Designed as test case isolating method.
+      # Starts manual transaction for current fiber. Designed for usage in test callback.
       def begin_transaction
         raise ::Jennifer::BaseException.new("Couldn't manually begin non top level transaction") if current_transaction
         Config.logger.debug("TRANSACTION START")
         lock_connection(@db.checkout.begin_transaction)
       end
 
-      # Closes manual transaction for current fiber. Designed as test case isolating method.
+      # Closes manual transaction for current fiber. Designed for usage in test callback.
       def rollback_transaction
         t = current_transaction
         raise ::Jennifer::BaseException.new("No transaction to rollback") unless t
@@ -109,6 +93,34 @@ module Jennifer
       @[AlwaysInline]
       private def fiber_id
         Fiber.current.object_id
+      end
+
+      private def lock_connection(transaction : DB::Transaction)
+        if under_transaction?
+          @locks[fiber_id].transaction = transaction
+        else
+          @locks[fiber_id] = TransactionObserver.new(transaction)
+        end
+      end
+
+      private def lock_connection(transaction : Nil)
+        @locks[fiber_id].update
+        @locks.delete(fiber_id)
+      end
+
+      # Yields current transaction or starts a new one.
+      private def with_transactionable(&block)
+        if under_transaction?
+          yield @locks[fiber_id].transaction
+        else
+          conn = @db.checkout
+          begin
+            res = yield conn
+          ensure
+            conn.release
+          end
+          res || false
+        end
       end
     end
   end

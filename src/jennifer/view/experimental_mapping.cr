@@ -17,6 +17,12 @@ module Jennifer
               @{{key.id}}
             end
 
+            {% if value[:type].is_a?(Generic) ? value[:type].resolve.union_types[0] == Bool : value[:type].resolve == Bool %}
+              def {{key.id}}?
+                {{key.id}} == true
+              end
+            {% end %}
+
             {% if value[:null] != false %}
               def {{key.id}}!
                 @{{key.id}}.not_nil!
@@ -54,6 +60,18 @@ module Jennifer
 
       # :nodoc:
       macro __instance_methods
+        private def inspect_attributes(io) : Nil
+          io << ' '
+          {% for var, i in COLUMNS_METADATA.keys %}
+            {% if i > 0 %}
+              io << ", "
+            {% end %}
+            io << "{{var.id}}: "
+            @{{var.id}}.inspect(io)
+          {% end %}
+          nil
+        end
+
         # Creates object from `DB::ResultSet`
         def initialize(%pull : DB::ResultSet)
           {{COLUMNS_METADATA.keys.map { |f| "@#{f.id}" }.join(", ").id}} = _extract_attributes(%pull)
@@ -77,7 +95,7 @@ module Jennifer
         # It stands on that fact result set has all defined fields in a raw
         # TODO: think about moving it to class scope
         # NOTE: don't use it manually - there is some dependencies on caller such as reading result set to the end
-        # if eception was raised
+        # if exception was raised
         private def _extract_attributes(pull : DB::ResultSet)
           {% for key in COLUMNS_METADATA.keys %}
             %var{key.id} = nil
@@ -256,44 +274,41 @@ module Jennifer
           {%
             _key = key.id.stringify
             str_properties = FIELDS[_key] = {} of String => String
+            properties[key] = {type: opt} unless opt.is_a?(HashLiteral) || opt.is_a?(NamedTupleLiteral)
+            options = properties[key]
           %}
-          {% unless opt.is_a?(HashLiteral) || opt.is_a?(NamedTupleLiteral) %} {% properties[key] = {type: opt} %} {% end %}
 
-          {% for attr, value in properties[key] %}
+          {% for attr, value in options %}
             {% str_properties[attr.id.stringify] = value.stringify %}
           {% end %}
 
-          {% if properties[key][:type].is_a?(Path) && Jennifer::Macros::TYPES.includes?(str_properties["type"]) %}
-            {% for tkey, tvalue in properties[key][:type].resolve %}
-              {% if tkey == :type || properties[key][tkey] == nil %}
+          {% if options[:type].is_a?(Path) && Jennifer::Macros::TYPES.includes?(str_properties["type"]) %}
+            {% for tkey, tvalue in options[:type].resolve %}
+              {% if tkey == :type || options[tkey] == nil %}
                 {%
-                  properties[key][tkey] = tvalue
+                  options[tkey] = tvalue
                   str_properties[tkey.stringify] = tvalue.stringify
                 %}
               {% end %}
             {% end %}
           {% end %}
 
-          {% stringified_type = str_properties["type"] %}
-          {% if properties[key][:primary] %} {% primary = key %} {% end %}
-          {% if stringified_type =~ Jennifer::Macros::NILLABLE_REGEXP %}
-            {%
-              properties[key][:null] = true
+          {%
+            stringified_type = str_properties["type"]
+            primary = key if options[:primary]
+            if stringified_type =~ Jennifer::Macros::NILLABLE_REGEXP
+              options[:null] = true
               str_properties["null"] = "true"
-              str_properties["parsed_type"] = properties[key][:parsed_type] = stringified_type
-            %}
-          {% else %}
-            {%
-              properties[key][:parsed_type] = properties[key][:null] || properties[key][:primary] ? stringified_type + "?" : stringified_type
-              str_properties["parsed_type"] = properties[key][:parsed_type]
-            %}
-          {% end %}
+              str_properties["parsed_type"] = options[:parsed_type] = stringified_type
+            else
+              options[:parsed_type] = options[:null] || options[:primary] ? stringified_type + "?" : stringified_type
+              str_properties["parsed_type"] = options[:parsed_type]
+            end
+          %}
         {% end %}
 
         # TODO: find way to allow view definition without any primary field
-        {% if primary == nil %}
-          {% raise "Model #{@type} has no defined primary field. For now model without primary field is not allowed" %}
-        {% end %}
+        {% raise "Model #{@type} has no defined primary field. For now model without primary field is not allowed" if primary == nil %}
 
         # :nodoc:
         COLUMNS_METADATA = {{properties}}

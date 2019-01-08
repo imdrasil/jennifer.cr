@@ -3,39 +3,15 @@ require "../spec_helper"
 describe Jennifer::QueryBuilder::Query do
   described_class = Jennifer::QueryBuilder::Query
 
-  describe "#to_sql" do
-    context "if query tree is not empty" do
-      it "returns sql representation of condition" do
-        q = Factory.build_query
-        c = Factory.build_criteria
-        q.set_tree(c).as_sql.should eq(c.as_sql)
-      end
-    end
-
-    context "if query tree is empty" do
-      it "returns empty string" do
-        Factory.build_query.as_sql.should eq("")
-      end
+  describe "#as_sql" do
+    it "returns sql representation of condition" do
+      q = Factory.build_query
+      c = Factory.build_criteria
+      q.where { c }.as_sql.should eq("SELECT tests.* FROM tests WHERE tests.f1 ")
     end
   end
 
   describe "#sql_args" do
-    context "if query tree is not empty" do
-      it "returns sql args of condition" do
-        q = Factory.build_query
-        c = Factory.build_criteria
-        q.set_tree(c).sql_args.should eq(c.sql_args)
-      end
-    end
-
-    context "if query tree is empty" do
-      it "returns empty array" do
-        Factory.build_query.sql_args.should eq([] of Jennifer::DBAny)
-      end
-    end
-  end
-
-  describe "#select_args" do
     query = Query["contacts"]
       .select { [abs(1)] }
       .from(Query["contacts"].where { _id > 2 })
@@ -44,7 +20,7 @@ describe Jennifer::QueryBuilder::Query do
       .group(:age)
       .having { _age > 5 }
 
-    it { query.select_args.should eq([1, 2, 3, 4, 5]) }
+    it { query.sql_args.should eq([1, 2, 3, 4, 5]) }
 
     pending "add tests for all cases" do
     end
@@ -69,6 +45,10 @@ describe Jennifer::QueryBuilder::Query do
 
     context "with arguments in select clause" do
       it { Query["contacts"].group(:age).having { _age > 10 }.filterable?.should be_true }
+    end
+
+    context "with query argument with arguments" do
+      it { Query["contacts"].where { _id == g(Query["users"].where { _id > 2 }.limit(1)) }.filterable?.should be_true }
     end
 
     context "without arguments" do
@@ -196,6 +176,18 @@ describe Jennifer::QueryBuilder::Query do
       q1 = Query["contacts"].where { (_name == "John") & sql("age > %s", [12]) }
       q1.tree.to_s.should eq("contacts.name = %s AND (age > %s)")
     end
+
+    postgres_only do
+      it "gracefully handle argument type mismatch" do
+        void_transaction do
+          expect_raises(Jennifer::BadQuery) do
+            Query["contacts"].where { _id == 1.0 }.to_a
+          end
+          # Next request should be executed without any error
+          Query["contacts"].where { _id == 1 }.to_a
+        end
+      end
+    end
   end
 
   describe "#having" do
@@ -266,24 +258,24 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#limit" do
     it "sets limit" do
-      Contact.all.limit(2).to_sql.should match(/LIMIT 2/m)
+      Contact.all.limit(2).as_sql.should match(/LIMIT 2/m)
     end
   end
 
   describe "#offset" do
     it "sets offset" do
-      Contact.all.offset(2).to_sql.should match(/OFFSET 2/m)
+      Contact.all.offset(2).as_sql.should match(/OFFSET 2/m)
     end
   end
 
   describe "#from" do
     it "accepts plain query" do
-      select_clause(Factory.build_query(table: "contacts").from("select * from contacts where id > 2"))
+      Factory.build_query(table: "contacts").from("select * from contacts where id > 2").as_sql
         .should eq("SELECT contacts.* FROM ( select * from contacts where id > 2 ) ")
     end
 
     it "accepts query object" do
-      select_clause(Factory.build_query(table: "contacts").from(Contact.where { _id > 2 }))
+      Factory.build_query(table: "contacts").from(Contact.where { _id > 2 }).as_sql
         .should eq("SELECT contacts.* FROM ( SELECT contacts.* FROM contacts WHERE contacts.id > %s  ) ")
     end
   end
@@ -318,7 +310,7 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#distinct" do
     it "adds DISTINCT to SELECT clause" do
-      Query["contacts"].select(:age).distinct.to_sql.should match(/SELECT DISTINCT contacts\.age/)
+      Query["contacts"].select(:age).distinct.as_sql.should match(/SELECT DISTINCT contacts\.age/)
     end
 
     it "returns uniq rows" do
@@ -389,7 +381,7 @@ describe Jennifer::QueryBuilder::Query do
     it "excludes where if given" do
       q = Query["contacts"].where { _age < 99 }
       clone = q.except(["where"])
-      clone.to_sql.should_not match(/WHERE/)
+      clone.as_sql.should_not match(/WHERE/)
     end
 
     it "expression builder follow newly created object" do
@@ -410,11 +402,11 @@ describe Jennifer::QueryBuilder::Query do
       .select { [_id] }
       .clone
 
-    it { clone.to_sql.should match(/WHERE/) }
-    it { clone.to_sql.should match(/GROUP/) }
-    it { clone.to_sql.should match(/ORDER/) }
-    it { clone.to_sql.should match(/JOIN/) }
-    it { clone.to_sql.should match(/UNION/) }
+    it { clone.as_sql.should match(/WHERE/) }
+    it { clone.as_sql.should match(/GROUP/) }
+    it { clone.as_sql.should match(/ORDER/) }
+    it { clone.as_sql.should match(/JOIN/) }
+    it { clone.as_sql.should match(/UNION/) }
     it { clone._select_fields[0].should_not be_a(Jennifer::QueryBuilder::Star) }
   end
 end

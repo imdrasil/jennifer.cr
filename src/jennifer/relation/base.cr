@@ -1,19 +1,24 @@
 module Jennifer
   module Relation
+    # Relation interface.
     abstract class IRelation
       abstract def name
+      # TODO: remove this method - it isn't used anywhere
       abstract def table_name
       abstract def model_class
       abstract def join_query
       abstract def condition_clause
       abstract def condition_clause(a)
       abstract def join_condition(a, b)
-      abstract def query(a)
+      # Returns query for given primary field values
+      abstract def query(primary_value)
       abstract def insert(a, b)
       # Preloads relation into *collection* from *out_collection* depending on keys from *pk_repo*.
       abstract def preload_relation(collection, out_collection, pk_repo)
     end
 
+    # Base generic relation class.
+    #
     # *T* - related model
     # *Q* - parent model
     class Base(T, Q) < IRelation
@@ -37,19 +42,17 @@ module Jennifer
       end
 
       def condition_clause
-        _foreign = foreign_field
-        _primary = primary_field
-        tree = T.c(_foreign, @name) == Q.c(_primary)
+        tree = T.c(foreign_field, @name) == Q.c(primary_field)
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
       def condition_clause(id)
-        tree = T.c(foreign_field) == id
+        tree = T.c(foreign_field, @name) == id
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
       def condition_clause(ids : Array)
-        tree = T.c(foreign_field).in(ids)
+        tree = T.c(foreign_field, @name).in(ids)
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
@@ -60,7 +63,6 @@ module Jennifer
         end
       end
 
-      # Returns query for given primary field values
       def query(primary_value)
         condition = condition_clause(primary_value)
         T.where { condition }
@@ -90,7 +92,7 @@ module Jennifer
         T.table_name
       end
 
-      # Foreign key on ~T~ model side
+      # Foreign key on *T* model side
       def foreign_field
         @foreign ||= Q.foreign_key_name
       end

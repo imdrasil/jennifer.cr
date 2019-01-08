@@ -13,6 +13,10 @@ module Jennifer
       def initialize(@table, @on : Condition | LogicOperator, @type, @aliass = nil, @relation = nil)
       end
 
+      def initialize(@table, on : Grouping, @type, @aliass = nil, @relation = nil)
+        @on = on.to_condition
+      end
+
       def table
         @table.is_a?(String) ? @table.as(String) : ""
       end
@@ -56,7 +60,7 @@ module Jennifer
         if @table.is_a?(String)
           @table.as(String)
         else
-          "(" + @table.as(Query).to_sql + ")"
+          "(" + @table.as(Query).as_sql(generator) + ")"
         end
       end
 

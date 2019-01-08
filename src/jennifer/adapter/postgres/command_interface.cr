@@ -24,11 +24,12 @@ module Jennifer
       end
 
       def generate_schema
-        options = ["-U", config.user, "-d", config.db, "-h", config.host, "-s", "-f", config.structure_path] of Command::Option
+        options = ["-U", config.user, "-d", config.db, "-h", config.host, "-s"] of Command::Option
         command = Command.new(
           executable: "pg_dump",
           options: options,
-          inline_vars: default_env_variables
+          inline_vars: default_env_variables,
+          out_stream: "> #{config.structure_path}"
         )
         execute(command)
       end

@@ -88,8 +88,7 @@ module Jennifer
         add_preloaded(result)
       end
 
-      # TODO: brake this method to smaller ones
-      # Perform request and maps results set to objects and related objects grepping fields from joined tables; preloading also
+      # Perform request and maps resultset to objects and related objects grepping fields from joined tables; preloading also
       # are performed
       private def to_a_with_relations
         result = adapter.select(self) do |rs|

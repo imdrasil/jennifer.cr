@@ -169,6 +169,26 @@ describe Jennifer::Adapter::Base do
     end
   end
 
+  describe "#foreign_key_exists?" do
+    context "with given connected tables names" do
+      it do
+        adapter.foreign_key_exists?(:addresses, :contacts).should be_true
+      end
+    end
+
+    context "with given foreign key name" do
+      it do
+        adapter.foreign_key_exists?("fk_cr_addresses_contacts").should be_true
+      end
+    end
+
+    context "with invalid name" do
+      it do
+        adapter.foreign_key_exists?("fk_cr_contacts_addresses").should be_false
+      end
+    end
+  end
+
   describe "#bulk_insert" do
     it "do nothing if empty array was given" do
       expect_query_silence do
@@ -276,18 +296,6 @@ describe Jennifer::Adapter::Base do
         connection_string = /^#{config.adapter}\:\/\/#{config.user}@#{config.host}/
         adapter.class.connection_string.should match(connection_string)
       end
-    end
-  end
-
-  describe "::extract_arguments" do
-    res = described_class.extract_arguments({:asd => 1, "qwe" => "2"})
-
-    it "converts all field names to string" do
-      res[:fields].should eq(%w(asd qwe))
-    end
-
-    it "extracts all values to :args" do
-      res[:args].should eq(db_array(1, "2"))
     end
   end
 

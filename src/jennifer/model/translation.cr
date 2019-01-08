@@ -4,61 +4,73 @@ module Jennifer
     #
     # Depends of parent class `::lookup_ancestors` and `::i18n_scope` methods.
     module Translation
-      alias LocalizeableTypes = Int32 | Int64 | Nil | Float32 | Float64 | Time | String | Symbol | Bool
-
       # Default global translation scope.
       GLOBAL_SCOPE = "jennifer"
 
-      # Search translation for given attribute.
-      def human_attribute_name(attribute : String | Symbol)
-        prefix = "#{GLOBAL_SCOPE}.attributes."
+      module ClassMethods
+        # Search translation for given attribute.
+        def human_attribute_name(attribute : String | Symbol)
+          prefix = "#{GLOBAL_SCOPE}.attributes."
 
-        lookup_ancestors do |ancestor|
-          path = "#{prefix}#{ancestor.i18n_key}.#{attribute}"
+          lookup_ancestors do |ancestor|
+            path = "#{prefix}#{ancestor.i18n_key}.#{attribute}"
+            return I18n.translate(path) if I18n.exists?(path)
+          end
+
+          path = "#{prefix}.#{attribute}"
           return I18n.translate(path) if I18n.exists?(path)
+          Inflector.humanize(attribute)
         end
 
-        path = "#{prefix}.#{attribute}"
-        return I18n.translate(path) if I18n.exists?(path)
-        Inflector.humanize(attribute)
-      end
+        # Returns localized model name.
+        def human(count = nil)
+          prefix = "#{GLOBAL_SCOPE}.#{i18n_scope}."
 
-      # Returns localized model name.
-      def human(count = nil)
-        prefix = "#{GLOBAL_SCOPE}.#{i18n_scope}."
+          lookup_ancestors do |ancestor|
+            path = prefix + ancestor.i18n_key
+            return I18n.translate(path, count: count) if I18n.exists?(path, count: count)
+          end
 
-        lookup_ancestors do |ancestor|
-          path = prefix + ancestor.i18n_key
-          return I18n.translate(path, count: count) if I18n.exists?(path, count: count)
+          name = Inflector.humanize(i18n_key)
+          name = Inflector.pluralize(name) if count && count > 1
+          name
         end
 
-        name = Inflector.humanize(i18n_key)
-        name = Inflector.pluralize(name) if count && count > 1
-        name
+        # Returns the i18n scope for the class.
+        def i18n_scope
+          :models
+        end
+
+        # Represents key which be used to search any related to current class localization information.
+        def i18n_key
+          return @@i18n_key unless @@i18n_key.empty?
+          @@i18n_key = Inflector.underscore(Inflector.demodulize(to_s)).downcase
+        end
+
+        # Yields all ancestors until `Base`.
+        def lookup_ancestors(&block)
+          klass = self
+          while klass
+            yield klass
+            klass = klass.superclass
+          end
+        end
       end
 
-      # Returns the i18n scope for the class.
-      def i18n_scope
-        :models
-      end
+      alias LocalizeableTypes = Int32 | Int64 | Nil | Float32 | Float64 | Time | String | Symbol | Bool
 
-      # Represents key which be used to search any related to current class localization information.
-      def i18n_key
-        return @@i18n_key unless @@i18n_key.empty?
-        @@i18n_key = Inflector.underscore(Inflector.demodulize(to_s)).downcase
-      end
-
-      # Yields all ancestors until `Base`.
       def lookup_ancestors(&block)
-        klass = self
-        while klass
-          yield klass
-          klass = klass.superclass
-        end
+        self.class.lookup_ancestors { |ancestor| yield ancestor }
       end
 
-      macro extended
+      def human_attribute_name(attribute : String | Symbol)
+        self.class.human_attribute_name(attribute)
+      end
+
+      macro included
         @@i18n_key : String = ""
+
+        extend ::Jennifer::Model::Translation::ClassMethods
       end
     end
   end

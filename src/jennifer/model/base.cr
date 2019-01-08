@@ -7,7 +7,6 @@ require "./mapping"
 require "./sti_mapping"
 require "./validation"
 require "./callback"
-require "./parameter_converter"
 require "./converters"
 
 module Jennifer
@@ -16,11 +15,6 @@ module Jennifer
       module AbstractClassMethods
         # Returns if primary field is autoincrementable
         abstract def primary_auto_incrementable?
-
-        # Converts String based hash to `Hash(String, Jennifer::DBAny)`
-        #
-        # NOTE: Deprecated - will be removed in 0.7.0. Please, use https://github.com/imdrasil/form_object instead
-        abstract def build_params(hash)
       end
 
       extend AbstractClassMethods
@@ -41,6 +35,8 @@ module Jennifer
       end
 
       # Represent actual amount of model's table column amount (is grepped from db).
+      # If somewhy you define model with custom table name after the place where adapter is used the first time -
+      # manually invoke this method anywhere after table name definition.
       def self.actual_table_field_count
         @@actual_table_field_count ||= adapter.table_column_count(table_name)
       end
@@ -74,11 +70,6 @@ module Jennifer
         @@foreign_key_name ||= Inflector.singularize(table_name) + "_id"
       end
 
-      # Returns default model parameter converter.
-      def self.parameter_converter
-        @@converter ||= ParameterConverter.new
-      end
-
       # Initializes new object based on given arguments.
       #
       # `after_initialize` callbacks are invoked. If model mapping allows creating an object
@@ -97,6 +88,12 @@ module Jennifer
       # Returns if record isn't deleted.
       def destroyed?
         @destroyed
+      end
+
+      # Returns `true` if the record is persisted, i.e. it’s not a new record and
+      # it was not destroyed, otherwise returns `false`.
+      def persisted?
+        !(new_record? || destroyed?)
       end
 
       def self.create(values : Hash | NamedTuple)
@@ -166,12 +163,13 @@ module Jennifer
       # Returns named tuple of all model fields to insert.
       abstract def arguments_to_insert
 
-      # Returns list of available model classes.
+      # Returns array of all non-abstract subclasses of *Jennifer::Model::Base*.
       def self.models
         {% begin %}
-          {% if !@type.all_subclasses.empty? %}
+          {% models = @type.all_subclasses.select { |m| !m.abstract? } %}
+          {% if !models.empty? %}
             [
-              {% for model in @type.all_subclasses %}
+              {% for model in models %}
                 {{model.id}},
               {% end %}
             ]
@@ -210,8 +208,9 @@ module Jennifer
         attribute(name.to_s, raise_exception)
       end
 
+      # Sets attributes base on given *hash* and saves the object.
       def update(hash : Hash | NamedTuple)
-        update_attributes(hash)
+        set_attributes(hash)
         save
       end
 
@@ -219,8 +218,9 @@ module Jennifer
         update(opts)
       end
 
+      # Sets attributes base on given *hash* and saves the object (using `#save!`).
       def update!(hash : Hash | NamedTuple)
-        update_attributes(hash)
+        set_attributes(hash)
         save!
       end
 
@@ -228,12 +228,17 @@ module Jennifer
         update!(opts)
       end
 
-      def update_attributes(hash : Hash | NamedTuple)
+      # Sets attributes based on `hash` where keys are attribute names.
+      #
+      # ```
+      # post.set_attributes({ :title => "New Title", :created_at => Time.now })
+      # ```
+      def set_attributes(hash : Hash | NamedTuple)
         hash.each { |k, v| set_attribute(k, v) }
       end
 
-      def update_attributes(**opts)
-        update_attributes(opts)
+      def set_attributes(**opts)
+        set_attributes(opts)
       end
 
       # Sets *value* to field with name *name* and stores them directly to db without
@@ -242,11 +247,15 @@ module Jennifer
         update_columns({name => value})
       end
 
+      # Saves record or raises RecordInvalid exception.
       def save!(skip_validation : Bool = false)
         raise Jennifer::RecordInvalid.new(errors.to_a) unless save(skip_validation)
         true
       end
 
+      # Saves record.
+      #
+      # *skip_validation* allows to skip validation for current invocation.
       def save(skip_validation : Bool = false) : Bool
         unless self.class.adapter.under_transaction?
           self.class.transaction do
@@ -332,22 +341,28 @@ module Jennifer
         adapter.with_table_lock(table_name, type.to_s) { |t| yield t }
       end
 
+      # Returns record by given primary field.
       def self.find(id)
         _id = id
         this = self
         all.where { this.primary == _id }.first
       end
 
+      # Returns record by given primary field or raises RecordNotFound exception.
       def self.find!(id)
         _id = id
         this = self
         all.where { this.primary == _id }.first!
       end
 
+      # Destroys records by given ids.
+      #
+      # All `destroy` callbacks will be invoked for each record. All records are loaded in batches.
       def self.destroy(*ids)
         destroy(ids.to_a)
       end
 
+      # ditto
       def self.destroy(ids : Array)
         _ids = ids
         all.where do
@@ -359,10 +374,12 @@ module Jennifer
         end.destroy
       end
 
+      # Deletes records by given ids.
       def self.delete(*ids)
         delete(ids.to_a)
       end
 
+      # ditto
       def self.delete(ids : Array)
         _ids = ids
         all.where do
@@ -374,6 +391,7 @@ module Jennifer
         end.delete
       end
 
+      # Performs bulk import of given collection.
       def self.import(collection : Array(self))
         adapter.bulk_insert(collection)
       end

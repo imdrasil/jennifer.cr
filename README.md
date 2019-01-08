@@ -10,7 +10,7 @@ Add this to your application's `shard.yml`:
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.6.2"
+    version: "~> 0.7.0"
 ```
 
 ### Requirements
@@ -162,7 +162,9 @@ to your `spec_helper.cr`. NB. you could simply use regular deleting or truncatio
 
 > Before developing any feature please create an issue where you describe your idea.
 
-Before development create the db user (see `/spec/config.cr` file) and database:
+To setup dev environment run `./examples/setup.sh` - it creates `./examples/database.yml` configuration file. You can override there any values specific to your environment (like db user of password).
+
+To create the databases:
 
 ```shell
 # Postgres
@@ -174,7 +176,7 @@ $ DB=mysql make same db:setup
 
 ### Running tests
 
-All unit tests are written using core `spec` component. Also in `spec/spec_helper.cr` some custom unit test matchers are defined. All migrations are under the `./examples/migrations` directory.
+All unit tests are written using core `spec`. Also in `spec/spec_helper.cr` some custom unit test matchers are defined. All migrations are under the `./examples/migrations` directory.
 
 The common way to run tests is just use using regular crystal spec tool:
 

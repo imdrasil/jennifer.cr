@@ -29,7 +29,7 @@ Contact.import(objects)
 
 #### Read
 
-Object could be retrieved by id using `#find` (returns `T?`) and `#find!` (returns `T` or raise `RecordNotFound` exception) methods.
+Object could be retrieved by id using `#find` (returns `T?`) and `#find!` (returns `T` or raises `RecordNotFound` exception) methods.
 
 ```crystal
 Contact.find!(1)
@@ -51,7 +51,7 @@ puts c1.age # 30
 There are several ways which allows to update object. Some of them were mentioned in mapping section. There are few extra methods to do this:
 - `#update_column(name, value)` - sets directly attribute and store it to db without any callback
 - `#update_columns(values)` - same for several ones
-- `#update_attributes(values)` - just set attributes
+- `#set_attributes(values)` - just set attributes
 - `#set_attribute(name, value)` - set attribute by given name
 
 You can provide hash or named tuple with new field values to update all records satisfying given conditions:
@@ -64,8 +64,10 @@ Will not trigger any callback.
 Also relative modification allowed as well:
 
 ```crystal
-# UPDATE contacts SET age = age + 2 WHERE id = 12
+# UPDATE contacts SET age = contacts.age + 2 WHERE contacts.id = 12
 Contact.where { _id == 12 }.increment(age: 2)
+# or
+Contact.where { _id == 12 }.update { { :age => _age + 12 } }
 ```
 
 #### Destroy

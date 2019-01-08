@@ -27,20 +27,6 @@ describe Jennifer::Model::Mapping do
     end
   end
 
-  describe "::build_params" do
-    it "correctly converts arguments hash with maybe Nil types" do
-      hash = Contact.build_params({"name" => "asd", "age" => "20".as(String?)})
-      hash["name"].should eq("asd")
-      hash["age"].should eq(20)
-    end
-
-    it "correctly converts nil values" do
-      hash = Contact.build_params({"name" => "asd", "age" => nil})
-      hash["name"].should eq("asd")
-      hash["age"].should be_nil
-    end
-  end
-
   describe "#reload" do
     it "assign all values from db to existing object" do
       c1 = Factory.create_contact
@@ -190,6 +176,12 @@ describe Jennifer::Model::Mapping do
           country.id.should be_nil
           country.name.should be_nil
         end
+
+        it "works with default values" do
+          c = CountryWithDefault.new
+          c.name.should be_nil
+          c.virtual.should be_true
+        end
       end
 
       context "model has only id field" do
@@ -226,8 +218,8 @@ describe Jennifer::Model::Mapping do
 
         describe "user-defined mapping types" do
           it "is accessible if defined in parent class" do
-            User::COLUMNS_METADATA[:password_digest].should eq({type: String, default: "", stringified_type: "String", parsed_type: "String"})
-            User::COLUMNS_METADATA[:email].should eq({type: String, default: "", stringified_type: "String", parsed_type: "String"})
+            User::COLUMNS_METADATA[:password_digest].should eq({type: String, default: "", parsed_type: "String"})
+            User::COLUMNS_METADATA[:email].should eq({type: String, default: "", parsed_type: "String"})
           end
 
           pending "allows to add extra options" do
@@ -358,11 +350,45 @@ describe Jennifer::Model::Mapping do
       end
     end
 
+    describe "predicate method" do
+      it { AddressWithNilableBool.new({main: true}).main?.should be_true }
+      it { AddressWithNilableBool.new({main: false}).main?.should be_false }
+      it { AddressWithNilableBool.new({main: nil}).main?.should be_false }
+    end
+
     describe "attribute setter" do
       it "provides setters" do
         c = Factory.build_contact(name: "a")
         c.name = "b"
         c.name.should eq("b")
+      end
+
+      context "with DBAny" do
+        it do
+          hash = { :name => "new_name" } of Symbol => Jennifer::DBAny
+          c = Factory.build_contact(name: "a")
+          c.name = hash[:name]
+          c.name.should eq("new_name")
+        end
+      end
+
+      context "with subset of DBAny" do
+        it do
+          hash = { :name => "new_name", :age => 12 }
+          c = Factory.build_contact(name: "a")
+          c.name = hash[:name]
+          c.name.should eq("new_name")
+        end
+
+        context "with wrong type" do
+          it do
+            hash = { :name => "new_name", :age => 12 }
+            c = Factory.build_contact(name: "a")
+            expect_raises(TypeCastError) do
+              c.name = hash[:age]
+            end
+          end
+        end
       end
     end
 

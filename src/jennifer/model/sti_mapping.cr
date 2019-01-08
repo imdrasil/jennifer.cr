@@ -1,8 +1,7 @@
 module Jennifer
   module Model
     module STIMapping
-      # :nodoc:
-      # Defines mapping using single table inheritance. Is automatically called by `%mapping` macro.
+      # Defines mapping using single table inheritance. Is automatically called by `.mapping` macro.
       private macro sti_mapping(properties)
         # :nodoc:
         STI = true
@@ -26,24 +25,34 @@ module Jennifer
 
         # generates hash with options
         {% for key, value in properties %}
-          {% unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) %}
-            {% properties[key] = {type: value} %}
-          {% end %}
-          {% properties[key][:stringified_type] = properties[key][:type].stringify %}
-          {% if properties[key][:stringified_type] =~ Jennifer::Macros::NILLABLE_REGEXP %}
-            {%
-              properties[key][:null] = true
-              properties[key][:parsed_type] = properties[key][:stringified_type]
-            %}
-          {% else %}
-            {% properties[key][:parsed_type] = properties[key][:null] ? properties[key][:stringified_type] + "?" : properties[key][:stringified_type] %}
-          {% end %}
-          {% add_default_constructor = add_default_constructor && (properties[key][:null] || properties[key].keys.includes?(:default)) %}
+          {%
+            properties[key] = {type: value} unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral)
+            options = properties[key]
+            stringified_type = options[:type].stringify
+            options[:converter] = ::Jennifer::Model::JSONConverter if stringified_type =~ Jennifer::Macros::JSON_REGEXP && options[:converter] == nil
+            if stringified_type =~ Jennifer::Macros::NILLABLE_REGEXP
+              options[:null] = true
+              options[:parsed_type] = stringified_type
+            else
+              options[:parsed_type] = options[:null] ? stringified_type + "?" : stringified_type
+            end
+            add_default_constructor = add_default_constructor && (options[:null] || options.keys.includes?(:default.id))
+          %}
         {% end %}
 
         {% nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] } %}
 
         __field_declaration({{properties}}, false)
+
+        private def inspect_attributes(io) : Nil
+          super
+          {% for var, i in properties.keys %}
+            io << ", "
+            io << "{{var.id}}: "
+            @{{var.id}}.inspect(io)
+          {% end %}
+          nil
+        end
 
         private def _sti_extract_attributes(values : Hash(String, ::Jennifer::DBAny))
           {% for key, value in properties %}
@@ -212,15 +221,12 @@ module Jennifer
           res = super
           args = res[:args]
           fields = res[:fields]
-          {% for key, value in properties %}
-            {% unless value[:virtual] %}
-              if @{{key.id}}_changed
-                args << {% if value[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
-                          @{{key.id}}.to_json
-                        {% else %}
-                          @{{key.id}}
-                        {% end %}
-                fields << "{{key.id}}"
+          {% for attr, options in properties %}
+            {% unless options[:virtual] %}
+              if @{{attr.id}}_changed
+                args <<
+                  {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
+                fields << "{{attr.id}}"
               end
             {% end %}
           {% end %}
@@ -232,14 +238,11 @@ module Jennifer
           res = super
           args = res[:args]
           fields = res[:fields]
-          {% for key, value in properties %}
-            {% unless value[:virtual] %}
-              args << {% if value[:stringified_type] =~ Jennifer::Macros::JSON_REGEXP %}
-                        (@{{key.id}} ? @{{key.id}}.to_json : nil)
-                      {% else %}
-                        @{{key.id}}
-                      {% end %}
-              fields << {{key.stringify}}
+          {% for attr, options in properties %}
+            {% unless options[:virtual] %}
+              args <<
+                {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
+              fields << "{{attr.id}}"
             {% end %}
           {% end %}
 
@@ -269,28 +272,8 @@ module Jennifer
 
         {% all_properties = properties %}
         {% for key, value in @type.superclass.constant("COLUMNS_METADATA") %}
-          {% if !properties[key] %}
-            {% all_properties[key] = value %}
-          {% end %}
+          {% all_properties[key] = value if !properties[key] %}
         {% end %}
-
-        # :nodoc:
-        def self.build_params(hash : Hash(String, String?)) : Hash(String, Jennifer::DBAny)
-          converted_hash = {} of String => Jennifer::DBAny
-          hash.each do |key, value|
-            case key.to_s
-            {% for field, opts in all_properties %}
-            when {{field.id.stringify}}
-              if value.nil? || value.empty?
-                converted_hash[key] = nil
-              else
-                converted_hash[key] = parameter_converter.parse(value, {{opts[:stringified_type]}})
-              end
-            {% end %}
-            end
-          end
-          converted_hash
-        end
 
         # :nodoc:
         COLUMNS_METADATA = {{all_properties}}

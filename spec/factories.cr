@@ -125,7 +125,7 @@ class TwitterProfileFactory < ProfileFactory
   attr :type, TwitterProfile.to_s
 end
 
-class MaleContactFactory < Factory::Base
+class MaleContactFactory < Factory::Jennifer::Base
   postgres_only do
     argument_type (Array(Int32) | Int32 | PG::Numeric | String? | Time)
   end
@@ -134,4 +134,22 @@ class MaleContactFactory < Factory::Base
   attr :age, 21
   attr :gender, "male"
   attr :created_at, ->{ Time.utc_now }
+end
+
+class NoteFactory < Factory::Jennifer::Base
+  argument_type Jennifer::DBAny
+
+  attr :text, "Some text"
+  attr :notable_id, nil
+  attr :notable_type, nil
+
+  trait :with_user do
+    attr :notable_id, -> { Factory.create_user([:with_valid_password]).id }, Int32
+    attr :notable_type, "User"
+  end
+
+  trait :with_contact do
+    attr :notable_id, -> { Factory.create_contact.id }, Int32
+    attr :notable_type, "Contact"
+  end
 end

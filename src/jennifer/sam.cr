@@ -1,3 +1,5 @@
+require "./generators/*"
+
 Sam.namespace "db" do
   desc "Will call all pending migrations"
   task "migrate" do |t, args|
@@ -34,18 +36,22 @@ Sam.namespace "db" do
     Jennifer::Migration::Runner.create
   end
 
-  desc "Runs db:create and db:migrate"
-  task "setup", ["create", "migrate"] do
+  desc "Populate database with default entities."
+  task "seed" do
+  end
+
+  desc "Runs db:create, db:migrate and db:seed"
+  task "setup", %w(create migrate seed) do
   end
 
   namespace "schema" do
-    desc "Loads database structure from structure.sql"
+    desc "Loads database structure from the structure.sql file"
     task "load" do
       Jennifer::Migration::Runner.load_schema
     end
   end
 
-  desc "Prints version of last runned migration"
+  desc "Prints version of the last run migration"
   task "version" do
     version = Jennifer::Migration::Version.all.last
     if version
@@ -57,8 +63,13 @@ Sam.namespace "db" do
 end
 
 Sam.namespace "generate" do
-  desc "Generates migration template. Usage generate:migration <migration_name>"
+  desc "Generates migration template. Usage - generate:migration <migration_name>"
   task "migration" do |t, args|
-    Jennifer::Migration::Runner.generate(args[0].as(String))
+    Jennifer::Generators::Migration.new(args).render
+  end
+
+  desc "Generates model and migrations template. Usage - generate:model <ModelName>"
+  task "model" do |t, args|
+    Jennifer::Generators::Model.new(args).render
   end
 end

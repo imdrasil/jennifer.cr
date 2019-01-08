@@ -21,10 +21,12 @@ class GTNContact < Jennifer::Model::Base
 
   mapping({
     id: Primary32,
-    age: Int32?
+    age: Int32?,
+    validatable: { type: Bool, default: true, virtual: true}
   }, false)
 
-  validates_numericality :age, greater_than: 20, allow_blank: true
+  validates_numericality :age, greater_than: 20, allow_blank: true, if: :validatable
+  validates_numericality :age, greater_than: 15, allow_blank: true, if: !validatable
 end
 
 class AcceptanceContact < ApplicationRecord
@@ -56,17 +58,23 @@ class PresenceContact < ApplicationRecord
   mapping({
     id: Primary32,
     name: String?,
-    address: String?
+    address: String?,
+    confirmable: {type: Bool, virtual: true, default: true}
   })
 
-  validates_presence :name
+  validates_presence :name, if: :confirmable?
   validates_absence :address
+
+  # NOTE: method is defined to check it's accessability in validation
+  private def confirmable?
+    confirmable
+  end
 end
 
-class ValidatorWithOptions < Jennifer::Validator
-  def validate(subject, field, message = nil)
-    if subject.attribute(field) == "invalid"
-      errors.add(field, message || "blank")
+class ValidatorWithOptions < Jennifer::Validations::Validator
+  def validate(record, field, message = nil)
+    if record.attribute(field) == "invalid"
+      record.errors.add(field, message || "blank")
     end
   end
 end
@@ -81,6 +89,26 @@ class CustomValidatorModel < ApplicationRecord
 end
 
 describe Jennifer::Model::Validation do
+  describe "if option" do
+    context "with negative response" do
+      it "doesn't invoke related validation" do
+        c = PresenceContact.build
+        c.confirmable = false
+        c.should be_valid
+      end
+    end
+
+    context "with expression" do
+      it do
+        c = GTNContact.build({ :age => 16 })
+        c.validatable = false
+        c.should be_valid
+        c.age = 14
+        c.should_not be_valid
+      end
+    end
+  end
+
   describe "%validates_with" do
     it "accepts class validators" do
       p = Factory.build_passport(enn: "abc")
@@ -430,6 +458,14 @@ describe Jennifer::Model::Validation do
         c.should be_valid
       end
     end
+
+    context "with if condition" do
+      it "doesn't invoke related validation if condition is negative" do
+        c = GTNContact.build({ :age => 16 })
+        c.validatable = false
+        c.should be_valid
+      end
+    end
   end
 
   describe "%validates_acceptance" do
@@ -445,7 +481,7 @@ describe Jennifer::Model::Validation do
     end
   end
 
-  describe "%validates_acceptance" do
+  describe "%validates_confirmation" do
     context "with nil confirmations" do
       it "pass validation" do
         c = ConfirmationContact.build({:name => "name"})

@@ -58,9 +58,9 @@ describe Jennifer::QueryBuilder::ModelQuery do
     end
   end
 
-  describe "#select_args" do
+  describe "#sql_args" do
     it "returns array of join and condition args" do
-      Contact.where { _id == 2 }.join(Address) { _name == "asd" }.select_args.should eq(db_array("asd", 2))
+      Contact.where { _id == 2 }.join(Address) { _name == "asd" }.sql_args.should eq(db_array("asd", 2))
     end
   end
 
@@ -282,7 +282,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
     it "excludes where if given" do
       q = Contact.where { _age < 99 }
       clone = q.except(["where"])
-      clone.to_sql.should_not match(/WHERE/)
+      clone.as_sql.should_not match(/WHERE/)
     end
 
     it "expression builder follow newly created object" do
@@ -311,12 +311,13 @@ describe Jennifer::QueryBuilder::ModelQuery do
       .eager_load(:addresses)
       .includes(:addresses)
       .clone
+    query = clone.as_sql
 
-    it { clone.to_sql.should match(/WHERE/) }
-    it { clone.to_sql.should match(/GROUP/) }
-    it { clone.to_sql.should match(/ORDER/) }
-    it { clone.to_sql.should match(/JOIN/) }
-    it { clone.to_sql.should match(/UNION/) }
+    it { query.should match(/WHERE/) }
+    it { query.should match(/GROUP/) }
+    it { query.should match(/ORDER/) }
+    it { query.should match(/JOIN/) }
+    it { query.should match(/UNION/) }
     it { clone._select_fields[0].should_not be_a(Jennifer::QueryBuilder::Star) }
     it { clone.with_relation?.should be_true }
     pending "add more precise testing" {}
@@ -326,8 +327,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
     postgres_only do
       it "allows custom select with grouping" do
         Factory.create_contact
-        Contact
-          .all
+        Contact.all
           .select { [sql("count(*)").alias("stat_count"), sql("date_trunc('year', created_at)").alias("period")] }
           .group("period")
           .order({"period" => :desc})
@@ -335,9 +335,9 @@ describe Jennifer::QueryBuilder::ModelQuery do
       end
 
       it "allows to use float for filtering decimal fields" do
-        converter = Jennifer::Model::ParameterConverter.new
-        c = Factory.create_contact
-        c.ballance = converter.parse("15.1", "Numeric").as(PG::Numeric)
+        c = Factory.build_contact
+        ballance = PG::Numeric.new(2i16, 0i16, 0i16, 1i16, [15i16, 1000i16])
+        c.ballance = ballance
         c.save
         Contact.all.where { _ballance == 15.1 }.count.should eq(1)
       end

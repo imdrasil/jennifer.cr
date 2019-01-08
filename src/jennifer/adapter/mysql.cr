@@ -34,7 +34,6 @@ module Jennifer
 
         :blob => "blob",
         :json => "json",
-
       }
 
       DEFAULT_SIZES = {

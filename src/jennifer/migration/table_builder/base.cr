@@ -3,7 +3,7 @@ module Jennifer
     module TableBuilder
       abstract class Base
         # Base allowed types for migration DSL option values
-        alias AllowedTypes = String | Int32 | Bool | Float32 | Nil
+        alias AllowedTypes = String | Int32 | Bool | Float32 | Float64 | JSON::Any | Nil
         # Allowed types for migration DSL + Symbol
         alias EAllowedTypes = AllowedTypes | Symbol
         # Allowed types for migration DSL including array
@@ -13,17 +13,11 @@ module Jennifer
 
         delegate schema_processor, table_exists?, index_exists?, column_exists?, to: adapter
 
-        getter adapter : Adapter::Base
-
-        @name : String
+        getter adapter : Adapter::Base, name : String
 
         def initialize(@adapter, name : String | Symbol)
           @name = name.to_s
           @commands = [] of Base
-        end
-
-        def name
-          @name.to_s
         end
 
         abstract def process

@@ -28,7 +28,7 @@ module Jennifer
 
         # All relations model classes
         models = @bucket.map { |e| e[1].model_class }
-        # Represents found relation primary keys for i-th relation primary key
+        # Presents found relation primary keys for i-th relation primary key
         existence = @bucket.map { |_| {} of DBAny => Set(DBAny) }
         # Stores all found relation records for i-th relation
         repo = @bucket.map { |_| {} of DBAny => Model::Resource }

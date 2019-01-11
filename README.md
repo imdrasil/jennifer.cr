@@ -15,8 +15,8 @@ dependencies:
 
 ### Requirements
 
-- you need to choose one of existing adapters for your db: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgres](https://github.com/will/crystal-pg);
-- crystal `>= 0.26.1`
+- you need to choose one of existing drivers for your db: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgres](https://github.com/will/crystal-pg); sqlite3 adapter automatically installs required driver for itself;
+- crystal `>= 0.26.1`.
 
 ## Usage
 
@@ -123,10 +123,6 @@ Contact.all.group(:gender).group_avg(:age, PG::Numeric)
 ```
 
 Much more about the query DSL can be found on the wiki [page](./docs/query_dsl.md).
-
-### SQLite Support
-
-SQLite3 has many limitations so adding its support isn't a very easy task, but it is still important to Jennifer.
 
 ### Versioning
 

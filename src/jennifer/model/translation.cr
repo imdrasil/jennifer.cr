@@ -41,7 +41,7 @@ module Jennifer
           :models
         end
 
-        # Represents key which be used to search any related to current class localization information.
+        # Presents key which be used to search any related to current class localization information.
         def i18n_key
           return @@i18n_key unless @@i18n_key.empty?
           @@i18n_key = Inflector.underscore(Inflector.demodulize(to_s)).downcase

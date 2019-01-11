@@ -4,7 +4,7 @@ require "set"
 module Jennifer
   module QueryBuilder
     abstract class RelationTree
-      # First tuple component represent index of parent context; 0 value represent top level collection, any positive value *i* -
+      # First tuple component present index of parent context; 0 value present top level collection, any positive value *i* -
       # *i*-th relation in ~bucket~ (with 1-based indexing).
       alias Element = Tuple(Int32, Relation::IRelation)
 

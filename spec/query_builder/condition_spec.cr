@@ -6,7 +6,7 @@ describe Jennifer::QueryBuilder::Condition do
   describe "#as_sql" do
     {% for op in [:<, :>, :<=, :>=, :!=] %}
       context "{{op.id}} operator" do
-        it "returns string representation" do
+        it "returns string presentation" do
           Factory.build_criteria.{{op.id}}("asd").as_sql.should eq("tests.f1 {{op.id}} %s")
         end
       end

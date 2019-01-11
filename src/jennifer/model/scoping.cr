@@ -3,7 +3,7 @@ module Jennifer
     module Scoping
       # Adds a class method for retrieving and querying objects.
       #
-      # A `.scope` represents a narrowing of a database query, such as
+      # A `.scope` presents a narrowing of a database query, such as
       # `where { _color == "red" }.includes(:washing_instructions)`.
       #
       # ```
@@ -42,7 +42,7 @@ module Jennifer
 
       # Adds a class method for retrieving and querying objects.
       #
-      # A `.scope` represents a narrowing of a database query, such as `where { _color == "red" }.includes(:washing_instructions)`.
+      # A `.scope` presents a narrowing of a database query, such as `where { _color == "red" }.includes(:washing_instructions)`.
       #
       # ```
       # class Shirt < Jennifer::Model::Base

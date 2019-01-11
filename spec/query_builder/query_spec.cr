@@ -4,7 +4,7 @@ describe Jennifer::QueryBuilder::Query do
   described_class = Jennifer::QueryBuilder::Query
 
   describe "#as_sql" do
-    it "returns sql representation of condition" do
+    it "returns sql presentation of condition" do
       q = Factory.build_query
       c = Factory.build_criteria
       q.where { c }.as_sql.should eq("SELECT tests.* FROM tests WHERE tests.f1 ")

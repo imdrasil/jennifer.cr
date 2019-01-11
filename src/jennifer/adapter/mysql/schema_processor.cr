@@ -37,15 +37,12 @@ module Jennifer
           io << ") "
         end
         if options.has_key?(:null)
-          if options[:null]
-            io << " NULL"
-          else
-            io << " NOT NULL"
-          end
+          io << " NOT" unless options[:null]
+          io << " NULL"
         end
-        io << " PRIMARY KEY" if options[:primary]?
-        io << " DEFAULT #{adapter_class.t(options[:default])}" if options[:default]?
-        io << " AUTO_INCREMENT" if options[:auto_increment]?
+        io << " PRIMARY KEY" if options.has_key?(:primary) && options[:primary]
+        io << " DEFAULT #{adapter_class.t(options[:default])}" if options.has_key?(:default)
+        io << " AUTO_INCREMENT" if options.has_key?(:auto_increment) && options[:auto_increment]
       end
     end
   end

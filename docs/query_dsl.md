@@ -10,7 +10,7 @@ My favorite part. Jennifer allows you to build lazy evaluated queries with chain
 Contact.all
 ```
 
-Specifying where clause is really flexible. Method accepts block which represents where clause of request (or it's part - you can chain several `#where` and they will be concatenated using `AND`).
+Specifying where clause is really flexible. Method accepts block which presents `WHERE` clause of request (or it's part - you can chain several `#where` and they will be concatenated using `AND`).
 
 To specify field use `#c` method which accepts string as field name. As I've mentioned after declaring model attributes, you can use their names inside of block: `_field_name` if it is for current table and `ModelName._field_name` if for another model. Also there you can specify attribute of some model or table using underscores: `_some_model_or_table_name__field_name` - model/table name is separated from field name by "__". You can specify relation in space of which you want to declare condition using double `_` at the beginning and block. Several examples:
 
@@ -110,7 +110,7 @@ where { _field_name.take(1) }
 
 ### Tips
 
-* all regexp methods accepts string representation of regexp;
+* all regexp methods accepts string presentation of regexp;
 * use parenthesis with binary operators (`&` and `|`);
 * `nil` given to `!=` and `==` will be transformed to `IS NOT NULL` and `IS NULL`;
 * `is` and `not` operator accepts next values: `nil`, `:unknown`, `true` and `false`;

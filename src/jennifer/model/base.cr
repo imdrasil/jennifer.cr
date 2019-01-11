@@ -34,7 +34,8 @@ module Jennifer
         @@has_table
       end
 
-      # Represent actual amount of model's table column amount (is grepped from db).
+      # Returns actual model table column amount (is grepped from db).
+      #
       # If somewhy you define model with custom table name after the place where adapter is used the first time -
       # manually invoke this method anywhere after table name definition.
       def self.actual_table_field_count

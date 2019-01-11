@@ -34,8 +34,8 @@ Mapping automatically resolves it to it's definition. At the moment only top lev
 
 For authentication `Crypto::Bcrypt::Password` is used. This mechanism requires you to have a `password_digest`, `password`, `password_confirmation` attributes defined in your mapping. This attribute can be customized - `with_authentication` macro accepts next arguments:
 
-- `password` - represents string based raw password attribute name;
-- `password_digest` - represents string based encrypted password.
+- `password` - presents string based raw password attribute name;
+- `password_digest` - presents string based encrypted password.
 
 > NOTE: `password_confirmation` attribute name is generated based on the `password` value + `_confirmation`.
 

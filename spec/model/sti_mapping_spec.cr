@@ -1,7 +1,27 @@
 require "../spec_helper"
 
+def test_sti(object : FacebookProfile)
+  "facebook"
+end
+
+def test_sti(object : TwitterProfile)
+  "twitter"
+end
+
+def test_sti(object : Profile)
+  raise ArgumentError.new
+end
+
 describe Jennifer::Model::STIMapping do
   describe "%sti_mapping" do
+    it "test" do
+      Factory.create_facebook_profile
+      Factory.create_twitter_profile
+      array = [] of String
+      Profile.all.to_a.each { |p| array << test_sti(p) }
+      array.should eq(["facebook", "twitter"])
+    end
+
     context "columns metadata" do
       it "sets constant" do
         FacebookProfile::COLUMNS_METADATA.is_a?(NamedTuple).should be_true

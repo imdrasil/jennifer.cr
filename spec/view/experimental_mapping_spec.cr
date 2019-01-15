@@ -1,5 +1,28 @@
 require "../spec_helper"
 
+class ViewWithArray < Jennifer::View::Base
+  view_name "contacts"
+
+  mapping({
+    id: Primary32,
+    tags: Array(Int32)
+  }, false)
+end
+
+class ViewWithBool < Jennifer::View::Base
+  mapping({
+    id: Primary32,
+    bool: Bool
+  }, false)
+end
+
+class ViewWithNilableBool < Jennifer::View::Base
+  mapping({
+    id: Primary32,
+    bool: Bool?
+  }, false)
+end
+
 describe Jennifer::View::ExperimentalMapping do
   describe "#reload" do
     it "assign all values from db to existing object" do
@@ -131,6 +154,21 @@ describe Jennifer::View::ExperimentalMapping do
           contact = Factory.create_contact
           with_time_zone("Etc/GMT+1") do
             MaleContact.all.first!.created_at!.should be_close(Time.now(local_time_zone), 2.seconds)
+          end
+        end
+      end
+
+      describe Bool do
+        it { ViewWithBool.new({ "bool" => false }).bool.should eq(false) }
+        it { ViewWithBool.new({ "bool" => false }).bool?.should eq(false) }
+        it { ViewWithNilableBool.new({ "bool" => false }).bool.should eq(false) }
+        it { ViewWithNilableBool.new({ "bool" => false }).bool?.should eq(false) }
+      end
+
+      postgres_only do
+        describe Array do
+          it do
+            ViewWithArray.new({ "tags" => [1, 2] }).tags.should eq([1, 2])
           end
         end
       end

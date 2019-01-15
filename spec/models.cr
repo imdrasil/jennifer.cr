@@ -84,7 +84,7 @@ class Contact < ApplicationRecord
           created_at:  Time?,
           updated_at:  Time?,
           user_id:     Int32?,
-          tags:        Array(Int32)?
+          tags:        { type: Array(Int32)? }
         )
       {% else %}
         mapping(

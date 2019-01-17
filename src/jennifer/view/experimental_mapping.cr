@@ -17,7 +17,8 @@ module Jennifer
               @{{key.id}}
             end
 
-            {% if value[:type].is_a?(Generic) ? value[:type].resolve.union_types[0] == Bool : value[:type].resolve == Bool %}
+            {% resolved_type = value[:type].resolve %}
+            {% if resolved_type == Bool || (resolved_type.union? && resolved_type.union_types[0] == Bool) %}
               def {{key.id}}?
                 {{key.id}} == true
               end

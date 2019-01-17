@@ -1,5 +1,14 @@
 require "../spec_helper"
 
+postgres_only do
+  class ContactWithArray < ApplicationRecord
+    mapping({
+      id: Primary32,
+      tags: Array(Int32)
+    })
+  end
+end
+
 describe Jennifer::Model::Mapping do
   select_regexp = /[\S\s]*SELECT contacts\.\*/i
 
@@ -334,10 +343,14 @@ describe Jennifer::Model::Mapping do
 
       postgres_only do
         describe Array do
-          it "properly load array" do
+          it "loads nilable array" do
             c = Factory.create_contact({:name => "sam", :age => 18, :gender => "male", :tags => [1, 2]})
             c.tags!.should eq([1, 2])
             Contact.all.first!.tags!.should eq([1, 2])
+          end
+
+          it "creates object with array" do
+            ContactWithArray.build({tags: [1, 2]}).tags.should eq([1, 2])
           end
         end
       end

@@ -7,6 +7,9 @@ module Jennifer
   # At the moment it implements singleton pattern but can be scaled to support several
   # configuration instances per application.
   #
+  # All class methods with same names as instance ones delegates the calls to default configuration (global)
+  # object.
+  #
   # Supported configurations:
   #
   # * `migration_files_path = "./db/migrations"`
@@ -20,9 +23,7 @@ module Jennifer
   # * `password`
   # * `db`
   # * `adapter`
-  # * `max_pool_size = 1`
-  # * `initial_pool_size = 1`
-  # * `max_idle_pool_size = 1`
+  # * `pool_size = 1`
   # * `retry_attempts = 1`
   # * `checkout_timeout = 5.0`
   # * `retry_delay = 1.0`
@@ -35,10 +36,10 @@ module Jennifer
   # * `migration_failure_handler_method = "none"`
   class Config
     # :nodoc:
-    CONNECTION_URI_PARAMS = [
+    CONNECTION_URI_PARAMS = {
       :max_pool_size, :initial_pool_size, :max_idle_pool_size,
       :retry_attempts, :checkout_timeout, :retry_delay
-    ]
+    }
     # :nodoc:
     STRING_FIELDS = {
       :user, :password, :db, :host, :adapter, :migration_files_path, :schema,
@@ -57,8 +58,7 @@ module Jennifer
     # :nodoc:
     macro define_fields(const, default)
       {% for field in const.resolve %}
-        @{{field.id}} = {{default}}
-        property {{field.id}}
+        property {{field.id}} = {{default}}
         delegate_property {{field.id}}
       {% end %}
     end
@@ -92,22 +92,28 @@ module Jennifer
     # * `"none"` - do nothing
     getter migration_failure_handler_method
 
-    # Defines postgres database schema name.
-    getter schema
+    # Defines postgres database schema name (postgres specific configuration).
+    getter schema = "public"
 
-    @local_time_zone : Time::Location
+    # Returns local time zone.
+    getter local_time_zone : Time::Location
+
+    # Returns logger instance.
+    #
+    # Default is `Logger.new(STDOUT)`. Default logger level - `Logger::DEBUG`.
+    getter logger : Logger = Logger.new(STDOUT)
+    setter logger
 
     @@instance = new
 
     def initialize
-      @adapter = "postgres"
+      @adapter = ""
       @host = "localhost"
       @port = -1
       @migration_files_path = "./db/migrations"
       @model_files_path = "./src/models"
-      @schema = "public"
-      @local_time_zone_name = Time::Location.local.name
       @local_time_zone = Time::Location.local
+      @local_time_zone_name = @local_time_zone.name
 
       # NOTE: Uncomment common default values after resolving https://github.com/crystal-lang/crystal-db/issues/77
 
@@ -127,26 +133,39 @@ module Jennifer
       @command_shell = "bash"
       @migration_failure_handler_method = "none"
 
-      @logger = Logger.new(STDOUT)
       logger.level = Logger::DEBUG
       logger.formatter = Logger::Formatter.new do |_severity, datetime, _progname, message, io|
         io << datetime << ": " << message
       end
     end
 
-    def self.instance
+    # Sets `max_pool_size`, `max_idle_pool_size` and `initial_pool_size` to the given *value*.
+    def pool_size=(value : Int32)
+      self.max_pool_size = self.max_idle_pool_size = self.initial_pool_size = value
+    end
+
+    # Returns maximum size of the pool.
+    def pool_size
+      max_pool_size
+    end
+
+    # Default configuration object used by application.
+    def self.instance : self
       @@instance
     end
 
-    def self.configure
+    # Returns default configuration object.
+    def self.configure : self
       instance
     end
 
-    def self.config
+    # ditto
+    def self.config : self
       instance
     end
 
-    def structure_folder
+    # Returns `schema.sql` folder name.
+    def structure_folder : String
       if @structure_folder.empty?
         File.dirname(@migration_files_path)
       else
@@ -154,28 +173,19 @@ module Jennifer
       end
     end
 
-    def structure_path
+    # Return path to `structure.sql` file.
+    def structure_path : String
       File.join(structure_folder, "structure.sql")
     end
 
+    # Delegates call to #structure_path.
     def self.structure_path
       instance.structure_path
     end
 
-    def self.structure_path
-      instance.structure_path
-    end
-
+    # Resets configurations to default ones.
     def self.reset_config
       @@instance = new
-    end
-
-    def logger
-      @logger.not_nil!
-    end
-
-    def logger=(value)
-      @logger = value
     end
 
     delegate_property(:logger)
@@ -186,10 +196,7 @@ module Jennifer
       value
     end
 
-    def local_time_zone
-      @local_time_zone
-    end
-
+    # Delegates call to #local_time_zone.
     def self.local_time_zone
       instance.local_time_zone
     end
@@ -202,15 +209,18 @@ module Jennifer
       @@migration_failure_handler_method = parsed_value
     end
 
+    # Yields default configuration instance to block and validates it.
     def self.configure(&block)
       yield instance
       instance.validate_config
     end
 
+    # Delegates call to #from_uri.
     def self.from_uri(uri)
       config.from_uri(uri)
     end
 
+    # Delegates call to #read.
     def self.read(*args, **opts)
       config.read(*args, **opts)
     end
@@ -250,11 +260,13 @@ module Jennifer
       {% for field in FLOAT_FIELDS %}
         @{{field.id}} = float_from_yaml(source, "{{field.id}}") if source["{{field.id}}"]?
       {% end %}
-      self.local_time_zone_name = source["local_time_zone_name"].as_s if source["local_time_zone_name"]?
-
       {% for field in BOOL_FIELDS %}
         @{{field.id}} = bool_from_yaml(source, "{{field.id}}") if source["{{field.id}}"]?
       {% end %}
+
+      self.local_time_zone_name = source["local_time_zone_name"].as_s if source["local_time_zone_name"]?
+      self.pool_size = int_from_yaml(source, "pool_size") if source["pool_size"]?
+
       validate_config
       self
     end
@@ -290,6 +302,7 @@ module Jennifer
           %}
           @{{field.id}} = params["{{field.id}}"].{{method.id}} if params["{{field.id}}"]?
         {% end %}
+        self.pool_size = params["pool_size"].to_i if params["pool_size"]?
       end
       validate_config
       self

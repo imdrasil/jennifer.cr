@@ -24,22 +24,27 @@ module PG
   end
 end
 
+# :nodoc:
 struct Time
   def_clone
+
 
   struct Span
     def_clone
   end
-end
 
-class Time::Location
-  def_clone
 
-  struct Zone
+  class Location
     def_clone
+
+
+    struct Zone
+      def_clone
+    end
   end
 end
 
+# :nodoc:
 struct JSON::Any
   def_clone
 end

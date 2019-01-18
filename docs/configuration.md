@@ -73,9 +73,7 @@ Jennifer::Config.from_uri(db)
 | `password` | - |
 | `db` | - |
 | `adapter` | - |
-| `max_pool_size` | 1 |
-| `initial_pool_size` | 1 |
-| `max_idle_pool_size` | 1 |
+| `pool_size` | 1 |
 | `retry_attempts` | 1 |
 | `checkout_timeout` | 5.0 |
 | `retry_delay` | 1.0 |
@@ -89,8 +87,6 @@ Jennifer::Config.from_uri(db)
 | `migration_files_path` | `"./db/migrations"` |
 | `model_files_path` | `"./src/models"` |
 | `structure_folder` | parent folder of `migration_files_path` |
-
-> It is highly recommended to set `max_idle_pool_size = max_pool_size = initial_pool_size` to prevent blowing up count of DB connections. For any details take a look at `crystal-db` [issue](https://github.com/crystal-lang/crystal-db/issues/77).
 
 To avoid port usage set it to `-1`. For doing same with the password - assign to it blank value (`""`). Empty string also turns off `structure_folder` config.
 

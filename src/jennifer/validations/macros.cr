@@ -91,6 +91,30 @@ module Jennifer
         end
       end
 
+      macro validates_composite_uniqueness(*fields, if if_value = nil)
+        # raise a compile time error if a composite key is specified
+        # that does not define any properties
+        {% raise "Composite checks must consist of at least two fields" if fields.empty? %}
+        # hint that a common unique key would be better suited if only one property
+        # is specified
+        {% raise "Composite checks must consist of at least two fields - please use a common unique constraint for validating single properties" if fields.size < 2 %}
+
+        validates_with_method(%validate_method, if: {{if_value}})
+
+        # generate a query that fetches records based on the marked
+        # properties of the current entity 
+        # (e.g. ... WHERE id = <id> AND name = <name> AND config = <config> ...)
+        {% field_condition = fields.map(&.id).map { |f| ".where { _#{f.id} == #{f.id} }" }.join("") %}
+
+        def %validate_method
+          ::Jennifer::Validations::CompositeUniqueness.instance.validate(
+            self,
+            self.class{{field_condition.id}},
+            {{fields}}
+          )
+        end # %validate_method
+      end # validates_composite_uniqueness
+
       # Validates that the specified attributes are not blank.
       macro validates_presence(field, if if_value = nil)
         validates_with_method(%validate_method, if: {{if_value}})

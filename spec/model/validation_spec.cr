@@ -304,6 +304,43 @@ describe Jennifer::Model::Validation do
     pending "allows blank" {}
   end
 
+  describe "%validates_composite_uniqueness" do
+    it "should do nothing when a unique entry is built" do
+      c = Factory.create_country(name: "specland")
+
+      d = Factory.build_district(code: "0123", country_id: c.id)
+      d.should be_valid
+    end
+
+    it "should do nothing when a unique entry is created" do
+      c = Factory.create_country(name: "specland")
+
+      d = Factory.create_district(code: "0123", country_id: c.id)
+      d.should be_valid
+    end
+
+    it "should do nothing if the combination of values is unique" do
+      c1 = Factory.create_country(name: "specland")
+
+      d1 = Factory.create_district(code: "0123", country_id: c1.id)
+      d1.should be_valid
+
+      d2 = Factory.build_district(code: "0124", country_id: c1.id)
+      d2.should be_valid
+    end
+
+    it "should not allow combinations of values that already exist" do
+      c = Factory.create_country(name: "specland")
+
+      d1 = Factory.create_district(code: "0123", country_id: c.id)
+      d1.should be_valid
+
+      d2 = Factory.build_district(code: "0123", country_id: c.id)
+      d2.should validate(:code).with("this combination has already been taken")
+      d2.should validate(:country_id).with("this combination has already been taken")
+    end
+  end
+
   describe "%validates_presence" do
     context "when field is not nil" do
       it "pass validation" do

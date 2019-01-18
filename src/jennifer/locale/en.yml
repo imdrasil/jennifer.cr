@@ -30,3 +30,4 @@ jennifer:
       other_than: "must be other than %{value}"
       odd: "must be odd"
       even: "must be even"
+      combination_taken: "this combination has already been taken"

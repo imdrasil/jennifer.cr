@@ -314,6 +314,18 @@ class Note < ApplicationRecord
   belongs_to :notable, Union(User | Contact), { where { _name.like("%on") } }, polymorphic: true
 end
 
+class District < ApplicationRecord
+  mapping(
+    id: Primary32,
+    code: String,
+    country_id: Int32
+  )
+
+  belongs_to :country, Country
+
+  validates_composite_uniqueness :code, :country_id
+end
+
 class OneFieldModel < Jennifer::Model::Base
   mapping(
     id: Primary64

@@ -88,7 +88,7 @@ module Jennifer
             s << opts[:null] ? " DROP" : " SET"
             s << " NOT NULL,"
           end
-          if opts[:default]?
+          if opts.has_key?(:default)
             s << column_name_part
             if opts[:default].is_a?(Symbol) && opts[:default].as(Symbol) == :drop
               s << "DROP DEFAULT "
@@ -110,14 +110,11 @@ module Jennifer
         io << name
         column_type_definition(options, io)
         if options.has_key?(:null)
-          if options[:null]
-            io << " NULL"
-          else
-            io << " NOT NULL"
-          end
+          io << " NOT" unless options[:null]
+          io << " NULL"
         end
-        io << " PRIMARY KEY" if options[:primary]?
-        io << " DEFAULT #{adapter_class.t(options[:default])}" if options[:default]?
+        io << " PRIMARY KEY" if options.has_key?(:primary) && options[:primary]
+        io << " DEFAULT #{adapter_class.t(options[:default])}" if options.has_key?(:default)
       end
 
       private def column_type_definition(options, io)

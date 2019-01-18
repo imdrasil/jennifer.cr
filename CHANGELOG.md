@@ -87,7 +87,7 @@
 **Config**
 
 * fix `migration_failure_handler_method` property from being global
-* add new property `model_files_path` representing model directory (is used in a scope of model generating)
+* add new property `model_files_path` presenting model directory (is used in a scope of model generating)
 * fix ignoring `skip_dumping_schema_sql` config
 
 **SqlGenerator**
@@ -362,7 +362,7 @@
 
 **Exceptions**
 
-* add `AbstractMethod` exception which represents expectation of overriding current method by parents (is useful when method can't be real abstract one)
+* add `AbstractMethod` exception which presents expectation of overriding current method by parents (is useful when method can't be real abstract one)
 * add `UnknownSTIType`
 
 ## 0.4.2 (24-11-2017)
@@ -470,7 +470,7 @@
 * `Query#order` realize same idea as with `Query#select` but with hashes
 * added `Criteria#alias` method which allows to alias field in the `SELECT` clause
 * `ExpressionBuilder#star` creates "all" attribute; allows optional argument specifying table name
-* `RawSql` now has `@use_brakets` attribute representing if sql statement should be surrounded by brackets
+* `RawSql` now has `@use_brakets` attribute presenting whether sql statement should be surrounded by brackets
 * `Criteria#sql` method now accepts `use_brackets` argument which is passed to `RawSql`
 
 **Migration**

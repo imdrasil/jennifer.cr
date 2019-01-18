@@ -28,7 +28,7 @@ create_table(:addresses) do |t|
 end
 ```
 
-There are next methods which represents corresponding types:
+There are next methods which presents corresponding types:
 
 | Method | PostgreSQL | MySql | Crystal type |
 | --- | --- | --- | --- |
@@ -76,7 +76,7 @@ Also if you use postgres array types are available as well: `Array(Int32)`, `Arr
 All those methods accepts additional options:
 
 - `:sql_type` - gets exact (except size) field type;
-- `:null` - represent nullable if field (by default is `false` for all types and field);
+- `:null` - present nullable if field (by default is `false` for all types and field);
 - `:primary` - marks field as primary key field (could be several ones but this provides some bugs with query generation for such model - for now try to avoid this).
 - `:default` - default value for field
 - `:auto_increment` - marks field to use auto increment (properly works only with `Int32` fields, another crystal types have cut functionality for it);

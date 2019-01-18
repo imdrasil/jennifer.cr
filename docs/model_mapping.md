@@ -142,7 +142,7 @@ If you don't want to define all the table fields - pass `false` as second argume
 | `::field_count`| | number of fields |
 | `::field_names`| | all fields names |
 | `#{{field_name}}` | | getter |
-| `#{{field_name}}_changed?` | | represents if field is changed |
+| `#{{field_name}}_changed?` | | presents whether field is changed |
 | `#{{field_name}}!` | | getter with `not_nil!` if `null: true` was passed |
 | `#{{field_name}}=`| | setter |
 | `::_{{field_name}}` | | helper method for building queries |

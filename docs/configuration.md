@@ -10,13 +10,15 @@ require "jennifer/adapter/postgres" # for postgres
 
 > Be attentive - adapter should be required **after** main staff. From `0.5.0` several adapters could be required at the same time.
 
+[SQLite3](https://github.com/imdrasil/jennifer_sqlite3_adapter) adapter is in a separate shard.
+
 This should be done before you load your application configurations (or at least models). Now configuration could be loaded from yaml file:
 
 ```crystal
 Jennifer::Config.read("./spec/fixtures/database.yml", :development)
 ```
 
-Second argument represents environment and just use it as namespace key grepping values from yml.
+Second argument presents environment and just use it as namespace key grepping values from yml.
 
 ```yaml
 defaults : &defaults

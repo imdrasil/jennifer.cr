@@ -1,4 +1,7 @@
 module Jennifer
+  # General data structure for the raw data retrieved for the DB.
+  #
+  # Dynamically generates getters using `.method_missing`.
   struct Record
     getter attributes
 
@@ -14,6 +17,7 @@ module Jennifer
       @attributes = {} of String => DBAny
     end
 
+    # Returns names of fields.
     def fields
       @attributes.keys
     end
@@ -23,14 +27,17 @@ module Jennifer
       attribute(name)
     end
 
+    # Returns value by attribute *name*.
     def attribute(name : String)
       @attributes[name]
     end
 
+    # ditto
     def attribute(name : Symbol)
       @attributes[name.to_s]
     end
 
+    # Returns casted value of attribute *name* to the type *type*.
     def attribute(name : String | Symbol, type : T.class) : T forall T
       value = @attributes[name.to_s]
       if value.is_a?(T)

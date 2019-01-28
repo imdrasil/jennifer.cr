@@ -104,7 +104,7 @@ drop_materialized_view("female_contacts")
 
 To alter existing table use next methods:
 
- - `#change_column(name, [new_name], options)` - to change column definition; postgres has slighly another implementation of this than mysql one - check source code for details;
+ - `#change_column(name, [new_name], options)` - to change column definition; postgres has slightly another implementation of this than mysql one - check source code for details;
  - `#add_column(name, type, options)` - add new column;
  - `#drop_column(name)` - drops existing column
  - `#add_index(name : String, field : Symbol, type : Symbol, order : Symbol?, length : Int32?)` - adds new index (postgres doesn't support length parameter and only support `:unique` type);

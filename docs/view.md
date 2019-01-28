@@ -20,7 +20,7 @@ end
 
 Second argument of `#create_view` describes query which will  be used to retrieve data.
 
-**Importent restriction**: any prepared argument is not allowed for now - all arguments should be escaped by your own.
+**Important restriction**: any prepared argument is not allowed for now - all arguments should be escaped by your own.
 
 ```crystal
 # bad
@@ -49,7 +49,7 @@ end
 
 All regular model mapping functionality are also available for views (except any functionality for deleting, updating or creating new view objects). Any scoping functionality is allowed as well. Only `after_initialize` callback is allowed. STI is not supported.
 
-Also all defined mapping properties are accessible via `COLUMNS_METADA` constant and `::columns_tuple` method.
+Also all defined mapping properties are accessible via `COLUMNS_METADATA` constant and `::columns_tuple` method.
 
 ## Materialized
 

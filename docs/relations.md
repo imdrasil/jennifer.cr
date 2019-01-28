@@ -72,7 +72,7 @@ class Photo < Jennifer::Model::Base
     attachable_id: int32?
   )
 
-  # Klass options specifies the exact union of models allowed to use this one
+  # klass options specifies the exact union of models allowed to use this one
   belongs_to :attachable, Union(Post | Comment), polymorphic: true
 end
 

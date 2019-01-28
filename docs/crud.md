@@ -18,7 +18,7 @@ c.age = 18
 c.save
 ```
 
-> Any `::create` and `#save` method call by default process under a transation. If transation is already started will not create new one.
+> Any `::create` and `#save` method call by default process under a transaction. If transaction is already started will not create new one.
 
 To insert multiple records at once use `::import`:
 

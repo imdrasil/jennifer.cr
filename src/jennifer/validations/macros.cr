@@ -76,44 +76,36 @@ module Jennifer
       # Because this check is performed outside the database there is still a chance that duplicate values will be
       # inserted in two parallel transactions. To guarantee against this you should create a unique index on the field.
       # TODO: add scope
-      macro validates_uniqueness(field, allow_blank = false, if if_value = nil)
-        validates_with_method(%validate_method, if: {{if_value}})
-
-        # :nodoc:
-        def %validate_method
-          ::Jennifer::Validations::Uniqueness.instance.validate(
-            self,
-            {{field}},
-            {{field.id}},
-            {{allow_blank}},
-            self.class.all.where { _{{field.id}} == {{field.id}} }
-          )
-        end
-      end
-
-      macro validates_composite_uniqueness(*fields, if if_value = nil)
-        # raise a compile time error if a composite key is specified
+      macro validates_uniqueness(*fields, allow_blank allow_blank_value = false, if if_value = nil)
+        # raise a compile time error if a uniqueness validator is specified
         # that does not define any properties
-        {% raise "Composite checks must consist of at least two fields" if fields.empty? %}
-        # hint that a common unique key would be better suited if only one property
-        # is specified
-        {% raise "Composite checks must consist of at least two fields - please use a common unique constraint for validating single properties" if fields.size < 2 %}
+        {% raise "A uniqueness check requires at least one field" if fields.empty? %}
 
         validates_with_method(%validate_method, if: {{if_value}})
 
         # generate a query that fetches records based on the marked
         # properties of the current entity 
         # (e.g. ... WHERE id = <id> AND name = <name> AND config = <config> ...)
-        {% field_condition = fields.map(&.id).map { |f| ".where { _#{f.id} == #{f.id} }" }.join("") %}
+        {% normalized_fields = fields.map(&.id) %}
 
+        {% fields_condition = normalized_fields.map { |field| ".where { _#{field} == #{field} }" }.join("") %}
+
+        # builds a unique identifier for this set of properties
+        # (e.g. for uniqueness properties `:a`, `:b` this results in `:a_b`)
+        {% fields_identifier = normalized_fields.join("_") %}
+
+        # :nodoc:
         def %validate_method
-          ::Jennifer::Validations::CompositeUniqueness.instance.validate(
+          ::Jennifer::Validations::Uniqueness.instance.validate(
             self,
-            self.class{{field_condition.id}},
-            {{fields}}
+            :{{fields_identifier.id}},
+            # pass on nil here to signal nil values in record
+            {{normalized_fields}}.all?(&.nil?) ? nil : {{normalized_fields}},
+            {{allow_blank_value}},
+            self.class{{fields_condition.id}}
           )
         end # %validate_method
-      end # validates_composite_uniqueness
+      end # validates_uniqueness
 
       # Validates that the specified attributes are not blank.
       macro validates_presence(field, if if_value = nil)

@@ -173,6 +173,8 @@ class Passport < Jennifer::Model::Base
   validates_with EnnValidator
   belongs_to :contact, Contact
 
+  validates_uniqueness :enn, :contact_id, allow_blank: true
+
   after_destroy :increment_destroy_counter
 
   @@destroy_counter = 0
@@ -312,18 +314,6 @@ class Note < ApplicationRecord
   include Mapping
 
   belongs_to :notable, Union(User | Contact), { where { _name.like("%on") } }, polymorphic: true
-end
-
-class District < ApplicationRecord
-  mapping(
-    id: Primary32,
-    code: String,
-    country_id: Int32
-  )
-
-  belongs_to :country, Country
-
-  validates_composite_uniqueness :code, :country_id
 end
 
 class OneFieldModel < Jennifer::Model::Base

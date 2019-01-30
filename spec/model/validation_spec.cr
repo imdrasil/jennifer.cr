@@ -302,42 +302,34 @@ describe Jennifer::Model::Validation do
     end
 
     pending "allows blank" {}
-  end
-
-  describe "%validates_composite_uniqueness" do
-    it "should do nothing when a unique entry is built" do
-      c = Factory.create_country(name: "specland")
-
-      d = Factory.build_district(code: "0123", country_id: c.id)
-      d.should be_valid
-    end
-
-    it "should do nothing when a unique entry is created" do
-      c = Factory.create_country(name: "specland")
-
-      d = Factory.create_district(code: "0123", country_id: c.id)
-      d.should be_valid
-    end
-
+    
     it "should do nothing if the combination of values is unique" do
-      c1 = Factory.create_country(name: "specland")
+      c = Factory.create_contact(
+        name:        "Tess Tee",
+        age:         22,
+        gender:      "female"
+      )
 
-      d1 = Factory.create_district(code: "0123", country_id: c1.id)
-      d1.should be_valid
+      p1 = Factory.create_passport(enn: "xyz0", contact_id: c.id)
+      p1.should be_valid
 
-      d2 = Factory.build_district(code: "0124", country_id: c1.id)
-      d2.should be_valid
+      p2 = Factory.build_passport(enn: "E928", contact_id: c.id)
+      p2.should be_valid
     end
 
     it "should not allow combinations of values that already exist" do
-      c = Factory.create_country(name: "specland")
+      c = Factory.create_contact(
+        name:        "Test R. Numberone",
+        age:         43,
+        gender:      "male"
+      )
 
-      d1 = Factory.create_district(code: "0123", country_id: c.id)
-      d1.should be_valid
+      p1 = Factory.create_passport(enn: "z0134", contact_id: c.id)
+      p1.should be_valid
 
-      d2 = Factory.build_district(code: "0123", country_id: c.id)
-      d2.should validate(:code).with("this combination has already been taken")
-      d2.should validate(:country_id).with("this combination has already been taken")
+      p2 = Factory.build_passport(enn: "z0134", contact_id: c.id)
+      p2.should_not be_valid
+      p2.should validate(:enn_contact_id).with("has already been taken")
     end
   end
 

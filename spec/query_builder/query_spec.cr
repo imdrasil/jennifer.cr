@@ -409,4 +409,89 @@ describe Jennifer::QueryBuilder::Query do
     it { clone.as_sql.should match(/UNION/) }
     it { clone._select_fields[0].should_not be_a(Jennifer::QueryBuilder::Star) }
   end
+
+  describe "#none" do
+    context "when is used alongside with #pluck" do
+      it "returns nothing when a single column is plucked" do
+        expect_query_silence do
+          Query["contacts"].none.pluck(:id).should be_empty
+        end
+      end
+
+      it "returns nothing when multiple columns are plucked" do
+        expect_query_silence do
+          Query["contacts"].none.pluck(%i(id name)).should be_empty
+        end
+      end
+    end
+
+    context "when is used alongside with #delete" do
+      it "deletes nothing" do
+        expect_query_silence do
+          Query["contacts"].none.delete
+        end
+      end
+    end
+
+    context "when is used alongside with #exists?" do
+      it "returns false without hitting the db" do
+        expect_query_silence do
+          Query["contacts"].none.exists?.should be_false
+        end
+      end
+    end
+
+    context "when is used alongside with #update" do
+      context "when block is given" do
+        it "updates nothing" do
+          expect_query_silence do
+            block_is_executed = false
+            Query["contacts"].none.update { block_is_executed = true; { :age => _age + 10 } }
+            block_is_executed.should be_true
+          end
+        end
+      end
+
+      context "when arguments is passed as hash" do
+        it "updates nothing" do
+          expect_query_silence do
+            Query["contacts"].none.update({ :age => 40 })
+          end
+        end
+      end
+    end
+
+    context "when is used alongside with #db_results" do
+      it "returns empty array" do
+        expect_query_silence do
+          Query["contacts"].none.db_results.should be_empty
+        end
+      end
+    end
+
+    context "when is used alongside with #results" do
+      it "returns empty array" do
+        expect_query_silence do
+          Query["contacts"].none.results.should be_empty
+        end
+      end
+    end
+
+    context "when is used alongside with #each_result_set" do
+      it do
+        expect_query_silence do
+          Query["contacts"].none.each_result_set do
+          end
+        end
+      end
+    end
+
+    context "when is used alongside with #find_records_by_sql" do
+      it "return empty array" do
+        expect_query_silence do
+          Query["contacts"].none.find_records_by_sql("INVALID SQL").should be_empty
+        end
+      end
+    end
+  end
 end

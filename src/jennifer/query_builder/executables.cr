@@ -50,29 +50,37 @@ module Jennifer
         result[0]
       end
 
-      def pluck(fields : Array)
+      # Returns array of given field values.
+      #
+      # This method allows you load only those fields you need without loading records.
+      # If query is ModelQuery - take into consideration that fields will not be converted by
+      # model converters.
+      def pluck(fields : Array) : Array(Array(DBAny))
+        return [] of Array(DBAny) if do_nothing?
         adapter.pluck(self, fields.map(&.to_s))
       end
 
-      def pluck(field : String | Symbol)
-        adapter.pluck(self, field.to_s)
+      # ditto
+      def pluck(*fields : String | Symbol)
+        pluck(fields.to_a)
       end
 
-      def pluck(*fields : String | Symbol)
-        adapter.pluck(self, fields.to_a.map(&.to_s))
+      def pluck(field : String | Symbol) : Array(DBAny)
+        return [] of DBAny if do_nothing?
+        adapter.pluck(self, field.to_s)
       end
 
       # Delete all records which satisfy given conditions.
       #
       # No callbacks or validation will be executed.
       def delete
-        return if @do_nothing
+        return if do_nothing?
         adapter.delete(self)
       end
 
       # Returns whether any record satisfying given conditions exists.
       def exists?
-        return false if @do_nothing
+        return false if do_nothing?
         adapter.exists?(self)
       end
 
@@ -81,14 +89,16 @@ module Jennifer
       # Expects block to return `Hash(Symbol, DBAny | Jennifer::QueryBuilder::Statement)`.
       #
       # ```
-      # Contact.all.where { and(_name == "Jon", age > 100) }.update { { name: "John", age: _age - 15 } }
+      # Contact.all.where { and(_name == "Jon", age > 100) }.update { { :name => "John", :age => _age - 15 } }
       # ```
       def update
         definition = (with @expression yield)
+        return DB::ExecResult.new(0i64, 0i64) if do_nothing?
         adapter.modify(self, definition)
       end
 
       def update(options : Hash)
+        return DB::ExecResult.new(0i64, 0i64) if do_nothing?
         adapter.update(self, options)
       end
 
@@ -144,7 +154,6 @@ module Jennifer
 
       def db_results
         result = [] of Hash(String, DBAny)
-        return result if @do_nothing
         each_result_set do |rs|
           result << adapter.result_to_hash(rs)
         end
@@ -153,7 +162,6 @@ module Jennifer
 
       def results
         result = [] of Record
-        return result if @do_nothing
         each_result_set { |rs| result << Record.new(rs) }
         result
       end
@@ -177,6 +185,7 @@ module Jennifer
 
       # Yields each result set object to a block.
       def each_result_set(&block)
+        return if do_nothing?
         adapter.select(self) do |rs|
           begin
             rs.each do
@@ -187,6 +196,28 @@ module Jennifer
             raise e
           end
         end
+      end
+
+      # Yields each batch of records that was found by the specified query.
+      #
+      # ```
+      # Jennifer::Query["contacts"].where { _age > 21 }.find_in_batches("id") do |batch|
+      #   batch.each do |contact|
+      #     puts contact.id
+      #   end
+      # end
+      # ```
+      #
+      # To get each record one by one use #find_each instead.
+      #
+      # NOTE: any given ordering will be ignored and query will be reordered based on the
+      # *primary_key* and *direction*.
+      def find_in_batches(primary_key : String, batch_size : Int32 = 1000, start : Int32? = nil, direction : String | Symbol = "asc", &block)
+        find_in_batches(@expression.c(primary_key.not_nil!), batch_size, start, direction) { |records| yield records }
+      end
+
+      def find_in_batches(batch_size : Int32 = 1000, start : Int32 = 0, &block)
+        find_in_batches(nil, batch_size, start) { |records| yield records }
       end
 
       def find_in_batches(primary_key : Criteria, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
@@ -206,7 +237,7 @@ module Jennifer
       def find_in_batches(primary_key : Nil, batch_size : Int32 = 1000, start : Int32 = 0, &block)
         Config.logger.warn("#find_in_batches is invoked with already ordered query - it will be reordered") if ordered?
         Config.logger.warn("#find_in_batches methods was invoked without passing primary_key" \
-                          " key field name which may results in not proper records extraction; 'start' argument" \
+                          " key field name which may results in incorrect records extraction; 'start' argument" \
                           " was realized as page number.")
         request = clone.reorder.limit(batch_size)
 
@@ -220,12 +251,21 @@ module Jennifer
         end
       end
 
-      def find_in_batches(batch_size : Int32 = 1000, start : Int32 = 0, &block)
-        find_in_batches(nil, batch_size, start) { |records| yield records }
-      end
-
-      def find_in_batches(primary_key : String, batch_size : Int32 = 1000, start : Int32? = nil, direction : String | Symbol = "asc", &block)
-        find_in_batches(@expression.c(primary_key.not_nil!), batch_size, start, direction) { |records| yield records }
+      # Yields each record in batches from #find_in_batches.
+      #
+      # Looping through a collection of records from the database is very inefficient since it will instantiate all the objects
+      # at once. In that case batch processing methods allow you to work with the records
+      # in batches, thereby greatly reducing memory consumption.
+      #
+      # ```
+      # Jennifer::Query["contacts"].where { _age > 21 }.find_each("id") do |contact|
+      #   puts contact.id
+      # end
+      # ```
+      def find_each(primary_key : String, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
+        find_in_batches(primary_key, batch_size, start, direction) do |records|
+          records.each { |rec| yield rec }
+        end
       end
 
       def find_each(primary_key : Criteria, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
@@ -240,21 +280,23 @@ module Jennifer
         end
       end
 
-      def find_each(primary_key : String, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
-        find_in_batches(primary_key, batch_size, start, direction) do |records|
-          records.each { |rec| yield rec }
-        end
-      end
-
       def find_each(batch_size : Int32 = 1000, start : Int32 = 0, direction : String | Symbol = "asc", &block)
         find_in_batches(batch_size, start) do |records|
           records.each { |rec| yield rec }
         end
       end
 
+      # Executes a custom SQL query against DB and returns array of `Record`.
+      #
+      # Any query conditions specified earlier are ignored.
+      #
+      # ```
+      # query = "SELECT name FROM users WHERE age > %1"
+      # Jennifer::Query["contacts"].find_records_by_sql(query, [21]) # [<Record: name="Roland">]
+      # ```
       def find_records_by_sql(query : String, args : Array(DBAny) = [] of DBAny)
         results = [] of Record
-        return results if @do_nothing
+        return results if do_nothing?
         adapter.query(query, args) do |rs|
           begin
             rs.each do

@@ -124,17 +124,9 @@ describe Jennifer::QueryBuilder::Executables do
 
     it "returns false if there is no such object with given condition" do
       Factory.create_contact(name: "Anton")
-      described_class.new("contacts").where { _name == "Jhon" }.exists?.should be_false
+      described_class.new("contacts").where { _name == "Abraham" }.exists?.should be_false
     end
   end
-
-  # describe "#modify" do
-  #   it "performs provided operations" do
-  #     c = Factory.create_contact(age: 13)
-  #     Contact.all.modify({:age => {value: 2, operator: :+}})
-  #     c.reload.age.should eq(15)
-  #   end
-  # end
 
   describe "#update" do
     it "updates given fields in all matched rows" do
@@ -397,10 +389,22 @@ describe Jennifer::QueryBuilder::Executables do
       Factory.create_contact
       res = Query["contacts"].find_records_by_sql(query)
       res.size.should eq(1)
-      res[0].id.nil?.should be_false
+      res[0].name.should eq("Deepthi")
     end
 
-    it "respects none method" do
+    it "accepts arguments" do
+      Factory.create_contact(age: 21)
+      Factory.create_contact(age: 20)
+      placeholder = db_specific(postgres: -> { "$1" }, mysql: -> { "?" })
+      res = Query["contacts"].find_records_by_sql(
+        "SELECT * FROM contacts WHERE age > #{placeholder}",
+        [20]
+      )
+      res.size.should eq(1)
+      res[0].age.should eq(21)
+    end
+
+    it "respects #none" do
       Factory.create_contact
       res = Query["contacts"].none.find_records_by_sql(query)
       res.size.should eq(0)

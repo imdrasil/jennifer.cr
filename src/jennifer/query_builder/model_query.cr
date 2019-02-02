@@ -55,7 +55,7 @@ module Jennifer
       # related records using `#preload` method nad respects `#none`
       def find_by_sql(query : String, args : Array(DBAny) = [] of DBAny)
         results = [] of T
-        return results if @do_nothing
+        return results if do_nothing?
         adapter.query(query, args) do |rs|
           begin
             rs.each do
@@ -71,7 +71,7 @@ module Jennifer
 
       # Executes request and maps result set to objects with loading any requested related objects
       def to_a
-        return [] of T if @do_nothing
+        return [] of T if do_nothing?
         add_aliases if @relation_used
         return to_a_with_relations if @eager_load
         result = [] of T

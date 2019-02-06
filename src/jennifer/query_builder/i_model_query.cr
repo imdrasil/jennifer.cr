@@ -25,10 +25,35 @@ module Jennifer
         model_class.relation(name.to_s).join_condition(self, type)
       end
 
+      # Yields each batch of records that was found by the specified query.
+      #
+      # ```
+      # Contact.all.where { _age > 21 }.find_in_batches do |batch|
+      #   batch.each do |contact|
+      #     puts contact.id
+      #   end
+      # end
+      # ```
+      #
+      # To get each record one by one use #find_each instead.
+      #
+      # NOTE: any given ordering will be ignored and query will be reordered based on the
+      # *primary_key* and *direction*.
       def find_in_batches(batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
         super(model_class.primary, batch_size, start, direction) { |records| yield records }
       end
 
+      # Yields each record in batches from #find_in_batches.
+      #
+      # Looping through a collection of records from the database is very inefficient since it will instantiate all the objects
+      # at once. In that case batch processing methods allow you to work with the records
+      # in batches, thereby greatly reducing memory consumption.
+      #
+      # ```
+      # Contact.all.where { _age > 21 }.find_each do |contact|
+      #   puts contact.id
+      # end
+      # ```
       def find_each(batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
         super(model_class.primary, batch_size, start, direction) { |record| yield record }
       end
@@ -43,6 +68,7 @@ module Jennifer
         find_each(&.update(options))
       end
 
+      # ditto
       def patch(**opts)
         patch(opts)
       end

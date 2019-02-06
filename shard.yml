@@ -4,7 +4,7 @@ version: 0.7.0
 authors:
   - Roman Kalnytskyi <moranibaca@gmail.com>
 
-crystal: 0.26.1
+crystal: 0.27.2
 
 license: MIT
 

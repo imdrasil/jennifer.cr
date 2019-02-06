@@ -22,11 +22,11 @@ require "./support/*"
 Spec.before_each do
   Jennifer::Adapter.adapter.begin_transaction
   set_default_configuration
+  Spec.logger.clear
 end
 
 Spec.after_each do
   Jennifer::Adapter.adapter.rollback_transaction
-  Spec.logger.clear
   Spec.file_system.clean
 end
 

@@ -173,6 +173,8 @@ class Passport < Jennifer::Model::Base
   validates_with EnnValidator
   belongs_to :contact, Contact
 
+  validates_uniqueness :enn, :contact_id, allow_blank: true
+
   after_destroy :increment_destroy_counter
 
   @@destroy_counter = 0

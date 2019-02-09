@@ -107,6 +107,11 @@ class CityFactory < Factory::Jennifer::Base
   attr :country_id, -> { Factory.create_country.id }, Int32
 end
 
+class DistrictFactory < Factory::Jennifer::Base
+  attr :code, "2357"
+  attr :country_id, -> { Factory.create_country.id }, Int32
+end
+
 class ProfileFactory < Factory::Jennifer::Base
   attr :login, "some_login"
   attr :type, Profile.to_s

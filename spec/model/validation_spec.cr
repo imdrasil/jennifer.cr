@@ -302,6 +302,35 @@ describe Jennifer::Model::Validation do
     end
 
     pending "allows blank" {}
+    
+    it "should do nothing if the combination of values is unique" do
+      c = Factory.create_contact(
+        name:        "Tess Tee",
+        age:         22,
+        gender:      "female"
+      )
+
+      p1 = Factory.create_passport(enn: "xyz0", contact_id: c.id)
+      p1.should be_valid
+
+      p2 = Factory.build_passport(enn: "E928", contact_id: c.id)
+      p2.should be_valid
+    end
+
+    it "should not allow combinations of values that already exist" do
+      c = Factory.create_contact(
+        name:        "Test R. Numberone",
+        age:         43,
+        gender:      "male"
+      )
+
+      p1 = Factory.create_passport(enn: "z0134", contact_id: c.id)
+      p1.should be_valid
+
+      p2 = Factory.build_passport(enn: "z0134", contact_id: c.id)
+      p2.should_not be_valid
+      p2.should validate(:enn_contact_id).with("has already been taken")
+    end
   end
 
   describe "%validates_presence" do

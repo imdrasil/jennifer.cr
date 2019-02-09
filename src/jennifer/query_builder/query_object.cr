@@ -19,9 +19,7 @@ module Jennifer
     #   end
     #
     #   private def article_order
-    #     article_order = Article.c(params["field"].as(String))
-    #     article_order.direction = params["order"].as(String)
-    #     article_order
+    #     Article.c(field).tap { |article_order| article_order.direction = order }
     #   end
     # end
     #
@@ -29,19 +27,13 @@ module Jennifer
     #   # ...
     #   scope :ordered, OrderedArticlesQuery
     # end
+    #
+    # Article.all.ordered("by_date", "desc")
     # ```
     abstract class QueryObject
-      getter relation : ::Jennifer::QueryBuilder::IModelQuery, params : Array(Jennifer::DBAny)
+      getter relation : ::Jennifer::QueryBuilder::IModelQuery
 
       def initialize(@relation)
-        @params = [] of Jennifer::DBAny
-      end
-
-      # Creates QueryObject based on given *relation* and *options*.
-      #
-      # NOTE: deprecated - will be removed in 0.7.0.
-      def initialize(@relation, *options)
-        @params = Ifrit.typed_array_cast(options, Jennifer::DBAny)
       end
 
       abstract def call

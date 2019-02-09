@@ -2,6 +2,35 @@
 
 ## Future release (__-__-2019)
 
+## 0.7.1 (09-02-2019)
+
+**QueryBuilder**
+
+* `#pluck`, `#update`, `#db_results`, `#results`. `#each_result_set` and `#find_in_batches`of `Query` respects `#none` (returns empty result if it has being called)
+* remove deprecated `QueryObject` constructor accepting array of options and `#params`
+
+**Model**
+
+* fix mapping issue when all `Generic`s are assumed as unions (#208)
+
+**Validation**
+
+* allow passing multiple fields to `.validates_uniqueness` to validate combination uniqueness
+
+**Adapter**
+
+* `Mysql::SchemaProcessor` now respects `false` as column default value
+* `Postgres::SchemaProcessor` now respects `false` as column default value
+
+**Config**
+
+* introduce new configuration `pool_size` which sets `max_idle_pool_size = max_pool_size = initial_pool_size` to the given value; getter `#pool_size` returns `#max_pool_size`
+* `postgres` is no more default adapter
+
+**Migration**
+
+* `TableBuilder::Base::AllowedTypes` alias includes `Float64` and `JSON::Any`
+
 ## 0.7.0 (08-01-2019)
 
 **General**

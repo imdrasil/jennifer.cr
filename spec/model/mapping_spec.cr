@@ -12,30 +12,6 @@ end
 describe Jennifer::Model::Mapping do
   select_regexp = /[\S\s]*SELECT contacts\.\*/i
 
-  describe "::build" do
-    context "loading STI objects from request" do
-      it "creates proper objects" do
-        Factory.create_twitter_profile
-        Factory.create_facebook_profile
-        match_array(Profile.all.to_a.map(&.class), [FacebookProfile, TwitterProfile])
-      end
-
-      it "raises exception if invalid type was given" do
-        p = Factory.create_facebook_profile
-        p.update_column("type", "asdasd")
-        expect_raises(Jennifer::UnknownSTIType) do
-          Profile.all.to_a
-        end
-      end
-
-      it "creates base class if type field is blank" do
-        p = Factory.create_facebook_profile
-        p.update_column("type", "")
-        Profile.all.first!.class.to_s.should eq("Profile")
-      end
-    end
-  end
-
   describe "#reload" do
     it "assign all values from db to existing object" do
       c1 = Factory.create_contact
@@ -135,7 +111,43 @@ describe Jennifer::Model::Mapping do
       Contact::WITH_DEFAULT_CONSTRUCTOR.should be_false
     end
 
-    describe "#initialize" do
+    describe ".new" do
+      context "loading STI objects from request" do
+        it "creates proper objects" do
+          Factory.create_twitter_profile
+          Factory.create_facebook_profile
+          klasses = [] of Profile.class
+
+          Profile.all.each_result_set do |rs|
+            record = Profile.new(rs)
+            klasses << record.class
+          end
+          match_array(klasses, [FacebookProfile, TwitterProfile])
+        end
+
+        it "raises exception if invalid type was given" do
+          p = Factory.create_facebook_profile
+          p.update_column("type", "asdasd")
+          expect_raises(Jennifer::UnknownSTIType) do
+            Profile.all.each_result_set do |rs|
+              Profile.new(rs)
+            end
+          end
+        end
+
+        it "creates base class if type field is blank" do
+          p = Factory.create_facebook_profile
+          p.update_column("type", "")
+          executed = false
+
+          Profile.all.each_result_set do |rs|
+            Profile.new(rs).class.to_s.should eq("Profile")
+            executed = true
+          end
+          executed.should be_true
+        end
+      end
+
       context "from result set" do
         it "properly creates object" do
           executed = false

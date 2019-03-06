@@ -1,5 +1,18 @@
 require "../spec_helper"
 
+class SimplifiedProfile < ApplicationRecord
+  mapping({
+    id: Primary32,
+    type: String
+  }, false)
+end
+
+class TwitterProfileWithDC < SimplifiedProfile
+  mapping(
+    email: String?
+  )
+end
+
 describe Jennifer::Model::STIMapping do
   describe "%sti_mapping" do
     context "columns metadata" do
@@ -41,12 +54,22 @@ describe Jennifer::Model::STIMapping do
       end
     end
 
-    pending "defines default constructor if all fields are nillable or have default values and superclass has default constructor" do
-      TwitterProfile::WITH_DEFAULT_CONSTRUCTOR.should be_true
-    end
+    describe "default constructor" do
+      context "when all child fields have a default value" do
+        context "when superclass has only `type` field without default value" do
+          it "sets WITH_DEFAULT_CONSTRUCTOR to true" do
+            TwitterProfileWithDC::WITH_DEFAULT_CONSTRUCTOR.should be_true
+          end
 
-    it "doesn't define default constructor if all fields are nillable or have default values" do
-      TwitterProfile::WITH_DEFAULT_CONSTRUCTOR.should be_false
+          it "passes type to parent constructor" do
+            TwitterProfileWithDC.new.type.should eq("TwitterProfileWithDC")
+          end
+        end
+
+        it "doesn't define default constructor if all fields are nillable or have default values" do
+          TwitterProfile::WITH_DEFAULT_CONSTRUCTOR.should be_false
+        end
+      end
     end
   end
 

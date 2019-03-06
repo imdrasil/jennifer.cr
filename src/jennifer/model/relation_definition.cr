@@ -168,7 +168,7 @@ module Jennifer
 
         # :nodoc:
         def append_{{name.id}}(rel : Hash)
-          obj = {{klass}}.build(rel, false)
+          obj = {{klass}}.new(rel, false)
           set_{{name.id}}_relation(obj)
           obj
         end
@@ -294,7 +294,7 @@ module Jennifer
 
         # :nodoc:
         def append_{{name.id}}(rel : Hash)
-          obj = {{klass}}.build(rel, false)
+          obj = {{klass}}.new(rel, false)
           set_{{name.id}}_relation(obj)
           obj
         end
@@ -497,7 +497,7 @@ module Jennifer
           # :nodoc:
           def append_{{name.id}}(rel : Hash)
             @__{{name.id}}_retrieved = true
-            @{{name.id}} = {{klass}}.build(rel, false)
+            @{{name.id}} = {{klass}}.new(rel, false)
           end
         {% end %}
       end
@@ -596,7 +596,7 @@ module Jennifer
         # :nodoc:
         def append_{{name.id}}(rel : Hash)
           @__{{name.id}}_retrieved = true
-          @{{name.id}} = {{klass}}.build(rel, false)
+          @{{name.id}} = {{klass}}.new(rel, false)
         end
 
         # :nodoc:

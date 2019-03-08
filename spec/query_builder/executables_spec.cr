@@ -128,6 +128,69 @@ describe Jennifer::QueryBuilder::Executables do
     end
   end
 
+  describe "#insert" do
+    context "with array" do
+      it do
+        values = [["John", 60], ["Cris", 111]]
+        Query["contacts"].insert(%w(name age), values)
+        Query["contacts"].pluck(:name, :age).should eq(values)
+      end
+    end
+
+    context "with hash" do
+      it do
+        values = { :name => "John", :age => 60 }
+        Query["contacts"].insert(values)
+        Query["contacts"].pluck(:name, :age).should eq([values.values])
+      end
+    end
+
+    context "with named tuple" do
+      it do
+        values = { name: "John", age: 60 }
+        Query["contacts"].insert(values)
+        Query["contacts"].pluck(:name, :age).should eq([values.values.to_a])
+      end
+    end
+
+    describe "do_nothing" do
+      it do
+        values = { name: "John", age: 60 }
+        Query["contacts"].none.insert(values)
+        Query["contacts"].pluck(:name, :age).should be_empty
+      end
+    end
+  end
+
+  describe "#upsert" do
+    context "with block" do
+      it do
+        Factory.create_contact(name: "Ivan", age: 15, description: "desc")
+        values = [["John", 60, "desc"]]
+        Query["contacts"].upsert(%w(name age description), values, %w(description)) { { :age => 1, :name => "a" } }
+        Query["contacts"].pluck(:name, :age, :description).should eq([["a", 1, "desc"]])
+      end
+
+      context "with reference to values" do
+        it do
+          Factory.create_contact(name: "Ivan", age: 15, description: "desc")
+          values = [["John", 60, "desc"]]
+          Query["contacts"].upsert(%w(name age description), values, %w(description)) { { :age => values(:age) + 1, :name => "a" } }
+          Query["contacts"].pluck(:name, :age, :description).should eq([["a", 61, "desc"]])
+        end
+      end
+    end
+
+    context "without block" do
+      it "do nothing" do
+        Factory.create_contact(name: "Ivan", age: 15, description: "desc")
+        values = [["John", 60, "desc"]]
+        Query["contacts"].upsert(%w(name age description), values, %w(description))
+        Query["contacts"].pluck(:name, :age, :description).should eq([["Ivan", 15, "desc"]])
+      end
+    end
+  end
+
   describe "#update" do
     it "updates given fields in all matched rows" do
       Factory.create_contact(age: 13, name: "a")

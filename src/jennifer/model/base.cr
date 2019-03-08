@@ -393,6 +393,15 @@ module Jennifer
       end
 
       # Performs bulk import of given collection.
+      #
+      # Any callback is ignored.
+      #
+      # ```
+      # User.import([
+      #   User.new({ name: "John" }),
+      #   User.new({ name: "Fahad" })
+      # ])
+      # ```
       def self.import(collection : Array(self))
         adapter.bulk_insert(collection)
       end

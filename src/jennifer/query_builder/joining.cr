@@ -5,7 +5,7 @@ module Jennifer
         eb = ExpressionBuilder.new(source.table_name, relation, self)
         with_relation! if relation
         other = with eb yield eb
-        add_join(Join.new(source.table_name, other, type, relation: relation))
+        _joins! << Join.new(source.table_name, other, type, relation: relation)
         self
       end
 
@@ -13,7 +13,7 @@ module Jennifer
         eb = ExpressionBuilder.new(source, relation, self)
         with_relation! if relation
         other = with eb yield eb
-        add_join(Join.new(source, other, type, relation))
+        _joins! << Join.new(source, other, type, relation)
         self
       end
 
@@ -21,14 +21,14 @@ module Jennifer
       def join(source : Query, aliass : String, type = :inner)
         eb = ExpressionBuilder.new(aliass, nil, self)
         other = with eb yield eb
-        add_join(Join.new(source, other, type, nil))
+        _joins! << Join.new(source, other, type, nil)
         self
       end
 
       def lateral_join(source : Query, aliass : String? = nil, type = :inner, relation : String? = nil)
         eb = ExpressionBuilder.new(aliass, nil, self)
         other = with eb yield eb
-        add_join(LateralJoin.new(source, other, type, nil))
+        _joins! << LateralJoin.new(source, other, type, nil)
         self
       end
 
@@ -46,11 +46,6 @@ module Jennifer
 
       def right_join(source : String)
         join(source, aliass, :left) { |eb| with eb yield }
-      end
-
-      protected def add_join(value : Join)
-        @joins ||= [] of Join
-        @joins.not_nil! << value
       end
     end
   end

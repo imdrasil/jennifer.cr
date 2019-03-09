@@ -209,7 +209,7 @@ describe Jennifer::QueryBuilder::Query do
   describe "#group" do
     context "with symbol" do
       it "creates criteria for given fields and current table" do
-        fields = described_class["table"].group(:f1)._groups
+        fields = described_class["table"].group(:f1)._groups!
         fields.size.should eq(1)
         fields[0].field.should eq("f1")
         fields[0].table.should eq("table")
@@ -218,7 +218,7 @@ describe Jennifer::QueryBuilder::Query do
 
     context "with symbol tuple" do
       it "adds all as criteria" do
-        fields = described_class["table"].group(:f1, :f2)._groups
+        fields = described_class["table"].group(:f1, :f2)._groups!
         fields.size.should eq(2)
         fields[0].field.should eq("f1")
         fields[1].field.should eq("f2")
@@ -227,7 +227,7 @@ describe Jennifer::QueryBuilder::Query do
 
     context "with criteria" do
       it "adds it to select fields" do
-        fields = described_class["table"].group(Contact._id)._groups
+        fields = described_class["table"].group(Contact._id)._groups!
         fields.size.should eq(1)
         fields[0].field.should eq("id")
         fields[0].table.should eq("contacts")
@@ -235,7 +235,7 @@ describe Jennifer::QueryBuilder::Query do
 
       context "as raw sql" do
         it "removes brackets" do
-          field = described_class["table"].group(Contact.context.sql("some sql"))._groups[0]
+          field = described_class["table"].group(Contact.context.sql("some sql"))._groups![0]
           field.identifier.should eq("some sql")
         end
       end
@@ -243,14 +243,14 @@ describe Jennifer::QueryBuilder::Query do
 
     context "with block" do
       it "yield expression builder as current context and accepts array" do
-        fields = described_class["table"].group { [_f1, Contact._id] }._groups
+        fields = described_class["table"].group { [_f1, Contact._id] }._groups!
         fields.size.should eq(2)
         fields[0].field.should eq("f1")
         fields[0].table.should eq("table")
       end
 
       it "removes brackets from raw sql" do
-        field = described_class["table"].group { [sql("f1")] }._groups[0]
+        field = described_class["table"].group { [sql("f1")] }._groups![0]
         field.identifier.should eq("f1")
       end
     end
@@ -284,7 +284,7 @@ describe Jennifer::QueryBuilder::Query do
     it "adds query to own array of unions" do
       q = Jennifer::Query["table"]
       q.union(Jennifer::Query["table2"]).should eq(q)
-      q._unions!.empty?.should be_false
+      q._unions!.should_not be_empty
     end
   end
 
@@ -344,25 +344,25 @@ describe Jennifer::QueryBuilder::Query do
     it "excludes order if given" do
       q = Query["contacts"].order(age: "asc")
       clone = q.except(["order"])
-      clone._order.empty?.should be_true
+      clone._order?.should be_falsey
     end
 
     it "excludes join if given" do
       q = Query["contacts"].join("passports") { _contact_id == _contacts__id }
       clone = q.except(["join"])
-      clone._joins.nil?.should be_true
+      clone._joins?.should be_nil
     end
 
     it "excludes join if given" do
       q = Query["contacts"].union(Query["contacts"])
       clone = q.except(["union"])
-      clone._unions.nil?.should be_true
+      clone._unions?.should be_falsey
     end
 
     it "excludes group if given" do
       q = Query["contacts"].group(:age)
       clone = q.except(["group"])
-      clone._groups.empty?.should be_true
+      clone._groups?.should be_falsey
     end
 
     it "excludes muting if given" do

@@ -254,7 +254,7 @@ describe Jennifer::QueryBuilder::EagerLoading do
     end
 
     it "doesn't add JOIN condition" do
-      Contact.all.includes(:addresses)._joins.nil?.should be_true
+      Contact.all.includes(:addresses)._joins?.should be_falsey
     end
 
     it "stops reloading relation from db if there is no records" do
@@ -362,9 +362,7 @@ describe Jennifer::QueryBuilder::EagerLoading do
     context "query has specified fields" do
       it "returns specified fields" do
         fields = Contact.all.select { [_id, _age] }._select_fields
-        fields.size.should eq(2)
-        fields[0].field.should eq("id")
-        fields[1].field.should eq("age")
+        fields.map(&.field).should eq(%w(id age))
       end
     end
   end

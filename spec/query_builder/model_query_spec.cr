@@ -6,9 +6,10 @@ describe Jennifer::QueryBuilder::ModelQuery do
   describe "#relation" do
     # TODO: this should be tested under sql generating process
     it "makes join using relation scope" do
-      ::Jennifer::Adapter.adapter.sql_generator
-                                 .select(Contact.all.relation(:addresses))
-                                 .should match(/LEFT JOIN addresses ON addresses.contact_id = contacts.id/)
+      ::Jennifer::Adapter.adapter
+        .sql_generator
+        .select(Contact.all.relation(:addresses))
+        .should match(/LEFT JOIN addresses ON addresses.contact_id = contacts.id/)
     end
   end
 
@@ -245,25 +246,25 @@ describe Jennifer::QueryBuilder::ModelQuery do
     it "excludes order if given" do
       q = Contact.all.order(age: "asc")
       clone = q.except(["order"])
-      clone._order.empty?.should be_true
+      clone._order?.should be_falsey
     end
 
     it "excludes join if given" do
       q = Contact.all.join("passports") { _contact_id == _contacts__id }
       clone = q.except(["join"])
-      clone._joins.nil?.should be_true
+      clone._joins?.should be_falsey
     end
 
     it "excludes join if given" do
       q = Contact.all.union(Query["contacts"])
       clone = q.except(["union"])
-      clone._unions.nil?.should be_true
+      clone._unions?.should be_nil
     end
 
     it "excludes group if given" do
       q = Contact.all.group(:age)
       clone = q.except(["group"])
-      clone._groups.empty?.should be_true
+      clone._groups?.should be_falsey
     end
 
     it "excludes muting if given" do
@@ -275,8 +276,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
     it "excludes select if given" do
       q = Contact.all.select { [_id] }
       clone = q.except(["select"])
-      clone._select_fields.size.should eq(1)
-      clone._select_fields[0].should be_a(Jennifer::QueryBuilder::Star)
+      clone._select_fields.map(&.class).should eq([Jennifer::QueryBuilder::Star])
     end
 
     it "excludes where if given" do

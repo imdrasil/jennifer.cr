@@ -30,9 +30,9 @@ module Jennifer
           options.map { |k, v| "#{k.to_s}= #{esc}" }.join(", ", s)
           s << ' '
 
-          from_clause(s, query, query._joins![0].table_name(self)) if query._joins
+          from_clause(s, query, query._joins![0].table_name(self)) if query._joins?
           where_clause(s, query.tree)
-          if query._joins
+          if query._joins?
             where_clause(s, query._joins![0].on)
             query._joins![1..-1].join(" ", s) { |e| s << e.as_sql(self) }
           end

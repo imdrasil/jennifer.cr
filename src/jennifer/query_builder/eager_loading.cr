@@ -9,14 +9,10 @@ module Jennifer
       protected abstract def preload_relations
 
       def _select_fields : Array(Criteria)
-        if @select_fields.empty?
-          if @eager_load
+        if @select_fields.nil? && @eager_load
             nested_relation_tree.select_fields(self)
-          else
-            [@expression.star] of Criteria
-          end
         else
-          @select_fields
+          super
         end
       end
 
@@ -32,7 +28,7 @@ module Jennifer
           join = temp_joins.find(&.relation.nil?)
           if join
             join.not_nil!.relation = name
-          elsif temp_joins.size == 0
+          elsif temp_joins.empty?
             raise BaseException.new("#with should be called after correspond join: no such table \"#{table_name}\" of relation \"#{name}\"")
           end
           @eager_load = true

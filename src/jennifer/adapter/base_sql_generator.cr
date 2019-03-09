@@ -118,8 +118,8 @@ module Jennifer
       end
 
       def self.union_clause(io : String::Builder, query)
-        return unless query._unions
-        query._unions.not_nil!.each do |u|
+        return unless query._unions?
+        query._unions!.each do |u|
           io << " UNION " << self.select(u)
         end
       end
@@ -140,7 +140,7 @@ module Jennifer
           if !exact_fields.empty?
             exact_fields.join(", ", io) { |f| io << "#{table}.#{f}" }
           else
-            query._select_fields.not_nil!.join(", ", io) { |f| io << f.definition(self) }
+            query._select_fields.join(", ", io) { |f| io << f.definition(self) }
           end
         else
           io << query._raw_select.not_nil!
@@ -167,9 +167,9 @@ module Jennifer
 
       # Generates `GROUP BY` query clause.
       def self.group_clause(io : String::Builder, query)
-        return if !query._groups || query._groups.empty?
+        return unless query._groups?
         io << "GROUP BY "
-        query._groups.not_nil!.each.join(", ", io) { |c| io << c.as_sql(self) }
+        query._groups!.each.join(", ", io) { |c| io << c.as_sql(self) }
         io << ' '
       end
 
@@ -181,8 +181,8 @@ module Jennifer
 
       # Generates `JOIN` query clause.
       def self.join_clause(io : String::Builder, query)
-        return unless query._joins
-        query._joins.not_nil!.join(" ", io) { |j| io << j.as_sql(self) }
+        return unless query._joins?
+        query._joins!.join(" ", io) { |j| io << j.as_sql(self) }
       end
 
       # Generates `WHERE` query clause.
@@ -204,9 +204,9 @@ module Jennifer
 
       # Generates `ORDER BY` clause.
       def self.order_clause(io : String::Builder, query)
-        return if query._order.blank?
+        return unless query._order?
         io << "ORDER BY "
-        query._order.join(", ", io) { |expression| io.print expression.as_sql(self) }
+        query._order!.join(", ", io) { |expression| io.print expression.as_sql(self) }
         io << ' '
       end
 

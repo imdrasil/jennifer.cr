@@ -302,7 +302,7 @@ describe Jennifer::Model::Validation do
     end
 
     pending "allows blank" {}
-    
+
     it "should do nothing if the combination of values is unique" do
       c = Factory.create_contact(
         name:        "Tess Tee",

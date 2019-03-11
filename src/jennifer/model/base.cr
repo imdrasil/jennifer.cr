@@ -13,7 +13,7 @@ module Jennifer
   module Model
     abstract class Base < Resource
       module AbstractClassMethods
-        # Returns if primary field is autoincrementable
+        # Returns if primary field is autoincrementable.
         abstract def primary_auto_incrementable?
       end
 
@@ -76,9 +76,7 @@ module Jennifer
       # `after_initialize` callbacks are invoked. If model mapping allows creating an object
       # without passing any argument - relevant `#build` method will be generated for such model.
       def self.build(values : Hash | NamedTuple, new_record : Bool)
-        o = new(values, new_record)
-        o.__after_initialize_callback
-        o
+        new(values, new_record)
       end
 
       # Returns if record isn't persisted
@@ -181,28 +179,7 @@ module Jennifer
       end
 
       def self.build(pull : DB::ResultSet)
-        {% begin %}
-          {% klasses = @type.all_subclasses.select { |s| s.constant("STI") == true } %}
-          {% if !klasses.empty? %}
-            hash = adapter.result_to_hash(pull)
-            o =
-              case hash["type"]
-              when "", nil, "{{@type}}"
-                new(hash, false)
-              {% for klass in klasses %}
-              when "{{klass}}"
-                {{klass}}.new(hash, false)
-              {% end %}
-              else
-                raise ::Jennifer::UnknownSTIType.new(self, hash["type"])
-              end
-          {% else %}
-            o = new(pull)
-          {% end %}
-
-          o.__after_initialize_callback
-          o
-        {% end %}
+        new(pull)
       end
 
       def attribute(name : Symbol, raise_exception : Bool = true)

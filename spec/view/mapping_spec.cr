@@ -23,7 +23,7 @@ class ViewWithNilableBool < Jennifer::View::Base
   }, false)
 end
 
-describe Jennifer::View::ExperimentalMapping do
+describe Jennifer::View::Mapping do
   describe "#reload" do
     it "assign all values from db to existing object" do
       c1 = Factory.create_contact
@@ -117,7 +117,6 @@ describe Jennifer::View::ExperimentalMapping do
       describe "user-defined mapping types" do
         it "is accessible if defined in parent class" do
           FemaleContact::COLUMNS_METADATA[:name].should eq({type: String, null: true, parsed_type: "String?"})
-          FemaleContact::FIELDS["name"].should eq({"type" => "String", "null" => "true", "parsed_type" => "String?"})
         end
 
         pending "allows to add extra options" do

@@ -52,8 +52,9 @@ class FakeContactView < Jennifer::View::Base
   }, false)
 end
 
-class StrinctBrokenMaleContact < Jennifer::View::Base
+class StrictBrokenMaleContact < Jennifer::View::Base
   view_name "male_contacts"
+
   mapping({
     id:   Primary32,
     name: String,

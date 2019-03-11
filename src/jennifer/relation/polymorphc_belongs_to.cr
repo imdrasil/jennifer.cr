@@ -58,7 +58,7 @@ module Jennifer
       end
 
       def build(opts : Hash, polymorphic_type)
-        related_model(polymorphic_type).build(opts, false)
+        related_model(polymorphic_type).new(opts, false)
       end
 
       private def related_model(obj : Model::Base)

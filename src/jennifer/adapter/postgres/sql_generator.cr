@@ -21,8 +21,9 @@ module Jennifer
         end
       end
 
-      # Generates update request depending on given query and hash options. Allows
-      # joins inside of query.
+      # Generates update request depending on given query and hash options.
+      #
+      # Allows joins inside of query.
       def self.update(query, options : Hash)
         esc = escape_string(1)
         String.build do |s|
@@ -30,7 +31,7 @@ module Jennifer
           options.map { |k, v| "#{k.to_s}= #{esc}" }.join(", ", s)
           s << ' '
 
-          from_clause(s, query, query._joins![0].table_name(self)) if query._joins?
+          from_clause(s, query._joins![0].table_name(self)) if query._joins?
           where_clause(s, query.tree)
           if query._joins?
             where_clause(s, query._joins![0].on)

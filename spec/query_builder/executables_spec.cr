@@ -260,6 +260,12 @@ describe Jennifer::QueryBuilder::Executables do
   end
 
   describe "#db_results" do
+    describe "without FROM clause" do
+      it do
+        Query[""].select("1 as col").db_results[0].should eq({ "col" => 1 })
+      end
+    end
+
     it "returns array of hashes" do
       id = Factory.create_contact.id
       res = Contact.all.db_results

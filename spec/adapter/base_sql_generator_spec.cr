@@ -1,6 +1,6 @@
 require "../spec_helper"
 
-describe "Jennifer::Adapter::SQLGenerator" do
+describe Jennifer::Adapter::BaseSQLGenerator do
   adapter = Jennifer::Adapter.adapter
   described_class = Jennifer::Adapter.adapter.sql_generator
 
@@ -48,7 +48,7 @@ describe "Jennifer::Adapter::SQLGenerator" do
   end
 
   describe "::select_clause" do
-    s = Contact.all.join(Address) { _id == Contact._id }.with(:addresses)
+    s = Contact.all.join(Address) { _id == Contact._id }.with_relation(:addresses)
 
     it "includes definitions of select fields" do
       sb { |io| described_class.select_clause(io, Contact.all.select { [now.alias("now")] }) }.should match(/SELECT NOW\(\) AS now/)
@@ -56,8 +56,24 @@ describe "Jennifer::Adapter::SQLGenerator" do
   end
 
   describe "::from_clause" do
-    it "build correct from clause" do
-      sb { |io| described_class.from_clause(io, Contact.all) }.should eq("FROM contacts ")
+    context "with given table name" do
+      it { sb { |io| described_class.from_clause(io, "contacts") }.should eq("FROM contacts ") }
+    end
+
+    context "with non-empty table name" do
+      it { sb { |io| described_class.from_clause(io, Jennifer::Query["contacts"]) }.should eq("FROM contacts ") }
+    end
+
+    context "with query that has FROM set to string" do
+      it { sb { |io| described_class.from_clause(io, Contact.all.from("here")) }.should eq("FROM ( here ) ") }
+    end
+
+    context "with query that has FROM set to query" do
+      it { sb { |io| described_class.from_clause(io, Contact.all.from(Contact.all)) }.should eq("FROM ( SELECT contacts.* FROM contacts  ) ") }
+    end
+
+    context "with empty table" do
+      it { sb { |io| described_class.from_clause(io, Jennifer::Query[""]) }.should be_empty }
     end
   end
 
@@ -183,7 +199,13 @@ describe "Jennifer::Adapter::SQLGenerator" do
     end
   end
 
-  describe "::union_clause" do
+  describe ".union_clause" do
+    describe "ALL" do
+      it do
+        sb { |s| described_class.union_clause(s, Query["contacts"].union(Query["users"], true)) }.should match(/UNION ALL /)
+      end
+    end
+
     it "add keyword" do
       sb { |s| described_class.union_clause(s, Jennifer::Query["users"].union(Jennifer::Query["contacts"])) }.should match(/UNION/)
     end
@@ -229,6 +251,25 @@ describe "Jennifer::Adapter::SQLGenerator" do
       it do
         Factory.build_criteria.asc.as_sql.should eq("tests.f1 ASC")
         Factory.build_criteria.desc.as_sql.should eq("tests.f1 DESC")
+      end
+    end
+  end
+
+  describe ".with_clause" do
+    describe "recursive" do
+      it do
+        query = Jennifer::Query["contacts"].with("test", Contact.all, true)
+        expected_sql = "WITH RECURSIVE test AS (SELECT contacts.* FROM contacts ) "
+        sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
+      end
+    end
+
+    context "with multiple expressions" do
+      it do
+        query = Jennifer::Query["contacts"].with("test", Contact.all).with("test 2", Contact.all)
+        expected_sql = "WITH test AS (SELECT contacts.* FROM contacts ) , "\
+          "test 2 AS (SELECT contacts.* FROM contacts ) "
+        sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
       end
     end
   end

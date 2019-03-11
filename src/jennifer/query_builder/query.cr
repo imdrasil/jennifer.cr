@@ -12,6 +12,8 @@ module Jennifer
       include Joining
       include Executables
 
+      alias UnionType = NamedTuple(query: Query, all: Bool)
+
       {% for method in %i(having table limit offset raw_select table_aliases from lock distinct) %}
         # :nodoc:
         def _{{method.id}}
@@ -24,7 +26,7 @@ module Jennifer
         end
       {% end %}
 
-      {% for method in %i(groups joins unions order) %}
+      {% for method in %i(groups joins unions order ctes) %}
         # :nodoc:
         def _{{method.id}}?
           @{{method.id}}
@@ -42,10 +44,11 @@ module Jennifer
       @from : String | Query?
       @lock : String | Bool?
       @joins : Array(Join)?
-      @unions : Array(Query)?
+      @unions : Array(UnionType)?
       @groups : Array(Criteria)?
       @order : Array(OrderItem)?
       @select_fields : Array(Criteria)?
+      @ctes : Array(CommonTableExpression)?
 
       def_clone
 
@@ -80,12 +83,17 @@ module Jennifer
 
       # :nodoc:
       def _unions!
-        @unions ||= [] of Query
+        @unions ||= [] of UnionType
       end
 
       # :nodoc:
       def _order!
         @order ||= [] of OrderItem
+      end
+
+      # :nodoc:
+      def _ctes!
+        @ctes ||= [] of CommonTableExpression
       end
 
       # Alias for `new(table).none`.
@@ -99,14 +107,14 @@ module Jennifer
       end
 
       protected def initialize_copy_without(other, except : Array(String))
-        {% for segment in %w(having limit offset raw_select from lock distinct) %}
+        {% for segment in %w(having limit offset raw_select from lock distinct order) %}
           @{{segment.id}} = other.@{{segment.id}}.clone unless except.includes?({{segment}})
         {% end %}
 
-        @order = other.@order.clone unless except.includes?("order")
         @joins = other.@joins.clone unless except.includes?("join")
         @unions = other.@unions.clone unless except.includes?("union")
         @groups = other.@groups.clone unless except.includes?("group")
+        @ctes = other.@ctes.clone unless except.includes?("cte")
         @do_nothing = except.includes?("none") ? false : other.@do_nothing
         @select_fields = other.@select_fields unless except.includes?("select")
         @tree = other.@tree.clone unless except.includes?("where")
@@ -132,7 +140,9 @@ module Jennifer
       # Creates a clone of the query.
       #
       # ```
-      #
+      # query = Jennifer::Query["contacts"].where { _city == "Kyiv" }
+      # query.clone.where { _name.like("John%") }
+      # query.clone.where { _name.like("Peter%") }
       # ```
       def clone
         clone = {{@type}}.allocate
@@ -141,6 +151,31 @@ module Jennifer
         clone
       end
 
+      # Creates a clone of the query without specified *parts*.
+      #
+      # Allowed values for *parts*:
+      #
+      # * select
+      # * raw_select
+      # * from
+      # * where
+      # * having
+      # * limit
+      # * offset
+      # * lock
+      # * distinct
+      # * order
+      # * join
+      # * union
+      # * group
+      # * none
+      # * cte
+      #
+      # Any eager loading isn't copied to a new query.
+      #
+      # ```
+      # Jennifer::Query["contacts"].where { _city == "Paris" }.except(["where"])
+      # ```
       def except(parts : Array(String))
         clone = {{@type}}.allocate
         clone.initialize_copy_without(self, parts)
@@ -199,20 +234,24 @@ module Jennifer
         _joins!.each { |join| args.concat(join.sql_args) } if @joins
         args.concat(@tree.not_nil!.sql_args) if @tree
         args.concat(@having.not_nil!.sql_args) if @having
+        _ctes!.each { |cte| args.concat(cte.sql_args) } if @ctes
+        _unions!.each { |union_tuple| args.concat(union_tuple[:query].sql_args) } if @unions
         args
       end
 
+      # :nodoc:
       def with_relation!
         @relation_used = true
       end
 
+      # :nodoc:
       def with_relation?
         @relation_used
       end
 
       def empty?
         @tree.nil? && @limit.nil? && @offset.nil? &&
-          (@joins.nil? || @joins.not_nil!.empty?) && @order.nil?
+          @joins.nil? && @order.nil?
       end
 
       # Allows executing a block in the query context.
@@ -323,8 +362,16 @@ module Jennifer
         self
       end
 
-      def union(query)
-        _unions! << query
+      # Adds *query* to `UNION`.
+      #
+      # To use `UNION ALL` pass `true` as a second argument.
+      #
+      # ```
+      # Jennifer::Query["contacts"].union(Jennifer::Query["users"])
+      # Jennifer::Query["contacts"].union(Jennifer::Query["users"], true)
+      # ```
+      def union(query, all : Bool = false)
+        _unions! << { query: query, all: all }
         self
       end
 
@@ -379,7 +426,27 @@ module Jennifer
         self
       end
 
+      # Adds CTE (common table expression) to the query.
+      #
+      # You can define multiple CTE for one query.
+      #
+      # ```
+      # # WITH RECURSIVE test AS (SELECT users.* FROM users )
+      # Jennifer::Query["contacts"].with("test", Jennifer::Query["users"])
+      #
+      # # WITH RECURSIVE test AS (SELECT users.* FROM users )
+      # Jennifer::Query["contacts"].with("test", Jennifer::Query["users"], true)
+      # ```
+      def with(name : String | Symbol, query : self, recursive : Bool = false)
+        _ctes! << CommonTableExpression.new(name.to_s, query, recursive)
+        self
+      end
+
       # Specifies a limit for the number of records to retrieve.
+      #
+      # ```
+      # Jennifer::Query["contacts"].limit(10)
+      # ```
       def limit(count : Int32)
         @limit = count
         self
@@ -445,7 +512,9 @@ module Jennifer
           (@from.is_a?(Query) && @from.as(Query).filterable?) ||
           (_joins? && _joins!.any?(&.filterable?)) ||
           (!@tree.nil? && @tree.not_nil!.filterable?) ||
-          (!@having.nil? && @having.not_nil!.filterable?)
+          (!@having.nil? && @having.not_nil!.filterable?) ||
+          (!@unions.nil? && _unions!.any?(&.[:query].filterable?)) ||
+          (!@ctes.nil? && _ctes!.any?(&.filterable?))
       end
 
       #

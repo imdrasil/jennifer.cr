@@ -288,6 +288,15 @@ describe Jennifer::QueryBuilder::Query do
     end
   end
 
+  describe "#cte" do
+    describe "top level" do
+      it do
+        Factory.create_contact(name: "John", age: 15)
+        Jennifer::Query["cte"].with("cte", Jennifer::Query["contacts"]).count.should eq(1)
+      end
+    end
+  end
+
   describe "#_select_fields" do
     context "query has no specified select fields" do
       it "returns array with only star" do
@@ -382,6 +391,12 @@ describe Jennifer::QueryBuilder::Query do
       q = Query["contacts"].where { _age < 99 }
       clone = q.except(["where"])
       clone.as_sql.should_not match(/WHERE/)
+    end
+
+    it "excludes CTE if given" do
+      q = Query["contacts"].with("test", Query["users"])
+      clone = q.except(["cte"])
+      clone.as_sql.should_not match(/WITH/)
     end
 
     it "expression builder follow newly created object" do

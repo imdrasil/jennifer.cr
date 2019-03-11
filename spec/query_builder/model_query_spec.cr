@@ -79,7 +79,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
       it "builds nested objects" do
         c2 = Factory.create_contact(name: "b")
         p = Factory.create_passport(contact_id: c2.id, enn: "12345")
-        res = Passport.all.join(Contact) { _id == _passport__contact_id }.with(:contact).first!
+        res = Passport.all.join(Contact) { _id == _passport__contact_id }.with_relation(:contact).first!
 
         res.contact!.name.should eq("b")
       end
@@ -105,7 +105,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
           res = Contact.all.left_join(Address) { _contact_id == _contact__id }
                            .left_join(Passport) { _contact_id == _contact__id }
                            .order(id: :asc)
-                           .with(:addresses, :passport).to_a
+                           .with_relation(:addresses, :passport).to_a
 
           res.size.should eq(2)
 
@@ -340,6 +340,23 @@ describe Jennifer::QueryBuilder::ModelQuery do
         c.ballance = ballance
         c.save
         Contact.all.where { _ballance == 15.1 }.count.should eq(1)
+      end
+    end
+
+    describe "CTE" do
+      it do
+        results = Jennifer::Query["cte"].with(
+          "cte",
+          Jennifer::Query[""].select("1 as n")
+          .union(
+            Jennifer::Query["cte"]
+            .select("1 + n AS n")
+            .where { _n < 5 },
+            true
+          ),
+          true
+        ).db_results.flat_map(&.values)
+        results.should eq([1, 2, 3, 4, 5])
       end
     end
   end

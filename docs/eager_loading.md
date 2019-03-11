@@ -46,9 +46,7 @@ Examples:
 Contact.all.eager_load(:addresses)
 
 # manual eager load
-Contact.all.left_join(Address) { _contacts__id == _contact_id }.with(:addresses)
-# or
-Contact.all.relation(:addresses).with(:addresses)
+Contact.all.left_join(Address) { _contacts__id == _contact_id }.with_relation(:addresses)
 
 # #includes/#preload
 Contact.all.includes(:addresses)

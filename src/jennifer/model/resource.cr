@@ -150,10 +150,7 @@ module Jennifer
 
       # Is a shortcut for `.all.where` call.
       def self.where(&block)
-        ac = all
-        tree = with ac.expression_builder yield
-        ac.set_tree(tree)
-        ac
+        all.where { |builder| with builder yield }
       end
 
       # Starts database transaction.

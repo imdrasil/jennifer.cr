@@ -174,7 +174,7 @@ module Jennifer
       # User.where { _email == "example@test.com" }
       # ```
       def where(&block)
-        other = (with @expression yield)
+        other = (with @expression yield @expression)
         set_tree(other)
         self
       end

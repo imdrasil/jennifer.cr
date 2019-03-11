@@ -51,6 +51,24 @@ module Jennifer
         result[0]
       end
 
+      # Alias for `.where { condition }.first`.
+      #
+      # ```
+      # Jennifer::Query["contacts"].find_by { _age > 25 }
+      # ```
+      def find_by(&block)
+        where { |builder| with builder yield builder }.first
+      end
+
+      # Alias for `.where { condition }.first!`.
+      #
+      # ```
+      # Jennifer::Query["contacts"].find_by! { _age > 25 }
+      # ```
+      def find_by!(&block)
+        where { |builder| with builder yield builder }.first!
+      end
+
       # Returns array of given field values.
       #
       # This method allows you load only those fields you need without loading records.

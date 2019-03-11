@@ -69,6 +69,38 @@ describe Jennifer::QueryBuilder::Executables do
     end
   end
 
+  describe "#find_by" do
+    it "returns first record by given query" do
+      c1 = Factory.create_contact(age: 15)
+      c2 = Factory.create_contact(age: 15)
+
+      r = Contact.all.find_by { _age == 15 }
+      r.try(&.id).should eq(c1.id)
+    end
+
+    it "returns nil if there is no such records" do
+      Contact.all.find_by { _age > 18 }.should be_nil
+    end
+  end
+
+  describe "#find_by!" do
+    it "returns first record by given query" do
+      c1 = Factory.create_contact(age: 15)
+      c2 = Factory.create_contact(age: 15)
+
+      r = Contact.all.find_by! { _age == 15 }
+      r.id.should eq(c1.id)
+    end
+
+    it "raises error if there is no such records" do
+      arg = db_specific(mysql: -> { "?" }, postgres: -> { "$1" })
+      message = "There is no record by given query:\nSELECT contacts.* FROM contacts WHERE contacts.id > #{arg}  | [2]"
+      expect_raises(Jennifer::RecordNotFound, message) do
+        Contact.all.find_by! { _id > 2 }
+      end
+    end
+  end
+
   describe "#pluck" do
     context "given list of attributes" do
       it "returns array of arrays" do

@@ -1,0 +1,27 @@
+module Jennifer::QueryBuilder
+  # Present reference to the `VALUES` related to the row with duplicate key during upsert.
+  class Values < SQLNode
+    def initialize(@field : Symbol)
+    end
+
+    def_clone
+
+    {% for op in %i(+ - * /) %}
+      def {{op.id}}(value : SQLNode | DBAny)
+        Condition.new(self, {{op}}, value)
+      end
+    {% end %}
+
+    def as_sql(sql_generator)
+      sql_generator.values_expression(@field)
+    end
+
+    def sql_args
+      [] of DBAny
+    end
+
+    def filterable?
+      false
+    end
+  end
+end

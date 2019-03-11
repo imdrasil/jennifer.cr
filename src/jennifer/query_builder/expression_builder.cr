@@ -75,6 +75,10 @@ module Jennifer
         Star.new(table)
       end
 
+      def values(field : String | Symbol)
+        Values.new(field)
+      end
+
       # Combines given *first_condition*, *second_condition* and all other *conditions* by `AND` operator.
       #
       # All given conditions will be wrapped in `Grouping`.

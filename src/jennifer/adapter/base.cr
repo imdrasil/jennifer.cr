@@ -15,8 +15,7 @@ module Jennifer
       include ResultParsers
       include RequestMethods
 
-      alias ArgType = DBAny
-      alias ArgsType = Array(ArgType)
+      alias ArgsType = Array(DBAny)
 
       module AbstractClassMethods
         abstract def command_interface
@@ -104,6 +103,7 @@ module Jennifer
 
       def bulk_insert(collection : Array(Model::Base))
         return collection if collection.empty?
+
         klass = collection[0].class
         fields = collection[0].arguments_to_insert[:fields]
         values = collection.flat_map(&.arguments_to_insert[:args])
@@ -120,13 +120,22 @@ module Jennifer
         collection
       end
 
-      def bulk_insert(table : String, fields : Array(String), values : Array(ArgsType)) : Nil
+      def bulk_insert(table : String, fields : Array(String), values : Array(ArgsType))
         return if values.empty?
+
         with_table_lock(table) do
           flat_values = values.flatten
           exec(*parse_query(sql_generator.bulk_insert(table, fields, values.size), flat_values))
         end
-        nil
+      end
+
+      def upsert(table : String, fields : Array(String), values : Array(ArgsType), unique_fields, on_conflict : Hash)
+        query = sql_generator.insert_on_duplicate(table, fields, values.size, unique_fields, on_conflict)
+        args = [] of DBAny
+        values.each { |row| args.concat(row) }
+        on_conflict.each { |_, value| add_field_assign_arguments(args, value) }
+
+        exec(*parse_query(query, args))
       end
 
       def parse_query(q : String, args : ArgsType)
@@ -210,6 +219,7 @@ module Jennifer
 
       def ready_to_migrate!
         return if table_exists?(Migration::Version.table_name)
+
         schema_processor.build_create_table(Migration::Version.table_name) do |t|
           t.string(:version, {:size => 17, :null => false})
         end

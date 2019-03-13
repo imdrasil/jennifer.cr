@@ -72,8 +72,10 @@ module Jennifer
       # Executes request and maps result set to objects with loading any requested related objects
       def to_a
         return [] of T if do_nothing?
+
         add_aliases if @relation_used
         return to_a_with_relations if @eager_load
+
         result = [] of T
         adapter.select(self) do |rs|
           rs.each do

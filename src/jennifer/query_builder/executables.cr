@@ -6,12 +6,13 @@ module Jennifer
       #
       # Doesn't modify query instance.
       def last
-        reverse_order
         old_limit = @limit
+        old_order = @order
+        reverse_order
         @limit = 1
         r = to_a[0]?
         @limit = old_limit
-        reverse_order
+        @order = old_order
         r
       end
 
@@ -20,10 +21,11 @@ module Jennifer
       # Doesn't modify query instance.
       def last!
         old_limit = @limit
+        old_order = @order
         @limit = 1
         reverse_order
         result = to_a
-        reverse_order
+        @order = old_order
         @limit = old_limit
         raise RecordNotFound.from_query(self, adapter) if result.empty?
         result[0]

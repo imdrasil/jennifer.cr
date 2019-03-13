@@ -24,7 +24,7 @@ module Jennifer
         String.build do |s|
           s << "UPDATE " << query.table
           s << ' '
-          _joins = query._joins
+          _joins = query._joins?
 
           unless _joins.nil?
             where_clause(s, _joins[0].on)

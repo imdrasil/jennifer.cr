@@ -3,24 +3,24 @@ require "../spec_helper"
 # TODO: add checking for log entries when we shouldn't hit db
 
 describe Jennifer::QueryBuilder::EagerLoading do
-  describe "#with" do
+  describe "#with_relation" do
     it "adds to select clause given relation" do
       q1 = Contact.all.relation(:addresses)
-      q1.with(:addresses)
+      q1.with_relation(:addresses)
       select_clause(q1).should match(/SELECT contacts\.\*, addresses\.\*/)
     end
 
     it "raises error if given relation is not exists" do
       q1 = Contact.all
       expect_raises(Jennifer::UnknownRelation, "Unknown relation for Contact: relation") do
-        q1.relation(:addresses).with(:relation)
+        q1.relation(:addresses).with_relation(:relation)
         select_clause(q1)
       end
     end
 
     it "raises error if given relation is not joined" do
-      expect_raises(Jennifer::BaseException, /with should be called after correspond join/) do
-        select_clause(Contact.all.with(:addresses))
+      expect_raises(Jennifer::BaseException, /with_relation should be called after corresponding join/) do
+        select_clause(Contact.all.with_relation(:addresses))
       end
     end
   end
@@ -254,7 +254,7 @@ describe Jennifer::QueryBuilder::EagerLoading do
     end
 
     it "doesn't add JOIN condition" do
-      Contact.all.includes(:addresses)._joins.nil?.should be_true
+      Contact.all.includes(:addresses)._joins?.should be_falsey
     end
 
     it "stops reloading relation from db if there is no records" do
@@ -362,9 +362,7 @@ describe Jennifer::QueryBuilder::EagerLoading do
     context "query has specified fields" do
       it "returns specified fields" do
         fields = Contact.all.select { [_id, _age] }._select_fields
-        fields.size.should eq(2)
-        fields[0].field.should eq("id")
-        fields[1].field.should eq("age")
+        fields.map(&.field).should eq(%w(id age))
       end
     end
   end

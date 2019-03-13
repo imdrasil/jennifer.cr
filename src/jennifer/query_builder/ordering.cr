@@ -10,7 +10,7 @@ module Jennifer
         opts.each do |k, v|
           expression = @expression.c(k.to_s).asc
           expression.direction = v
-          @order << expression
+          _order! << expression
         end
         self
       end
@@ -24,7 +24,7 @@ module Jennifer
         opts.each do |k, v|
           expression = @expression.sql(k.to_s, false).asc
           expression.direction = v
-          @order << expression
+          _order! << expression
         end
         self
       end
@@ -38,7 +38,7 @@ module Jennifer
         opts.each do |k, v|
           expression = @expression.c(k.to_s).asc
           expression.direction = v
-          @order << expression
+          _order! << expression
         end
         self
       end
@@ -49,7 +49,7 @@ module Jennifer
       # Contact.all.order(Contact._name.asc)
       # ```
       def order(opt : OrderItem)
-        @order << opt
+        _order! << opt
         self
       end
 
@@ -59,14 +59,15 @@ module Jennifer
       # Contact.all.order([Contact._name.asc])
       # ```
       def order(opts : Array(OrderItem))
-        opts.each { |opt| @order << opt }
+        opts.each { |opt| _order! << opt }
         self
       end
 
+      # TODO: it seems this doesn't work
       def order(opts : Hash(String | Symbol, String | Symbol))
         opts.each do |k, v|
           key = k.is_a?(String) ? @expression.sql(k, false) : @expression.c(k.to_s)
-          @order[key] = v.to_s
+          _order![key] = v.to_s
         end
         self
       end
@@ -75,6 +76,7 @@ module Jennifer
       #
       # ```
       # Contact.all.order { _name.asc }
+      # Contact.all.order { [_name.asc, _age.desc] }
       # ```
       def order(&block)
         order(with @expression yield)
@@ -83,35 +85,35 @@ module Jennifer
       # Replace an existing order with the newly specified.
       #
       # ```
-      # Contact.all.order(name: :asc).reorder(name: :desc)
+      # Contact.all.order(name: :asc).reorder(age: :desc) # ORDER BY contacts.age DESC
       # ```
       def reorder(**opts)
-        @order.clear
+        @order = nil
         order(**opts)
       end
 
       def reorder(opts : Hash(String, String | Symbol))
-        @order.clear
+        @order = nil
         order(opts)
       end
 
       def reorder(opts : Hash(Symbol, String | Symbol))
-        @order.clear
+        @order = nil
         order(opts)
       end
 
       def reorder(opt : OrderItem)
-        @order.clear
+        @order = nil
         order(opt)
       end
 
       def reorder(opts : Array(OrderItem))
-        @order.clear
+        @order = nil
         order(opts)
       end
 
       def reorder(opts : Hash(String | Symbol, String | Symbol))
-        @order.clear
+        @order = nil
         order(opts)
       end
 
@@ -121,14 +123,14 @@ module Jennifer
 
       # Show whether order is specified.
       def ordered?
-        !@order.empty?
+        !!_order?
       end
 
       private def reverse_order
-        if @order.empty?
-          @order << @expression.c("id").desc
+        if _order?
+          _order!.each(&.reverse)
         else
-          @order.each(&.reverse)
+          _order! << @expression.c("id").desc
         end
       end
     end

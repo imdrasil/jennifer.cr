@@ -75,7 +75,6 @@ module Jennifer
       #
       # Because this check is performed outside the database there is still a chance that duplicate values will be
       # inserted in two parallel transactions. To guarantee against this you should create a unique index on the field.
-      # TODO: add scope
       macro validates_uniqueness(*fields, allow_blank allow_blank_value = false, if if_value = nil)
         # raise a compile time error if a uniqueness validator is specified
         # that does not define any properties
@@ -88,7 +87,7 @@ module Jennifer
         # (e.g. ... WHERE id = <id> AND name = <name> AND config = <config> ...)
         {% normalized_fields = fields.map(&.id) %}
 
-        {% fields_condition = normalized_fields.map { |field| ".where { _#{field} == #{field} }" }.join("") %}
+        {% fields_condition = normalized_fields.map { |field| ".where { self.class._#{field} == #{field} }" }.join("") %}
 
         # builds a unique identifier for this set of properties
         # (e.g. for uniqueness properties `:a`, `:b` this results in `:a_b`)

@@ -76,3 +76,15 @@ class MaleContactWithDescription < Jennifer::View::Base
     description: String,
   }, false)
 end
+
+class PrintPublication < Jennifer::View::Base
+  mapping({
+    id:         Primary32,
+    title:      String,
+    v:          {type: Int32, column: :version},
+    publisher:  String,
+    pages:      Int32?,
+    url:        String?,
+    type:       String
+  })
+end

@@ -87,6 +87,14 @@ describe Jennifer::Model::Mapping do
         metadata[:id][:type].should eq(Int32)
         metadata[:id][:parsed_type].should eq("Int32?")
       end
+
+      it "ignores column aliases" do
+        metadata = Author.columns_tuple
+        metadata.is_a?(NamedTuple).should be_true
+        metadata[:name1].is_a?(NamedTuple).should be_true
+        metadata[:name1][:type].should eq(String)
+        metadata[:name1][:parsed_type].should eq("String")
+      end
     end
 
     context "columns metadata" do
@@ -160,6 +168,18 @@ describe Jennifer::Model::Mapping do
           end
           executed.should be_true
         end
+
+        it "properly assigns aliased columns" do
+          executed = false
+          Author.create(name1: "Ann", name2: "OtherAuthor")
+          Author.all.each_result_set do |rs|
+            record = Author.new(rs)
+            record.name1.should eq("Ann")
+            record.name2.should eq("OtherAuthor")
+            executed = true
+          end
+          executed.should be_true
+        end
       end
 
       context "from hash" do
@@ -170,6 +190,12 @@ describe Jennifer::Model::Mapping do
             contact.age.should eq(18)
             contact.gender.should eq("female")
           end
+
+          it "properly maps column aliases" do
+            a = Author.new({"name1" => "Gener", "name2" => "Ric"})
+            a.name1.should eq("Gener")
+            a.name2.should eq("Ric")
+          end
         end
 
         context "with symbol keys" do
@@ -178,6 +204,12 @@ describe Jennifer::Model::Mapping do
             contact.name.should eq("Deepthi")
             contact.age.should eq(18)
             contact.gender.should eq("female")
+          end
+
+          it "properly maps column aliases" do
+            a = Author.new({:name1 => "Ran", :name2 => "Dom"})
+            a.name1.should eq("Ran")
+            a.name2.should eq("Dom")
           end
         end
       end
@@ -188,6 +220,12 @@ describe Jennifer::Model::Mapping do
           contact.name.should eq("Deepthi")
           contact.age.should eq(18)
           contact.gender.should eq("female")
+        end
+
+        it "properly maps column aliases" do
+          a = Author.new({ name1: "Unk", name2: "Nown" })
+          a.name1.should eq("Unk")
+          a.name2.should eq("Nown")
         end
       end
 
@@ -239,8 +277,8 @@ describe Jennifer::Model::Mapping do
 
         describe "user-defined mapping types" do
           it "is accessible if defined in parent class" do
-            User::COLUMNS_METADATA[:password_digest].should eq({type: String, default: "", parsed_type: "String"})
-            User::COLUMNS_METADATA[:email].should eq({type: String, default: "", parsed_type: "String"})
+            User::COLUMNS_METADATA[:password_digest].should eq({type: String, column: "password_digest", default: "", parsed_type: "String"})
+            User::COLUMNS_METADATA[:email].should eq({type: String, column: "email", default: "", parsed_type: "String"})
           end
 
           pending "allows to add extra options" do
@@ -417,6 +455,14 @@ describe Jennifer::Model::Mapping do
       end
     end
 
+    describe "attribute alias" do
+      it "provides aliases for the getters and setters" do
+        a = Author.build(name1: "an", name2: "author")
+        a.name1 = "the"
+        a.name1.should eq "the"
+      end
+    end
+
     describe "criteria attribute class shortcut" do
       it "adds criteria shortcut for class" do
         c = Contact._name
@@ -560,6 +606,18 @@ describe Jennifer::Model::Mapping do
           c.attribute("missing")
         end
       end
+
+      it "returns fields names only (no aliased columns)" do
+        a = Author.build(name1: "TheO", name2: "TherExample")
+        a.attribute("name1").should eq("TheO")
+        a.attribute(:name2).should eq("TherExample")
+        expect_raises(::Jennifer::BaseException) do
+          a.attribute("first_name")
+        end
+        expect_raises(::Jennifer::BaseException) do
+          a.attribute(:last_name)
+        end
+      end
     end
 
     describe "#arguments_to_save" do
@@ -584,6 +642,14 @@ describe Jennifer::Model::Mapping do
         r[:args].should eq(db_array("some new name"))
         r[:fields].should eq(db_array("name"))
       end
+
+      it "returns aliased columns" do
+        a = Author.create(name1: "Fin", name2: "AlAuthor")
+        a.name1 = "NotFin"
+        r = a.arguments_to_save
+        r[:args].should eq(db_array("NotFin"))
+        r[:fields].should eq(db_array("first_name"))
+      end
     end
 
     describe "#arguments_to_insert" do
@@ -602,6 +668,14 @@ describe Jennifer::Model::Mapping do
         r = Factory.build_profile.arguments_to_insert
         match_array(r[:args], db_array("some_login", nil, "Profile"))
       end
+
+      it "returns aliased columns" do
+        r = Author
+          .build(name1: "Prob", name2: "AblyTheLast")
+          .arguments_to_insert
+        match_array(r[:args], db_array("Prob", "AblyTheLast"))
+        match_array(r[:fields], %w(first_name last_name))
+      end
     end
 
     describe "#to_h" do
@@ -610,6 +684,11 @@ describe Jennifer::Model::Mapping do
         # NOTE: virtual field isn't included
         hash.keys.should eq(%i(id login contact_id type))
       end
+
+      it "creates hash with symbol keys that does not contain the column names" do
+        hash = Author.build(name1: "IsThi", name2: "SFinallyOver").to_h
+        hash.keys.should eq(%i(id name1 name2))
+      end
     end
 
     describe "#to_str_h" do
@@ -617,6 +696,11 @@ describe Jennifer::Model::Mapping do
         hash = Factory.build_profile(login: "Abdul").to_str_h
         # NOTE: virtual field isn't included
         hash.keys.should eq(%w(id login contact_id type))
+      end
+
+      it "creates hash with string keys that does not contain the column names" do
+        hash = Author.build(name1: "NoIt", name2: "SNot").to_str_h
+        hash.keys.should eq(%w(id name1 name2))
       end
     end
   end

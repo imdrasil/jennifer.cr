@@ -60,7 +60,7 @@ module Jennifer
             end
 
             def self._{{key}}
-              c("{{key.id}}")
+              c({{value[:column]}})
             end
 
             {% if value[:primary] %}
@@ -71,7 +71,7 @@ module Jennifer
 
               # :nodoc:
               def self.primary
-                c("{{key.id}}")
+                c({{value[:column]}})
               end
 
               # :nodoc:
@@ -115,6 +115,8 @@ module Jennifer
             stringified_type = options[:type].stringify
             options[:converter] = ::Jennifer::Model::JSONConverter if stringified_type =~ Jennifer::Macros::JSON_REGEXP && options[:converter] == nil
             options[:parsed_type] = stringified_type
+
+            options[:column] = (options[:column] || key).id.stringify
 
             if stringified_type =~ NILLABLE_REGEXP
               options[:null] = true
@@ -388,7 +390,7 @@ module Jennifer
             case name.to_s
             {% for key, value in properties %}
               {% if !value[:virtual] %}
-                when "{{key.id}}"
+                when "{{key.id}}" {% if key.id.stringify != value[:column] %}, {{value[:column]}} {% end %}
                   if value.is_a?({{value[:parsed_type].id}})
                     local = value.as({{value[:parsed_type].id}})
                     @{{key.id}} = local
@@ -435,7 +437,7 @@ module Jennifer
               if @{{attr.id}}_changed
                 args <<
                   {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
-                fields << "{{attr.id}}"
+                fields << {{options[:column]}}
               end
             {% end %}
           {% end %}
@@ -450,7 +452,7 @@ module Jennifer
             {% unless options[:virtual] || options[:primary] && primary_auto_incrementable %}
               args <<
                 {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
-              fields << "{{attr.id}}"
+              fields << {{options[:column]}}
             {% end %}
           {% end %}
           {args: args, fields: fields}
@@ -473,7 +475,7 @@ module Jennifer
             case column
             {% for key in nonvirtual_attrs %}
               {% value = properties[key] %}
-              when {{(value[:column_name] || key).id.stringify}}
+              when {{value[:column]}}
                 %found{key.id} = true
                 begin
                   %var{key.id} =
@@ -498,7 +500,7 @@ module Jennifer
           {% if strict %}
             {% for key in nonvirtual_attrs %}
               unless %found{key.id}
-                raise ::Jennifer::BaseException.new("Column {{@type}}.{{key.id}} hasn't been found in the result set.")
+                raise ::Jennifer::BaseException.new("Column {{@type}}.{{properties[key][:column].id}} hasn't been found in the result set.")
               end
             {% end %}
           {% end %}
@@ -508,7 +510,7 @@ module Jennifer
               begin
                 %var{key.id}.as({{value[:parsed_type].id}})
               rescue e : Exception
-                raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
+                raise ::Jennifer::DataTypeCasting.build({{value[:column]}}, {{@type}}, e)
               end,
             {% end %}
             }
@@ -517,7 +519,7 @@ module Jennifer
             begin
               %var{key}.as({{properties[key][:parsed_type].id}})
             rescue e : Exception
-              raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
+              raise ::Jennifer::DataTypeCasting.build({{properties[key][:column]}}, {{@type}}, e)
             end
           {% end %}
         end
@@ -529,14 +531,22 @@ module Jennifer
           {% end %}
 
           {% for key, value in properties %}
-            {% column = (value[:column_name] || key).id.stringify %}
-            if values.has_key?({{column}})
+            {% column1 = key.id.stringify %}
+            {% column2 = value[:column] %}
+            if values.has_key?({{column1}})
                 %var{key.id} =
                   {% if value[:converter] %}
-                    {{value[:converter]}}.from_hash(values, {{column}})
+                    {{value[:converter]}}.from_hash(values, {{column1}})
                   {% else %}
-                    values[{{column}}]
+                    values[{{column1}}]
                   {% end %}
+            elsif values.has_key?({{column2}})
+                %var{key.id} =
+                {% if value[:converter] %}
+                  {{value[:converter]}}.from_hash(values, {{column2}})
+                {% else %}
+                  values[{{column2}}]
+                {% end %}
             else
               %found{key.id} = false
             end
@@ -607,6 +617,7 @@ module Jennifer
       # - virtual
       # - default
       # - converter
+      # - column
       macro mapping(properties, strict = true)
         build_properties({{properties}})
         {% if !@type.constant("MODEL") %}

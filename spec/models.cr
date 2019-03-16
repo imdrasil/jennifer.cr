@@ -565,3 +565,39 @@ class AddressWithNilableBool < Jennifer::Model::Base
     main: Bool?
   }, false)
 end
+class Author < Jennifer::Model::Base
+  mapping({
+    id:         Primary32,
+    name1:      { type: String, column: :first_name },
+    name2:      { type: String, column: :last_name }
+  })
+end
+
+abstract class Publication < Jennifer::Model::Base
+  mapping({
+    id:         Primary32,
+    name:       { type: String, column: :title },
+    version:    Int32,
+    publisher:  String,
+    type:       String
+  })
+end
+
+class Book < Publication
+  mapping({
+    pages:      Int32?
+  })
+end
+
+class Article < Publication
+  mapping({
+    size:       { type: Int32?, column: :pages }
+  })
+end
+
+class BlogPost < Publication
+  mapping({
+    url:        String?,
+    created_at:    {type: Time?, virtual: true, column: :created}
+  })
+end

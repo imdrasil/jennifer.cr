@@ -37,7 +37,7 @@ module Jennifer
           {% end %}
 
           def self._{{key}}
-            c({{key.stringify}})
+            c({{value[:column]}})
           end
 
           {% if value[:primary] %}
@@ -48,7 +48,7 @@ module Jennifer
 
             # :nodoc:
             def self.primary
-              c({{key.stringify}})
+              c({{value[:column]}})
             end
 
             # :nodoc:
@@ -83,7 +83,7 @@ module Jennifer
             break if own_attributes == 0
             case column
             {% for key, value in COLUMNS_METADATA %}
-              when {{(value[:column_name] || key).id.stringify}}
+              when "{{key.id}}"{% if key.id.stringify != value[:column] %}, {{value[:column]}} {% end %}
                 own_attributes -= 1
                 %found{key.id} = true
                 begin
@@ -108,9 +108,9 @@ module Jennifer
           end
           pull.read_to_end
           {% if strict %}
-            {% for key in COLUMNS_METADATA.keys %}
+            {% for key, value in COLUMNS_METADATA %}
               unless %found{key.id}
-                raise ::Jennifer::BaseException.new("Column #{{{@type}}}.{{key.id}} hasn't been found in the result set.")
+                raise ::Jennifer::BaseException.new("Column #{{{@type}}}.{{value[:column].id}} hasn't been found in the result set.")
               end
             {% end %}
           {% end %}
@@ -120,7 +120,7 @@ module Jennifer
               begin
                 res = %var{key.id}.as({{value[:parsed_type].id}})
               rescue e : Exception
-                raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
+                raise ::Jennifer::DataTypeCasting.build({{value[:column]}}, {{@type}}, e)
               end,
             {% end %}
             }
@@ -129,7 +129,7 @@ module Jennifer
             begin
               %var{key}.as({{COLUMNS_METADATA[key][:parsed_type].id}})
             rescue e : Exception
-              raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
+              raise ::Jennifer::DataTypeCasting.build({{COLUMNS_METADATA[key][:column]}}, {{@type}}, e)
             end
           {% end %}
         end
@@ -142,13 +142,21 @@ module Jennifer
           {% end %}
 
           {% for key, value in COLUMNS_METADATA %}
-            {% column = (value[:column_name] || key).id.stringify %}
-            if values.has_key?({{column}})
+            {% column1  = key.id.stringify %}
+            {% column2 = value[:column] %}
+            if values.has_key?({{column1}})
               %var{key.id} =
                 {% if value[:converter] %}
-                  {{value[:converter]}}.from_hash(values, {{column}})
+                  {{value[:converter]}}.from_hash(values, {{column1}})
                 {% else %}
-                  values[{{column}}]
+                  values[{{column1}}]
+                {% end %}
+            elsif values.has_key?({{column2}})
+              %var{key.id} =
+                {% if value[:converter] %}
+                  {{value[:converter]}}.from_hash(values, {{column2}})
+                {% else %}
+                  values[{{column2}}]
                 {% end %}
             else
               %found{key.id} = false

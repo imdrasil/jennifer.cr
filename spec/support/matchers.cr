@@ -1,3 +1,35 @@
+def match_array(expect, target)
+  (expect - target).size.should eq(0)
+  (target - expect).size.should eq(0)
+rescue e
+  puts "Actual array: #{expect}"
+  puts "Expected: #{target}"
+  raise e
+end
+
+def match_each(source, target)
+  source.size.should eq(target.size)
+  source.each do |e|
+    target.includes?(e).should be_true
+  end
+rescue e
+  puts "Actual array: #{source}"
+  puts "Expected: #{target}"
+  raise e
+end
+
+macro match_fields(object, fields)
+  {% for field, value in fields %}
+    {{object}}.{{field.id}}.should eq({{value}})
+  {% end %}
+end
+
+macro match_fields(object, **fields)
+  {% for field, value in fields %}
+    {{object}}.{{field.id}}.should eq({{value}})
+  {% end %}
+end
+
 module Spec
   module Methods
     # The following construction
@@ -39,6 +71,20 @@ module Spec
 
     def negative_failure_message(object)
       "Expected: #{object.inspect} not to be valid"
+    end
+  end
+
+  struct BeInvalidExpectation
+    def match(object)
+      object.invalid?
+    end
+
+    def failure_message(object)
+      "Expected: #{object.inspect} to be invalid"
+    end
+
+    def negative_failure_message(object)
+      "Expected: #{object.inspect} be valid but got errors: #{object.errors.full_messages.inspect}"
     end
   end
 
@@ -131,6 +177,10 @@ module Spec
 
     def be_valid
       BeValidExpectation.new
+    end
+
+    def be_invalid
+      BeInvalidExpectation.new
     end
 
     def validate(attr)

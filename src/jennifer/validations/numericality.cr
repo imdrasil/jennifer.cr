@@ -23,10 +23,40 @@ module Jennifer
 
           errors.add(field, :other_than, { :value => other_than }) if other_than.try(&.== value)
 
-          errors.add(field, :odd) if odd && value.even?
+          errors.add(field, :odd) if odd && even?(value)
 
-          errors.add(field, :even) if even && value.odd?
+          errors.add(field, :even) if even && odd?(value)
         end
+      end
+
+      private def odd?(value : Int)
+        value.odd?
+      end
+
+      private def even?(value : Int | Float)
+        !odd?(value)
+      end
+
+      private def odd?(value : Float64)
+        odd?(value.to_i64)
+      end
+
+      private def odd?(value : Float32)
+        odd?(value.to_i)
+      end
+
+      private def odd?(value : Nil)
+      end
+
+      private def even?(value : Nil)
+      end
+
+      private def odd?(value)
+        raise ArgumentError.new("'#{value.inspect}' doesn't support :even validation")
+      end
+
+      private def even?(value)
+        raise ArgumentError.new("'#{value.inspect}' doesn't support :odd validation")
       end
     end
   end

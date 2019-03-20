@@ -32,6 +32,12 @@ end
 
 # Helper methods ================
 
+macro validated_by_record(type, value, field = :age, allow_blank = true)
+  Factory.build_contact.tap do |record|
+    described_class.instance.validate(record, {{field}}, {{value}}, {{allow_blank}}, **{{type}})
+  end
+end
+
 def clean_db
   postgres_only do
     Jennifer::Adapter.adapter.as(Jennifer::Postgres::Adapter).refresh_materialized_view(FemaleContact.table_name)
@@ -110,38 +116,4 @@ def db_specific(mysql, postgres)
   else
     raise "Unknown adapter type"
   end
-end
-
-# Matchers ======================
-
-def match_array(expect, target)
-  (expect - target).size.should eq(0)
-  (target - expect).size.should eq(0)
-rescue e
-  puts "Actual array: #{expect}"
-  puts "Expected: #{target}"
-  raise e
-end
-
-def match_each(source, target)
-  source.size.should eq(target.size)
-  source.each do |e|
-    target.includes?(e).should be_true
-  end
-rescue e
-  puts "Actual array: #{source}"
-  puts "Expected: #{target}"
-  raise e
-end
-
-macro match_fields(object, fields)
-  {% for field, value in fields %}
-    {{object}}.{{field.id}}.should eq({{value}})
-  {% end %}
-end
-
-macro match_fields(object, **fields)
-  {% for field, value in fields %}
-    {{object}}.{{field.id}}.should eq({{value}})
-  {% end %}
 end

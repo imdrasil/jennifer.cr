@@ -276,7 +276,7 @@ describe Jennifer::QueryBuilder::Executables do
 
   describe "#results" do
     it "returns array of records" do
-      r = Contact.all.results.should eq([] of Jennifer::Record)
+      Contact.all.results.should eq([] of Jennifer::Record)
     end
   end
 

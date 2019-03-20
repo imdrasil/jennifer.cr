@@ -1,6 +1,6 @@
 require "../spec_helper"
 
-Jennifer::QueryBuilder::Function.define("dummy") do
+Jennifer::QueryBuilder::Function.define("dummy", arity: -1) do
   def as_sql(generator)
     "dummy(#{operands_to_sql(generator)})"
   end
@@ -50,6 +50,20 @@ describe Jennifer::QueryBuilder::Function do
 
   # Functions ====================
 
+  describe "CoalesceFunction" do
+    describe "#as_sql" do
+      it do
+        Jennifer::QueryBuilder::CoalesceFunction.new("asd", Factory.build_criteria).as_sql
+          .should eq("COALESCE(%s, tests.f1)")
+      end
+    end
+
+    it do
+      Factory.create_contact
+      Query["contacts"].select { [coalesce(nil, _name).alias("test")] }.results.map(&.test).should eq(["Deepthi"])
+    end
+  end
+
   describe "LowerFunction" do
     describe "#as_sql" do
       it do
@@ -59,12 +73,12 @@ describe Jennifer::QueryBuilder::Function do
 
     it do
       Factory.create_contact(name: "asd")
-      Jennifer::Query["contacts"].where { _name == lower("ASD") }.exists?.should be_true
+      Query["contacts"].where { _name == lower("ASD") }.exists?.should be_true
     end
 
     it do
       Factory.create_contact(name: "ASD")
-      Jennifer::Query["contacts"].where { lower(_name) == "asd" }.exists?.should be_true
+      Query["contacts"].where { lower(_name) == "asd" }.exists?.should be_true
     end
 
     it do

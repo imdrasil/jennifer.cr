@@ -2,11 +2,20 @@ require "./logic_operator"
 
 module Jennifer
   module QueryBuilder
+    # Container for any kind of expression/condition.
     class Condition
       include LogicOperator::Operators
       include Statement
 
-      getter lhs : SQLNode, rhs : Criteria::Rightable?, operator : Symbol = :bool
+      # Left hand side of condition.
+      getter lhs : SQLNode
+
+      # Right hand side of condition.
+      getter rhs : Criteria::Rightable?
+
+      # Condition operator.
+      getter operator : Symbol = :bool
+
       @negative = false
 
       def initialize(field : String, table : String, relation = nil)
@@ -62,6 +71,9 @@ module Jennifer
         @rhs.as(SQLNode).change_table(old_name, new_name) if @rhs.is_a?(SQLNode)
       end
 
+      # Makes condition negative.
+      #
+      # Will add `NOT` statement before condition in generated SQL.
       def not
         @negative = !@negative
         self

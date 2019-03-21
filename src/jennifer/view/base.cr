@@ -31,18 +31,17 @@ module Jennifer
       end
 
       # Returns view name.
+      #
+      # An alias for `.table_name`.
       def self.view_name
-        @@view_name ||= Inflector.pluralize(to_s.underscore)
+        table_name
       end
 
       # Sets view name.
+      #
+      # An alias for `.table_name(value : String)`.
       def self.view_name(value : String)
-        @@view_name = value
-      end
-
-      # Alias for `#view_name`.
-      def self.table_name
-        view_name
+        table_name(value)
       end
 
       # Alias for `.new`.
@@ -74,7 +73,15 @@ module Jennifer
         raise Jennifer::UnknownRelation.new(self, KeyError.new(name))
       end
 
-      # Reloads all fields from db.
+      # Reloads the record from the database.
+      #
+      # This method finds record by its primary key and modifies the receiver in-place.
+      #
+      # ```
+      # user = AdminUser.first!
+      # user.name = "John"
+      # user.reload # => #<AdminUser id: 1, name: "Will">
+      # ```
       def reload
         this = self
         self.class.all.where { this.class.primary == this.primary }.limit(1).each_result_set do |rs|

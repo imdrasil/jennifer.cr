@@ -38,16 +38,6 @@ describe Jennifer::Model::Mapping do
         raw_errors[:description].should eq(["Too large description"])
       end
     end
-
-    it "should not raise validation exception when skipped" do
-      contact = Factory.create_contact
-      contact.age = 12
-      begin
-        contact.save!(true)
-      rescue ex : Jennifer::RecordInvalid
-        fail("should not raise validation exception")
-      end
-    end
   end
 
   describe "%mapping" do

@@ -61,10 +61,6 @@ def grouping(exp)
   Jennifer::QueryBuilder::Grouping.new(exp)
 end
 
-def select_clause(query)
-  String.build { |s| ::Jennifer::Adapter.adapter.sql_generator.select_clause(s, query) }
-end
-
 def select_query(query)
   ::Jennifer::Adapter.adapter.sql_generator.select(query)
 end
@@ -103,10 +99,6 @@ def with_time_zone(zone_name : String)
   end
 end
 
-def sb
-  String.build { |io| yield io }
-end
-
 def db_specific(mysql, postgres)
   case Spec.adapter
   when "postgres"
@@ -116,4 +108,22 @@ def db_specific(mysql, postgres)
   else
     raise "Unknown adapter type"
   end
+end
+
+# SQL query clauses =============
+
+private def sql_generator
+  ::Jennifer::Adapter.adapter.sql_generator
+end
+
+def sb
+  String.build { |io| yield io }
+end
+
+def select_clause(query)
+  sb { |s| sql_generator.select_clause(s, query) }
+end
+
+def join_clause(query)
+  sb { |io| sql_generator.join_clause(io, query) }
 end

@@ -27,6 +27,13 @@ module Jennifer
         with_relation(names.to_a.map(&.to_s))
       end
 
+      # Mark recently added join to be used to retrieve for relations given in *names*.
+      #
+      # This allows to specify custom JOIN and load results into specified relation.
+      #
+      # ```
+      # Contact.all.join(Address) { and(Address._contact_id == Contact._id, Address._main) }.with_relation([:addresses])
+      # ```
       def with_relation(names : Array)
         raise BaseException.new("#with_relation should be called after corresponding join") unless @joins
 
@@ -48,6 +55,14 @@ module Jennifer
         self
       end
 
+      # Specify relationships to be included in the result set.
+      #
+      # All specified relationships are loaded in a separate queries.
+      #
+      # ```
+      # Contact.all.includes(:addresses)
+      # Contact.all.includes(:addresses, friends: %i(addresses followers))
+      # ```
       def includes(*names, **deep_relations)
         @include_relations = true
 
@@ -66,7 +81,20 @@ module Jennifer
         includes(*names, **deep_relations)
       end
 
-      # Adds to select statement given relations (with correspond joins) and loads them from result.
+      # Adds to select statement given relations (with corresponding `LEFT OUTER JOIN`) and loads them from results.
+      #
+      # ```
+      # Contact.all.eager_load(:addresses)
+      # # SELECT contacts.*, addresses.*
+      # # FROM users
+      # # LEFT JOIN addresses ON addresses.contact_id = contacts.id
+      # ```
+      #
+      # You can specify nested relationships same way as in `#includes`:
+      #
+      # ```
+      # Contact.all.includes(:addresses, friends: %i(addresses followers))
+      # ```
       def eager_load(*names, **deep_relations)
         @eager_load = true
 

@@ -1,8 +1,19 @@
 module Jennifer
   module QueryBuilder
     class Join
+      # Table name to be joined or source query.
       setter table : String | Query
-      property type : Symbol, on : Condition | LogicOperator, aliass : String?, relation : String?
+
+      # Join type.
+      property type : Symbol
+
+      # Query `ON` condition.
+      property on : Condition | LogicOperator
+
+      # Table alias.
+      property aliass : String?
+
+      property relation : String?
 
       def_clone
 

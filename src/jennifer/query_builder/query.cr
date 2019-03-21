@@ -269,13 +269,15 @@ module Jennifer
         self
       end
 
-      # Mutates query applying all modification from the block.
+      # Mutates query applying all modification returned from the block.
+      #
+      # Yields the expression builder and block is also executed with expression builder context.
       #
       # ```
       # User.where { _email == "example@test.com" }
       # ```
       def where(&block)
-        other = (with @expression yield)
+        other = (with @expression yield @expression)
         set_tree(other)
         self
       end

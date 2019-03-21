@@ -171,11 +171,6 @@ module Jennifer
         end
 
         # :nodoc:
-        def self.field_count
-          {{properties.size}}
-        end
-
-        # :nodoc:
         FIELD_NAMES = [{{properties.keys.map { |e| "#{e.id.stringify}" }.join(", ").id}}]
 
         # :nodoc:
@@ -314,7 +309,7 @@ module Jennifer
       end
 
       # :nodoc:
-      private macro base_mapping(strict = true)
+      macro base_mapping(strict = true)
         {%
           primary = COLUMNS_METADATA.keys.find { |field| COLUMNS_METADATA[field][:primary] }
           primary_auto_incrementable = primary && AUTOINCREMENTABLE_STR_TYPES.includes?(COLUMNS_METADATA[primary][:type].stringify)
@@ -385,7 +380,7 @@ module Jennifer
         end
 
         # :nodoc:
-        def update_columns(values : Hash(String | Symbol, Jennifer::DBAny))
+        def update_columns(values : Hash(String | Symbol, ::Jennifer::DBAny))
           values.each do |name, value|
             case name.to_s
             {% for key, value in properties %}

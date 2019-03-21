@@ -1,11 +1,43 @@
 module Jennifer
   module QueryBuilder
+    # Stands for creating criteria for the query.
+    #
+    # This class provides straight forward way to define criteria and a bit (pretty huge one)
+    # of metaprogramming.
+    #
+    # You can use standard method `#c` to create criteria for current table or for any other (passing it's name
+    # as a 2nd argument):
+    #
+    # ```
+    # Jennifer::Query["contacts"].join("addresses") { c("contact_id") == c("id", "contacts") }
+    # ```
+    #
+    # Also you can use "*magic*" underscored methods to specify current table fields putting "_" before a name:
+    #
+    # ```
+    # Jennifer::Query["contacts"].join("addresses") { _contact_id == c("id", "contacts") }
+    # ```
+    #
+    # Obviously, you also can specify same way table name for the field. Just put "__" (double underscore) between table name
+    # and field name as well.
+    #
+    # ```
+    # Jennifer::Query["contacts"].join("addresses") { _contact_id == _contacts__id }
+    # ```
+    #
+    # Because of double underscore between symbols between field and table you can safely reference tables with "_".
+    #
+    # ```
+    # Jennifer::Query["facebook_profiles"].join("addresses") { _profile_id == _facebook_profiles__id }
+    # ```
     class ExpressionBuilder
       property query : Query?
 
+      getter table : String, relation : String?
+
       def_clone
 
-      def initialize(@table : String, @relation : String? = nil, @query = nil)
+      def initialize(@table, @relation = nil, @query = nil)
       end
 
       # Initialize object copy;
@@ -16,6 +48,8 @@ module Jennifer
       end
 
       # Query's model primary field criterion.
+      #
+      # Can be used only in a scope of `IModelQuery`.
       def primary
         query.not_nil!.as(IModelQuery).model_class.primary
       end

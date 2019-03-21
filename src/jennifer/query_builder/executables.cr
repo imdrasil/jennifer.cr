@@ -1,10 +1,17 @@
 module Jennifer
   module QueryBuilder
     # All query methods that invokes database query.
+    #
+    # A lot of methods in this module accepts strings and symbols. Any string is
+    # considered as a plain SQL and is inserted as-is; any symbol - as a current table field.
     module Executables
       # Returns last matched record or `nil`.
       #
       # Doesn't modify query instance.
+      #
+      # ```
+      # Contact.where { _city_id == 3 }.last
+      # ```
       def last
         old_limit = @limit
         old_order = @order
@@ -19,6 +26,10 @@ module Jennifer
       # Returns last matched record or raise `RecordNotFound` exception otherwise.
       #
       # Doesn't modify query instance.
+      #
+      # ```
+      # Contact.where { _city_id == 3 }.last!
+      # ```
       def last!
         old_limit = @limit
         old_order = @order
@@ -34,6 +45,10 @@ module Jennifer
       # Returns first matched record or `nil`.
       #
       # Doesn't modify query instance.
+      #
+      # ```
+      # Contact.where { _city_id == 3 }.first
+      # ```
       def first
         old_limit = @limit
         @limit = 1
@@ -45,6 +60,10 @@ module Jennifer
       # Returns first matched record or raise `RecordNotFound` exception otherwise.
       #
       # Doesn't modify query instance.
+      #
+      # ```
+      # Contact.where { _city_id == 3 }.first!
+      # ```
       def first!
         old_limit = @limit
         result = to_a
@@ -58,14 +77,17 @@ module Jennifer
       # This method allows you load only those fields you need without loading records.
       # If query is ModelQuery - take into consideration that fields will not be converted by
       # model converters.
+      #
+      # ```
+      # Contact.all.limit(2).pluck([:id, :name]) # [[1, "Name 1"], [2, "Name 2"]]
+      # ```
       def pluck(fields : Array) : Array(Array(DBAny))
         return [] of Array(DBAny) if do_nothing?
 
         adapter.pluck(self, fields.map(&.to_s))
       end
 
-      # ditto
-      def pluck(*fields : String | Symbol)
+      def pluck(*fields : String | Symbol) : Array(Array(DBAny))
         pluck(fields.to_a)
       end
 
@@ -179,12 +201,22 @@ module Jennifer
         adapter.modify(self, definition)
       end
 
+      # Updates records with given *options*.
+      #
+      # ```
+      # Contact.all.where { and(_name == "Jon", age > 100) }.update({ :name => "John", :age => 40 })
+      # ```
       def update(options : Hash)
         return DB::ExecResult.new(0i64, 0i64) if do_nothing?
 
         adapter.update(self, options)
       end
 
+      # Updates records with given *options*.
+      #
+      # ```
+      # Contact.all.where { and(_name == "Jon", age > 100) }.update(name: "John", age: 40)
+      # ```
       def update(**options)
         update(options.to_h)
       end
@@ -231,11 +263,17 @@ module Jennifer
         decrement(fields.to_h)
       end
 
+      # Alias for `#results`.
       def to_a
         results
       end
 
-      def db_results
+      # Returns array of hashes representing result sets.
+      #
+      # ```
+      # Jennifer::Query["contacts"].where { _id == 1 }.db_results # => [{"id" => 1, "name" => "Name", ...}]
+      # ```
+      def db_results : Array(Hash(String, DBAny))
         result = [] of Hash(String, DBAny)
         each_result_set do |rs|
           result << adapter.result_to_hash(rs)
@@ -243,7 +281,13 @@ module Jennifer
         result
       end
 
-      def results
+      # Returns array of `Record` created based on result sets.
+      #
+      # ```
+      # Jennifer::Query["contacts"].where { _id == 1 }.results
+      # # => [Jennifer::Record(@attributes={"id" => 1, "name" => "Name", ...})]
+      # ```
+      def results : Array(Record)
         result = [] of Record
         each_result_set { |rs| result << Record.new(rs) }
         result

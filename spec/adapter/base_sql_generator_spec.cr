@@ -141,11 +141,50 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     end
   end
 
-  describe "::join_clause" do
-    it "calls #as_sql on all parts" do
-      res = Contact.all.join(Address) { _id == Address._contact_id }
-                       .join(Passport) { _id == Passport._contact_id }
-      sb { |io| described_class.join_clause(io, res) }.split("JOIN").size.should eq(3)
+  describe ".join_clause" do
+    context "with multiple components" do
+      it "calls #as_sql on all parts" do
+        res = Contact.all
+          .join(Address) { _contact_id == Contact._id }
+          .join(Passport) { _contact_id == Contact._id }
+        join_clause(res).split("JOIN").size.should eq(3)
+      end
+    end
+
+    context "with alias" do
+      it do
+        query = Contact.all.join(Address, "some_table") { |t| _contact_id == t._id }
+        join_clause(query).should eq("JOIN addresses some_table ON some_table.contact_id = contacts.id\n")
+      end
+    end
+
+    describe "RIGHT" do
+      it do
+        query = Contact.all.right_join(Address) { |t| _contact_id == t._id }
+        join_clause(query).should eq("RIGHT JOIN addresses ON addresses.contact_id = contacts.id\n")
+      end
+    end
+
+    describe "LEFT" do
+      it do
+        query = Contact.all.left_join(Address) { |t| _contact_id == t._id }
+        join_clause(query).should eq("LEFT JOIN addresses ON addresses.contact_id = contacts.id\n")
+      end
+    end
+
+    describe "INNER" do
+      it do
+        query = Contact.all.join(Address) { |t| _contact_id == t._id }
+        join_clause(query).should eq("JOIN addresses ON addresses.contact_id = contacts.id\n")
+      end
+    end
+
+    describe "LATERAL" do
+      it do
+        query = Contact.all.lateral_join(Address.all, "some_table") { |t| _contact_id == t._id }
+        sub_query = "SELECT addresses.* FROM addresses "
+        join_clause(query).should eq("JOIN LATERAL (#{sub_query}) some_table ON some_table.contact_id = contacts.id\n")
+      end
     end
   end
 

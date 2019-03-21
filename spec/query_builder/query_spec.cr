@@ -509,4 +509,50 @@ describe Jennifer::QueryBuilder::Query do
       end
     end
   end
+
+  describe "#merge" do
+    describe "having" do
+      it do
+        Query["contacts"].merge(Query["users"].having { _id > 1 }).as_sql.should match(/HAVING users\.id >/)
+      end
+    end
+
+    describe "order" do
+      it do
+        Query["contacts"].merge(Query["users"].order(id: :desc)).as_sql.should match(/ORDER BY users\.id DESC/)
+      end
+    end
+
+    describe "join" do
+      it do
+        Query["contacts"].merge(Query["users"].join("addresses") { _user_id == c("id", "users") }).as_sql
+          .should match(/JOIN addresses ON addresses.user_id = users\.id/)
+      end
+    end
+
+    describe "group by" do
+      it do
+        Query["contacts"].merge(Query["users"].group(:id)).as_sql.should match(/GROUP BY users\.id/)
+      end
+    end
+
+    describe "CTE" do
+      it do
+        query = Query["contacts"].with("test", Contact.all)
+        Query["contacts"].merge(query).as_sql.should match(/WITH test AS \(SELECT contacts\.\* FROM contacts \)/)
+      end
+    end
+
+    describe "where" do
+      it do
+        Query["contacts"].merge(Query["users"].where { _id > 1 }).as_sql.should match(/WHERE users\.id >/)
+      end
+    end
+
+    describe "do nothing" do
+      it do
+        Query["contacts"].merge(Query["users"].none).do_nothing?.should be_true
+      end
+    end
+  end
 end

@@ -21,6 +21,11 @@ module Jennifer
         end
 
         # :nodoc:
+        def _{{method.id}}?
+          @{{method.id}}
+        end
+
+        # :nodoc:
         def _{{method.id}}!
           @{{method.id}}.not_nil!
         end
@@ -442,6 +447,51 @@ module Jennifer
         self
       end
 
+      # Merges other query into current one.
+      #
+      # This method merges the following query components:
+      #
+      # - `JOIN`s
+      # - `GROUP BY`s
+      # - `ORDER`s
+      # - `CTE`s
+      # - `HAVING`s
+      # - `WHERE`s
+      # - do nothing
+      #
+      # ```
+      # # returns contacts that have main address
+      # addresses_condition = Jennifer::Query["addresses"].where { _main }
+      # Jennifer::Query["contacts"].join("addresses") { _contact_id == _contacts__id }
+      #   .merge(addresses_condition)
+      # ```
+      #
+      # This method provides mechanism to reuse some predefined queries for involved tables.
+      # It makes real sense when is used in the scope of `ModelQuery` and models.
+      #
+      # ```
+      # Contacts.all.relation(:addresses).merge(Address.all.main)
+      # ```
+      def merge(other : self)
+        {% for segment in %w(order joins groups ctes) %}
+          _{{segment.id}}!.concat(other._{{segment.id}}!) if other._{{segment.id}}?
+        {% end %}
+
+        if other._having?
+          @having =
+            if _having?
+              _having! & other._having!
+            else
+              other._having!
+            end
+        end
+
+        set_tree(other.tree) if other.tree
+
+        @do_nothing = @do_nothing || other.do_nothing?
+        self
+      end
+
       # Specifies a limit for the number of records to retrieve.
       #
       # ```
@@ -484,11 +534,12 @@ module Jennifer
 
       # Joins given *other* condition statement to the main condition tree.
       def set_tree(other : LogicOperator | Condition)
-        @tree = if !@tree.nil?
-                  @tree.as(Condition | LogicOperator) & other
-                else
-                  other
-                end
+        @tree =
+          if @tree
+            @tree.as(Condition | LogicOperator) & other
+          else
+            other
+          end
         self
       end
 

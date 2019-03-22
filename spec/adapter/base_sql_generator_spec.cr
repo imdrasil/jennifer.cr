@@ -3,6 +3,7 @@ require "../spec_helper"
 describe Jennifer::Adapter::BaseSQLGenerator do
   adapter = Jennifer::Adapter.adapter
   described_class = Jennifer::Adapter.adapter.sql_generator
+  expression_builder = Factory.build_expression
 
   describe "::filter_out" do
     c2 = Factory.build_criteria
@@ -310,6 +311,13 @@ describe Jennifer::Adapter::BaseSQLGenerator do
           "test 2 AS (SELECT contacts.* FROM contacts ) "
         sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
       end
+    end
+  end
+
+  describe ".cast_expression" do
+    it do
+      described_class.cast_expression(expression_builder.sql("'2000-10-20'", false), "DATE").should eq("CAST('2000-10-20' AS DATE)")
+      described_class.cast_expression(expression_builder._date, "DATE").should eq("CAST(tests.date AS DATE)")
     end
   end
 end

@@ -248,6 +248,11 @@ module Jennifer
         end
       end
 
+      # Returns `CAST` expression.
+      def self.cast_expression(expression, type : String)
+        "CAST(#{expression.as_sql(self)} AS #{type})"
+      end
+
       # ======== utils
 
       def self.order_expression(expression : QueryBuilder::OrderItem)

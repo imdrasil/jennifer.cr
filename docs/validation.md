@@ -298,7 +298,7 @@ class Country < Jennifer::Model::Base
     code: String
   )
 
-  validate_uniqueness :code
+  validates_uniqueness :code
 end
 ```
 

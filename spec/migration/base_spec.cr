@@ -2,7 +2,6 @@ require "../spec_helper"
 require "../../examples/migrations/20170119011451314_create_contacts"
 
 describe Jennifer::Migration::Base do
-  adapter = Jennifer::Adapter.adapter
   described_class = Jennifer::Migration::Base
   migration = CreateContacts.new
 
@@ -20,6 +19,8 @@ describe Jennifer::Migration::Base do
 
   # TODO: add aka transactional schema tests for MySQL
   postgres_only do
+    adapter = Jennifer::Adapter.adapter.as(Jennifer::Postgres::Adapter)
+
     describe "#create_table" do
       it "creates table" do
         migration.create_table(:test_table) do |t|

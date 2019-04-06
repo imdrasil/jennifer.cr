@@ -10,6 +10,10 @@ module Jennifer
           def process
             adapter.exec "DROP MATERIALIZED VIEW #{name}"
           end
+
+          def explain
+            "drop_materialized_view :#{@name}"
+          end
         end
       end
     end

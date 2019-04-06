@@ -89,14 +89,6 @@ module Jennifer
           .exists?
       end
 
-      def index_exists?(table, name)
-        Query["information_schema.statistics"].where do
-          (_table_name == table) &
-            (_index_name == name) &
-            (_table_schema == Config.db)
-        end.exists?
-      end
-
       def index_exists?(table, name : String)
         Query["information_schema.statistics"].where do
           (_table_name == table) &

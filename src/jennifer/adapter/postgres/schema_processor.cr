@@ -10,23 +10,23 @@ module Jennifer
       # ================
 
       def build_create_enum(name, values)
-        Migration::TableBuilder::CreateEnum.new(@adapter, name, values).process
+        Migration::TableBuilder::CreateEnum.new(@adapter, name, values)
       end
 
       def build_drop_enum(name)
-        Migration::TableBuilder::DropEnum.new(@adapter, name).process
+        Migration::TableBuilder::DropEnum.new(@adapter, name)
       end
 
       def build_change_enum(name, options)
-        Migration::TableBuilder::ChangeEnum.new(@adapter, name, options).process
+        Migration::TableBuilder::ChangeEnum.new(@adapter, name, options)
       end
 
       def build_create_materialized_view(name, source)
-        Migration::TableBuilder::CreateMaterializedView.new(@adapter, name, source).process
+        Migration::TableBuilder::CreateMaterializedView.new(@adapter, name, source)
       end
 
       def build_drop_materialized_view(name)
-        Migration::TableBuilder::DropMaterializedView.new(@adapter, name).process
+        Migration::TableBuilder::DropMaterializedView.new(@adapter, name)
       end
 
       # ============================

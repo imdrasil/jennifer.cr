@@ -139,7 +139,7 @@ end
 
 def down
   change_table(:contacts) do |t|
-    t.change_column(:age, :integer, { default: 0 })
+    t.change_column(:age, :integer, { :default => 0 })
     t.drop_column(:description)
   end
 

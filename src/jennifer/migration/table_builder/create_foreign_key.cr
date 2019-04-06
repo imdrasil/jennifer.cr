@@ -1,3 +1,5 @@
+require "openssl"
+
 module Jennifer
   module Migration
     module TableBuilder
@@ -12,6 +14,10 @@ module Jennifer
 
         def process
           schema_processor.add_foreign_key(from_table, to_table, column, primary_key, name)
+        end
+
+        def explain
+          "add_foreign_key :#{@from_table}, :#{@to_table}, :#{@column}, :#{@primary_key}, \"#{@name}\""
         end
 
         # :nodoc:

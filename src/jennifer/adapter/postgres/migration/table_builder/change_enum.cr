@@ -17,6 +17,10 @@ module Jennifer
             rename(name, @options[:new_name]) if @options.has_key?(:rename)
           end
 
+          def explain
+            "change_enum :#{@name}, #{@options.inspect}"
+          end
+
           def remove_values
             new_values = adapter.enum_values(@name)
             new_values -= @options[:remove_values]

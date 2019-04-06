@@ -24,6 +24,10 @@ module Jennifer
           @new_table_name = ""
         end
 
+        def explain
+          "change_table :#{@name}"
+        end
+
         # Renames table to the given *new_name*.
         #
         # ```

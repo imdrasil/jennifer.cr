@@ -190,7 +190,7 @@ module Jennifer
         tb = TableBuilder::CreateTable.new(adapter, name)
         tb.integer(:id, {:primary => true, :auto_increment => true}) if id
         yield tb
-        tb.process
+        process_builder(tb)
       end
 
       # Creates a new join table with the name created using the lexical order of the first 2 arguments.
@@ -227,7 +227,7 @@ module Jennifer
       def change_table(table : String | Symbol, &block)
         tb = TableBuilder::ChangeTable.new(adapter, table)
         yield tb
-        tb.process
+        process_builder(tb)
       end
 
       # Drops a *table* from the database.
@@ -236,7 +236,7 @@ module Jennifer
       # drop_table(:users)
       # ```
       def drop_table(table : String | Symbol)
-        TableBuilder::DropTable.new(adapter, table).process
+        process_builder(TableBuilder::DropTable.new(adapter, table))
       end
 
       # Drops the join table specified by the given arguments.
@@ -259,7 +259,7 @@ module Jennifer
       # The source query can't have any arguments therefore all literals should be escaped manually and passed using
       # `QueryBuilder::Expression#sql`.
       def create_view(name : String | Symbol, source)
-        TableBuilder::CreateView.new(adapter, name.to_s, source).process
+        process_builder(TableBuilder::CreateView.new(adapter, name.to_s, source))
       end
 
       # Drops a view from the database.
@@ -268,7 +268,7 @@ module Jennifer
       # drop_view(:youth_contacts)
       # ```
       def drop_view(name : String | Symbol)
-        TableBuilder::DropView.new(adapter, name.to_s).process
+        process_builder(TableBuilder::DropView.new(adapter, name.to_s))
       end
 
       # Creates a new materialized database view with the name *name*.
@@ -282,7 +282,7 @@ module Jennifer
       #
       # NOTE: not all adapters support this method.
       def create_materialized_view(name : String | Symbol, source)
-        schema_processor.build_create_materialized_view(name, source)
+        process_builder(schema_processor.build_create_materialized_view(name, source))
       end
 
       # Drops a materialized view from the database.
@@ -291,7 +291,7 @@ module Jennifer
       # drop_materialized_view(:youth_contacts)
       # ```
       def drop_materialized_view(name : String | Symbol)
-        schema_processor.build_drop_materialized_view(name)
+        process_builder(schema_processor.build_drop_materialized_view(name))
       end
 
       # Creates database enum
@@ -302,7 +302,7 @@ module Jennifer
       #
       # NOTE: not all adapters support this method.
       def create_enum(name : String | Symbol, values : Array(String))
-        schema_processor.build_create_enum(name, values)
+        process_builder(schema_processor.build_create_enum(name, values))
       end
 
       # Drops a database enum by given *name*.
@@ -313,7 +313,7 @@ module Jennifer
       #
       # NOTE: not all adapters support this method.
       def drop_enum(name : String | Symbol)
-        schema_processor.build_drop_enum(name)
+        process_builder(schema_processor.build_drop_enum(name))
       end
 
       # Changes database enum *name* by given *options*.
@@ -335,7 +335,7 @@ module Jennifer
       #
       # NOTE: not all adapters support this method.
       def change_enum(name : String | Symbol, options : Hash(Symbol, Array(String)))
-        schema_processor.build_change_enum(name, options)
+        process_builder(schema_processor.build_change_enum(name, options))
       end
 
       # Adds a new index to the *table_name*.
@@ -392,7 +392,7 @@ module Jennifer
       def add_index(table_name : String | Symbol, fields : Array(Symbol), type : Symbol? = nil, name : String? = nil,
                     lengths : Hash(Symbol, Int32) = {} of Symbol => Int32,
                     orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
-        TableBuilder::CreateIndex.new(adapter, table_name.to_s, name, fields, type, lengths, orders).process
+        process_builder(TableBuilder::CreateIndex.new(adapter, table_name.to_s, name, fields, type, lengths, orders))
       end
 
       def add_index(table_name : String | Symbol, field : Symbol, type : Symbol? = nil, name : String? = nil,
@@ -424,11 +424,11 @@ module Jennifer
       # drop_index(:accounts, name: "by_branch_name")
       # ```
       def drop_index(table : String | Symbol, fields : Array(Symbol) = [] of Symbol, name : String? = nil)
-        TableBuilder::DropIndex.new(adapter, table, fields, name).process
+        process_builder(TableBuilder::DropIndex.new(adapter, table, fields, name))
       end
 
       def drop_index(table : String | Symbol, field : Symbol?, name : String? = nil)
-        TableBuilder::DropIndex.new(adapter, table, field ? [field] : %i(), name).process
+        process_builder(TableBuilder::DropIndex.new(adapter, table, field ? [field] : %i(), name))
       end
 
       # Adds a new foreign key.
@@ -456,7 +456,9 @@ module Jennifer
       # ```
       def add_foreign_key(from_table : String | Symbol, to_table : String | Symbol, column : String | Symbol? = nil,
                           primary_key : String | Symbol? = nil, name : String? = nil)
-        TableBuilder::CreateForeignKey.new(adapter, from_table.to_s, to_table.to_s, column, primary_key, name).process
+        process_builder(
+          TableBuilder::CreateForeignKey.new(adapter, from_table.to_s, to_table.to_s, column, primary_key, name)
+        )
       end
 
       # Removes the given foreign key from *from_table* to *to_table*.
@@ -484,7 +486,9 @@ module Jennifer
       # ```
       def drop_foreign_key(from_table : String | Symbol, to_table : String | Symbol, column : String | Symbol? = nil,
                            name : String? = nil)
-        TableBuilder::DropForeignKey.new(adapter, from_table.to_s, to_table.to_s, column, name).process
+        process_builder(
+          TableBuilder::DropForeignKey.new(adapter, from_table.to_s, to_table.to_s, column, name)
+        )
       end
 
       # Executes given query.
@@ -496,8 +500,8 @@ module Jennifer
       #     CHECK (type IN('FacebookProfile', 'TwitterProfile'))
       # SQL
       # ```
-      def exec(string)
-        TableBuilder::Raw.new(adapter, string).process
+      def exec(string : String)
+        process_builder(TableBuilder::Raw.new(adapter, string))
       end
 
       # After failed `#up` method invocation.
@@ -506,6 +510,11 @@ module Jennifer
 
       # After failed `#down` method invocation.
       def after_down_failure
+      end
+
+      private def process_builder(builder)
+        builder.process
+        puts "  * #{builder.explain}" if Jennifer::Config.config.verbose_migrations
       end
 
       # Returns migration timestamp.

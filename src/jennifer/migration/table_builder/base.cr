@@ -21,13 +21,10 @@ module Jennifer
         end
 
         abstract def process
+        abstract def explain
 
         def process_commands
           @commands.each(&.process)
-        end
-
-        def to_s
-          "#{@name} -> #{self.class.to_s}"
         end
 
         private def build_column_options(type : Symbol?, options : Hash)

@@ -11,6 +11,10 @@ module Jennifer
         def process
           schema_processor.create_view(@name, @query)
         end
+
+        def explain
+          "create_view :#{@name}, \"#{@query.as_sql}\""
+        end
       end
     end
   end

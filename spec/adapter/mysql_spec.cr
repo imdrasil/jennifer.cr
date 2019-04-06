@@ -11,7 +11,7 @@ mysql_only do
       end
 
       it "returns true if table has index with given columns" do
-        adapter.index_exists?("contacts", [:description_id]).should be_true
+        adapter.index_exists?("contacts", [:description]).should be_true
       end
 
       it "returns false if table has no given index" do

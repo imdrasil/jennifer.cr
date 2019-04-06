@@ -14,6 +14,23 @@ module Jennifer
           schema_processor.add_index(@name, @index_name, fields, @type, orders, @lengths)
         end
 
+        def explain
+          String.build do |io|
+            io << "add_foreign_key :" <<
+              @name <<
+              ", " <<
+              @fields.inspect <<
+              ", " <<
+              @type.inspect <<
+              ", " <<
+              @index_name.inspect <<
+              ", " <<
+              @lengths.inspect <<
+              ", " <<
+              @orders.inspect
+          end
+        end
+
         # :nodoc:
         def self.generate_index_name(table, fields, name)
           if name.is_a?(String)

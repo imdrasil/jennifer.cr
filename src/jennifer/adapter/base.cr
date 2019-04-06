@@ -144,10 +144,10 @@ module Jennifer
       # # Check an index exists
       # adapter.index_exists?(:suppliers, :company_id)
       #
-      # Check an index on multiple columns exists
+      # # Check an index on multiple columns exists
       # adapter.index_exists?(:suppliers, [:company_id, :company_type])
       #
-      # Check an index with a custom name exists
+      # # Check an index with a custom name exists
       # adapter.index_exists?(:suppliers, "idx_company_id")
       # ```
       def index_exists?(table, fields : Array)

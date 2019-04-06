@@ -23,6 +23,10 @@ module Jennifer
           process_commands
         end
 
+        def explain
+          "create_table :#{@name}"
+        end
+
         {% for method in Jennifer::Adapter::TYPES %}
           # Defines new column *name* of type `{{method}}` with given *options*.
           #

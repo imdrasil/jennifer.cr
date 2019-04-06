@@ -13,6 +13,7 @@ module Jennifer
   # Supported configurations:
   #
   # * `migration_files_path = "./db/migrations"`
+  # * `verbose_migrations = true`
   # * `model_files_path = "./src/models"`
   # * `structure_folder` parent folder of `migration_files_path`
   # * `host = "localhost"`
@@ -51,7 +52,7 @@ module Jennifer
     # :nodoc:
     FLOAT_FIELDS  = {:checkout_timeout, :retry_delay}
     # :nodoc:
-    BOOL_FIELDS   = {:command_shell_sudo, :skip_dumping_schema_sql}
+    BOOL_FIELDS   = {:command_shell_sudo, :skip_dumping_schema_sql, :verbose_migrations}
     # :nodoc:
     ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS = %w(reverse_direction callback none)
 
@@ -82,6 +83,11 @@ module Jennifer
     define_fields(INT_FIELDS, 0)
     define_fields(FLOAT_FIELDS, 0.0)
     define_fields(BOOL_FIELDS, false)
+
+    # Returns whether migrations should be performed in verbose mode.
+    #
+    # Default is `true`.
+    getter verbose_migrations = true
 
     # Handler type for the failed migrations; default is `"none"`.
     #

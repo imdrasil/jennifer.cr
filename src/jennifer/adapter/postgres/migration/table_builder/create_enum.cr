@@ -10,6 +10,10 @@ module Jennifer
           def process
             schema_processor.define_enum(@name, @values)
           end
+
+          def explain
+            "create_enum :#{@name}, #{@values.inspect}"
+          end
         end
       end
     end

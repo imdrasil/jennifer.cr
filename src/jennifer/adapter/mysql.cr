@@ -89,7 +89,7 @@ module Jennifer
           .exists?
       end
 
-      def index_exists?(table, name)
+      def index_exists?(table, name : String)
         Query["information_schema.statistics"].where do
           (_table_name == table) &
             (_index_name == name) &
@@ -105,12 +105,8 @@ module Jennifer
         end.exists?
       end
 
-      def foreign_key_exists?(from_table, to_table)
-        name = self.class.foreign_key_name(from_table, to_table)
-        foreign_key_exists?(name)
-      end
-
-      def foreign_key_exists?(name)
+      def foreign_key_exists?(from_table, to_table = nil, column = nil, name : String? = nil)
+        name = self.class.foreign_key_name(from_table, to_table, column, name)
         Query["information_schema.KEY_COLUMN_USAGE"]
           .where { and(_constraint_name == name, _table_schema == Config.db) }
           .exists?

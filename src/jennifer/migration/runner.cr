@@ -98,41 +98,60 @@ module Jennifer
       end
 
       private def self.process_up_migration(migration)
-        migration_processed = false
-        begin
-          transaction { migration.up }
-          Version.create(version: migration.class.version)
-          migration_processed = true
-          puts "Migration #{migration.class}"
-        ensure
-          transaction do
-            case Config.migration_failure_handler_method
-            when "reverse_direction"
-              migration.down
-            when "callback"
-              migration.after_up_failure
-            end
+        transaction do
+          process_with_announcement(migration, :up) do
+            migration.up
+            Version.create(version: migration.class.version)
           end
         end
+      rescue e
+        transaction do
+          case Config.migration_failure_handler_method
+          when "reverse_direction"
+            migration.down
+          when "callback"
+            migration.after_up_failure
+          end
+        end
+
+        raise e
       end
 
       private def self.process_down_migration(migration)
-        migration_processed = false
-        begin
-          transaction { migration.down }
-          Version.all.where { _version == migration.class.version }.delete
-          migration_processed = true
-          puts "Dropped migration #{migration.class}"
-        ensure
-          transaction do
-            case Config.migration_failure_handler_method
-            when "reverse_direction"
-              migration.up
-            when "callback"
-              migration.after_down_failure
-            end
+        transaction do
+          process_with_announcement(migration, :down) do
+            migration.down
+            Version.all.where { _version == migration.class.version }.delete
           end
         end
+      rescue e
+        transaction do
+          case Config.migration_failure_handler_method
+          when "reverse_direction"
+            migration.up
+          when "callback"
+            migration.after_down_failure
+          end
+        end
+
+        raise e
+      end
+
+      private def self.process_with_announcement(migration, direction)
+        words =
+          case direction
+          when :up
+            {start: "migrating", end: "migrated"}
+          else
+            {start: "reverting", end: "reverted"}
+          end
+        header = "== #{migration.class.version} #{migration.class}:"
+        puts  "#{header} #{words[:start]}" if Config.config.verbose_migrations
+        time = Time.measure do
+          yield
+        end
+        puts  "#{header} #{words[:end]} (#{time.milliseconds} ms)" if Config.config.verbose_migrations
+        puts if Config.config.verbose_migrations
       end
 
       private def self.assert_outdated_pending_migrations

@@ -10,6 +10,10 @@ module Jennifer
           def process
             schema_processor.drop_enum(@name)
           end
+
+          def explain
+            "drop_enum :#{@name}"
+          end
         end
       end
     end

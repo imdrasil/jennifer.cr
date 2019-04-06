@@ -62,6 +62,7 @@ def set_default_configuration
     conf.logger.level = Logger::DEBUG
     conf.user = ENV["DB_USER"] if ENV["DB_USER"]?
     conf.password = ENV["DB_PASSWORD"] if ENV["DB_PASSWORD"]?
+    conf.verbose_migrations = false
   end
 end
 

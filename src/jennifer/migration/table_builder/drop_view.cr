@@ -5,6 +5,10 @@ module Jennifer
         def process
           schema_processor.drop_view(@name)
         end
+
+        def explain
+          "drop_view :#{@name}"
+        end
       end
     end
   end

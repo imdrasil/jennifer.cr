@@ -12,7 +12,7 @@ module Jennifer
 
   module Adapter
     TYPES = %i(
-      integer short bigint oid
+      tinyint integer short bigint oid
       float double
       numeric decimal
       bool

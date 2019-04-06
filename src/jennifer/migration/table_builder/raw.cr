@@ -12,6 +12,10 @@ module Jennifer
         def process
           adapter.exec(@raw_sql)
         end
+
+        def explain
+          "exec \"#{@raw_sql}\""
+        end
       end
     end
   end

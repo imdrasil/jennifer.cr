@@ -27,7 +27,7 @@ describe Jennifer::Migration::TableBuilder::CreateForeignKey do
       it do
         command = described_class.new(adapter, DEFAULT_TABLE, "to_tables", "column", "primary", nil)
         command.primary_key.should eq("primary")
-        command.name.should eq("fk_cr_test_table_to_tables")
+        command.name.should eq("fk_cr_81338c9f68")
         command.column.should eq("column")
       end
     end
@@ -35,6 +35,20 @@ describe Jennifer::Migration::TableBuilder::CreateForeignKey do
 
   describe "#process" do
     pending "add" do
+    end
+  end
+
+  describe ".foreign_key_name" do
+    context "with name" do
+      it { described_class.foreign_key_name("table", "column", "name").should eq("name") }
+    end
+
+    it { described_class.foreign_key_name("accounts", "branch_id", nil).should eq("fk_cr_d72169e1fc") }
+  end
+
+  describe ".column_name" do
+    context "with present column name" do
+      it { described_class.column_name("table", "name").should eq("name") }
     end
   end
 end

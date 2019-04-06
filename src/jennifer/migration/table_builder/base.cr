@@ -21,13 +21,18 @@ module Jennifer
         end
 
         abstract def process
+        abstract def explain
 
         def process_commands
           @commands.each(&.process)
         end
 
-        def to_s
-          "#{@name} -> #{self.class.to_s}"
+        private def build_column_options(type : Symbol?, options : Hash)
+          if type.nil? && !options.has_key?(:sql_type)
+            raise ArgumentError.new("Both type and sql_type can't be blank")
+          end
+
+          Ifrit.sym_hash_cast(options, AAllowedTypes).merge({ :type => type } of Symbol => AAllowedTypes)
         end
       end
     end

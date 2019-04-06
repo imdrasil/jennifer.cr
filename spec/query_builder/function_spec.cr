@@ -160,10 +160,7 @@ describe Jennifer::QueryBuilder::Function do
 
     it do
       Factory.create_contact
-      time = db_specific(
-        mysql: -> { Time.now + Time.now.offset.seconds },
-        postgres: -> { Time.utc_now }
-      )
+      time = Time.utc_now
       Jennifer::Query["contacts"].select { [now.alias("now")] }.first!.now(Time).should be_close(time, 1.second)
     end
   end

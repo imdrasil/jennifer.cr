@@ -170,16 +170,16 @@ describe Jennifer::Adapter::Base do
   end
 
   describe "#foreign_key_exists?" do
-    context "with given connected tables names" do
-      it do
-        adapter.foreign_key_exists?(:addresses, :contacts).should be_true
-      end
+    context "with to_table" do
+      it { adapter.foreign_key_exists?(:addresses, :contacts).should be_true }
     end
 
-    context "with given foreign key name" do
-      it do
-        adapter.foreign_key_exists?("fk_cr_addresses_contacts").should be_true
-      end
+    context "with foreign key name" do
+      it { adapter.foreign_key_exists?(:addresses, name: "fk_cr_67e9674de3").should be_true }
+    end
+
+    context "with column name" do
+      it { adapter.foreign_key_exists?(:addresses, column: :contact_id).should be_true }
     end
 
     context "with invalid name" do

@@ -3,7 +3,7 @@ require "../schema_processor"
 module Jennifer
   module Postgres
     class SchemaProcessor < Adapter::SchemaProcessor
-      delegate data_type_exists?, to: adapter.as(Postgres)
+      delegate enum_exists?, to: adapter.as(Postgres)
 
       # ================
       # Builder methods
@@ -21,8 +21,8 @@ module Jennifer
         Migration::TableBuilder::ChangeEnum.new(@adapter, name, options).process
       end
 
-      def build_create_materialized_view(name, _as)
-        Migration::TableBuilder::CreateMaterializedView.new(@adapter, name, _as).process
+      def build_create_materialized_view(name, source)
+        Migration::TableBuilder::CreateMaterializedView.new(@adapter, name, source).process
       end
 
       def build_drop_materialized_view(name)
@@ -104,6 +104,16 @@ module Jennifer
         end
 
         adapter.exec query[0...-1]
+      end
+
+      def drop_foreign_key(from_table, name)
+        query = String.build do |s|
+          s << "ALTER TABLE " <<
+            from_table <<
+            " DROP CONSTRAINT " <<
+            name
+        end
+        adapter.exec query
       end
 
       private def column_definition(name, options, io)

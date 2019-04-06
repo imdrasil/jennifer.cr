@@ -138,6 +138,23 @@ module Jennifer
         exec(*parse_query(query, args))
       end
 
+      # Returns whether index for the *table` with *name* or *fields* exists.
+      #
+      # ```
+      # # Check an index exists
+      # adapter.index_exists?(:suppliers, :company_id)
+      #
+      # Check an index on multiple columns exists
+      # adapter.index_exists?(:suppliers, [:company_id, :company_type])
+      #
+      # Check an index with a custom name exists
+      # adapter.index_exists?(:suppliers, "idx_company_id")
+      # ```
+      def index_exists?(table, fields : Array)
+        index_name = Migration::TableBuilder::CreateIndex.generate_index_name(table, fields, nil)
+        index_exists?(table, index_name)
+      end
+
       def parse_query(q : String, args : ArgsType)
         sql_generator.parse_query(q, args)
       end
@@ -177,8 +194,9 @@ module Jennifer
       end
 
       # Generates foreign key name for given tables.
-      def self.foreign_key_name(table1, table2)
-        "fk_cr_#{join_table_name(table1, table2)}"
+      def self.foreign_key_name(from_table, to_table = nil, column = nil, name : String? = nil) : String
+        column_name = Migration::TableBuilder::CreateForeignKey.column_name(to_table, column)
+        Migration::TableBuilder::CreateForeignKey.foreign_key_name(from_table, column_name, name)
       end
 
       def self.connection_string(*options)
@@ -220,9 +238,10 @@ module Jennifer
       def ready_to_migrate!
         return if table_exists?(Migration::Version.table_name)
 
-        schema_processor.build_create_table(Migration::Version.table_name) do |t|
-          t.string(:version, {:size => 17, :null => false})
-        end
+        tb = Migration::TableBuilder::CreateTable.new(self, Migration::Version.table_name)
+        tb.integer(:id, { :primary => true, :auto_increment => true })
+        tb.string(:version, { :size => 17, :null => false })
+        tb.process
       end
 
       def query_array(_query : String, klass : T.class, field_count : Int32 = 1) forall T
@@ -241,24 +260,47 @@ module Jennifer
 
       abstract def schema_processor
       abstract def sql_generator
-      abstract def view_exists?(name, silent = true)
+
+      # Check whether view with given *name* exists.
+      #
+      # ```
+      # adapter.view_exists?(:youth_contacts)
+      # ```
+      abstract def view_exists?(name) : Bool
+
       abstract def update(obj)
       abstract def update(q, h)
       abstract def insert(obj)
 
       # Returns where table with given *table* name exists.
+      #
+      # ```
+      # adapter.table_exists?(:developers)
+      # ```
       abstract def table_exists?(table)
 
-      # Returns whether foreign key between *from_table* and *to_table* exists.
-      abstract def foreign_key_exists?(from_table, to_table)
+      # Checks to see if a foreign key exists on a table for a given foreign key definition.
+      #
+      # ```
+      # # Checks to see if a foreign key exists.
+      # adapter.foreign_key_exists?(:accounts, :branches)
+      #
+      # # Checks to see if a foreign key on a specified column exists.
+      # adapter.foreign_key_exists?(:accounts, column: :owner_id)
+      #
+      # # Checks to see if a foreign key with a custom name exists.
+      # adapter.foreign_key_exists?(:accounts, name: "special_fk_name")
+      # ```
+      abstract def foreign_key_exists?(from_table, to_table = nil, column = nil, name : String? = nil) : Bool
 
-      # Returns whether foreign key with given *name* exists.
-      abstract def foreign_key_exists?(name)
-
-      # Returns whether index for the *table` with *name* exists.
-      abstract def index_exists?(table, name)
+      abstract def index_exists?(table, name : String)
 
       # Returns whether column of *table* with *name* exists.
+      #
+      # ```
+      # # Check a column exists
+      # column_exists?(:suppliers, :name)
+      # ```
       abstract def column_exists?(table, name)
       abstract def translate_type(name)
       abstract def default_type_size(name)

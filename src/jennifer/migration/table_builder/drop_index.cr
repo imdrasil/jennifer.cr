@@ -1,9 +1,15 @@
+require "./create_index"
+
 module Jennifer
   module Migration
     module TableBuilder
       class DropIndex < Base
-        def initialize(adapter, name, @index_name : String)
+        @index_name : String
+
+        def initialize(adapter, name, fields, index_name : String?)
+          raise ArgumentError.new if fields.empty? && (index_name.nil? || index_name.empty?)
           super(adapter, name)
+          @index_name = CreateIndex.generate_index_name(name, fields, index_name)
         end
 
         def process

@@ -28,7 +28,7 @@ describe Jennifer::Model::Authentication do
       end
 
       describe "::password_digest_cost" do
-        it { User.password_digest_cost.should eq(Crypto::Bcrypt::DEFAULT_COST) }
+        pending { User.password_digest_cost.should eq(Crypto::Bcrypt::DEFAULT_COST) }
       end
 
       describe "#password=" do

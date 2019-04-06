@@ -7,11 +7,15 @@ mysql_only do
 
     describe "#index_exists?" do
       it "returns true if table has index with given name" do
-        adapter.index_exists?("contacts", "contacts_description_index").should be_true
+        adapter.index_exists?("contacts", "contacts_description_idx").should be_true
+      end
+
+      it "returns true if table has index with given columns" do
+        adapter.index_exists?("contacts", [:description_id]).should be_true
       end
 
       it "returns false if table has no given index" do
-        adapter.index_exists?("addresses", "contacts_description_index").should be_false
+        adapter.index_exists?("addresses", "contacts_description_id_idx").should be_false
       end
     end
 

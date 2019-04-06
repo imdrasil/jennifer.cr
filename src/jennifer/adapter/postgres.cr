@@ -15,6 +15,8 @@ module Jennifer
       alias EnumType = Bytes
 
       TYPE_TRANSLATIONS = {
+        :bool       => "boolean",
+
         :integer => "int",      # Int32
         :short   => "SMALLINT", # Int16
         :bigint  => "BIGINT",   # Int64
@@ -28,7 +30,6 @@ module Jennifer
 
         :string     => "varchar",
         :char       => "char",
-        :bool       => "boolean",
         :text       => "text",
         :var_string => "varchar",
         :varchar    => "varchar",
@@ -159,25 +160,21 @@ module Jennifer
           .exists?
       end
 
-      def index_exists?(table, name)
+      def index_exists?(_table, name : String)
         Query["pg_class"]
           .join("pg_namespace") { _oid == _pg_class__relnamespace }
           .where { (_pg_class__relname == name) & (_pg_namespace__nspname == Config.schema) }
           .exists?
       end
 
-      def foreign_key_exists?(from_table, to_table)
-        name = self.class.foreign_key_name(from_table, to_table)
-        foreign_key_exists?(name)
-      end
-
-      def foreign_key_exists?(name)
+      def foreign_key_exists?(from_table, to_table = nil, column = nil, name : String? = nil)
+        name = self.class.foreign_key_name(from_table, to_table, column, name)
         Query["information_schema.table_constraints"]
           .where { and(_constraint_name == name, _table_schema == Config.schema) }
           .exists?
       end
 
-      def data_type_exists?(name)
+      def enum_exists?(name)
         Query["pg_type"].where { _typname == name }.exists?
       end
 

@@ -66,6 +66,10 @@ class User < ApplicationRecord
   validates_uniqueness :email
 
   has_many :contacts, Contact, inverse_of: :user
+
+  def self.password_digest_cost
+    4
+  end
 end
 
 class Contact < ApplicationRecord

@@ -4,8 +4,9 @@ module Jennifer
       class DropForeignKey < Base
         getter from_table : String, to_table : String
 
-        def initialize(adapter, @from_table, @to_table, name)
-          super(adapter, (name || adapter.class.foreign_key_name(@from_table, @to_table)).to_s)
+        def initialize(adapter, @from_table, @to_table, column, name)
+          column_name = CreateForeignKey.column_name(@to_table, column)
+          super(adapter, CreateForeignKey.foreign_key_name(@from_table, column_name, name))
         end
 
         def process

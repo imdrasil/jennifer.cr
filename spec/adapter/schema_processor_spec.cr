@@ -153,12 +153,4 @@ describe Jennifer::Adapter::SchemaProcessor do
       end
     end
   end
-
-  describe "#drop_foreign_key" do
-    it do
-      match_query_from_exception(/ALTER TABLE table_name DROP FOREIGN KEY key_name/) do
-        processor.drop_foreign_key("table_name", "key_name")
-      end
-    end
-  end
 end

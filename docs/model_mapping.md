@@ -102,7 +102,11 @@ end
 
 ## Mapping definition
 
-`%mapping(options, strict = true)` macros stands for defining all model attributes. If field has no extra parameter, you can just specify name and type (type in case of crystal language): `field_name: :Type`. Named tuple can be used instead of type. Next keys are supported:
+You should define all fields that you'd like to grep from the particular table, other words - define model's mapping.
+
+`%mapping(options, strict = true)` macro stands for defining all model attributes. If field has no extra parameter,
+you can just specify name and type (type in case of crystal language): `field_name: :Type`. Named tuple can be used
+instead of type. Next keys are supported:
 
 | argument | description |
 | --- | --- |
@@ -110,6 +114,7 @@ end
 | `:primary` | mark field as primary key (default is `false`) |
 | `:null` | allows field to be `nil` (default is `false` for all fields except primary key |
 | `:default` | default value which will be set during creating **new** object |
+| `:column` | database column name associated with this attribute (default is attribute name) |
 | `:getter` | if getter should be created (default - `true`) |
 | `:setter` | if setter should be created (default - `true`) |
 | `:virtual` | mark field as virtual - will not be stored and retrieved from db |

@@ -73,40 +73,41 @@ class User < ApplicationRecord
 end
 
 class Contact < ApplicationRecord
-  with_timestamps
-
   module Mapping
-    macro included
-      {% if env("DB") == "postgres" || env("DB") == nil %}
-        mapping(
-          id:          Primary32,
-          name:        String,
-          ballance:    PG::Numeric?,
-          age:         {type: Int32, default: 10},
-          gender:      {type: String?, default: "male"},
-          description: String?,
-          created_at:  Time?,
-          updated_at:  Time?,
-          user_id:     Int32?,
-          tags:        { type: Array(Int32)? }
-        )
-      {% else %}
-        mapping(
-          id:          Primary32,
-          name:        String,
-          ballance:    Float64?,
-          age:         {type: Int32, default: 10},
-          gender:      {type: String?, default: "male"},
-          description: String?,
-          created_at:  Time?,
-          updated_at:  Time?,
-          user_id:     Int32?
-        )
-      {% end %}
-    end
+    include Jennifer::Model::Mapping
+
+    {% if env("DB") == "postgres" || env("DB") == nil %}
+      mapping(
+        id:          Primary32,
+        name:        String,
+        ballance:    PG::Numeric?,
+        age:         {type: Int32, default: 10},
+        gender:      {type: String?, default: "male"},
+        description: String?,
+        created_at:  Time?,
+        updated_at:  Time?,
+        user_id:     Int32?,
+        tags:        { type: Array(Int32)? }
+      )
+    {% else %}
+      mapping(
+        id:          Primary32,
+        name:        String,
+        ballance:    Float64?,
+        age:         {type: Int32, default: 10},
+        gender:      {type: String?, default: "male"},
+        description: String?,
+        created_at:  Time?,
+        updated_at:  Time?,
+        user_id:     Int32?
+      )
+    {% end %}
   end
 
   include Mapping
+
+  with_timestamps
+  mapping
 
   has_many :addresses, Address, inverse_of: :contact
   has_many :facebook_profiles, FacebookProfile, inverse_of: :contact
@@ -577,7 +578,7 @@ class Author < Jennifer::Model::Base
   })
 end
 
-abstract class Publication < Jennifer::Model::Base
+class Publication < Jennifer::Model::Base
   mapping({
     id:         Primary32,
     name:       { type: String, column: :title },

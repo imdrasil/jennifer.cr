@@ -109,6 +109,12 @@ module Jennifer
       @@has_table : Bool?
       @@table_name : String?
 
+      # Returns a string containing a human-readable representation of object.
+      #
+      # ```
+      # Address.new.inspect
+      # # => "#<Address:0x7f532bdd5340 id: nil, street: "Ant st. 69", contact_id: nil, created_at: nil, updated_at: nil>"
+      # ```
       def inspect(io) : Nil
         io << "#<" << {{@type.name.id.stringify}} << ":0x"
         object_id.to_s(16, io)
@@ -156,6 +162,7 @@ module Jennifer
         Adapter.adapter
       end
 
+      # Returns `QueryBuilder::ExpressionBuilder` object of this resource's table.
       def self.context
         @@expression_builder ||= QueryBuilder::ExpressionBuilder.new(table_name)
       end
@@ -176,26 +183,38 @@ module Jennifer
       end
 
       # Starts database transaction.
+      #
+      # For more details see `Jennifer::Adapter::Transactions`.
       def self.transaction
         adapter.transaction do |t|
           yield(t)
         end
       end
 
+      # Returns criterion for column *name* of resource's table.
+      #
+      # ```
+      # User.c(:email) # => users.email
+      # ```
       def self.c(name : String | Symbol)
         context.c(name.to_s)
       end
 
       def self.c(name : String | Symbol, relation)
-        ::Jennifer::QueryBuilder::Criteria.new(name.to_s, table_name, relation)
+        QueryBuilder::Criteria.new(name.to_s, table_name, relation)
       end
 
+      # Returns star field statement for current resource's table.
+      #
+      # ```
+      # User.star # => users.*
+      # ```
       def self.star
         context.star
       end
 
       def self.relation(name)
-        raise Jennifer::UnknownRelation.new(self, name)
+        raise UnknownRelation.new(self, name)
       end
 
       def append_relation(name : String, hash)

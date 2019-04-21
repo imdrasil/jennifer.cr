@@ -10,6 +10,8 @@ module Spec
   class Contact < ApplicationRecord
     include ::Contact::Mapping
 
+    mapping
+
     has_one :note, Note, inverse_of: :notable, polymorphic: true, dependent: :nullify
   end
 end

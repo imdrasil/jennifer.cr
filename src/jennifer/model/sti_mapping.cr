@@ -1,5 +1,6 @@
 module Jennifer
   module Model
+    # :nodoc:
     module STIMapping
       # TODO: try to make the "type" field customizable
 
@@ -23,7 +24,7 @@ module Jennifer
         end
 
         {%
-          super_properties = @type.superclass.constant("COLUMNS_METADATA")
+          super_properties = INHERITED_COLUMNS_METADATA
           add_default_constructor =
             super_properties.keys.all? do|field|
               options = super_properties[field]
@@ -37,6 +38,15 @@ module Jennifer
             end
           properties = COLUMNS_METADATA
           nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] }
+
+          all_properties = super_properties.to_a.reduce({} of ASTNode => ASTNode) do |hash, (key, value)|
+            hash[key] = value
+            hash
+          end
+          properties.to_a.reduce(all_properties) do |hash, (key, value)|
+            hash[key] = value
+            hash
+          end
         %}
 
         __field_declaration({{properties}}, false)
@@ -44,20 +54,70 @@ module Jennifer
         private def inspect_attributes(io) : Nil
           super
           {% for var, i in properties.keys %}
-            io << ", "
-            io << "{{var.id}}: "
+            io << ", {{var.id}}: "
             @{{var.id}}.inspect(io)
           {% end %}
           nil
         end
 
-        private def _sti_extract_attributes(values : Hash(String, ::Jennifer::DBAny))
-          {% for key, value in properties %}
+        private def _extract_attributes(pull : DB::ResultSet)
+          requested_columns_count = self.class.actual_table_field_count
+          ::Jennifer::BaseException.assert_column_count(requested_columns_count, pull.column_count)
+          {% for key, value in all_properties %}
+            %var{key.id} = {{value[:default]}}
+            %found{key.id} = false
+          {% end %}
+          requested_columns_count.times do
+            column = pull.column_name(pull.column_index)
+            case column
+            {% for key, value in all_properties %}
+              {% if !value[:virtual] %}
+              when {{value[:column]}}
+                %found{key.id} = true
+                begin
+                  %var{key.id} =
+                    {% if value[:converter] %}
+                      {{ value[:converter] }}.from_db(pull, {{value[:null]}})
+                    {% else %}
+                      pull.read({{value[:parsed_type].id}})
+                    {% end %}
+                  %var{key.id} = %var{key.id}.in(::Jennifer::Config.local_time_zone) if %var{key.id}.is_a?(Time)
+                rescue e : Exception
+                  raise ::Jennifer::DataTypeMismatch.build(column, {{@type}}, e)
+                end
+              {% end %}
+            {% end %}
+            else
+              pull.read
+            end
+          end
+          {% if all_properties.size > 1 %}
+            {
+            {% for key, value in all_properties %}
+              begin
+                %var{key.id}.as({{value[:parsed_type].id}})
+              rescue e : Exception
+                raise ::Jennifer::DataTypeCasting.build({{value[:column]}}, {{@type}}, e)
+              end,
+            {% end %}
+            }
+          {% else %}
+            {% key = all_properties.keys[0] %}
+            begin
+              %var{key}.as({{all_properties[key][:parsed_type].id}})
+            rescue e : Exception
+              raise ::Jennifer::DataTypeCasting.build({{all_properties[key][:column]}}, {{@type}}, e)
+            end
+          {% end %}
+        end
+
+        private def _extract_attributes(values : Hash(String, ::Jennifer::DBAny))
+          {% for key, value in all_properties %}
             %var{key.id} = {{value[:default]}}
             %found{key.id} = true
           {% end %}
 
-          {% for key, value in properties %}
+          {% for key, value in all_properties %}
             {% column1 = key.id.stringify %}
             {% column2 = value[:column] %}
             if values.has_key?({{column1}})
@@ -79,7 +139,7 @@ module Jennifer
             end
           {% end %}
 
-          {% for key, value in properties %}
+          {% for key, value in all_properties %}
             begin
               %casted_var{key.id} =
                 {% if value[:default] != nil %}
@@ -93,20 +153,19 @@ module Jennifer
             end
           {% end %}
 
-          {% if properties.size > 1 %}
+          {% if all_properties.size > 1 %}
             {
-            {% for key, value in properties %}
+            {% for key, value in all_properties %}
               %casted_var{key.id},
             {% end %}
             }
           {% else %}
-            {% key = properties.keys[0] %}
-            %casted_var{key}
+            %casted_var{all_properties.keys[0]}
           {% end %}
         end
 
         def self.new(pull : DB::ResultSet)
-          instance = {{@type}}.allocate
+          instance = allocate
           instance.initialize(pull)
           instance.__after_initialize_callback
           instance
@@ -114,11 +173,12 @@ module Jennifer
 
         # Creates object from db tuple
         def initialize(%pull : DB::ResultSet)
-          initialize(self.class.adapter.result_to_hash(%pull), false)
+          @new_record = false
+          {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(%pull)
         end
 
         def self.new(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-          instance = {{@type}}.allocate
+          instance = allocate
           instance.initialize(values)
           instance.__after_initialize_callback
           instance
@@ -129,7 +189,7 @@ module Jennifer
         end
 
         def self.new(values : Hash(String, ::Jennifer::DBAny))
-          instance = {{@type}}.allocate
+          instance = allocate
           instance.initialize(values)
           instance.__after_initialize_callback
           instance
@@ -137,12 +197,11 @@ module Jennifer
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))
           values["type"] = "{{@type.id}}" if values["type"]?.nil?
-          super(values)
-          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _sti_extract_attributes(values)
+          {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
         def self.new(values : Hash | NamedTuple, new_record : Bool)
-          instance = {{@type}}.allocate
+          instance = allocate
           instance.initialize(values, new_record)
           instance.__after_initialize_callback
           instance
@@ -189,7 +248,7 @@ module Jennifer
         end
 
         # :nodoc:
-        def update_columns(values : Hash(String | Symbol, Jennifer::DBAny))
+        def update_columns(values : Hash(String | Symbol, ::Jennifer::DBAny))
           missing_values = {} of String | Symbol => Jennifer::DBAny
           values.each do |name, value|
             case name.to_s
@@ -213,7 +272,7 @@ module Jennifer
         end
 
         # :nodoc:
-        def set_attribute(name, value)
+        def set_attribute(name : String | Symbol, value : ::Jennifer::DBAny)
           case name.to_s
           {% for key, value in properties %}
             {% if value[:setter] != false %}
@@ -280,12 +339,11 @@ module Jennifer
         end
 
         private def init_attributes(values : Hash)
-          super(values)
-          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _sti_extract_attributes(values)
+          {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
         private def init_attributes(values : DB::ResultSet)
-          init_attributes(self.class.adapter.result_to_hash(values))
+          {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
         private def __refresh_changes

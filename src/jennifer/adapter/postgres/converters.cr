@@ -1,5 +1,8 @@
 module Jennifer
   module Model
+    # Type converter for Postgre numeric field.
+    #
+    # Converts `PG::Numeric` to `Float64` and back.
     class NumericToFloat64Converter
       def self.from_db(pull, nillable)
         if nillable

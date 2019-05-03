@@ -28,7 +28,7 @@ describe Jennifer::QueryBuilder::Condition do
       end
     {% end %}
 
-    context "operator ==" do
+    context "= operator" do
       it { (Factory.build_criteria == "asd").as_sql.should eq("tests.f1 = %s") }
 
       context "with model query" do
@@ -80,7 +80,7 @@ describe Jennifer::QueryBuilder::Condition do
       end
     end
 
-    context "operator =~" do
+    context "=~ operator" do
       it "returns regexp operator" do
         sql = (Factory.build_criteria =~ "asd").as_sql
 
@@ -91,13 +91,13 @@ describe Jennifer::QueryBuilder::Condition do
       end
     end
 
-    context "operator between" do
+    context "BETWEEN operator" do
       it "generates proper sql" do
         expression._age.between(20, 30).as_sql.should match(/age BETWEEN %s AND %s/)
       end
     end
 
-    context "operator LIKE" do
+    context "LIKE operator" do
       it "finds correct results" do
         Factory.create_contact(name: "Abraham")
         Factory.create_contact(name: "Johny")
@@ -105,19 +105,23 @@ describe Jennifer::QueryBuilder::Condition do
       end
     end
 
-    context "operator is bool" do
+    context "bool" do
       it "renders table name and field name" do
         Factory.build_criteria.to_condition.as_sql.should eq("tests.f1")
       end
     end
 
     context "IN operator" do
-      it "renders table name and field name" do
-        Factory.build_criteria.in([1, "asd"]).as_sql.should match(/tests\.f1/)
-      end
+      context "with array" do
+        it "correctly renders" do
+          Factory.build_criteria.in([1, "asd"]).as_sql.should eq("tests.f1 IN(%s, %s)")
+        end
 
-      it "correctly renders IN part (mysql)" do
-        Factory.build_criteria.in([1, "asd"]).as_sql.should match(/IN\(%s\, %s\)/)
+        context "with 0 size" do
+          it "renders impossible condition" do
+            Factory.build_criteria.in(%w()).as_sql.should eq("1 = 0")
+          end
+        end
       end
 
       context "with model query" do
@@ -160,8 +164,16 @@ describe Jennifer::QueryBuilder::Condition do
     end
 
     context "IN operator" do
-      it "returns array of IN args" do
-        Factory.build_criteria.in([1, "asd"]).sql_args.should eq(db_array(1, "asd"))
+      context "with array" do
+        it "returns array of IN args" do
+          Factory.build_criteria.in([1, "asd"]).sql_args.should eq(db_array(1, "asd"))
+        end
+
+        context "with 0 size" do
+          it "returns empty array" do
+            Factory.build_criteria.in(%w()).sql_args.should be_empty
+          end
+        end
       end
 
       context "with model query" do

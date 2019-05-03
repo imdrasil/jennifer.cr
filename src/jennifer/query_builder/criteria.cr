@@ -3,7 +3,7 @@ require "./order_item"
 
 module Jennifer
   module QueryBuilder
-    # Basic class describing table field.
+    # Basic class describing filterable/selectable database atom. By default it is table column.
     #
     # TODO: rename to Criterion
     class Criteria < SQLNode
@@ -115,7 +115,6 @@ module Jennifer
       end
 
       def in(arr : Array)
-        raise ArgumentError.new("IN array can't be empty") if arr.empty?
         Condition.new(self, :in, arr.map { |e| e.as(DBAny) })
       end
 

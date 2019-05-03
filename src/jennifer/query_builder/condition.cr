@@ -7,6 +7,8 @@ module Jennifer
       include LogicOperator::Operators
       include Statement
 
+      IN_OPERATOR_PATTERN = "%s IN(%s)"
+
       # Left hand side of condition.
       getter lhs : SQLNode
 
@@ -88,24 +90,17 @@ module Jennifer
       end
 
       def as_sql(generator)
-        _lhs = @lhs.as_sql(generator)
         str =
           case @operator
           when :bool
-            _lhs
+            converted_lhs(generator)
           when :in
-            value =
-              if @rhs.is_a?(Array)
-                generator.filter_out(@rhs.as(Array), false)
-              else
-                @rhs.as(SQLNode).as_sql(generator)
-              end
-            "#{_lhs} IN(#{value})"
+            in_rhs_sql(generator)
           when :between
             rhs = @rhs.as(Array)
-            "#{_lhs} BETWEEN #{generator.filter_out(rhs[0])} AND #{generator.filter_out(rhs[1])}"
+            "#{converted_lhs(generator)} BETWEEN #{generator.filter_out(rhs[0])} AND #{generator.filter_out(rhs[1])}"
           else
-            "#{_lhs} #{generator.operator_to_sql(@operator)} #{parsed_rhs(generator)}"
+            "#{converted_lhs(generator)} #{generator.operator_to_sql(@operator)} #{converted_rhs(generator)}"
           end
         str = "NOT (#{str})" if @negative
         str
@@ -114,6 +109,7 @@ module Jennifer
       def sql_args : Array(DBAny)
         res = @lhs.sql_args
         return res if @operator == :bool
+
         if @rhs.is_a?(SQLNode)
           res.concat(@rhs.as(SQLNode).sql_args)
         elsif @rhs.is_a?(Array) && (@operator == :in || @operator == :between)
@@ -146,13 +142,33 @@ module Jennifer
         end
       end
 
-      private def parsed_rhs(generator)
+      private def converted_rhs(generator)
         if @rhs.is_a?(SQLNode)
           @rhs.as(SQLNode).as_sql(generator)
         elsif @operator == :is || @operator == :is_not
           translate(generator)
         else
           generator.filter_out(@rhs)
+        end
+      end
+
+      private def converted_lhs(generator)
+        @lhs.as_sql(generator)
+      end
+
+      private def in_rhs_sql(generator)
+        rhs = @rhs
+        case rhs
+        when Array
+          if rhs.empty?
+            "1 = 0"
+          else
+            IN_OPERATOR_PATTERN % [converted_lhs(generator), generator.filter_out(rhs, false)]
+          end
+        when SQLNode
+          IN_OPERATOR_PATTERN % [converted_lhs(generator), rhs.as_sql(generator)]
+        else
+          ""
         end
       end
 

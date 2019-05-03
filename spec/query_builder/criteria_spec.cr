@@ -124,13 +124,6 @@ describe Jennifer::QueryBuilder::Criteria do
   end
 
   describe "#in" do
-    it "raises error if giben array is empty" do
-      c = Factory.build_criteria
-      expect_raises(Exception, "IN array can't be empty") do
-        c.in([] of Jennifer::DBAny)
-      end
-    end
-
     it "accepts all DB::Any types at the same time" do
       c = Factory.build_criteria.in([1, "asd"])
       c.rhs.should eq(db_array(1, "asd"))

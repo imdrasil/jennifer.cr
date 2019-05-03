@@ -9,6 +9,47 @@ postgres_only do
   end
 end
 
+module Mapping11
+  include Jennifer::Macros
+  include Jennifer::Model::Mapping
+
+  mapping(
+    id: Primary32
+  )
+end
+
+module Mapping12
+  include Jennifer::Macros
+  include Jennifer::Model::Mapping
+
+  mapping(
+    name: String?
+  )
+end
+
+module CompositeMapping
+  include Mapping11
+  include Mapping12
+
+  mapping(
+    password_digest: String?
+  )
+end
+
+module ModuleWithoutMapping
+  include CompositeMapping
+end
+
+class UserWithModuleMapping < Jennifer::Model::Base
+  include ModuleWithoutMapping
+
+  table_name "users"
+
+  mapping(
+    email: String?
+  )
+end
+
 describe Jennifer::Model::Mapping do
   select_regexp = /[\S\s]*SELECT contacts\.\*/i
 
@@ -70,7 +111,7 @@ describe Jennifer::Model::Mapping do
     end
 
     describe "::columns_tuple" do
-      it "returns named tuple mith column metedata" do
+      it "returns named tuple with column metadata" do
         metadata = Contact.columns_tuple
         metadata.is_a?(NamedTuple).should be_true
         metadata[:id].is_a?(NamedTuple).should be_true
@@ -84,6 +125,15 @@ describe Jennifer::Model::Mapping do
         metadata[:name1].is_a?(NamedTuple).should be_true
         metadata[:name1][:type].should eq(String)
         metadata[:name1][:parsed_type].should eq("String")
+      end
+
+      it "includes fields defined in included module" do
+        metadata = UserWithModuleMapping.columns_tuple
+        metadata.is_a?(NamedTuple).should be_true
+        metadata.has_key?(:id).should be_true
+        metadata.has_key?(:name).should be_true
+        metadata.has_key?(:password_digest).should be_true
+        metadata.has_key?(:email).should be_true
       end
     end
 

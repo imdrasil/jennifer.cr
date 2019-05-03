@@ -1,5 +1,8 @@
 module Jennifer
   module Model
+    # Default converter for `JSON::Any` fields.
+    #
+    # Converts json string to `JSON::Any` and back.
     class JSONConverter
       def self.from_db(pull, nillable)
         nillable ? pull.read(JSON::Any?) : pull.read(JSON::Any)

@@ -1,5 +1,4 @@
 require "db"
-require "ifrit"
 require "./shared/*"
 require "./transactions"
 require "./result_parsers"

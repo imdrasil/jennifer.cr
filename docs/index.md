@@ -11,6 +11,7 @@ Also you can check out following example applications where you can find how to 
 
 ## Content
 
+* [Getting started](./getting_started.md)
 * [Configuration](./configuration.md)
 * [Command Line](./command_line.md)
 * [Migration](./migration.md)

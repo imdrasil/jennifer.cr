@@ -20,7 +20,7 @@ dependencies:
 
 ## Usage
 
-Jennifer allows you to maintain everything for your models - from db migrations and field mapping to callbacks and building queries. For detailed information see the [guide](https://imdrasil.github.io/jennifer.cr/docs/) and [API documentation](https://imdrasil.github.io/jennifer.cr/versions).
+Jennifer allows you to maintain everything for your models - from db migrations and field mapping to callbacks and building queries. For detailed information see the [docs](https://imdrasil.github.io/jennifer.cr/docs/) and [API documentation](https://imdrasil.github.io/jennifer.cr/versions).
 
 ### Migration
 
@@ -67,12 +67,12 @@ to create the database and run the newly created migration.
 Jennifer provides next features:
 
 - flexible model schema definition
-- relationship definition (`belongs_to`, `has_many`, `has_one`, `has_and_belongs_to_many`)
-- validation
+- relationship definition (`belongs_to`, `has_many`, `has_one`, `has_and_belongs_to_many`) - including polymorphic ones
+- built-in extendable validations
 - model-specific query scope definition
 - callbacks
-- view support
-- translations
+- database view support
+- SQL translations
 
 Hers is model example:
 

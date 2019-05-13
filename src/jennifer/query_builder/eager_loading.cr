@@ -1,5 +1,11 @@
 module Jennifer
   module QueryBuilder
+    # Includes methods required for associations eager loading.
+    #
+    # Eager loading is a way to find objects of a certain class and a number of named associations.
+    # It is one of the easiest ways to prevent the dreaded N+1 problem in which fetching 100 posts
+    # that each need to display their author triggers 101 database queries. Through the use of eager
+    # loading, the number of queries will be reduced from 101 to 2.
     module EagerLoading
       @eager_load : Bool  = false
       @include_relations : Bool = false

@@ -35,6 +35,16 @@ module Jennifer
   # * `docker_source_location = ""`
   # * `command_shell_sudo = false`
   # * `migration_failure_handler_method = "none"`
+  #
+  # ```
+  # Jennifer::Config.configure do |conf|
+  #   conf.host = "localhost"
+  #   conf.user = "root"
+  #   conf.password = ""
+  #   conf.adapter = "mysql"
+  #   conf.db = "crystal"
+  # end
+  # ```
   class Config
     # :nodoc:
     CONNECTION_URI_PARAMS = {
@@ -67,12 +77,14 @@ module Jennifer
     # :nodoc:
     macro delegate_property(*methods)
       {% for method in methods %}
+        # Delegates to `#{{method}}`.
         def self.{{method.id}}
           instance.{{method.id}}
         end
       {% end %}
 
       {% for method in methods %}
+        # Delegates to `#{{method}}=`.
         def self.{{method.id}}=(value)
           instance.{{method.id}}= value
         end
@@ -150,11 +162,6 @@ module Jennifer
       self.max_pool_size = self.max_idle_pool_size = self.initial_pool_size = value
     end
 
-    # Returns maximum size of the pool.
-    def pool_size
-      max_pool_size
-    end
-
     # Default configuration object used by application.
     def self.instance : self
       @@instance
@@ -168,6 +175,31 @@ module Jennifer
     # ditto
     def self.config : self
       instance
+    end
+
+    # Yields default configuration instance to block and validates it.
+    def self.configure(&block)
+      yield instance
+      instance.validate_config
+    end
+
+    # Delegates call to #from_uri.
+    def self.from_uri(uri)
+      config.from_uri(uri)
+    end
+
+    # Delegates call to #read.
+    def self.read(*args, **opts)
+      config.read(*args, **opts)
+    end
+
+    def self.read(*args, **opts)
+      config.read(*args, **opts) { |document| yield document }
+    end
+
+    # Returns maximum size of the pool.
+    def pool_size
+      max_pool_size
     end
 
     # Returns `schema.sql` folder name.
@@ -215,24 +247,20 @@ module Jennifer
       @@migration_failure_handler_method = parsed_value
     end
 
-    # Yields default configuration instance to block and validates it.
-    def self.configure(&block)
-      yield instance
-      instance.validate_config
+    # Reads configurations from the file with given *path* for given *env*.
+    #
+    # All configuration properties will be read from the *env* key.
+    #
+    # ```
+    # Jennifer::Config.read("./db/database.yml", :production)
+    # ```
+    def read(path : String, env : Symbol = :development)
+      read(path, env.to_s)
     end
 
-    # Delegates call to #from_uri.
-    def self.from_uri(uri)
-      config.from_uri(uri)
-    end
-
-    # Delegates call to #read.
-    def self.read(*args, **opts)
-      config.read(*args, **opts)
-    end
-
-    def self.read(*args, **opts)
-      config.read(*args, **opts) { |document| yield document }
+    # ditto
+    def read(path : String, env : String)
+      read(path) { |document| document[env] }
     end
 
     # Reads configurations from the file with given *path*.
@@ -241,18 +269,6 @@ module Jennifer
     def read(path : String)
       source = yield YAML.parse(File.read(path))
       from_yaml(source)
-    end
-
-    # Reads configurations from the file with given *path*.
-    #
-    # All configuration properties will be read from the *env* key.
-    def read(path : String, env : Symbol = :development)
-      read(path, env.to_s)
-    end
-
-    # ditto
-    def read(path : String, env : String)
-      read(path) { |document| document[env] }
     end
 
     # Reads configuration properties from the given YAML *source*.
@@ -278,6 +294,10 @@ module Jennifer
     end
 
     # Reads configuration properties from the given *uri* string.
+    #
+    # ```
+    # Jennifer::Config.from_uri("mysql://root:password@somehost:3306/some_database")
+    # ```
     def from_uri(uri : String)
       from_uri(URI.parse(uri))
     rescue e

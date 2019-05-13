@@ -1,9 +1,7 @@
 require "./adapter/base"
 
 module Jennifer
-  alias AnyResult = DBAny | Int8 | Int16 | JSON::Any
-  alias AnyArgument = AnyResult | Array(AnyResult)
-
+  # All possible database types for any driver.
   alias DBAny = Array(Int32) | Array(Char) | Array(Float32) | Array(Float64) |
                 Array(Int16) | Array(Int64) | Array(String) |
                 Bool | Char | Float32 | Float64 | Int8 | Int16 | Int32 | Int64 | JSON::Any | PG::Geo::Box |
@@ -43,6 +41,9 @@ module Jennifer
       @@adapter = _adapter
     end
 
+    # Returns adapter instance.
+    #
+    # The first call greps all model's table column numbers.
     def self.adapter
       @@adapter ||= begin
         a = adapter_class.not_nil!.build
@@ -64,6 +65,7 @@ module Jennifer
       adapter_class
     end
 
+    # Returns adapter class.
     def self.adapter_class
       @@adapter_class ||= adapters[Config.adapter]
     end

@@ -1,5 +1,8 @@
 module Jennifer
   module Validations
+    # Numericality validation class.
+    #
+    # For more details see `Macros.validates_numericality`.
     class Numericality < Validator
       def validate(record, field : Symbol, value, allow_blank : Bool, greater_than = nil, greater_than_or_equal_to = nil, equal_to = nil,
                         less_than = nil, less_than_or_equal_to = nil, other_than = nil, odd = nil, even = nil)

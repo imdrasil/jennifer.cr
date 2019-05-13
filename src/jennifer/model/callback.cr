@@ -2,6 +2,25 @@ module Jennifer
   module Model
     # Callbacks are hooks into the life cycle of a model object that allow you to trigger logic before
     # or after an alteration of the object state.
+    #
+    # ```
+    # class User < Jennifer::Model::Base
+    #   mapping(
+    #     # ...
+    #   )
+    #
+    #   before_save :notify
+    #   after_create :send_email, if: admin?
+    #
+    #   def notify
+    #     # ...
+    #   end
+    #
+    #   def admin?
+    #     role == "admin"
+    #   end
+    # end
+    # ```
     module Callback
       protected def __before_save_callback
         true

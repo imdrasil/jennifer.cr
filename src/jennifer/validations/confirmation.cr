@@ -1,5 +1,8 @@
 module Jennifer
   module Validations
+    # Confirmation validation class.
+    #
+    # For more details see `Macros.validates_confirmation`.
     class Confirmation < Validator
       def validate(record, field : Symbol, value, allow_blank : Bool, confirmation, case_sensitive)
         return true if confirmation.nil?

@@ -1,4 +1,5 @@
 module Jennifer::Model
+  # :nodoc:
   module FieldDeclaration
     # :nodoc:
     macro __bool_convert(value, type)

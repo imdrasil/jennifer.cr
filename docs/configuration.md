@@ -37,7 +37,7 @@ test:
   <<: *defaults
 ```
 
-Also dsl could be used:
+This also can be written using DSL:
 
 ```crystal
 Jennifer::Config.configure do |conf|

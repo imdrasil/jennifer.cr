@@ -154,7 +154,7 @@ If you don't want to define all the table fields - pass `false` as second argume
 | `#{{field_name}}_changed?` | | shows if field was changed |
 | `#changed?` | | shows if any field was changed |
 | `#primary` | | value of primary key field |
-| `::primary` | | returns criterion for primary field (query dsl) |
+| `::primary` | | returns criterion for primary field (query DSL) |
 | `::primary_field_name` | | name of primary field |
 | `::primary_field_type` | | type of primary key |
 | `#new_record?` | | returns `true` if record has `nil` primary key (is not stored to db) |

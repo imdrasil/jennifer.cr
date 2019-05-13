@@ -1,5 +1,8 @@
 module Jennifer
   module Validations
+    # Exclusion validation class.
+    #
+    # For more details see `Macros.validates_exclusion`.
     class Exclusion < Validator
       def validate(record, field : Symbol, value, allow_blank : Bool, collection)
         with_blank_validation do

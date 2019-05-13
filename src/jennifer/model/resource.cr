@@ -127,14 +127,17 @@ module Jennifer
         nil
       end
 
+      # Alias for `.new`.
       def self.build(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
         new(values)
       end
 
+      # ditto
       def self.build(values : Hash(String, ::Jennifer::DBAny))
         new(values)
       end
 
+      # ditto
       def self.build(**values)
         new(values)
       end
@@ -163,11 +166,19 @@ module Jennifer
       end
 
       # Returns `QueryBuilder::ExpressionBuilder` object of this resource's table.
+      #
+      # ```
+      # User.context.sql("ABS(1.2)")
+      # ```
       def self.context
         @@expression_builder ||= QueryBuilder::ExpressionBuilder.new(table_name)
       end
 
       # Implementation of `AbstractClassMethods.all`.
+      #
+      # ```
+      # User.all.where { _name == "John" }
+      # ```
       def self.all
         {% begin %}
           QueryBuilder::ModelQuery({{@type}}).build(table_name)
@@ -175,6 +186,10 @@ module Jennifer
       end
 
       # Is a shortcut for `.all.where` call.
+      #
+      # ```
+      # User.where { _name == "John" }
+      # ```
       def self.where(&block)
         ac = all
         tree = with ac.expression_builder yield ac.expression_builder
@@ -185,6 +200,12 @@ module Jennifer
       # Starts database transaction.
       #
       # For more details see `Jennifer::Adapter::Transactions`.
+      #
+      # ```
+      # User.transaction do
+      #   Post.create
+      # end
+      # ```
       def self.transaction
         adapter.transaction do |t|
           yield(t)

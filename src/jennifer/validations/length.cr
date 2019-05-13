@@ -1,5 +1,8 @@
 module Jennifer
   module Validations
+    # Length validation class.
+    #
+    # For more details see `Macros.validates_length`.
     class Length < Validator
       def validate(record, field : Symbol, value, allow_blank : Bool, in = nil, is = nil, minimum = nil, maximum = nil)
         with_blank_validation do

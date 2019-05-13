@@ -1,5 +1,6 @@
 module Jennifer
   module Migration
+    # :nodoc:
     module Runner
       @@pending_versions = [] of String
 

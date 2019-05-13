@@ -1,5 +1,12 @@
 module Jennifer
   module QueryBuilder
+    # Presents SQL function invocation.
+    #
+    # ```
+    # Jennifer::Query["users"].where { coalesce(sql("NULL"), _name) == "John" }
+    #
+    # # SELECT users. FROM users WHERE COALESCE(NULL, users.name) == "John"
+    # ```
     abstract class Function < Criteria
       # Array of arguments that were passed to the function.
       getter operands = [] of Criteria::Rightable

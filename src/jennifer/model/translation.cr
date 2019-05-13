@@ -57,6 +57,7 @@ module Jennifer
         end
       end
 
+      # All possible types to be used for localization.
       alias LocalizeableTypes = Int32 | Int64 | Nil | Float32 | Float64 | Time | String | Symbol | Bool
 
       def lookup_ancestors(&block)

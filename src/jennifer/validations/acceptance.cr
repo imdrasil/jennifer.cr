@@ -1,5 +1,8 @@
 module Jennifer
   module Validations
+    # Acceptance validation class.
+    #
+    # For more details see `Macros.validates_acceptance`.
     class Acceptance < Validator
       def validate(record, field : Symbol, value, _allow_blank : Bool, accept : Array? = nil)
         return true if value.nil?

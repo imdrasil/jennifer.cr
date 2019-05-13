@@ -1,7 +1,12 @@
 module Jennifer
   # General data structure for the raw data retrieved for the DB.
   #
-  # Dynamically generates getters using `.method_missing`.
+  # Dynamically generates getters using `.method_missing`. If class `T` is passed
+  # as an argument - return value is automatically casted to it.
+  #
+  # ```
+  # Jennifer::Query["users"].first.name(String)
+  # ```
   struct Record
     getter attributes
 

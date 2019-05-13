@@ -8,7 +8,6 @@ module Jennifer
         version: String
       )
 
-      # :nodoc:
       def self.has_table?
         false
       end

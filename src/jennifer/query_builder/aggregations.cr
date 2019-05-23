@@ -1,5 +1,6 @@
 module Jennifer
   module QueryBuilder
+    # Contains aggregation query functions.
     module Aggregations
       # Returns result row count.
       #

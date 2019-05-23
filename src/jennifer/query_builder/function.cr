@@ -285,6 +285,79 @@ module Jennifer
       end
     end
 
+    Function.define("count", arity: -1, comment: <<-TEXT
+      Returns the count of given field.
+
+      If no argument is specified - `*` is used by default
+
+      ```
+      Jennifer::Query["users"].select { [_gender, count.alias("human_count")] }.group(:gender)
+      ```
+      TEXT
+    ) do
+      def as_sql(generator)
+        identifier =
+          if operands.empty?
+            "*"
+          else
+            operand_sql(operands[0], generator)
+          end
+        "COUNT(#{identifier})"
+      end
+    end
+
+    Function.define("max", arity: 1, comment: <<-TEXT
+      Returns the maximum value of given field.
+
+      ```
+      Jennifer::Query["users"].select { [_gender, max(_age).alias("human_age")] }.group(:gender)
+      ```
+      TEXT
+    ) do
+      def as_sql(generator)
+        "MAX(#{operand_sql(operands[0], generator)})"
+      end
+    end
+
+    Function.define("min", arity: 1, comment: <<-TEXT
+      Returns the minimum value of given field.
+
+      ```
+      Jennifer::Query["users"].select { [_gender, min(_age).alias("human_age")] }.group(:gender)
+      ```
+      TEXT
+    ) do
+      def as_sql(generator)
+        "MIN(#{operand_sql(operands[0], generator)})"
+      end
+    end
+
+    Function.define("sum", arity: 1, comment: <<-TEXT
+      Returns the sum of given field values.
+
+      ```
+      Jennifer::Query["users"].select { [_gender, sum(_age).alias("human_age")] }.group(:gender)
+      ```
+      TEXT
+    ) do
+      def as_sql(generator)
+        "SUM(#{operand_sql(operands[0], generator)})"
+      end
+    end
+
+    Function.define("avg", arity: 1, comment: <<-TEXT
+      Returns the average of given field values.
+
+      ```
+      Jennifer::Query["users"].select { [_gender, avg(_age).alias("human_age")] }.group(:gender)
+      ```
+      TEXT
+    ) do
+      def as_sql(generator)
+        "AVG(#{operand_sql(operands[0], generator)})"
+      end
+    end
+
     Function.define("round", arity: -1, comment: <<-TEXT
       Returns the rounded value of given first argument to a specific number of decimal places.
 

@@ -242,4 +242,57 @@ describe Jennifer::QueryBuilder::Function do
       )
     end
   end
+
+  describe "CountFunction" do
+    it do
+      Factory.create_contact(name: "Asd", gender: "male", age: 18)
+      Factory.create_contact(name: "BBB", gender: "female", age: 18)
+      Factory.create_contact(name: "Asd", gender: "male", age: 20)
+      match_array(Query["contacts"].select { [count] }.group(:gender).to_a.map(&.count), [2, 1])
+    end
+  end
+
+  describe "MaxFunction" do
+    it do
+      Factory.create_contact(name: "Asd", gender: "male", age: 18)
+      Factory.create_contact(name: "BBB", gender: "female", age: 19)
+      Factory.create_contact(name: "Asd", gender: "male", age: 20)
+      Factory.create_contact(name: "BBB", gender: "female", age: 21)
+      match_array(Query["contacts"].select { [max(_age)] }.group(:gender).to_a.map(&.max), [20, 21])
+    end
+  end
+
+  describe "MinFunction" do
+    it do
+      Factory.create_contact(name: "Asd", gender: "male", age: 18)
+      Factory.create_contact(name: "BBB", gender: "female", age: 19)
+      Factory.create_contact(name: "Asd", gender: "male", age: 20)
+      Factory.create_contact(name: "BBB", gender: "female", age: 21)
+      match_array(Query["contacts"].select { [min(_age)] }.group(:gender).to_a.map(&.min), [18, 19])
+    end
+  end
+
+  describe "SumFunction" do
+    it do
+      Factory.create_contact(name: "Asd", gender: "male", age: 18)
+      Factory.create_contact(name: "BBB", gender: "female", age: 19)
+      Factory.create_contact(name: "Asd", gender: "male", age: 20)
+      Factory.create_contact(name: "BBB", gender: "female", age: 21)
+      match_array(Query["contacts"].select { [sum(_age)] }.group(:gender).to_a.map(&.sum.as(Number).to_f), [38.0, 40.0])
+    end
+  end
+
+  describe "AvgFunction" do
+    it do
+      Factory.create_contact(name: "Asd", gender: "male", age: 18)
+      Factory.create_contact(name: "BBB", gender: "female", age: 19)
+      Factory.create_contact(name: "Asd", gender: "male", age: 20)
+      Factory.create_contact(name: "BBB", gender: "female", age: 21)
+      res = db_specific(
+        mysql: -> { Query["contacts"].select { [avg(_age)] }.group(:gender).to_a.map(&.avg.as(Float64)) },
+        postgres: -> { Query["contacts"].select { [avg(_age)] }.group(:gender).to_a.map(&.avg.as(PG::Numeric)) }
+      )
+      match_each([19, 20], res)
+    end
+  end
 end

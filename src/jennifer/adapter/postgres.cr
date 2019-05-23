@@ -134,6 +134,27 @@ module Jennifer
         end
       end
 
+      def tables_column_count(tables : Array(String))
+        view_request = Query["pg_attribute"]
+          .join("pg_class") { _pg_attribute__attrelid == _oid }
+          .join("pg_namespace") { _oid == _pg_class__relnamespace }
+          .where do
+            (_attnum > 0) &
+              (_pg_namespace__nspname == Config.schema) &
+              (_pg_class__relname.in(tables)) &
+              _attisdropped.not
+          end
+          .group("table_name")
+          .select { [_pg_class__relname.alias("table_name"), count.alias("count")] }
+
+        Query["information_schema.columns"]
+          .where { _table_name.in(tables) }
+          .group(:table_name)
+          .select { [_table_name, count.alias("count")] }
+          .union(view_request)
+          .to_a
+      end
+
       def material_view_exists?(name)
         Query["pg_class"].join("pg_namespace") { _oid == _pg_class__relnamespace }.where do
           (_relkind == "m") &

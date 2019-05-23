@@ -295,19 +295,11 @@ module Jennifer
       # Specifies criterion to be used in SELECT clause.
       #
       # ```
-      # Jennifer::Query["contacts"].exec { select(expression._name.as(:first_name)) }.results
+      # Jennifer::Query["contacts"].exec { select(expression._name.alias("first_name")) }.results
       # ```
       def select(field : Criteria)
         _select_fields! << field
         field.as(RawSql).without_brackets if field.is_a?(RawSql)
-        self
-      end
-
-      # Specifies column name to be used in SELECT clause.
-      #
-      # TODO: remove as deprecated.
-      def select(field_name : Symbol)
-        _select_fields! << @expression.c(field_name.to_s)
         self
       end
 

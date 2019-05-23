@@ -67,6 +67,11 @@ module Jennifer
         @@actual_table_field_count ||= adapter.table_column_count(table_name)
       end
 
+      # :nodoc:
+      def self.actual_table_field_count=(value)
+        @@actual_table_field_count = value
+      end
+
       # Sets custom model foreign key name.
       #
       # ```

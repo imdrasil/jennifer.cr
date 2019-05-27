@@ -327,15 +327,20 @@ describe Jennifer::Adapter::Base do
 
   describe "#tables_column_count" do
     it "returns amount of tables fields" do
-      match_array(adapter.tables_column_count(["contacts", "addresses"]).to_a.map(&.count), [10, 7])
+      match_array(adapter.tables_column_count(["passports", "addresses"]).to_a.map(&.count), [2, 7])
     end
 
     it "returns amount of views fields" do
-      match_array(adapter.tables_column_count(["male_contacts", "female_contacts"]).to_a.map(&.count), [9, 10])
+      postgres_only do
+        match_array(adapter.tables_column_count(["male_contacts", "female_contacts"]).to_a.map(&.count), [9, 10])
+      end
+      mysql_only do
+        match_array(adapter.tables_column_count(["male_contacts"]).to_a.map(&.count), [9])
+      end
     end
 
     it "returns nothing for unknown tables" do
-      adapter.tables_column_count(["missing_table"]).should be_empty
+      adapter.tables_column_count(["missing_table"]).to_a.should be_empty
     end
   end
 

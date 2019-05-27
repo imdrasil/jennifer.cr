@@ -35,16 +35,18 @@ module Jennifer
     # Returns value by attribute *name*.
     def attribute(name : String)
       @attributes[name]
+    rescue e : KeyError
+      raise BaseException.new("Column '#{name}' is missing")
     end
 
     # ditto
     def attribute(name : Symbol)
-      @attributes[name.to_s]
+      attribute(name.to_s)
     end
 
     # Returns casted value of attribute *name* to the type *type*.
     def attribute(name : String | Symbol, type : T.class) : T forall T
-      value = @attributes[name.to_s]
+      value = attribute(name)
       if value.is_a?(T)
         value
       else

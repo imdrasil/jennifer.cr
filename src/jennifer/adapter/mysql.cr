@@ -40,7 +40,7 @@ module Jennifer
         :string => 254,
       }
 
-      # NOTE: now is not used
+      # NOTE: ATM is not used
       TABLE_LOCK_TYPES = {
         "r"       => "READ",
         "rl"      => "READ LOCAL",
@@ -75,6 +75,13 @@ module Jennifer
         else
           -1
         end
+      end
+
+      def tables_column_count(tables)
+        Query["information_schema.COLUMNS"]
+          .where { _table_name.in(tables) & (_table_schema == Config.db) }
+          .group(:table_name)
+          .select { [_table_name.alias("table_name"), count.alias("count")] }
       end
 
       def table_exists?(table)

@@ -34,7 +34,20 @@ module Jennifer
       end
 
       def prepare
-        ::Jennifer::Model::Base.models.each(&.actual_table_field_count)
+        models = Hash(String, Array(Jennifer::Model::Base.class)).new do |hash, name|
+          hash[name] = [] of Jennifer::Model::Base.class
+        end
+
+        ::Jennifer::Model::Base.models.each do |model|
+          models[model.table_name] << model
+        end
+
+        tables_column_count(models.keys).each do |record|
+          count = record.count(Int64).to_i
+          models[record.table_name(String)].each do |model|
+            model.actual_table_field_count = count
+          end
+        end
       end
 
       def exec(query : String, args : ArgsType = [] of DBAny)
@@ -179,6 +192,7 @@ module Jennifer
         command_interface.drop_database
       end
 
+      # Yields to block connection to the database main schema.
       def self.db_connection
         DB.open(connection_string) do |db|
           yield(db)
@@ -302,9 +316,12 @@ module Jennifer
       # column_exists?(:suppliers, :name)
       # ```
       abstract def column_exists?(table, name)
+
+      # Translates symbol data type name to database-specific data type.
       abstract def translate_type(name)
       abstract def default_type_size(name)
       abstract def table_column_count(table)
+      abstract def tables_column_count(tables : Array(String))
       abstract def with_table_lock(table : String, type : String = "default", &block)
 
       def refresh_materialized_view(name)

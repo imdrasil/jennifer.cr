@@ -33,15 +33,19 @@ module Jennifer
       # Creates database.
       def self.create
         # TODO: allow to specify adapter
-        r = default_adapter_class.create_database
-        puts "DB is created!"
+        if default_adapter_class.database_exists?
+          puts "#{Config.db} is already exists"
+        else
+          default_adapter_class.create_database
+          puts "#{Config.db} is created!"
+        end
       end
 
       # Drops database.
       def self.drop
         # TODO: allow to specify adapter
         r = default_adapter_class.drop_database
-        puts "DB is dropped!"
+        puts "#{Config.db} is dropped!"
       end
 
       # Rollbacks migrations.

@@ -18,6 +18,7 @@ module Jennifer
       abstract def create_database
       abstract def generate_schema
       abstract def load_schema
+      abstract def database_exists?
 
       def execute(command)
         shell.execute(command)

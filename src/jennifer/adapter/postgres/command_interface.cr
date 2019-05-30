@@ -23,6 +23,16 @@ module Jennifer
         execute(command)
       end
 
+      def database_exists?
+        options = ["-U", config.user, "-l"] of Command::Option
+        command = Command.new(
+          executable: "psql",
+          options: options,
+          inline_vars: default_env_variables
+        )
+        execute(command)[:output].to_s.split("\n")[2..-1].any?(&.[](/([^|]*)? |/).strip.==(config.db))
+      end
+
       def generate_schema
         options = ["-U", config.user, "-d", config.db, "-h", config.host, "-s"] of Command::Option
         command = Command.new(

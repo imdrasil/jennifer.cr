@@ -142,6 +142,19 @@ module Jennifer
           db.exec "DROP DATABASE #{Config.db}"
         end
       end
+
+      def self.database_exists? : Bool
+        db_connection do |db|
+          db.scalar <<-SQL,
+            SELECT EXISTS(
+              SELECT 1
+              FROM INFORMATION_SCHEMA.SCHEMATA
+              WHERE SCHEMA_NAME = ?
+            )
+          SQL
+          Config.db
+        end == 1
+      end
     end
   end
 end

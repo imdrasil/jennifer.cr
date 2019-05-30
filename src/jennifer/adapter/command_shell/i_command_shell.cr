@@ -17,7 +17,7 @@ module Jennifer
         io = IO::Memory.new
         result = Process.run(command_string, options, shell: true, output: io, error: io)
         raise Command::Failed.new(result.exit_code, io) if result.exit_code != 0
-        result
+        {status: result, output: io}
       end
     end
   end

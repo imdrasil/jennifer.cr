@@ -192,6 +192,10 @@ module Jennifer
         command_interface.drop_database
       end
 
+      def self.database_exists?
+        command_interface.database_exists?
+      end
+
       # Yields to block connection to the database main schema.
       def self.db_connection
         DB.open(connection_string) do |db|

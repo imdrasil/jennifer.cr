@@ -167,7 +167,7 @@ To create the databases:
 $ make sam db:setup
 
 # Mysql
-$ DB=mysql make same db:setup
+$ DB=mysql make sam db:setup
 ```
 
 ### Running tests

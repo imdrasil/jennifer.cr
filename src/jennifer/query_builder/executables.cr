@@ -79,7 +79,7 @@ module Jennifer
       end
 
       # Returns whether any record satisfying given conditions exists.
-      def exists?
+      def exists? : Bool
         return false if do_nothing?
         adapter.exists?(self)
       end

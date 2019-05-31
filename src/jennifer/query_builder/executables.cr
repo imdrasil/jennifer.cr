@@ -31,15 +31,9 @@ module Jennifer
       # Contact.where { _city_id == 3 }.last!
       # ```
       def last!
-        old_limit = @limit
-        old_order = @order
-        @limit = 1
-        reverse_order
-        result = to_a
-        @order = old_order
-        @limit = old_limit
-        raise RecordNotFound.from_query(self, adapter) if result.empty?
-        result[0]
+        result = last
+        raise RecordNotFound.from_query(self, adapter) if result.nil?
+        result
       end
 
       # Returns first matched record or `nil`.
@@ -65,11 +59,9 @@ module Jennifer
       # Contact.where { _city_id == 3 }.first!
       # ```
       def first!
-        old_limit = @limit
-        result = to_a
-        @limit = old_limit
-        raise RecordNotFound.from_query(self, adapter) if result.empty?
-        result[0]
+        result = first
+        raise RecordNotFound.from_query(self, adapter) if result.nil?
+        result
       end
 
       # Returns array of given field values.

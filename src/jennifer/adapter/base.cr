@@ -1,5 +1,4 @@
 require "db"
-require "ifrit"
 require "./shared/*"
 require "./transactions"
 require "./result_parsers"
@@ -106,7 +105,7 @@ module Jennifer
         exec(*parse_query(sql_generator.delete(query), query.sql_args))
       end
 
-      def exists?(query : QueryBuilder::Query)
+      def exists?(query : QueryBuilder::Query) : Bool
         scalar(*parse_query(sql_generator.exists(query), query.sql_args)) == 1
       end
 

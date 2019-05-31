@@ -107,7 +107,7 @@ module Jennifer
       # ```
       # Jennifer::Query["contacts"].where { _name.like("%dan%") }.exists?
       # ```
-      def exists?
+      def exists? : Bool
         return false if do_nothing?
 
         adapter.exists?(self)

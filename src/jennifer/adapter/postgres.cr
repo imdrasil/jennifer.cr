@@ -227,8 +227,8 @@ module Jennifer
         ExecResult.new(id, affected)
       end
 
-      def exists?(query)
-        scalar(*parse_query(sql_generator.exists(query), query.sql_args))
+      def exists?(query) : Bool
+        scalar(*parse_query(sql_generator.exists(query), query.sql_args)).as(Bool)
       end
     end
   end

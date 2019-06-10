@@ -119,6 +119,7 @@ instead of type. Next keys are supported:
 | `:setter` | if setter should be created (default - `true`) |
 | `:virtual` | mark field as virtual - will not be stored and retrieved from db |
 | `:converter` | class be used to serialize/deserialize value |
+| `:auto` | indicate whether primary field is autoincrementable (by default `true` for `Int32` and `Int64`) |
 
 To define field converter create a class which implements next methods:
 

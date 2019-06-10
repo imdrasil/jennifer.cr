@@ -570,6 +570,19 @@ class AddressWithNilableBool < Jennifer::Model::Base
     main: Bool?
   }, false)
 end
+
+class NoteWithManualId < Jennifer::Model::Base
+  table_name "notes"
+  with_timestamps
+
+  mapping(
+    id: { type: Primary32, auto: false },
+    text: { type: String? },
+    created_at: Time?,
+    updated_at: Time?
+  )
+end
+
 class Author < Jennifer::Model::Base
   mapping({
     id:         Primary32,

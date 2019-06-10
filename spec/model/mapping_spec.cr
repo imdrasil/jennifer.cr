@@ -151,14 +151,6 @@ describe Jennifer::Model::Mapping do
       end
     end
 
-    it "define default constructor if all fields are nillable or have default values" do
-      Passport::WITH_DEFAULT_CONSTRUCTOR.should be_true
-    end
-
-    it "defines no defulat constructor if at least one field is not nillable and has no default" do
-      Contact::WITH_DEFAULT_CONSTRUCTOR.should be_false
-    end
-
     describe ".new" do
       context "loading STI objects from request" do
         it "creates proper objects" do
@@ -716,6 +708,12 @@ describe Jennifer::Model::Mapping do
         match_array(r[:args], db_array("Prob", "AblyTheLast"))
         match_array(r[:fields], %w(first_name last_name))
       end
+
+      it "includes non autoincrementable primary field" do
+        r = NoteWithManualId.new({ id: 12, text: "test" }).arguments_to_insert
+        match_array(r[:args], db_array(12, "test", nil, nil))
+        match_array(r[:fields], %w(id text created_at updated_at))
+      end
     end
 
     describe "#to_h" do
@@ -742,6 +740,11 @@ describe Jennifer::Model::Mapping do
         hash = Author.build(name1: "NoIt", name2: "SNot").to_str_h
         hash.keys.should eq(%w(id name1 name2))
       end
+    end
+
+    describe ".primary_auto_incrementable?" do
+      it { Note.primary_auto_incrementable?.should be_true }
+      it { NoteWithManualId.primary_auto_incrementable?.should be_false }
     end
   end
 

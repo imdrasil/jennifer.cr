@@ -191,6 +191,13 @@ describe Jennifer::Model::Base do
           .should eq(a.id)
       end
     end
+
+    context "with non-auto primary key" do
+      it do
+        NoteWithManualId.create(id: 1)
+        NoteWithManualId.all.where { _id == 1 }.exists?.should be_true
+      end
+    end
   end
 
   describe "::create!" do

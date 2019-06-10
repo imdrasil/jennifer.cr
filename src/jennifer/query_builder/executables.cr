@@ -430,6 +430,17 @@ module Jennifer
         end
         results
       end
+
+      # Returns query execution explanation.
+      #
+      # Format depends on used database adapter.
+      #
+      # ```
+      # Jennifer::Query["contacts"].explain # => "Seq Scan on contacts  (cost=0.00..13.40 rows=340 width=206)"
+      # ```
+      def explain : String
+        adapter.explain(self)
+      end
     end
   end
 end

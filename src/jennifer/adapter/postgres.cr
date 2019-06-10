@@ -230,6 +230,19 @@ module Jennifer
       def exists?(query) : Bool
         scalar(*parse_query(sql_generator.exists(query), query.sql_args)).as(Bool)
       end
+
+      def explain(q)
+        body = sql_generator.explain(q)
+        args = q.sql_args
+        plan = ""
+        query(*parse_query(body, args)) do |rs|
+          rs.each do
+            plan = rs.read(String)
+          end
+        end
+
+        plan
+      end
     end
   end
 end

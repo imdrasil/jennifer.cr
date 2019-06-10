@@ -116,5 +116,12 @@ postgres_only do
         end
       end
     end
+
+    describe "#explain" do
+      it do
+        adapter.explain(Query["contacts"])
+          .should match(/Seq Scan on contacts  \(cost=0\.00\.\.\d*\.\d* rows=\d* width=\d*\)/)
+      end
+    end
   end
 end

@@ -16,6 +16,10 @@ module Jennifer
 
       extend ClassMethods
 
+      def self.explain(query)
+        "EXPLAIN #{self.select(query)}"
+      end
+
       # Generates insert query
       def self.insert(table, hash)
         String.build do |s|

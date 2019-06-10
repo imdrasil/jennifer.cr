@@ -36,5 +36,22 @@ mysql_only do
         adapter.parse_query("asd %s asd", [2] of Jennifer::DBAny).should eq({"asd ? asd", [2]})
       end
     end
+
+    describe "#explain" do
+      it "has header" do
+        explanation = adapter.explain(Query["contacts"]).split("\n")
+
+        explanation[0].split("|").map(&.strip).should eq(%w(id select_type table partitions type possible_keys key key_len ref rows filtered Extra))
+      end
+
+      it "includes row data" do
+        explanation = adapter.explain(Query["contacts"]).split("\n")
+        cols = explanation[2].split("|").map(&.strip)
+        cols[0..8].should eq(%w(1 SIMPLE contacts NULL ALL NULL NULL NULL NULL))
+        cols[9].should match(/\d*/)
+        cols[10].should eq("100.0")
+        cols[11].should eq("NULL")
+      end
+    end
   end
 end

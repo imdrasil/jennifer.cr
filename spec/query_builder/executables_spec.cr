@@ -479,4 +479,8 @@ describe Jennifer::QueryBuilder::Executables do
       res.size.should eq(0)
     end
   end
+
+  describe "#explain" do
+    it { Query["contacts"].explain.should_not be_empty }
+  end
 end

@@ -127,6 +127,24 @@ module Jennifer
         end
       end
 
+      def explain(q)
+        body = sql_generator.explain(q)
+        args = q.sql_args
+        plan = [] of Array(String)
+        query(*parse_query(body, args)) do |rs|
+          rs.each do
+            row = %w()
+            12.times do
+              temp = rs.read
+              row << (temp.nil? ? "NULL" : temp.to_s)
+            end
+            plan << row
+          end
+        end
+
+        format_query_explain(plan)
+      end
+
       def self.command_interface
         @@command_interface ||= CommandInterface.new(Config.instance)
       end
@@ -154,6 +172,37 @@ module Jennifer
           SQL
           Config.db
         end == 1
+      end
+
+      private def format_query_explain(plan : Array)
+        headers = %w(id select_type table partitions type possible_keys key key_len ref rows filtered Extra)
+        column_sizes = headers.map(&.size)
+        plan.each do |row|
+          row.each_with_index do |cell, column_i|
+            cell_size = cell.size
+            column_sizes[column_i] = cell_size if cell_size > column_sizes[column_i]
+          end
+        end
+
+        String.build do |io|
+          format_table_row(io, headers, column_sizes)
+
+          io << "\n"
+          io << column_sizes.map { |size| "-" * size }.join(" | ")
+          io << "\n"
+
+          plan.each_with_index do |row, row_i|
+            io << "\n" if row_i != 0
+            format_table_row(io, row, column_sizes)
+          end
+        end
+      end
+
+      private def format_table_row(io, row, column_sizes)
+        row.each_with_index do |cell, i|
+          io << " | " if i != 0
+          io << cell.ljust(column_sizes[i])
+        end
       end
     end
   end

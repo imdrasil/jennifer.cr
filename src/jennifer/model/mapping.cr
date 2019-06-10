@@ -23,6 +23,8 @@ module Jennifer
     # * `:setter` - whether attribute writer should be generated (`true` by default);
     # * `:virtual` - whether attribute is virtual (will not be stored to / retrieved from database);
     # * `:converter` - class to be used to serialize/deserialize data.
+    # * `:auto` - mark primary key as autoincrementable - it's value will be assigned by database automatically
+    # (`true` for `Int32` & `Int64`)
     #
     # ```
     # class Contact < Jennifer::Model::Base
@@ -164,6 +166,10 @@ module Jennifer
               options[:parsed_type] = stringified_type + "?"
             end
 
+            if options[:primary] && options[:auto] != false
+              options[:auto] = AUTOINCREMENTABLE_STR_TYPES.includes?(stringified_type)
+            end
+
             hash
           end
         %}
@@ -217,7 +223,6 @@ module Jennifer
 
         {%
           primary = COLUMNS_METADATA.keys.find { |field| COLUMNS_METADATA[field][:primary] }
-          primary_auto_incrementable = primary && AUTOINCREMENTABLE_STR_TYPES.includes?(COLUMNS_METADATA[primary][:type].stringify)
           add_default_constructor = COLUMNS_METADATA.keys.all? do|field|
             options = COLUMNS_METADATA[field]
 
@@ -232,7 +237,7 @@ module Jennifer
 
         # :nodoc:
         def self.primary_auto_incrementable?
-          {{primary_auto_incrementable}}
+          {{COLUMNS_METADATA[primary][:auto]}}
         end
 
         {% if add_default_constructor %}
@@ -346,7 +351,7 @@ module Jennifer
           args = [] of ::Jennifer::DBAny
           fields = [] of String
           {% for attr, options in properties %}
-            {% unless options[:virtual] || options[:primary] && primary_auto_incrementable %}
+            {% unless options[:virtual] || options[:primary] && options[:auto] %}
               args <<
                 {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
               fields << {{options[:column]}}

@@ -151,11 +151,11 @@ module Jennifer
             {start: "reverting", end: "reverted"}
           end
         header = "== #{migration.class.version} #{migration.class}:"
-        puts  "#{header} #{words[:start]}" if Config.config.verbose_migrations
+        puts "#{header} #{words[:start]}" if Config.config.verbose_migrations
         time = Time.measure do
           yield
         end
-        puts  "#{header} #{words[:end]} (#{time.milliseconds} ms)" if Config.config.verbose_migrations
+        puts "#{header} #{words[:end]} (#{time.milliseconds} ms)" if Config.config.verbose_migrations
         puts if Config.config.verbose_migrations
       end
 

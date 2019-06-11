@@ -44,7 +44,7 @@ module Jennifer
         String.build do |io|
           io << "INSERT INTO " << table << " ("
           fields.join(", ", io)
-          escaped_row = "(" + escape_string(fields.size)  + ")"
+          escaped_row = "(" + escape_string(fields.size) + ")"
           io << ") VALUES "
           rows.times.join(", ", io) { io << escaped_row }
           io << " ON CONFLICT (" << unique_fields.join(", ") << ") "

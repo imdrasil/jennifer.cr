@@ -7,7 +7,7 @@ module Jennifer
     # that each need to display their author triggers 101 database queries. Through the use of eager
     # loading, the number of queries will be reduced from 101 to 2.
     module EagerLoading
-      @eager_load : Bool  = false
+      @eager_load : Bool = false
       @include_relations : Bool = false
 
       abstract def nested_relation_tree : NestedRelationTree

@@ -15,7 +15,7 @@ module Jennifer
       alias EnumType = Bytes
 
       TYPE_TRANSLATIONS = {
-        :bool       => "boolean",
+        :bool => "boolean",
 
         :integer => "int",      # Int32
         :short   => "SMALLINT", # Int16
@@ -124,11 +124,11 @@ module Jennifer
             .join("pg_class") { _pg_attribute__attrelid == _oid }
             .join("pg_namespace") { _oid == _pg_class__relnamespace }
             .where do
-            (_attnum > 0) &
-              (_pg_namespace__nspname == Config.schema) &
-              (_pg_class__relname == table) &
-              _attisdropped.not
-          end.count
+              (_attnum > 0) &
+                (_pg_namespace__nspname == Config.schema) &
+                (_pg_class__relname == table) &
+                _attisdropped.not
+            end.count
         else
           -1
         end

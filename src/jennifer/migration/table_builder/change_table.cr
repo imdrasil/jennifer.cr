@@ -11,7 +11,7 @@ module Jennifer
       #   t.rename_table :users
       #   t.add_column :name, :string, {:size => 30}
       #   t.drop_column :age
-      #  end
+      # end
       # ```
       class ChangeTable < Base
         getter changed_columns, drop_columns, drop_index, new_table_name

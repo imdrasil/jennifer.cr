@@ -125,9 +125,8 @@ module Jennifer
       #
       # ```
       # class User < Jennifer::Model::Base
-      #   mapping(
-      #     # ...
-      #   )
+      #   mapping( # ...
+      # )
       #
       #   validates_length :name, minimum: 2
       #   validates_length :login, in: 4..16
@@ -215,9 +214,8 @@ module Jennifer
       #
       # ```
       # class Article < Jennifer::Model::Base
-      #   mapping(
-      #     # ...
-      #   )
+      #   mapping( # ...
+      # )
       #
       #   validates_absence :title
       # end
@@ -269,9 +267,8 @@ module Jennifer
       #
       # ```
       # class User < Jennifer::Model::Base
-      #   mapping(
-      #     # ...
-      #   )
+      #   mapping( # ...
+      # )
       #
       #   property terms_of_service = false
       #   property eula : String?

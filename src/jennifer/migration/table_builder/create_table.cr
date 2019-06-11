@@ -13,7 +13,7 @@ module Jennifer
       #   t.decimal :ballance
       #   t.field :gender, :gender_enum
       #   t.timestamps true
-      #  end
+      # end
       # ```
       class CreateTable < Base
         getter fields = {} of String => DB_OPTIONS

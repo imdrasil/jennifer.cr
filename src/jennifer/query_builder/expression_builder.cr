@@ -60,7 +60,7 @@ module Jennifer
       #
       # ```
       # Jennifer::Query[""].select { [sql("1", false)] } # => SELECT 1
-      # Jennifer::Query[""].select { [sql("1")] } # => SELECT (1)
+      # Jennifer::Query[""].select { [sql("1")] }        # => SELECT (1)
       # Jennifer::Query[""].select { [sql("TIMESTAMP %s AT TIME ZONE %s", ["2001-02-16 20:38:40", "MST"], false)] }
       # # => SELECT TIMESTAMP '2001-02-16 20:38:40' AT TIME ZONE 'MST';
       # ```

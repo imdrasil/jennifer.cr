@@ -26,16 +26,16 @@ module Jennifer
         {%
           super_properties = INHERITED_COLUMNS_METADATA
           add_default_constructor =
-            super_properties.keys.all? do|field|
+            super_properties.keys.all? do |field|
               options = super_properties[field]
 
               options[:primary] || options[:null] || options.keys.includes?(:default.id) || field == :type
             end &&
-            COLUMNS_METADATA.keys.all? do|field|
-              options = COLUMNS_METADATA[field]
+              COLUMNS_METADATA.keys.all? do |field|
+                options = COLUMNS_METADATA[field]
 
-              options[:null] || options.keys.includes?(:default.id)
-            end
+                options[:null] || options.keys.includes?(:default.id)
+              end
           properties = COLUMNS_METADATA
           nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] }
 

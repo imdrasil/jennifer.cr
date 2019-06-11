@@ -166,7 +166,7 @@ module Jennifer
 
   class AmbiguousSQL < BaseException
     def initialize(sql)
-      @message = "Ambiguous raw SQL around '%' in '#{sql}'"\
+      @message = "Ambiguous raw SQL around '%' in '#{sql}'" \
                  " - please pass any string including '%' via query parameters."
     end
   end

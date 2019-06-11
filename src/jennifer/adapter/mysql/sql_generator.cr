@@ -44,7 +44,7 @@ module Jennifer
           io << "IGNORE " if is_ignore
           io << "INTO " << table << " ("
           fields.join(", ", io)
-          escaped_row = "(" + escape_string(fields.size)  + ")"
+          escaped_row = "(" + escape_string(fields.size) + ")"
           io << ") VALUES "
           rows.times.join(", ", io) { io << escaped_row }
           unless is_ignore

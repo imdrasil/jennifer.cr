@@ -175,7 +175,7 @@ module Jennifer
         %}
 
         # :nodoc:
-        COLUMNS_METADATA = { {{new_props.map { |field, mapping| "#{field}: #{mapping}" }.join(", ").id }} }
+        COLUMNS_METADATA = { {{new_props.map { |field, mapping| "#{field}: #{mapping}" }.join(", ").id}} }
       end
 
       # Adds callbacks for `created_at` and `updated_at` fields.
@@ -223,7 +223,7 @@ module Jennifer
 
         {%
           primary = COLUMNS_METADATA.keys.find { |field| COLUMNS_METADATA[field][:primary] }
-          add_default_constructor = COLUMNS_METADATA.keys.all? do|field|
+          add_default_constructor = COLUMNS_METADATA.keys.all? do |field|
             options = COLUMNS_METADATA[field]
 
             options[:primary] || options[:null] || options.keys.includes?(:default.id)

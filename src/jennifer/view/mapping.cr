@@ -142,7 +142,7 @@ module Jennifer
           {% end %}
 
           {% for key, value in COLUMNS_METADATA %}
-            {% column1  = key.id.stringify %}
+            {% column1 = key.id.stringify %}
             {% column2 = value[:column] %}
             if values.has_key?({{column1}})
               %var{key.id} =

@@ -221,7 +221,7 @@ module Jennifer
       # Sets *name* field with *value*
       #
       # ```
-      #
+      # contact.set_attribute(:name, "Ivan")
       # ```
       abstract def set_attribute(name, value)
 

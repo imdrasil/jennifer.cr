@@ -154,7 +154,7 @@ module Jennifer
       # Translates an error message in its default scope
       def generate_message(attribute : Symbol, message : Symbol, count, options : Hash)
         prefix = "#{Translation::GLOBAL_SCOPE}.errors."
-        opts = { count: count, options: options}
+        opts = { count: count, options: options }
 
         @base.class.lookup_ancestors do |ancestor|
           path = "#{prefix}#{ancestor.i18n_key}.attributes.#{attribute}.#{message}"
@@ -178,8 +178,8 @@ module Jennifer
       def inspect(io) : Nil
         io << "#<" << {{@type.name.id.stringify}} << ":0x"
         object_id.to_s(16, io)
-          io << " @messages="
-          @messages.inspect(io)
+        io << " @messages="
+        @messages.inspect(io)
         io << '>'
         nil
       end

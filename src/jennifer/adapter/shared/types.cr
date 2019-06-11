@@ -28,15 +28,12 @@ end
 struct Time
   def_clone
 
-
   struct Span
     def_clone
   end
 
-
   class Location
     def_clone
-
 
     struct Zone
       def_clone

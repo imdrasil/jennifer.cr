@@ -58,11 +58,11 @@ module Jennifer
       :migration_failure_handler_method, :model_files_path
     }
     # :nodoc:
-    INT_FIELDS    = {:port, :max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
+    INT_FIELDS = {:port, :max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
     # :nodoc:
-    FLOAT_FIELDS  = {:checkout_timeout, :retry_delay}
+    FLOAT_FIELDS = {:checkout_timeout, :retry_delay}
     # :nodoc:
-    BOOL_FIELDS   = {:command_shell_sudo, :skip_dumping_schema_sql, :verbose_migrations}
+    BOOL_FIELDS = {:command_shell_sudo, :skip_dumping_schema_sql, :verbose_migrations}
     # :nodoc:
     ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS = %w(reverse_direction callback none)
 
@@ -308,7 +308,7 @@ module Jennifer
     def from_uri(uri : URI)
       @adapter = uri.scheme.to_s if uri.scheme
       @host = uri.host.to_s if uri.host
-      @port = uri.port.not_nil!  if uri.port
+      @port = uri.port.not_nil! if uri.port
       @db = uri.path.to_s.lchop if uri.path
       @user = uri.user.to_s if uri.user
       @password = uri.password.to_s if uri.password
@@ -338,8 +338,8 @@ module Jennifer
       raise Jennifer::InvalidConfig.bad_adapter if adapter.empty?
       raise Jennifer::InvalidConfig.bad_database if db.empty?
       if max_idle_pool_size != max_pool_size || max_pool_size != initial_pool_size
-        logger.warn("It is highly recommended to set max_idle_pool_size = max_pool_size = initial_pool_size to "\
-                    "prevent blowing up count of DB connections. For any details take a look at "\
+        logger.warn("It is highly recommended to set max_idle_pool_size = max_pool_size = initial_pool_size to " \
+                    "prevent blowing up count of DB connections. For any details take a look at " \
                     "https://github.com/crystal-lang/crystal-db/issues/77")
       end
     end

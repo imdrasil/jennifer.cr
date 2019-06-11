@@ -136,11 +136,7 @@ module Jennifer
         {%
           klass = name.camelcase + "Function" if klass == nil
           args_string = (
-            arity > 0 ?
-              (0...arity).to_a.map { |i| "arg#{i}" }.join(", ") :
-              arity < 0 ?
-                "*args" :
-                ""
+            arity > 0 ? (0...arity).to_a.map { |i| "arg#{i}" }.join(", ") : arity < 0 ? "*args" : ""
           ).id
         %}
 
@@ -151,7 +147,7 @@ module Jennifer
           end
         end
 
-        {{ comment.split("\n").map { |row| "# " + row.strip  }.join("\n").id if comment != nil}}
+        {{ comment.split("\n").map { |row| "# " + row.strip }.join("\n").id if comment != nil }}
         class {{klass.id}} < ::Jennifer::QueryBuilder::Function
           def_clone
 

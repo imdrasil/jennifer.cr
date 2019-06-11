@@ -22,7 +22,7 @@ class Contact < Jennifer::Model::Base
   has_one :main_address, Address, {where { _main }}
   has_one :passport, Passport
 
-  validates_inclucion :age, 13..75
+  validates_inclusion :age, 13..75
   validates_length :name, minimum: 1, maximum: 15
   validates_with_method :name_check
 

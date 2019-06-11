@@ -1,6 +1,6 @@
 # Aggregations
 
-There are 2 types of aggregation functions: ones which are orking without GROUP clause and returns single values (e.g. `max`, `min`, `count`) and ones, working with GROUP clause and returning array of values.
+There are 2 types of aggregation functions: ones which are working without a GROUP clause and returns single values (e.g. `max`, `min`, `count`) and ones, working with GROUP clause and returning arrays of values.
 
 #### Max
 
@@ -58,7 +58,7 @@ Contact.all.group(:gender).group_avg(:age, PG::Numeric) # Postgres specific
 ```crystal
 Contact.all.group(:gender).group_sum(:age, Float64) # mysql specific
 Contact.all.group(:gender).group_sum(:age, Int64) # postgres specific
-``` 
+```
 
 #### Group Count
 

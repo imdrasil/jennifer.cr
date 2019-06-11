@@ -216,14 +216,19 @@ They allows pass argument (tuple, named tuple or hash - depending on context) of
 Raw sql for `SELECT` clause could be passed into `#select` method. This have highest priority during forming this query part.
 
 ```crystal
-Contact.all.select("COUNT(id) as count, contacts.name").group("name")
-       .having { sql("COUNT(id)") > 1 }.pluck(:name)
+Contact
+  .all
+  .select("COUNT(id) as count, contacts.name")
+  .group("name")
+  .having { sql("COUNT(id)") > 1 }
+  .pluck(:name)
 ```
 
 Also `#select` accepts block where all fields could be specified and aliased:
 
 ```crystal
-Contact.all
+Contact
+  .all
   .select { [sql("COUNT(id)").alias("count"), _name] }
   .group("name")
   .having { sql("count") > 1 }.pluck(:name)
@@ -302,11 +307,13 @@ Contact.all.group("name", "id").pluck(:name, :id)
 `#group` allows to add columns for `GROUP BY` section. If passing arguments are tuple of strings or just one string - all columns will be parsed as current table columns. If there is a need to group on joined table or using fields from several tables use next:
 
 ```crystal
-Contact.all.relation("addresses").group(addresses: ["street"], contacts: ["name"])
-       .pluck("addresses.street", "contacts.name")
+Contact
+  .all
+  .select { [_addresses__street, _contacts__name] }
+  .relation("addresses")
+  .group(addresses: ["street"], contacts: ["name"])
+  .results
 ```
-
- Here keys should be *table names*.
 
 ## HAVING
 
@@ -337,10 +344,20 @@ Contact.all.distinct # Array(Contact) with unique attributes (all)
 To make common SQL `UNION` you can use `#union` method which accepts other query object. But be careful - all selected fields should have same name and type.
 
 ```crystal
-Address.all.where { _street.like("%St. Paul%") }.union(Profile.all.where { _login.in(["login1", "login2"]) }.select(:contact_id)).select(:contact_id).results
+Address
+  .all
+  .select(:contact_id)
+  .where { _street.like("%St. Paul%") }
+  .union(
+    Profile
+      .all
+      .select(:contact_id)
+      .where { _login.in(["login1", "login2"]) }
+  )
+  .results
 ```
 
-In this example you can't use regular `#to_a` because result records will be not an address or profile so it couldn't be mapped to any of these models. That's why only `Jennifer::Record` could be got.
+In this example you can't use regular `#to_a` because resulted records are not  an address neither profile so they couldn't be mapped to any model. That's why only `Jennifer::Record` could be obtained (which is done by `#results`).
 
 ## WITH
 
@@ -349,7 +366,8 @@ You can specify common table expression (even recursive):
 ```crystal
 Jennifer::Query["cte"].with(
   "cte",
-  Jennifer::Query[""].select("1 as n")
+  Jennifer::Query[""]
+    .select("1 as n")
     .union(
       Jennifer::Query["cte"].select("1 + n AS n").where { _n < 5 },
       true

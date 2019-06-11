@@ -5,7 +5,7 @@
 Generator will create template file for you with next name  pattern "timestamp_your_underscored_migration_name.cr". Empty file looks like this:
 
 ```crystal
-class YourCamelcasedMigrationName < Jennifer::Migration::Base
+class YourCamelCasedMigrationName < Jennifer::Migration::Base
   def up
   end
 

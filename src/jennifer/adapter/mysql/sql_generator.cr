@@ -24,7 +24,7 @@ module Jennifer
         String.build do |s|
           s << "UPDATE " << query.table
           s << ' '
-          _joins = query._joins
+          _joins = query._joins?
 
           unless _joins.nil?
             where_clause(s, _joins[0].on)
@@ -34,6 +34,26 @@ module Jennifer
           options.join(", ", s) { |(k, v)| s << k << " = " << esc }
           s << " "
           where_clause(s, query.tree)
+        end
+      end
+
+      def self.insert_on_duplicate(table, fields, rows : Int32, unique_fields, on_conflict)
+        is_ignore = on_conflict.empty?
+        String.build do |io|
+          io << "INSERT "
+          io << "IGNORE " if is_ignore
+          io << "INTO " << table << " ("
+          fields.join(", ", io)
+          escaped_row = "(" + escape_string(fields.size) + ")"
+          io << ") VALUES "
+          rows.times.join(", ", io) { io << escaped_row }
+          unless is_ignore
+            io << " ON DUPLICATE KEY UPDATE "
+            on_conflict.each_with_index do |(field, value), index|
+              io << ", " if index != 0
+              io << field_assign_statement(field.to_s, value)
+            end
+          end
         end
       end
 
@@ -60,6 +80,10 @@ module Jennifer
               super
           end
         end
+      end
+
+      def self.values_expression(field)
+        "VALUES(#{field})"
       end
 
       def self.quote(value : String)

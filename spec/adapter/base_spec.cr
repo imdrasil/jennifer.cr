@@ -170,16 +170,16 @@ describe Jennifer::Adapter::Base do
   end
 
   describe "#foreign_key_exists?" do
-    context "with given connected tables names" do
-      it do
-        adapter.foreign_key_exists?(:addresses, :contacts).should be_true
-      end
+    context "with to_table" do
+      it { adapter.foreign_key_exists?(:addresses, :contacts).should be_true }
     end
 
-    context "with given foreign key name" do
-      it do
-        adapter.foreign_key_exists?("fk_cr_addresses_contacts").should be_true
-      end
+    context "with foreign key name" do
+      it { adapter.foreign_key_exists?(:addresses, name: "fk_cr_67e9674de3").should be_true }
+    end
+
+    context "with column name" do
+      it { adapter.foreign_key_exists?(:addresses, column: :contact_id).should be_true }
     end
 
     context "with invalid name" do
@@ -322,6 +322,25 @@ describe Jennifer::Adapter::Base do
 
     it "returns -1 if name is not a table or MV" do
       adapter.table_column_count("asdasd").should eq(-1)
+    end
+  end
+
+  describe "#tables_column_count" do
+    it "returns amount of tables fields" do
+      match_array(adapter.tables_column_count(["passports", "addresses"]).to_a.map(&.count), [2, 7])
+    end
+
+    it "returns amount of views fields" do
+      postgres_only do
+        match_array(adapter.tables_column_count(["male_contacts", "female_contacts"]).to_a.map(&.count), [9, 10])
+      end
+      mysql_only do
+        match_array(adapter.tables_column_count(["male_contacts"]).to_a.map(&.count), [9])
+      end
+    end
+
+    it "returns nothing for unknown tables" do
+      adapter.tables_column_count(["missing_table"]).to_a.should be_empty
     end
   end
 

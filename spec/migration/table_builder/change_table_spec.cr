@@ -103,7 +103,7 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
     context "with plain arguments and specified length" do
       it do
         table = change_table_expr
-        table.add_index("nodes_uuid_index", :uuid, :uniq, 10, :asc)
+        table.add_index(:uuid, :uniq, length: 10, order: :asc)
         command = table.@commands[0].as(Jennifer::Migration::TableBuilder::CreateIndex)
         command.fields.should eq([:uuid])
         command.type.should eq(:uniq)
@@ -115,7 +115,7 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
     context "with multiple fields" do
       it do
         table = change_table_expr
-        table.add_index("nodes_uuid_index", [:uuid, :name], :uniq, orders: { :uuid => :asc, :name => :desc })
+        table.add_index([:uuid, :name], :uniq, orders: { :uuid => :asc, :name => :desc })
         command = table.@commands[0].as(Jennifer::Migration::TableBuilder::CreateIndex)
         command.fields.should eq([:uuid, :name])
         command.type.should eq(:uniq)
@@ -141,7 +141,7 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
   describe "#drop_foreign_key" do
     it do
       table = change_table_expr
-      table.drop_foreign_key("to_table", "some_name")
+      table.drop_foreign_key("to_table", name: "some_name")
       command = table.@commands[0].as(Jennifer::Migration::TableBuilder::DropForeignKey)
       command.from_table.should eq(DEFAULT_TABLE)
       command.to_table.should eq("to_table")

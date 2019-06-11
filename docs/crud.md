@@ -35,7 +35,7 @@ Object could be retrieved by id using `#find` (returns `T?`) and `#find!` (retur
 Contact.find!(1)
 ```
 
-Also there is flexible dsl for building queries.
+Also there is flexible DSL for building queries.
 
 To reload all fields from db use `#reload`
 

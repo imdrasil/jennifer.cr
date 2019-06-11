@@ -1,5 +1,6 @@
 module Jennifer
   module QueryBuilder
+    # Container for the `ANY` sql expression.
     class Any < SQLNode
       getter query : Query
       delegate sql_args, to: @query

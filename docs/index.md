@@ -3,8 +3,15 @@
 * [Latest API Documentation](https://imdrasil.github.io/jennifer.cr/latest/)
 * [Other API versions](https://imdrasil.github.io/jennifer.cr/versions)
 
+Also you can check out following example applications where you can find how to integrate Jennifer with some web frameworks/libraries:
+
+* [amber](https://github.com/imdrasil/amber_and_jennifer_sample_app)
+* [kemal](https://github.com/imdrasil/kemal_and_jennifer_sample_app)
+* [spider-gazelle](https://github.com/imdrasil/spider-gazelle_and_jennifer_sample_app)
+
 ## Content
 
+* [Getting started](./getting_started.md)
 * [Configuration](./configuration.md)
 * [Command Line](./command_line.md)
 * [Migration](./migration.md)

@@ -6,9 +6,10 @@ describe Jennifer::QueryBuilder::ModelQuery do
   describe "#relation" do
     # TODO: this should be tested under sql generating process
     it "makes join using relation scope" do
-      ::Jennifer::Adapter.adapter.sql_generator
-                                 .select(Contact.all.relation(:addresses))
-                                 .should match(/LEFT JOIN addresses ON addresses.contact_id = contacts.id/)
+      ::Jennifer::Adapter.adapter
+        .sql_generator
+        .select(Contact.all.relation(:addresses))
+        .should match(/LEFT JOIN addresses ON addresses.contact_id = contacts.id/)
     end
   end
 
@@ -78,7 +79,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
       it "builds nested objects" do
         c2 = Factory.create_contact(name: "b")
         p = Factory.create_passport(contact_id: c2.id, enn: "12345")
-        res = Passport.all.join(Contact) { _id == _passport__contact_id }.with(:contact).first!
+        res = Passport.all.join(Contact) { _id == _passport__contact_id }.with_relation(:contact).first!
 
         res.contact!.name.should eq("b")
       end
@@ -104,7 +105,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
           res = Contact.all.left_join(Address) { _contact_id == _contact__id }
                            .left_join(Passport) { _contact_id == _contact__id }
                            .order(id: :asc)
-                           .with(:addresses, :passport).to_a
+                           .with_relation(:addresses, :passport).to_a
 
           res.size.should eq(2)
 
@@ -245,25 +246,25 @@ describe Jennifer::QueryBuilder::ModelQuery do
     it "excludes order if given" do
       q = Contact.all.order(age: "asc")
       clone = q.except(["order"])
-      clone._order.empty?.should be_true
+      clone._order?.should be_falsey
     end
 
     it "excludes join if given" do
       q = Contact.all.join("passports") { _contact_id == _contacts__id }
       clone = q.except(["join"])
-      clone._joins.nil?.should be_true
+      clone._joins?.should be_falsey
     end
 
     it "excludes join if given" do
       q = Contact.all.union(Query["contacts"])
       clone = q.except(["union"])
-      clone._unions.nil?.should be_true
+      clone._unions?.should be_nil
     end
 
     it "excludes group if given" do
       q = Contact.all.group(:age)
       clone = q.except(["group"])
-      clone._groups.empty?.should be_true
+      clone._groups?.should be_falsey
     end
 
     it "excludes muting if given" do
@@ -275,8 +276,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
     it "excludes select if given" do
       q = Contact.all.select { [_id] }
       clone = q.except(["select"])
-      clone._select_fields.size.should eq(1)
-      clone._select_fields[0].should be_a(Jennifer::QueryBuilder::Star)
+      clone._select_fields.map(&.class).should eq([Jennifer::QueryBuilder::Star])
     end
 
     it "excludes where if given" do
@@ -340,6 +340,23 @@ describe Jennifer::QueryBuilder::ModelQuery do
         c.ballance = ballance
         c.save
         Contact.all.where { _ballance == 15.1 }.count.should eq(1)
+      end
+    end
+
+    describe "CTE" do
+      it do
+        results = Jennifer::Query["cte"].with(
+          "cte",
+          Jennifer::Query[""].select("1 as n")
+          .union(
+            Jennifer::Query["cte"]
+            .select("1 + n AS n")
+            .where { _n < 5 },
+            true
+          ),
+          true
+        ).db_results.flat_map(&.values)
+        results.should eq([1, 2, 3, 4, 5])
       end
     end
   end

@@ -21,8 +21,9 @@ module Jennifer
         end
       end
 
-      # Generates update request depending on given query and hash options. Allows
-      # joins inside of query.
+      # Generates update request depending on given query and hash options.
+      #
+      # Allows joins inside of query.
       def self.update(query, options : Hash)
         esc = escape_string(1)
         String.build do |s|
@@ -30,16 +31,40 @@ module Jennifer
           options.map { |k, v| "#{k.to_s}= #{esc}" }.join(", ", s)
           s << ' '
 
-          from_clause(s, query, query._joins![0].table_name(self)) if query._joins
+          from_clause(s, query._joins![0].table_name(self)) if query._joins?
           where_clause(s, query.tree)
-          if query._joins
+          if query._joins?
             where_clause(s, query._joins![0].on)
             query._joins![1..-1].join(" ", s) { |e| s << e.as_sql(self) }
           end
         end
       end
 
+      def self.insert_on_duplicate(table, fields, rows : Int32, unique_fields, on_conflict)
+        String.build do |io|
+          io << "INSERT INTO " << table << " ("
+          fields.join(", ", io)
+          escaped_row = "(" + escape_string(fields.size) + ")"
+          io << ") VALUES "
+          rows.times.join(", ", io) { io << escaped_row }
+          io << " ON CONFLICT (" << unique_fields.join(", ") << ") "
+          if on_conflict.empty?
+            io << "DO NOTHING"
+          else
+            io << "DO UPDATE SET "
+            on_conflict.each_with_index do |(field, value), index|
+              io << ", " if index != 0
+              io << field_assign_statement(field.to_s, value)
+            end
+          end
+        end
+      end
+
       # =================== utils
+
+      def self.values_expression(field : Symbol)
+        "excluded.#{field}"
+      end
 
       def self.order_expression(expression : QueryBuilder::OrderItem)
         if expression.null_position.none?

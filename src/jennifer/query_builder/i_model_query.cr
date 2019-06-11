@@ -11,16 +11,23 @@ module Jennifer
         raise AbstractMethod.new(:model_class, {{@type}})
       end
 
-      # NOTE: can't be abstract because is already implemented by super class
+      # NOTE: can't be abstract because is already implemented by super class.
       def clone
         raise AbstractMethod.new(:clone, {{@type}})
       end
 
-      # Returns target table name
+      # Returns target table name.
       def table
         @table.empty? ? model_class.table_name : @table
       end
 
+      # Joins *name* relation.
+      #
+      # You can specify join type passing it as 2nd argument.
+      #
+      # ```
+      # Contact.all.relation(:addresses)
+      # ```
       def relation(name, type = :left)
         model_class.relation(name.to_s).join_condition(self, type)
       end
@@ -59,11 +66,21 @@ module Jennifer
       end
 
       # Triggers `#destroy` on the each matched object.
+      #
+      # ```
+      # Contact.all.where { _name.like('%John%') }.destroy
+      # ```
       def destroy
         find_each(&.destroy)
       end
 
       # Triggers `#update` on the each matched object.
+      #
+      # As a result all callbacks and validations are invoked.
+      #
+      # ```
+      # Contact.all.where { _name == "Ohn" }.path({ name: "John" })
+      # ```
       def patch(options : Hash | NamedTuple)
         find_each(&.update(options))
       end
@@ -74,6 +91,13 @@ module Jennifer
       end
 
       # Triggers `#update!` on the each matched object.
+      #
+      # As a result all callbacks and validations are invoked. If any individual update raise exception -
+      # it will stop all following operations.
+      #
+      # ```
+      # Contact.all.where { _name == "Ohn" }.path!({ name: "John" })
+      # ```
       def patch!(options : Hash | NamedTuple)
         find_each(&.update!(options))
       end
@@ -87,12 +111,12 @@ module Jennifer
 
       private def add_aliases
         table_names = [table]
-        table_names.concat(_joins!.map { |e| e.table unless e.has_alias? }.compact) if @joins
+        table_names.concat(_joins!.map { |e| e.table unless e.has_alias? }.compact) if _joins?
         duplicates = extract_duplicates(table_names)
         return if duplicates.empty?
         i = 0
         @table_aliases.clear
-        if @joins
+        if _joins?
           _joins!.each do |j|
             if j.relation && duplicates.includes?(j.table)
               @table_aliases[j.relation.as(String)] = "t#{i}"

@@ -9,32 +9,49 @@ postgres_only do
   end
 end
 
+module Mapping11
+  include Jennifer::Macros
+  include Jennifer::Model::Mapping
+
+  mapping(
+    id: Primary32
+  )
+end
+
+module Mapping12
+  include Jennifer::Macros
+  include Jennifer::Model::Mapping
+
+  mapping(
+    name: String?
+  )
+end
+
+module CompositeMapping
+  include Mapping11
+  include Mapping12
+
+  mapping(
+    password_digest: String?
+  )
+end
+
+module ModuleWithoutMapping
+  include CompositeMapping
+end
+
+class UserWithModuleMapping < Jennifer::Model::Base
+  include ModuleWithoutMapping
+
+  table_name "users"
+
+  mapping(
+    email: String?
+  )
+end
+
 describe Jennifer::Model::Mapping do
   select_regexp = /[\S\s]*SELECT contacts\.\*/i
-
-  describe "::build" do
-    context "loading STI objects from request" do
-      it "creates proper objects" do
-        Factory.create_twitter_profile
-        Factory.create_facebook_profile
-        match_array(Profile.all.to_a.map(&.class), [FacebookProfile, TwitterProfile])
-      end
-
-      it "raises exception if invalid type was given" do
-        p = Factory.create_facebook_profile
-        p.update_column("type", "asdasd")
-        expect_raises(Jennifer::UnknownSTIType) do
-          Profile.all.to_a
-        end
-      end
-
-      it "creates base class if type field is blank" do
-        p = Factory.create_facebook_profile
-        p.update_column("type", "")
-        Profile.all.first!.class.to_s.should eq("Profile")
-      end
-    end
-  end
 
   describe "#reload" do
     it "assign all values from db to existing object" do
@@ -60,16 +77,6 @@ describe Jennifer::Model::Mapping do
         raw_errors[:age].should eq(["is not included in the list"])
         raw_errors[:name].should eq(["is too long (maximum is 15 characters)"])
         raw_errors[:description].should eq(["Too large description"])
-      end
-    end
-
-    it "should not raise validation exception when skipped" do
-      contact = Factory.create_contact
-      contact.age = 12
-      begin
-        contact.save!(true)
-      rescue ex : Jennifer::RecordInvalid
-        fail("should not raise validation exception")
       end
     end
   end
@@ -104,12 +111,29 @@ describe Jennifer::Model::Mapping do
     end
 
     describe "::columns_tuple" do
-      it "returns named tuple mith column metedata" do
+      it "returns named tuple with column metadata" do
         metadata = Contact.columns_tuple
         metadata.is_a?(NamedTuple).should be_true
         metadata[:id].is_a?(NamedTuple).should be_true
         metadata[:id][:type].should eq(Int32)
         metadata[:id][:parsed_type].should eq("Int32?")
+      end
+
+      it "ignores column aliases" do
+        metadata = Author.columns_tuple
+        metadata.is_a?(NamedTuple).should be_true
+        metadata[:name1].is_a?(NamedTuple).should be_true
+        metadata[:name1][:type].should eq(String)
+        metadata[:name1][:parsed_type].should eq("String")
+      end
+
+      it "includes fields defined in included module" do
+        metadata = UserWithModuleMapping.columns_tuple
+        metadata.is_a?(NamedTuple).should be_true
+        metadata.has_key?(:id).should be_true
+        metadata.has_key?(:name).should be_true
+        metadata.has_key?(:password_digest).should be_true
+        metadata.has_key?(:email).should be_true
       end
     end
 
@@ -127,15 +151,43 @@ describe Jennifer::Model::Mapping do
       end
     end
 
-    it "define default constructor if all fields are nillable or have default values" do
-      Passport::WITH_DEFAULT_CONSTRUCTOR.should be_true
-    end
+    describe ".new" do
+      context "loading STI objects from request" do
+        it "creates proper objects" do
+          Factory.create_twitter_profile
+          Factory.create_facebook_profile
+          klasses = [] of Profile.class
 
-    it "defines no defulat constructor if at least one field is not nillable and has no default" do
-      Contact::WITH_DEFAULT_CONSTRUCTOR.should be_false
-    end
+          Profile.all.each_result_set do |rs|
+            record = Profile.new(rs)
+            klasses << record.class
+          end
+          match_array(klasses, [FacebookProfile, TwitterProfile])
+        end
 
-    describe "#initialize" do
+        it "raises exception if invalid type was given" do
+          p = Factory.create_facebook_profile
+          p.update_column("type", "asdasd")
+          expect_raises(Jennifer::UnknownSTIType) do
+            Profile.all.each_result_set do |rs|
+              Profile.new(rs)
+            end
+          end
+        end
+
+        it "creates base class if type field is blank" do
+          p = Factory.create_facebook_profile
+          p.update_column("type", "")
+          executed = false
+
+          Profile.all.each_result_set do |rs|
+            Profile.new(rs).class.to_s.should eq("Profile")
+            executed = true
+          end
+          executed.should be_true
+        end
+      end
+
       context "from result set" do
         it "properly creates object" do
           executed = false
@@ -144,6 +196,18 @@ describe Jennifer::Model::Mapping do
             record = Contact.new(rs)
             record.name.should eq("Jennifer")
             record.age.should eq(20)
+            executed = true
+          end
+          executed.should be_true
+        end
+
+        it "properly assigns aliased columns" do
+          executed = false
+          Author.create(name1: "Ann", name2: "OtherAuthor")
+          Author.all.each_result_set do |rs|
+            record = Author.new(rs)
+            record.name1.should eq("Ann")
+            record.name2.should eq("OtherAuthor")
             executed = true
           end
           executed.should be_true
@@ -158,6 +222,12 @@ describe Jennifer::Model::Mapping do
             contact.age.should eq(18)
             contact.gender.should eq("female")
           end
+
+          it "properly maps column aliases" do
+            a = Author.new({"name1" => "Gener", "name2" => "Ric"})
+            a.name1.should eq("Gener")
+            a.name2.should eq("Ric")
+          end
         end
 
         context "with symbol keys" do
@@ -166,6 +236,12 @@ describe Jennifer::Model::Mapping do
             contact.name.should eq("Deepthi")
             contact.age.should eq(18)
             contact.gender.should eq("female")
+          end
+
+          it "properly maps column aliases" do
+            a = Author.new({:name1 => "Ran", :name2 => "Dom"})
+            a.name1.should eq("Ran")
+            a.name2.should eq("Dom")
           end
         end
       end
@@ -176,6 +252,12 @@ describe Jennifer::Model::Mapping do
           contact.name.should eq("Deepthi")
           contact.age.should eq(18)
           contact.gender.should eq("female")
+        end
+
+        it "properly maps column aliases" do
+          a = Author.new({ name1: "Unk", name2: "Nown" })
+          a.name1.should eq("Unk")
+          a.name2.should eq("Nown")
         end
       end
 
@@ -227,8 +309,8 @@ describe Jennifer::Model::Mapping do
 
         describe "user-defined mapping types" do
           it "is accessible if defined in parent class" do
-            User::COLUMNS_METADATA[:password_digest].should eq({type: String, default: "", parsed_type: "String"})
-            User::COLUMNS_METADATA[:email].should eq({type: String, default: "", parsed_type: "String"})
+            User::COLUMNS_METADATA[:password_digest].should eq({type: String, column: "password_digest", default: "", parsed_type: "String"})
+            User::COLUMNS_METADATA[:email].should eq({type: String, column: "email", default: "", parsed_type: "String"})
           end
 
           pending "allows to add extra options" do
@@ -405,6 +487,14 @@ describe Jennifer::Model::Mapping do
       end
     end
 
+    describe "attribute alias" do
+      it "provides aliases for the getters and setters" do
+        a = Author.build(name1: "an", name2: "author")
+        a.name1 = "the"
+        a.name1.should eq "the"
+      end
+    end
+
     describe "criteria attribute class shortcut" do
       it "adds criteria shortcut for class" do
         c = Contact._name
@@ -548,6 +638,18 @@ describe Jennifer::Model::Mapping do
           c.attribute("missing")
         end
       end
+
+      it "returns fields names only (no aliased columns)" do
+        a = Author.build(name1: "TheO", name2: "TherExample")
+        a.attribute("name1").should eq("TheO")
+        a.attribute(:name2).should eq("TherExample")
+        expect_raises(::Jennifer::BaseException) do
+          a.attribute("first_name")
+        end
+        expect_raises(::Jennifer::BaseException) do
+          a.attribute(:last_name)
+        end
+      end
     end
 
     describe "#arguments_to_save" do
@@ -572,6 +674,14 @@ describe Jennifer::Model::Mapping do
         r[:args].should eq(db_array("some new name"))
         r[:fields].should eq(db_array("name"))
       end
+
+      it "returns aliased columns" do
+        a = Author.create(name1: "Fin", name2: "AlAuthor")
+        a.name1 = "NotFin"
+        r = a.arguments_to_save
+        r[:args].should eq(db_array("NotFin"))
+        r[:fields].should eq(db_array("first_name"))
+      end
     end
 
     describe "#arguments_to_insert" do
@@ -590,6 +700,20 @@ describe Jennifer::Model::Mapping do
         r = Factory.build_profile.arguments_to_insert
         match_array(r[:args], db_array("some_login", nil, "Profile"))
       end
+
+      it "returns aliased columns" do
+        r = Author
+          .build(name1: "Prob", name2: "AblyTheLast")
+          .arguments_to_insert
+        match_array(r[:args], db_array("Prob", "AblyTheLast"))
+        match_array(r[:fields], %w(first_name last_name))
+      end
+
+      it "includes non autoincrementable primary field" do
+        r = NoteWithManualId.new({ id: 12, text: "test" }).arguments_to_insert
+        match_array(r[:args], db_array(12, "test", nil, nil))
+        match_array(r[:fields], %w(id text created_at updated_at))
+      end
     end
 
     describe "#to_h" do
@@ -597,6 +721,11 @@ describe Jennifer::Model::Mapping do
         hash = Factory.build_profile(login: "Abdul").to_h
         # NOTE: virtual field isn't included
         hash.keys.should eq(%i(id login contact_id type))
+      end
+
+      it "creates hash with symbol keys that does not contain the column names" do
+        hash = Author.build(name1: "IsThi", name2: "SFinallyOver").to_h
+        hash.keys.should eq(%i(id name1 name2))
       end
     end
 
@@ -606,6 +735,16 @@ describe Jennifer::Model::Mapping do
         # NOTE: virtual field isn't included
         hash.keys.should eq(%w(id login contact_id type))
       end
+
+      it "creates hash with string keys that does not contain the column names" do
+        hash = Author.build(name1: "NoIt", name2: "SNot").to_str_h
+        hash.keys.should eq(%w(id name1 name2))
+      end
+    end
+
+    describe ".primary_auto_incrementable?" do
+      it { Note.primary_auto_incrementable?.should be_true }
+      it { NoteWithManualId.primary_auto_incrementable?.should be_false }
     end
   end
 

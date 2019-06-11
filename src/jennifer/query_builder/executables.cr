@@ -1,36 +1,48 @@
 module Jennifer
   module QueryBuilder
+    # All query methods that invokes database query.
+    #
+    # A lot of methods in this module accepts strings and symbols. Any string is
+    # considered as a plain SQL and is inserted as-is; any symbol - as a current table field.
     module Executables
       # Returns last matched record or `nil`.
       #
-      # Doesn't affect query instance.
+      # Doesn't modify query instance.
+      #
+      # ```
+      # Contact.where { _city_id == 3 }.last
+      # ```
       def last
-        reverse_order
         old_limit = @limit
+        old_order = @order
+        reverse_order
         @limit = 1
         r = to_a[0]?
         @limit = old_limit
-        reverse_order
+        @order = old_order
         r
       end
 
       # Returns last matched record or raise `RecordNotFound` exception otherwise.
       #
-      # Doesn't affect query instance.
+      # Doesn't modify query instance.
+      #
+      # ```
+      # Contact.where { _city_id == 3 }.last!
+      # ```
       def last!
-        old_limit = @limit
-        @limit = 1
-        reverse_order
-        result = to_a
-        reverse_order
-        @limit = old_limit
-        raise RecordNotFound.from_query(self, adapter) if result.empty?
-        result[0]
+        result = last
+        raise RecordNotFound.from_query(self, adapter) if result.nil?
+        result
       end
 
       # Returns first matched record or `nil`.
       #
-      # Doesn't affect query instance.
+      # Doesn't modify query instance.
+      #
+      # ```
+      # Contact.where { _city_id == 3 }.first
+      # ```
       def first
         old_limit = @limit
         @limit = 1
@@ -41,13 +53,15 @@ module Jennifer
 
       # Returns first matched record or raise `RecordNotFound` exception otherwise.
       #
-      # Doesn't affect query instance.
+      # Doesn't modify query instance.
+      #
+      # ```
+      # Contact.where { _city_id == 3 }.first!
+      # ```
       def first!
-        old_limit = @limit
-        result = to_a
-        @limit = old_limit
-        raise RecordNotFound.from_query(self, adapter) if result.empty?
-        result[0]
+        result = first
+        raise RecordNotFound.from_query(self, adapter) if result.nil?
+        result
       end
 
       # Returns array of given field values.
@@ -55,33 +69,114 @@ module Jennifer
       # This method allows you load only those fields you need without loading records.
       # If query is ModelQuery - take into consideration that fields will not be converted by
       # model converters.
+      #
+      # ```
+      # Contact.all.limit(2).pluck([:id, :name]) # [[1, "Name 1"], [2, "Name 2"]]
+      # ```
       def pluck(fields : Array) : Array(Array(DBAny))
         return [] of Array(DBAny) if do_nothing?
+
         adapter.pluck(self, fields.map(&.to_s))
       end
 
-      # ditto
-      def pluck(*fields : String | Symbol)
+      def pluck(*fields : String | Symbol) : Array(Array(DBAny))
         pluck(fields.to_a)
       end
 
       def pluck(field : String | Symbol) : Array(DBAny)
         return [] of DBAny if do_nothing?
+
         adapter.pluck(self, field.to_s)
       end
 
       # Delete all records which satisfy given conditions.
       #
-      # No callbacks or validation will be executed.
+      # No model callbacks or validation will be executed.
+      #
+      # ```
+      # Jennifer::Query["contacts"].where { _name.like("%dan%") }.delete
+      # ```
       def delete
         return if do_nothing?
+
         adapter.delete(self)
       end
 
       # Returns whether any record satisfying given conditions exists.
+      #
+      # ```
+      # Jennifer::Query["contacts"].where { _name.like("%dan%") }.exists?
+      # ```
       def exists? : Bool
         return false if do_nothing?
+
         adapter.exists?(self)
+      end
+
+      # Creates new record in a database with given *fields* and *values*.
+      #
+      # Ignores any model callbacks.
+      #
+      # ```
+      # Jennifer::Query["contacts"].insert(%w(name age), [["John", 60], ["Chris", 40]])
+      # ```
+      def insert(fields : Array(String), values : Array(Array(DBAny)))
+        return if do_nothing? || values.empty?
+
+        unless values.is_a?(Array(Array(DBAny)))
+          values = values.map { |row| Ifrit.typed_array_cast(row, DBAny) }
+        end
+        adapter.bulk_insert(table, fields, values)
+      end
+
+      # Creates new record in a database with given *options*.
+      #
+      # Ignores any model callbacks.
+      #
+      # ```
+      # Jennifer::Query["contacts"].insert({ name: "John", age: 60 })
+      # ```
+      def insert(options : Hash(String | Symbol, DBAny) | NamedTuple)
+        return if do_nothing? || options.empty?
+
+        fields = options.keys.to_a.map(&.to_s)
+        values = Ifrit.typed_array_cast(options.values, DBAny)
+        insert(fields, [values])
+      end
+
+      # Inserts given *values* and ignores ones that would cause a duplicate values of `UNIQUE` index on given *unique_fields*.
+      #
+      # Some RDMS (like MySQL) doesn't require specifying exact constraint to be violated, therefore *unique_fields* argument by default
+      # is `[] of String`.
+      #
+      # ```
+      # Jennifer::Query["orders"].insert({ :name => "Order 1", :uid => 123 })
+      # # the first record will be skipped
+      # Jennifer::Query["orders"].upsert(%w(name uid), [["Order 1", 123], ["Order 2", 321]], %w(uid))
+      # ```
+      def upsert(fields : Array(String), values : Array(Array(DBAny)), unique_fields : Array = [] of String)
+        return if do_nothing? || values.empty?
+
+        adapter.upsert(table, fields, values, unique_fields, {} of String => String)
+      end
+
+      # Inserts given *values* modifies existing row using hash returned by the block.
+      #
+      # Some RDMS (like MySQL) doesn't require specifying exact constraint to be violated, therefore *unique_fields* argument by default
+      # is `[] of String`.
+      #
+      # ```
+      # Jennifer::Query["orders"].insert({ :name => "Order 1", :uid => 123, :value => 2 })
+      # # the first record will be skipped
+      # Jennifer::Query["orders"].upsert(%w(name uid value), [["Order 1", 123, 3], ["Order 2", 321, 4]], %w(uid)) do
+      #   { :value => values(:value) + _value }
+      # end
+      # ```
+      def upsert(fields : Array(String), values : Array(Array(DBAny)), unique_fields : Array, &block)
+        return if do_nothing? || values.empty?
+
+        definition = (with @expression yield)
+        adapter.upsert(table, fields, values, unique_fields, definition)
       end
 
       # Updates specified fields by given value retrieved from the block.
@@ -94,14 +189,26 @@ module Jennifer
       def update
         definition = (with @expression yield)
         return DB::ExecResult.new(0i64, 0i64) if do_nothing?
+
         adapter.modify(self, definition)
       end
 
+      # Updates records with given *options*.
+      #
+      # ```
+      # Contact.all.where { and(_name == "Jon", age > 100) }.update({ :name => "John", :age => 40 })
+      # ```
       def update(options : Hash)
         return DB::ExecResult.new(0i64, 0i64) if do_nothing?
+
         adapter.update(self, options)
       end
 
+      # Updates records with given *options*.
+      #
+      # ```
+      # Contact.all.where { and(_name == "Jon", age > 100) }.update(name: "John", age: 40)
+      # ```
       def update(**options)
         update(options.to_h)
       end
@@ -148,11 +255,17 @@ module Jennifer
         decrement(fields.to_h)
       end
 
+      # Alias for `#results`.
       def to_a
         results
       end
 
-      def db_results
+      # Returns array of hashes representing result sets.
+      #
+      # ```
+      # Jennifer::Query["contacts"].where { _id == 1 }.db_results # => [{"id" => 1, "name" => "Name", ...}]
+      # ```
+      def db_results : Array(Hash(String, DBAny))
         result = [] of Hash(String, DBAny)
         each_result_set do |rs|
           result << adapter.result_to_hash(rs)
@@ -160,7 +273,13 @@ module Jennifer
         result
       end
 
-      def results
+      # Returns array of `Record` created based on result sets.
+      #
+      # ```
+      # Jennifer::Query["contacts"].where { _id == 1 }.results
+      # # => [Jennifer::Record(@attributes={"id" => 1, "name" => "Name", ...})]
+      # ```
+      def results : Array(Record)
         result = [] of Record
         each_result_set { |rs| result << Record.new(rs) }
         result
@@ -186,6 +305,7 @@ module Jennifer
       # Yields each result set object to a block.
       def each_result_set(&block)
         return if do_nothing?
+
         adapter.select(self) do |rs|
           begin
             rs.each do
@@ -297,6 +417,7 @@ module Jennifer
       def find_records_by_sql(query : String, args : Array(DBAny) = [] of DBAny)
         results = [] of Record
         return results if do_nothing?
+
         adapter.query(query, args) do |rs|
           begin
             rs.each do
@@ -308,6 +429,17 @@ module Jennifer
           end
         end
         results
+      end
+
+      # Returns query execution explanation.
+      #
+      # Format depends on used database adapter.
+      #
+      # ```
+      # Jennifer::Query["contacts"].explain # => "Seq Scan on contacts  (cost=0.00..13.40 rows=340 width=206)"
+      # ```
+      def explain : String
+        adapter.explain(self)
       end
     end
   end

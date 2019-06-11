@@ -36,7 +36,7 @@ describe Jennifer::View::Base do
     end
 
     it "returns specified name" do
-      StrinctBrokenMaleContact.view_name.should eq("male_contacts")
+      StrictBrokenMaleContact.view_name.should eq("male_contacts")
     end
   end
 
@@ -172,9 +172,9 @@ describe Jennifer::View::Base do
     context "with hash" do
       context "strict mapping" do
         it "raises exception if some field can't be casted" do
-          error_message = "Column StrinctBrokenMaleContact.name can't be casted from Nil to it's type - String"
+          error_message = "Column StrictBrokenMaleContact.name can't be casted from Nil to it's type - String"
           expect_raises(Jennifer::BaseException, error_message) do
-            StrinctBrokenMaleContact.build({} of String => Jennifer::DBAny)
+            StrictBrokenMaleContact.build({} of String => Jennifer::DBAny)
           end
         end
       end

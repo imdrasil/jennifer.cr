@@ -10,19 +10,25 @@ Add this to your application's `shard.yml`:
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.7.1"
+    version: "~> 0.8.0"
 ```
 
 ### Requirements
 
-- you need to choose one of existing drivers for your db: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgres](https://github.com/will/crystal-pg); sqlite3 adapter automatically installs required driver for itself;
-- crystal `>= 0.26.1`.
+- you need to choose one of the existing drivers for your DB: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgres](https://github.com/will/crystal-pg); sqlite3 adapter automatically installs required driver for it;
+- crystal `>= 0.29.0`.
 
 ## Usage
 
-Jennifer allows you to maintain everything for your models - from db migrations and field mapping to callbacks and building queries. For detailed information see the [guide](https://imdrasil.github.io/jennifer.cr/docs/) and [API documentation](https://imdrasil.github.io/jennifer.cr/versions).
+Jennifer allows you to maintain everything for your models - from DB migrations and field mapping to callbacks and building queries. For detailed information see the [docs](https://imdrasil.github.io/jennifer.cr/docs/) and [API documentation](https://imdrasil.github.io/jennifer.cr/versions).
+
+### CLI
+
+For command management Jennifer uses [Sam](https://github.com/imdrasil/sam.cr). Due to this you can easily create/migrate/drop database or invoke generator to bootstrap your models and migrations.
 
 ### Migration
+
+Jennifer has built-in database migration management system. Migrations allow you to organize all database changes.
 
 To start using Jennifer you'll first need to generate a migration:
 
@@ -60,21 +66,20 @@ $ crystal sam.cr -- db:setup
 ```
 
 to create the database and run the newly created migration.
-> For command management Jennifer uses [Sam](https://github.com/imdrasil/sam.cr).
 
 ### Model
 
 Jennifer provides next features:
 
 - flexible model schema definition
-- relationship definition (`belongs_to`, `has_many`, `has_one`, `has_and_belongs_to_many`)
-- validation
+- relationship definition (`belongs_to`, `has_many`, `has_one`, `has_and_belongs_to_many`) - including polymorphic ones
+- built-in extendable validations
 - model-specific query scope definition
 - callbacks
-- view support
-- translations
+- database view support
+- SQL translations
 
-Hers is model example:
+Hers is a model example:
 
 ```crystal
 class Contact < Jennifer::Model::Base
@@ -108,35 +113,70 @@ class Contact < Jennifer::Model::Base
 end
 ```
 
-More details you can find in the documentation.
-
 ### Query DSL
 
-Jennifer allows you to query the db using a flexible DSL:
+Jennifer allows you to query the DB using a flexible DSL:
 
 ```crystal
-Contact.all.left_join(Passport) { _contact_id == _contact__id }
-            .order(id: :asc).order(Contact._name.asc.nulls_last)
-            .with(:passport).to_a
+Contact
+  .all
+  .left_join(Passport) { _contact_id == _contact__id }
+  .order(id: :asc).order(Contact._name.asc.nulls_last)
+  .with_relation(:passport)
+  .to_a
 Contact.all.eager_load(:countries).where { __countries { _name.like("%tan%") } }
 Contact.all.group(:gender).group_avg(:age, PG::Numeric)
 ```
 
-Much more about the query DSL can be found on the wiki [page](./docs/query_dsl.md).
+Supported features:
 
-### Versioning
+- fetching model objects from the database
+- fetching records from a specific table
+- *magic* underscore  table column notation which allows effectively reference any table column or alias
+- eager loading of model associations any levels deep
+- support of common SQL functions (including aggregations) and mechanism to register own ones
+- flexible DSL of all SQL clauses (`SELECT`, `FROM`, `WHERE`, `JOIN`, `GROUP BY`, etc.)
+- `CTE` support
+- `JSON` operators
+- table and column aliasing
 
-Now that Jennifer is under heavy development, there could be many breaking changes. So please check the release notes to check if any of the changes may prevent you from using it. Also, until this library reaches a beta version, the next version rules will be followed:
+Much more about the query DSL can be found in the wiki [page](./docs/query_dsl.md).
 
-- all bugfixes, new minor features or (sometimes) ones that don't break the existing API will be added as a patch number (e.g. 0.3.**4**);
+### Internationalization
 
-- all breaking changes and new important features (as well as reaching a milestone) will be added by bumping the minor digit (0.**4**.0);
+You can easily configure error message generated for certain validation violation for a specific model or globally. Model and attribute names can be easily configured as well. For internationalization purpose [i18n](https://github.com/TechMagister/i18n.cr) is used. For more details how does it work see [wiki](./docs/internationalization_dsl.md).
 
-So even a patch version change could bring a lot of new stuff.
+### Logging & Debugging
 
-If there is a branch for the next release - it will be removed 1 month after the release. So please use them only as a hotfix or for experiments or contribution.
+Jennifer uses a regular Crystal logging mechanism so you could specify your own logger or formatter:
 
-### Test tips
+```crystal
+# Here is default logger configuration
+Jennifer::Config.configure do |conf|
+  conf.logger = Logger.new(STDOUT).tap do |logger|
+    logger.formatter = Logger::Formatter.new do |_severity, datetime, _progname, message, io|
+      io << datetime << ": " << message
+    end
+
+    logger.level = Logger::DEBUG
+  end
+end
+```
+
+All errors occurred during executing query includes query itself with arguments along side description. `Jennifer::Model::Base#inspect` returns model debug information filtered out all unnecessary information.
+
+```crystal
+Address.first!.inspect
+# #<Address:0x7efde96ac0d0 id: 1, street: "Ant st. 69", contact_id: nil, created_at: 2019-06-10 11:11:11.665032000 +03:00 Local>
+```
+
+Also, you can get a query execution plan explanation right from your code - just execute `#explain` on query to get appropriate information (output is database specific):
+
+```crystal
+Contact.all.explain # => Seq Scan on contacts  (cost=0.00..14.30 rows=100.0 width=320)
+```
+
+### Testing tips
 
 The fastest way to rollback all changes in the DB after test case is by using a transaction. So add:
 
@@ -152,7 +192,19 @@ end
 
 to your `spec_helper.cr`. NB. you could simply use regular deleting or truncation, but a transaction will provide a 15x speed up (at least for postgres; mysql gets less impact).
 
-> This functions can be safely used only under test environment.
+> These functions can be safely used only under test environment.
+
+## Versioning
+
+Now that Jennifer is under heavy development, there could be many breaking changes. So please check the release notes to check if any of the changes may prevent you from using it. Also, until this library reaches a beta version, the next version rules will be followed:
+
+- all bug fixes, new minor features or (sometimes) ones that don't break the existing API will be added as a patch number (e.g. 0.3.**4**);
+
+- all breaking changes and new important features (as well as reaching a milestone) will be added by bumping the minor digit (0.**4**.0);
+
+So even a patch version change could bring a lot of new stuff.
+
+If there is a branch for the next release - it will be removed 1 month after the release. So please use them only as a hotfix or for experiments or contribution.
 
 ## Development
 

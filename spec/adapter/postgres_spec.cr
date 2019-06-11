@@ -11,22 +11,18 @@ postgres_only do
       end
     end
 
-    context "index manipulation" do
-      age_index_options = {
-        :type    => nil,
-        :fields  => [:age],
-        :order   => {} of Symbol => Symbol,
-        :lengths => {} of Symbol => Symbol,
-      }
-      index_name = "contacts_age_index"
-
+    describe "index manipulation" do
       describe "#index_exists?" do
         it "returns true if exists index with given name" do
-          adapter.index_exists?("", "contacts_description_index").should be_true
+          adapter.index_exists?(:contacts, "contacts_description_idx").should be_true
+        end
+
+        it "returns true if table has index with given columns" do
+          adapter.index_exists?(:contacts, [:description]).should be_true
         end
 
         it "returns false if index is not exist" do
-          adapter.index_exists?("", "contacts_description_index_test").should be_false
+          adapter.index_exists?(:contacts, "contacts_description_index_test").should be_false
         end
       end
     end
@@ -79,13 +75,13 @@ postgres_only do
       end
     end
 
-    describe "#data_type_exists?" do
+    describe "#enum_exists?" do
       it "returns true if given datatype exists" do
-        adapter.data_type_exists?("gender_enum").should eq(true)
+        adapter.enum_exists?("gender_enum").should eq(true)
       end
 
       it "returns false if given datatype doesn't exists" do
-        adapter.data_type_exists?("gender").should eq(false)
+        adapter.enum_exists?("gender").should eq(false)
       end
     end
 
@@ -118,6 +114,13 @@ postgres_only do
         expect_raises(Jennifer::BaseException) do
           adapter.with_table_lock(table, "gghhhh") { }
         end
+      end
+    end
+
+    describe "#explain" do
+      it do
+        adapter.explain(Query["contacts"])
+          .should match(/Seq Scan on contacts  \(cost=0\.00\.\.\d*\.\d* rows=\d* width=\d*\)/)
       end
     end
   end

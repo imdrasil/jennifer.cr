@@ -14,6 +14,11 @@ module Jennifer
             adapter.exec(generate_query)
           end
 
+          def explain
+            source = @query.is_a?(QueryBuilder::Query) ? @query.as(QueryBuilder::Query).as_sql : @query
+            "create_materialized_view :#{@name}, \"#{source}\""
+          end
+
           private def generate_query
             if @query.is_a?(String)
               puts "String was used for describing source request of materialized  view. Use QueryBuilder::Query instead"

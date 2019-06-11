@@ -23,7 +23,9 @@ Creates database described in the configuration.
 $ crystal sam.cr -- db:create
 ```
 
-> Will create only **one** database. This means that for test environment this command should be invoked separately. This is common for all commands in this section.
+> Will create only **one** database. This means that for test environment (and for any extra environment you want) this command should be invoked separately. This is common for all commands in this section.
+
+If database is already exists - successfully finishes (returns code 0).
 
 ### db:drop
 

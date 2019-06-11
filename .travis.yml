@@ -3,9 +3,8 @@ dist: trusty
 sudo: required
 services:
   - postgresql
-  - mysql
 addons:
-  postgresql: 9.4
+  postgresql: 9.5
 env:
   - DB=mysql DB_USER=root DB_PASSWORD=""
   - DB=postgres DB_USER=postgres DB_PASSWORD=""
@@ -14,5 +13,5 @@ env:
   # integration tests
   - DB=postgres DB_USER=postgres DB_PASSWORD="" INTEGRATION=1
   - DB=mysql DB_USER=root DB_PASSWORD="" INTEGRATION=1
-before_script: bash .travis.setup.sh
-script: bash .travis.spec.sh
+before_script: bash .ci/setup.sh
+script: bash .ci/test.sh

@@ -22,7 +22,7 @@ class Contact < Jennifer::Model::Base
   has_one :main_address, Address, {where { _main }}
   has_one :passport, Passport
 
-  validates_inclucion :age, 13..75
+  validates_inclusion :age, 13..75
   validates_length :name, minimum: 1, maximum: 15
   validates_with_method :name_check
 
@@ -102,7 +102,11 @@ end
 
 ## Mapping definition
 
-`%mapping(options, strict = true)` macros stands for defining all model attributes. If field has no extra parameter, you can just specify name and type (type in case of crystal language): `field_name: :Type`. Named tuple can be used instead of type. Next keys are supported:
+You should define all fields that you'd like to grep from the particular table, other words - define model's mapping.
+
+`%mapping(options, strict = true)` macro stands for defining all model attributes. If field has no extra parameter,
+you can just specify name and type (type in case of crystal language): `field_name: :Type`. Named tuple can be used
+instead of type. Next keys are supported:
 
 | argument | description |
 | --- | --- |
@@ -110,10 +114,12 @@ end
 | `:primary` | mark field as primary key (default is `false`) |
 | `:null` | allows field to be `nil` (default is `false` for all fields except primary key |
 | `:default` | default value which will be set during creating **new** object |
+| `:column` | database column name associated with this attribute (default is attribute name) |
 | `:getter` | if getter should be created (default - `true`) |
 | `:setter` | if setter should be created (default - `true`) |
 | `:virtual` | mark field as virtual - will not be stored and retrieved from db |
 | `:converter` | class be used to serialize/deserialize value |
+| `:auto` | indicate whether primary field is autoincrementable (by default `true` for `Int32` and `Int64`) |
 
 To define field converter create a class which implements next methods:
 
@@ -149,7 +155,7 @@ If you don't want to define all the table fields - pass `false` as second argume
 | `#{{field_name}}_changed?` | | shows if field was changed |
 | `#changed?` | | shows if any field was changed |
 | `#primary` | | value of primary key field |
-| `::primary` | | returns criterion for primary field (query dsl) |
+| `::primary` | | returns criterion for primary field (query DSL) |
 | `::primary_field_name` | | name of primary field |
 | `::primary_field_type` | | type of primary key |
 | `#new_record?` | | returns `true` if record has `nil` primary key (is not stored to db) |

@@ -8,7 +8,7 @@ describe Jennifer::QueryBuilder::MultiQueryRelationTree do
         tree = builder.call
         tree.add_relation(query, :contact, Passport, 1)
         tree.bucket[0].should eq({1, Passport.relation("contact")})
-        query._joins.should be_nil
+        query._joins?.should be_nil
       end
     end
   end

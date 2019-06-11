@@ -40,7 +40,7 @@ module Jennifer
         :string => 254,
       }
 
-      # NOTE: now is not used
+      # NOTE: ATM is not used
       TABLE_LOCK_TYPES = {
         "r"       => "READ",
         "rl"      => "READ LOCAL",
@@ -77,6 +77,13 @@ module Jennifer
         end
       end
 
+      def tables_column_count(tables)
+        Query["information_schema.COLUMNS"]
+          .where { _table_name.in(tables) & (_table_schema == Config.db) }
+          .group(:table_name)
+          .select { [_table_name.alias("table_name"), count.alias("count")] }
+      end
+
       def table_exists?(table)
         Query["information_schema.TABLES"]
           .where { (_table_schema == Config.db) & (_table_name == table) }
@@ -89,7 +96,7 @@ module Jennifer
           .exists?
       end
 
-      def index_exists?(table, name)
+      def index_exists?(table, name : String)
         Query["information_schema.statistics"].where do
           (_table_name == table) &
             (_index_name == name) &
@@ -105,12 +112,8 @@ module Jennifer
         end.exists?
       end
 
-      def foreign_key_exists?(from_table, to_table)
-        name = self.class.foreign_key_name(from_table, to_table)
-        foreign_key_exists?(name)
-      end
-
-      def foreign_key_exists?(name)
+      def foreign_key_exists?(from_table, to_table = nil, column = nil, name : String? = nil)
+        name = self.class.foreign_key_name(from_table, to_table, column, name)
         Query["information_schema.KEY_COLUMN_USAGE"]
           .where { and(_constraint_name == name, _table_schema == Config.db) }
           .exists?
@@ -122,6 +125,24 @@ module Jennifer
                               " Instead of this only transaction was started.")
           yield t
         end
+      end
+
+      def explain(q)
+        body = sql_generator.explain(q)
+        args = q.sql_args
+        plan = [] of Array(String)
+        query(*parse_query(body, args)) do |rs|
+          rs.each do
+            row = %w()
+            12.times do
+              temp = rs.read
+              row << (temp.nil? ? "NULL" : temp.to_s)
+            end
+            plan << row
+          end
+        end
+
+        format_query_explain(plan)
       end
 
       def self.command_interface
@@ -137,6 +158,50 @@ module Jennifer
       def self.drop_database
         db_connection do |db|
           db.exec "DROP DATABASE #{Config.db}"
+        end
+      end
+
+      def self.database_exists? : Bool
+        db_connection do |db|
+          db.scalar <<-SQL,
+            SELECT EXISTS(
+              SELECT 1
+              FROM INFORMATION_SCHEMA.SCHEMATA
+              WHERE SCHEMA_NAME = ?
+            )
+          SQL
+          Config.db
+        end == 1
+      end
+
+      private def format_query_explain(plan : Array)
+        headers = %w(id select_type table partitions type possible_keys key key_len ref rows filtered Extra)
+        column_sizes = headers.map(&.size)
+        plan.each do |row|
+          row.each_with_index do |cell, column_i|
+            cell_size = cell.size
+            column_sizes[column_i] = cell_size if cell_size > column_sizes[column_i]
+          end
+        end
+
+        String.build do |io|
+          format_table_row(io, headers, column_sizes)
+
+          io << "\n"
+          io << column_sizes.map { |size| "-" * size }.join(" | ")
+          io << "\n"
+
+          plan.each_with_index do |row, row_i|
+            io << "\n" if row_i != 0
+            format_table_row(io, row, column_sizes)
+          end
+        end
+      end
+
+      private def format_table_row(io, row, column_sizes)
+        row.each_with_index do |cell, i|
+          io << " | " if i != 0
+          io << cell.ljust(column_sizes[i])
         end
       end
     end

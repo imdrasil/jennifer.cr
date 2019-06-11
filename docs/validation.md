@@ -370,7 +370,7 @@ class Player < Jennifer::Model::Base
   mapping(
     # ...
     health: Float64,
-    live_creature: { type: Bool, default: true, virtual: true}
+    live_creature: { type: Bool, default: true, virtual: true }
   )
 
   validates_numericality :health, greater_than: 0, if: :live_creature
@@ -384,7 +384,7 @@ class Player < Jennifer::Model::Base
   mapping(
     # ...
     health: Float64,
-    undead: { type: Bool, default: false, virtual: true}
+    undead: { type: Bool, default: false, virtual: true }
   )
 
   validates_numericality :health, greater_than: 0, if: !undead

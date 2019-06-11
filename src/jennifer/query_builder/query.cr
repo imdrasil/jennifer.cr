@@ -12,8 +12,16 @@ module Jennifer
       include Joining
       include Executables
 
-      {% for method in %i(having table limit offset raw_select table_aliases from lock joins order relations groups lock unions distinct) %}
+      alias UnionType = NamedTuple(query: Query, all: Bool)
+
+      {% for method in %i(having table limit offset raw_select table_aliases from lock distinct) %}
+        # :nodoc:
         def _{{method.id}}
+          @{{method.id}}
+        end
+
+        # :nodoc:
+        def _{{method.id}}?
           @{{method.id}}
         end
 
@@ -23,6 +31,14 @@ module Jennifer
         end
       {% end %}
 
+      {% for method in %i(groups joins unions order ctes) %}
+        # :nodoc:
+        def _{{method.id}}?
+          @{{method.id}}
+        end
+      {% end %}
+
+      # Table name to be specified in `FROM` clause.
       getter table : String = ""
 
       @having : Condition | LogicOperator?
@@ -33,59 +49,91 @@ module Jennifer
       @from : String | Query?
       @lock : String | Bool?
       @joins : Array(Join)?
-      @unions : Array(Query)?
+      @unions : Array(UnionType)?
+      @groups : Array(Criteria)?
+      @order : Array(OrderItem)?
+      @select_fields : Array(Criteria)?
+      @ctes : Array(CommonTableExpression)?
 
       def_clone
 
+      # Query filter to be rendered in `WHERE` clause.
       property tree : Condition | LogicOperator?
 
       def initialize
         @do_nothing = false
         @expression = ExpressionBuilder.new(@table)
-        @order = [] of OrderItem
-        @relations = [] of String
-        @groups = [] of Criteria
         @relation_used = false
         @table_aliases = {} of String => String
-        @select_fields = [] of Criteria
       end
 
       def initialize(@table)
         initialize
       end
 
+      # :nodoc:
+      def _select_fields!
+        @select_fields ||= [] of Criteria
+      end
+
+      # :nodoc:
+      def _groups!
+        @groups ||= [] of Criteria
+      end
+
+      # :nodoc:
+      def _joins!
+        @joins ||= [] of Join
+      end
+
+      # :nodoc:
+      def _unions!
+        @unions ||= [] of UnionType
+      end
+
+      # :nodoc:
+      def _order!
+        @order ||= [] of OrderItem
+      end
+
+      # :nodoc:
+      def _ctes!
+        @ctes ||= [] of CommonTableExpression
+      end
+
+      # Alias for `new(table).none`.
+      def self.null(table = "")
+        new(table).none
+      end
+
+      # Returns whether query should be executed.
       def do_nothing?
         @do_nothing
       end
 
-      def self.null
-        new.none
-      end
-
       protected def initialize_copy_without(other, except : Array(String))
-        {% for segment in %w(having limit offset raw_select from lock distinct) %}
+        {% for segment in %w(having limit offset raw_select from lock distinct order) %}
           @{{segment.id}} = other.@{{segment.id}}.clone unless except.includes?({{segment}})
         {% end %}
 
-        @order = except.includes?("order") ? [] of OrderItem : other.@order.clone
         @joins = other.@joins.clone unless except.includes?("join")
         @unions = other.@unions.clone unless except.includes?("union")
-        @groups = except.includes?("group") ? [] of Criteria : other.@groups.clone
+        @groups = other.@groups.clone unless except.includes?("group")
+        @ctes = other.@ctes.clone unless except.includes?("cte")
         @do_nothing = except.includes?("none") ? false : other.@do_nothing
-        @select_fields = except.includes?("select") ? [] of Criteria : other.@select_fields
+        @select_fields = other.@select_fields unless except.includes?("select")
         @tree = other.@tree.clone unless except.includes?("where")
 
         @table = other.@table.clone
         @table_aliases = other.@table_aliases.clone
 
         @relation_used = false
-        @relations = [] of String
         @expression = ExpressionBuilder.new(@table)
       end
 
       # Compare current object with given comparing generated sql query and parameters.
       #
-      # Is mostly used for testing
+      # Is used for testing.
       def eql?(other : Query)
         sql_args == other.sql_args && as_sql == other.as_sql
       end
@@ -94,6 +142,13 @@ module Jennifer
         false
       end
 
+      # Creates a clone of the query.
+      #
+      # ```
+      # query = Jennifer::Query["contacts"].where { _city == "Kyiv" }
+      # query.clone.where { _name.like("John%") }
+      # query.clone.where { _name.like("Peter%") }
+      # ```
       def clone
         clone = {{@type}}.allocate
         clone.initialize_copy(self)
@@ -101,6 +156,31 @@ module Jennifer
         clone
       end
 
+      # Creates a clone of the query without specified *parts*.
+      #
+      # Allowed values for *parts*:
+      #
+      # * select
+      # * raw_select
+      # * from
+      # * where
+      # * having
+      # * limit
+      # * offset
+      # * lock
+      # * distinct
+      # * order
+      # * join
+      # * union
+      # * group
+      # * none
+      # * cte
+      #
+      # Any eager loading isn't copied to a new query.
+      #
+      # ```
+      # Jennifer::Query["contacts"].where { _city == "Paris" }.except(["where"])
+      # ```
       def except(parts : Array(String))
         clone = {{@type}}.allocate
         clone.initialize_copy_without(self, parts)
@@ -108,25 +188,38 @@ module Jennifer
         clone
       end
 
+      # Returns current query expression builder.
       def expression_builder
         @expression
       end
 
       # Returns array of `Criteria` for `SELECT` query statement.
       def _select_fields : Array(Criteria)
-        if @select_fields.empty?
+        if @select_fields.nil?
           [@expression.star] of Criteria
         else
-          @select_fields
+          @select_fields.as(Array(Criteria))
         end
       end
 
+      # Builds query with related expression builder.
+      #
+      # Should be used instead of `.new`.
+      #
+      # ```
+      # Jennifer::Query.build("contacts").where { _name == "Jack London" }
+      # ```
       def self.build(*opts)
         q = new(*opts)
         q.expression_builder.query = q
         q
       end
 
+      # Alias for `.build`.
+      #
+      # ```
+      # Jennifer::Query["contacts"].where { _name == "Jack London" }
+      # ```
       def self.[](*opts)
         build(*opts)
       end
@@ -146,71 +239,78 @@ module Jennifer
         _joins!.each { |join| args.concat(join.sql_args) } if @joins
         args.concat(@tree.not_nil!.sql_args) if @tree
         args.concat(@having.not_nil!.sql_args) if @having
+        _ctes!.each { |cte| args.concat(cte.sql_args) } if @ctes
+        _unions!.each { |union_tuple| args.concat(union_tuple[:query].sql_args) } if @unions
         args
       end
 
+      # :nodoc:
       def with_relation!
         @relation_used = true
       end
 
+      # :nodoc:
       def with_relation?
         @relation_used
       end
 
       def empty?
         @tree.nil? && @limit.nil? && @offset.nil? &&
-          (@joins.nil? || @joins.not_nil!.empty?) && @order.empty? && @relations.empty?
+          @joins.nil? && @order.nil?
       end
 
-      # Allows executing a block in query context.
+      # Allows executing a block in the query context.
+      #
+      # ```
+      # Jennifer::Query["contacts"].exec { where { _name == "Jack London" } }
+      # ```
       def exec(&block)
         with self yield
         self
       end
 
-      # Mutates query applying all modification from the block.
+      # Mutates query applying all modification returned from the block.
+      #
+      # Yields the expression builder and block is also executed with expression builder context.
       #
       # ```
       # User.where { _email == "example@test.com" }
       # ```
       def where(&block)
-        other = (with @expression yield)
+        other = (with @expression yield @expression)
         set_tree(other)
         self
       end
 
       # Specifies raw SELECT clause value.
+      #
+      # ```
+      # Jennifer::Query["contacts"].select("name as first_name, age as count").results
+      # ```
       def select(raw_sql : String)
         @raw_select = raw_sql
         self
       end
 
       # Specifies criterion to be used in SELECT clause.
-      def select(field : Criteria)
-        @select_fields << field
-        field.as(RawSql).without_brackets if field.is_a?(RawSql)
-        self
-      end
-
-      # Specifies column name to be used in SELECT clause.
       #
-      # TODO: remove as deprecated.
-      def select(field_name : Symbol)
-        @select_fields << @expression.c(field_name.to_s)
+      # ```
+      # Jennifer::Query["contacts"].exec { select(expression._name.alias("first_name")) }.results
+      # ```
+      def select(field : Criteria)
+        _select_fields! << field
+        field.as(RawSql).without_brackets if field.is_a?(RawSql)
         self
       end
 
       # Specifies column names to be used in SELECT clause.
       def select(*fields : Symbol)
-        fields.each { |f| @select_fields << @expression.c(f.to_s) }
+        fields.each { |f| _select_fields! << @expression.c(f.to_s) }
         self
       end
 
       def select(fields : Array(Criteria))
-        fields.each do |f|
-          @select_fields << f
-          f.as(RawSql).without_brackets if f.is_a?(RawSql)
-        end
+        fields.each { |f| self.select(f) }
         self
       end
 
@@ -219,19 +319,30 @@ module Jennifer
         fields.each do |f|
           f.as(RawSql).without_brackets if f.is_a?(RawSql)
         end
-        @select_fields.concat(fields)
+        _select_fields!.concat(fields)
         self
       end
 
       # Specifies table *from* which the records will be fetched.
       #
-      # Can accept other query object.
+      # Can accept other query.
+      #
+      # ```
+      # # FROM contacts
+      # Jennifer::Query[""].from("contacts") # FROM contacts
+      # # FROM (SELECT users.* WHERE users.active)
+      # Jennifer::Query["contacts"].from(Jennifer::Query["users"].where { _active })
+      # ```
       def from(from : String | Query)
         @from = from
         self
       end
 
       # Returns a chainable query with zero records.
+      #
+      # ```
+      # Jennifer::Query["contacts"].where { _name == "Jack London" }.none
+      # ```
       def none
         @do_nothing = true
         self
@@ -250,8 +361,16 @@ module Jennifer
         self
       end
 
-      def union(query)
-        (@unions ||= [] of Query) << query
+      # Adds *query* to `UNION`.
+      #
+      # To use `UNION ALL` pass `true` as a second argument.
+      #
+      # ```
+      # Jennifer::Query["contacts"].union(Jennifer::Query["users"])
+      # Jennifer::Query["contacts"].union(Jennifer::Query["users"], true)
+      # ```
+      def union(query, all : Bool = false)
+        _unions! << { query: query, all: all }
         self
       end
 
@@ -261,50 +380,127 @@ module Jennifer
         self
       end
 
-      # Groups by given column realizes it as is
+      # Groups by given column realizes it as is.
+      #
+      # ```
+      # Jennifer::Query["contacts"].group("first_name || last_name")
+      # ```
       def group(column : String)
-        @groups << @expression.sql(column, false)
+        _groups! << @expression.sql(column, false)
         self
       end
 
-      # Groups by given column realizes it as current table's field
+      # Groups by given *column* realizing it as a current table's field.
+      #
+      # ```
+      # Jennifer::Query["contacts"].group(:name)
+      # ```
       def group(column : Symbol)
-        @groups << @expression.c(column.to_s)
+        _groups! << @expression.c(column.to_s)
         self
       end
 
       # Groups by given columns realizes them as are
       def group(*columns : String)
-        columns.each { |c| @groups << @expression.sql(c, false) }
+        columns.each { |c| _groups! << @expression.sql(c, false) }
         self
       end
 
       # Groups by given columns realizes them as current table's ones
       def group(*columns : Symbol)
-        columns.each { |c| @groups << @expression.c(c.to_s) }
+        columns.each { |c| _groups! << @expression.c(c.to_s) }
         self
       end
 
       def group(column : Criteria)
         column.as(RawSql).without_brackets if column.is_a?(RawSql)
-        @groups << column
+        _groups! << column
         self
       end
 
       def group(&block)
         fields = with @expression yield
         fields.each { |f| f.as(RawSql).without_brackets if f.is_a?(RawSql) }
-        @groups.concat(fields)
+        _groups!.concat(fields)
+        self
+      end
+
+      # Adds CTE (common table expression) to the query.
+      #
+      # You can define multiple CTE for one query.
+      #
+      # ```
+      # # WITH RECURSIVE test AS (SELECT users.* FROM users )
+      # Jennifer::Query["contacts"].with("test", Jennifer::Query["users"])
+      #
+      # # WITH RECURSIVE test AS (SELECT users.* FROM users )
+      # Jennifer::Query["contacts"].with("test", Jennifer::Query["users"], true)
+      # ```
+      def with(name : String | Symbol, query : self, recursive : Bool = false)
+        _ctes! << CommonTableExpression.new(name.to_s, query, recursive)
+        self
+      end
+
+      # Merges other query into current one.
+      #
+      # This method merges the following query components:
+      #
+      # - `JOIN`s
+      # - `GROUP BY`s
+      # - `ORDER`s
+      # - `CTE`s
+      # - `HAVING`s
+      # - `WHERE`s
+      # - do nothing
+      #
+      # ```
+      # # returns contacts that have main address
+      # addresses_condition = Jennifer::Query["addresses"].where { _main }
+      # Jennifer::Query["contacts"].join("addresses") { _contact_id == _contacts__id }
+      #   .merge(addresses_condition)
+      # ```
+      #
+      # This method provides mechanism to reuse some predefined queries for involved tables.
+      # It makes real sense when is used in the scope of `ModelQuery` and models.
+      #
+      # ```
+      # Contacts.all.relation(:addresses).merge(Address.all.main)
+      # ```
+      def merge(other : self)
+        {% for segment in %w(order joins groups ctes) %}
+          _{{segment.id}}!.concat(other._{{segment.id}}!) if other._{{segment.id}}?
+        {% end %}
+
+        if other._having?
+          @having =
+            if _having?
+              _having! & other._having!
+            else
+              other._having!
+            end
+        end
+
+        set_tree(other.tree) if other.tree
+
+        @do_nothing = @do_nothing || other.do_nothing?
         self
       end
 
       # Specifies a limit for the number of records to retrieve.
+      #
+      # ```
+      # Jennifer::Query["contacts"].limit(10)
+      # ```
       def limit(count : Int32)
         @limit = count
         self
       end
 
       # Specifies the number of rows to skip before returning rows.
+      #
+      # ```
+      # Jennifer::Query["contacts"].offset(10)
+      # ```
       def offset(count : Int32)
         @offset = count
         self
@@ -332,11 +528,12 @@ module Jennifer
 
       # Joins given *other* condition statement to the main condition tree.
       def set_tree(other : LogicOperator | Condition)
-        @tree = if !@tree.nil?
-                  @tree.as(Condition | LogicOperator) & other
-                else
-                  other
-                end
+        @tree =
+          if @tree
+            @tree.as(Condition | LogicOperator) & other
+          else
+            other
+          end
         self
       end
 
@@ -358,9 +555,11 @@ module Jennifer
       def filterable?
         select_filterable_arguments? ||
           (@from.is_a?(Query) && @from.as(Query).filterable?) ||
-          (!@joins.nil? && _joins!.any?(&.filterable?)) ||
+          (_joins? && _joins!.any?(&.filterable?)) ||
           (!@tree.nil? && @tree.not_nil!.filterable?) ||
-          (!@having.nil? && @having.not_nil!.filterable?)
+          (!@having.nil? && @having.not_nil!.filterable?) ||
+          (!@unions.nil? && _unions!.any?(&.[:query].filterable?)) ||
+          (!@ctes.nil? && _ctes!.any?(&.filterable?))
       end
 
       #
@@ -368,12 +567,12 @@ module Jennifer
       #
 
       private def select_filterable_arguments?
-        @select_fields.any?(&.filterable?)
+        @select_fields && _select_fields!.any?(&.filterable?)
       end
 
       private def select_filterable_arguments
         args = [] of DBAny
-        @select_fields.each do |field|
+        _select_fields!.each do |field|
           args.concat(field.sql_args) if field.filterable?
         end
         args

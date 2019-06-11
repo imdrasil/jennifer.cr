@@ -209,7 +209,7 @@ describe Jennifer::QueryBuilder::Query do
   describe "#group" do
     context "with symbol" do
       it "creates criteria for given fields and current table" do
-        fields = described_class["table"].group(:f1)._groups
+        fields = described_class["table"].group(:f1)._groups!
         fields.size.should eq(1)
         fields[0].field.should eq("f1")
         fields[0].table.should eq("table")
@@ -218,7 +218,7 @@ describe Jennifer::QueryBuilder::Query do
 
     context "with symbol tuple" do
       it "adds all as criteria" do
-        fields = described_class["table"].group(:f1, :f2)._groups
+        fields = described_class["table"].group(:f1, :f2)._groups!
         fields.size.should eq(2)
         fields[0].field.should eq("f1")
         fields[1].field.should eq("f2")
@@ -227,7 +227,7 @@ describe Jennifer::QueryBuilder::Query do
 
     context "with criteria" do
       it "adds it to select fields" do
-        fields = described_class["table"].group(Contact._id)._groups
+        fields = described_class["table"].group(Contact._id)._groups!
         fields.size.should eq(1)
         fields[0].field.should eq("id")
         fields[0].table.should eq("contacts")
@@ -235,7 +235,7 @@ describe Jennifer::QueryBuilder::Query do
 
       context "as raw sql" do
         it "removes brackets" do
-          field = described_class["table"].group(Contact.context.sql("some sql"))._groups[0]
+          field = described_class["table"].group(Contact.context.sql("some sql"))._groups![0]
           field.identifier.should eq("some sql")
         end
       end
@@ -243,14 +243,14 @@ describe Jennifer::QueryBuilder::Query do
 
     context "with block" do
       it "yield expression builder as current context and accepts array" do
-        fields = described_class["table"].group { [_f1, Contact._id] }._groups
+        fields = described_class["table"].group { [_f1, Contact._id] }._groups!
         fields.size.should eq(2)
         fields[0].field.should eq("f1")
         fields[0].table.should eq("table")
       end
 
       it "removes brackets from raw sql" do
-        field = described_class["table"].group { [sql("f1")] }._groups[0]
+        field = described_class["table"].group { [sql("f1")] }._groups![0]
         field.identifier.should eq("f1")
       end
     end
@@ -284,7 +284,16 @@ describe Jennifer::QueryBuilder::Query do
     it "adds query to own array of unions" do
       q = Jennifer::Query["table"]
       q.union(Jennifer::Query["table2"]).should eq(q)
-      q._unions!.empty?.should be_false
+      q._unions!.should_not be_empty
+    end
+  end
+
+  describe "#cte" do
+    describe "top level" do
+      it do
+        Factory.create_contact(name: "John", age: 15)
+        Jennifer::Query["cte"].with("cte", Jennifer::Query["contacts"]).count.should eq(1)
+      end
     end
   end
 
@@ -344,25 +353,25 @@ describe Jennifer::QueryBuilder::Query do
     it "excludes order if given" do
       q = Query["contacts"].order(age: "asc")
       clone = q.except(["order"])
-      clone._order.empty?.should be_true
+      clone._order?.should be_falsey
     end
 
     it "excludes join if given" do
       q = Query["contacts"].join("passports") { _contact_id == _contacts__id }
       clone = q.except(["join"])
-      clone._joins.nil?.should be_true
+      clone._joins?.should be_nil
     end
 
     it "excludes join if given" do
       q = Query["contacts"].union(Query["contacts"])
       clone = q.except(["union"])
-      clone._unions.nil?.should be_true
+      clone._unions?.should be_falsey
     end
 
     it "excludes group if given" do
       q = Query["contacts"].group(:age)
       clone = q.except(["group"])
-      clone._groups.empty?.should be_true
+      clone._groups?.should be_falsey
     end
 
     it "excludes muting if given" do
@@ -382,6 +391,12 @@ describe Jennifer::QueryBuilder::Query do
       q = Query["contacts"].where { _age < 99 }
       clone = q.except(["where"])
       clone.as_sql.should_not match(/WHERE/)
+    end
+
+    it "excludes CTE if given" do
+      q = Query["contacts"].with("test", Query["users"])
+      clone = q.except(["cte"])
+      clone.as_sql.should_not match(/WITH/)
     end
 
     it "expression builder follow newly created object" do
@@ -491,6 +506,52 @@ describe Jennifer::QueryBuilder::Query do
         expect_query_silence do
           Query["contacts"].none.find_records_by_sql("INVALID SQL").should be_empty
         end
+      end
+    end
+  end
+
+  describe "#merge" do
+    describe "having" do
+      it do
+        Query["contacts"].merge(Query["users"].having { _id > 1 }).as_sql.should match(/HAVING users\.id >/)
+      end
+    end
+
+    describe "order" do
+      it do
+        Query["contacts"].merge(Query["users"].order(id: :desc)).as_sql.should match(/ORDER BY users\.id DESC/)
+      end
+    end
+
+    describe "join" do
+      it do
+        Query["contacts"].merge(Query["users"].join("addresses") { _user_id == c("id", "users") }).as_sql
+          .should match(/JOIN addresses ON addresses.user_id = users\.id/)
+      end
+    end
+
+    describe "group by" do
+      it do
+        Query["contacts"].merge(Query["users"].group(:id)).as_sql.should match(/GROUP BY users\.id/)
+      end
+    end
+
+    describe "CTE" do
+      it do
+        query = Query["contacts"].with("test", Contact.all)
+        Query["contacts"].merge(query).as_sql.should match(/WITH test AS \(SELECT contacts\.\* FROM contacts \)/)
+      end
+    end
+
+    describe "where" do
+      it do
+        Query["contacts"].merge(Query["users"].where { _id > 1 }).as_sql.should match(/WHERE users\.id >/)
+      end
+    end
+
+    describe "do nothing" do
+      it do
+        Query["contacts"].merge(Query["users"].none).do_nothing?.should be_true
       end
     end
   end

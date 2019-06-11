@@ -1,0 +1,17 @@
+default: &default
+  host: localhost
+  migration_files_path: "./examples/migrations"
+  model_files_path: "./examples/models"
+  db: jennifer_test
+
+postgres:
+  <<: *default
+  adapter: postgres
+
+mysql:
+  <<: *default
+  command_shell: docker
+  host: "127.0.0.1"
+  adapter: mysql
+  user: root
+  docker_container: mysqld

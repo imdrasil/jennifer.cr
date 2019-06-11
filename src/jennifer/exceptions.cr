@@ -35,7 +35,7 @@ module Jennifer
     end
   end
 
-  # Wraps native query driver exception adding query information.
+  # Wraps driver query native exception with some extra information.
   class BadQuery < BaseException
     def initialize(original_message, query, args)
       @message = "#{original_message}.\nOriginal query was:\n#{BadQuery.format_query(query, args)}"
@@ -109,7 +109,7 @@ module Jennifer
     end
   end
 
-  # Exception class to stopping model callback invoking.
+  # Is used to stop callback invocation.
   class Skip < BaseException
     def initialize
       @message = ""
@@ -166,7 +166,7 @@ module Jennifer
 
   class AmbiguousSQL < BaseException
     def initialize(sql)
-      @message = "Ambiguous raw SQL around '%' in '#{sql}'"\
+      @message = "Ambiguous raw SQL around '%' in '#{sql}'" \
                  " - please pass any string including '%' via query parameters."
     end
   end

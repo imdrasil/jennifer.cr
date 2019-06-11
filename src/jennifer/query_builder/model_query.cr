@@ -59,7 +59,7 @@ module Jennifer
         adapter.query(query, args) do |rs|
           begin
             rs.each do
-              results << T.build(rs)
+              results << T.new(rs)
             end
           rescue e : Exception
             rs.read_to_end
@@ -72,13 +72,15 @@ module Jennifer
       # Executes request and maps result set to objects with loading any requested related objects
       def to_a
         return [] of T if do_nothing?
+
         add_aliases if @relation_used
         return to_a_with_relations if @eager_load
+
         result = [] of T
         adapter.select(self) do |rs|
           rs.each do
             begin
-              result << T.build(rs)
+              result << T.new(rs)
             rescue e : Exception
               rs.read_to_end
               raise e

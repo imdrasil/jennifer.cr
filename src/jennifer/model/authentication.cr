@@ -26,7 +26,7 @@ module Jennifer
         {% end %}
 
         def authenticate(given_password)
-          self if Crypto::Bcrypt::Password.new({{password_hash.id}}) == given_password
+          self if Crypto::Bcrypt::Password.new({{password_hash.id}}).verify given_password
         end
 
         def {{password.id}}=(unencrypted_password : String)

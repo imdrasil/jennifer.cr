@@ -1,11 +1,43 @@
 module Jennifer
   module QueryBuilder
+    # Stands for creating criteria for the query.
+    #
+    # This class provides straight forward way to define criteria and a bit (pretty huge one)
+    # of metaprogramming.
+    #
+    # You can use standard method `#c` to create criteria for current table or for any other (passing it's name
+    # as a 2nd argument):
+    #
+    # ```
+    # Jennifer::Query["contacts"].join("addresses") { c("contact_id") == c("id", "contacts") }
+    # ```
+    #
+    # Also you can use "*magic*" underscored methods to specify current table fields putting "_" before a name:
+    #
+    # ```
+    # Jennifer::Query["contacts"].join("addresses") { _contact_id == c("id", "contacts") }
+    # ```
+    #
+    # Obviously, you also can specify same way table name for the field. Just put "__" (double underscore) between table name
+    # and field name as well.
+    #
+    # ```
+    # Jennifer::Query["contacts"].join("addresses") { _contact_id == _contacts__id }
+    # ```
+    #
+    # Because of double underscore between symbols between field and table you can safely reference tables with "_".
+    #
+    # ```
+    # Jennifer::Query["facebook_profiles"].join("addresses") { _profile_id == _facebook_profiles__id }
+    # ```
     class ExpressionBuilder
       property query : Query?
 
+      getter table : String, relation : String?
+
       def_clone
 
-      def initialize(@table : String, @relation : String? = nil, @query = nil)
+      def initialize(@table, @relation = nil, @query = nil)
       end
 
       # Initialize object copy;
@@ -16,25 +48,36 @@ module Jennifer
       end
 
       # Query's model primary field criterion.
+      #
+      # Can be used only in a scope of `IModelQuery`.
       def primary
         query.not_nil!.as(IModelQuery).model_class.primary
-      end
-
-      # Adds plain query *query* with filtered arguments *args*.
-      #
-      # If you need to wrap query set *use_brackets* to `true`.
-      def sql(query : String, args : Array(DBAny) = [] of DBAny, use_brackets : Bool = true)
-        RawSql.new(query, args, use_brackets)
       end
 
       # Adds plain query *query*.
       #
       # If you need to wrap query set *use_brackets* to `true`.
+      #
+      # ```
+      # Jennifer::Query[""].select { [sql("1", false)] } # => SELECT 1
+      # Jennifer::Query[""].select { [sql("1")] }        # => SELECT (1)
+      # Jennifer::Query[""].select { [sql("TIMESTAMP %s AT TIME ZONE %s", ["2001-02-16 20:38:40", "MST"], false)] }
+      # # => SELECT TIMESTAMP '2001-02-16 20:38:40' AT TIME ZONE 'MST';
+      # ```
+      def sql(query : String, args : Array(DBAny) = [] of DBAny, use_brackets : Bool = true)
+        RawSql.new(query, args, use_brackets)
+      end
+
+      # ditto
       def sql(query : String, use_brackets : Bool = true)
         RawSql.new(query, use_brackets)
       end
 
       # Creates criterion for current table by given name *name*.
+      #
+      # ```
+      # Jennifer::Query["users"].where { c("id") }
+      # ```
       def c(name : String)
         Criteria.new(name, @table, @relation)
       end
@@ -55,24 +98,69 @@ module Jennifer
       end
 
       # Creates grouping for the given *condition*.
+      #
+      # ```
+      # Jennifer::Query["users"].where { c1 & g(c2 | c3) }
+      # ```
       def g(condition)
         Grouping.new(condition)
       end
 
+      # Alias for #g.
       def group(condition)
         g(condition)
       end
 
+      # Creates `ANY` SQL statement.
+      #
+      # ```
+      # nested_query = Jennifer::Query["addresses"].where { _main }.select(:contact_id)
+      # Jennifer::Query["contacts"].where { _id == any(nested_query) }
+      # ```
       def any(query : Query)
         Any.new(query)
       end
 
+      # Creates `ALL` SQL statement.
+      #
+      # ```
+      # nested_query = Jennifer::Query["contacts"].select(:age).where { _tag == "phone" }
+      # Jennifer::Query["contacts"].where { _age > all(nested_query) }
+      # ```
       def all(query : Query)
         All.new(query)
       end
 
+      # Creates select star for *table*.
+      #
+      # ```
+      # Jennifer::Query["users"].select { [star("contacts")] } # => SELECT contacts.* FROM users
+      # ```
       def star(table : String = @table)
         Star.new(table)
+      end
+
+      # Returns reference to the *field* in upsert operation.
+      #
+      # ```
+      # Jennifer::Query["orders"].upsert(%w(name uid price), [["Order 1", 123, 3]], %w(uid)) do
+      #   { :price => values(:price) + _price }
+      # end
+      # ```
+      def values(field : Symbol)
+        Values.new(field)
+      end
+
+      # Cases *expression* to the given *type*.
+      #
+      # *type* field is pasted as-is.
+      #
+      # ```
+      # Jennifer::Query[""].select { [cast(sql("'100'", false), "integer").alias("field")] }
+      # # => SELECT CAST('100' AS INTEGER) AS field
+      # ```
+      def cast(expression, type : String)
+        Cast.new(expression, type)
       end
 
       # Combines given *first_condition*, *second_condition* and all other *conditions* by `AND` operator.
@@ -95,11 +183,10 @@ module Jennifer
       #
       # ```
       # User.all.where { or(_name.like("%on"), _age > 3) }
-      # # WHERE (users.name LIKE '%on' OR users.age > 3)
+      # # => WHERE (users.name LIKE '%on' OR users.age > 3)
+      # ```
       def or(first_condition, second_condition, *conditions)
-        g(
-          conditions.reduce(first_condition | second_condition) { |sum, e| sum |= e }
-        )
+        g(conditions.reduce(first_condition | second_condition) { |sum, e| sum |= e })
       end
 
       # Combines given *first_condition*, *second_condition* and all other *conditions* by `XOR` operator.
@@ -108,7 +195,8 @@ module Jennifer
       #
       # ```
       # User.all.where { xor(_name.like("%on"), _age > 3) }
-      # # WHERE (users.name LIKE '%on' XOR users.age > 3)
+      # # => WHERE (users.name LIKE '%on' XOR users.age > 3)
+      # ```
       def xor(first_condition, second_condition, *conditions)
         g(
           conditions.reduce(first_condition.xor second_condition) { |sum, e| sum.xor e }

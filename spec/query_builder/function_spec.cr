@@ -1,6 +1,6 @@
 require "../spec_helper"
 
-Jennifer::QueryBuilder::Function.define("dummy") do
+Jennifer::QueryBuilder::Function.define("dummy", arity: -1) do
   def as_sql(generator)
     "dummy(#{operands_to_sql(generator)})"
   end
@@ -50,6 +50,20 @@ describe Jennifer::QueryBuilder::Function do
 
   # Functions ====================
 
+  describe "CoalesceFunction" do
+    describe "#as_sql" do
+      it do
+        Jennifer::QueryBuilder::CoalesceFunction.new("asd", Factory.build_criteria).as_sql
+          .should eq("COALESCE(%s, tests.f1)")
+      end
+    end
+
+    it do
+      Factory.create_contact
+      Query["contacts"].select { [coalesce(nil, _name).alias("test")] }.results.map(&.test).should eq(["Deepthi"])
+    end
+  end
+
   describe "LowerFunction" do
     describe "#as_sql" do
       it do
@@ -59,12 +73,12 @@ describe Jennifer::QueryBuilder::Function do
 
     it do
       Factory.create_contact(name: "asd")
-      Jennifer::Query["contacts"].where { _name == lower("ASD") }.exists?.should be_true
+      Query["contacts"].where { _name == lower("ASD") }.exists?.should be_true
     end
 
     it do
       Factory.create_contact(name: "ASD")
-      Jennifer::Query["contacts"].where { lower(_name) == "asd" }.exists?.should be_true
+      Query["contacts"].where { lower(_name) == "asd" }.exists?.should be_true
     end
 
     it do
@@ -146,10 +160,7 @@ describe Jennifer::QueryBuilder::Function do
 
     it do
       Factory.create_contact
-      time = db_specific(
-        mysql: -> { Time.now + Time.now.offset.seconds },
-        postgres: -> { Time.utc_now }
-      )
+      time = Time.utc_now
       Jennifer::Query["contacts"].select { [now.alias("now")] }.first!.now(Time).should be_close(time, 1.second)
     end
   end
@@ -228,6 +239,59 @@ describe Jennifer::QueryBuilder::Function do
         mysql: -> { res.v(Float64).should eq(-2) },
         postgres: -> { res.v(PG::Numeric).should eq(-2) }
       )
+    end
+  end
+
+  describe "CountFunction" do
+    it do
+      Factory.create_contact(name: "Asd", gender: "male", age: 18)
+      Factory.create_contact(name: "BBB", gender: "female", age: 18)
+      Factory.create_contact(name: "Asd", gender: "male", age: 20)
+      match_array(Query["contacts"].select { [count.alias("count")] }.group(:gender).to_a.map(&.count), [2, 1])
+    end
+  end
+
+  describe "MaxFunction" do
+    it do
+      Factory.create_contact(name: "Asd", gender: "male", age: 18)
+      Factory.create_contact(name: "BBB", gender: "female", age: 19)
+      Factory.create_contact(name: "Asd", gender: "male", age: 20)
+      Factory.create_contact(name: "BBB", gender: "female", age: 21)
+      match_array(Query["contacts"].select { [max(_age).alias("max")] }.group(:gender).to_a.map(&.max), [20, 21])
+    end
+  end
+
+  describe "MinFunction" do
+    it do
+      Factory.create_contact(name: "Asd", gender: "male", age: 18)
+      Factory.create_contact(name: "BBB", gender: "female", age: 19)
+      Factory.create_contact(name: "Asd", gender: "male", age: 20)
+      Factory.create_contact(name: "BBB", gender: "female", age: 21)
+      match_array(Query["contacts"].select { [min(_age).alias("min")] }.group(:gender).to_a.map(&.min), [18, 19])
+    end
+  end
+
+  describe "SumFunction" do
+    it do
+      Factory.create_contact(name: "Asd", gender: "male", age: 18)
+      Factory.create_contact(name: "BBB", gender: "female", age: 19)
+      Factory.create_contact(name: "Asd", gender: "male", age: 20)
+      Factory.create_contact(name: "BBB", gender: "female", age: 21)
+      match_array(Query["contacts"].select { [sum(_age).alias("sum")] }.group(:gender).to_a.map(&.sum.as(Number).to_f), [38.0, 40.0])
+    end
+  end
+
+  describe "AvgFunction" do
+    it do
+      Factory.create_contact(name: "Asd", gender: "male", age: 18)
+      Factory.create_contact(name: "BBB", gender: "female", age: 19)
+      Factory.create_contact(name: "Asd", gender: "male", age: 20)
+      Factory.create_contact(name: "BBB", gender: "female", age: 21)
+      res = db_specific(
+        mysql: -> { Query["contacts"].select { [avg(_age).alias("avg")] }.group(:gender).to_a.map(&.avg.as(Float64)) },
+        postgres: -> { Query["contacts"].select { [avg(_age)] }.group(:gender).to_a.map(&.avg.as(PG::Numeric)) }
+      )
+      match_each([19, 20], res)
     end
   end
 end

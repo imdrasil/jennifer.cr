@@ -5,7 +5,7 @@
 Generator will create template file for you with next name  pattern "timestamp_your_underscored_migration_name.cr". Empty file looks like this:
 
 ```crystal
-class YourCamelcasedMigrationName20170119011451314 < Jennifer::Migration::Base
+class YourCamelCasedMigrationName < Jennifer::Migration::Base
   def up
   end
 
@@ -104,32 +104,32 @@ drop_materialized_view("female_contacts")
 
 To alter existing table use next methods:
 
- - `#change_column(name, [new_name], options)` - to change column definition; postgres has slightly another implementation of this than mysql one - check source code for details;
- - `#add_column(name, type, options)` - add new column;
- - `#drop_column(name)` - drops existing column
- - `#add_index(name : String, field : Symbol, type : Symbol, order : Symbol?, length : Int32?)` - adds new index (postgres doesn't support length parameter and only support `:unique` type);
- - `#drop_index(name : String)` - drops existing index;
- - `#add_foreign_key(from_table, to_table, column = nil, primary_key = nil, name = nil)` - adds foreign key constraint;
- - `drop_foreign_key(from_table, to_table, name = nil)` - drops foreign key constraint;
- - `#rename_table(new_name)` - renames table.
+ - `#change_column` - to change column definition;
+ - `#add_column` - adds new column;
+ - `#drop_column` - drops existing column;
+ - `#add_index` - adds new index;
+ - `#drop_index` - drops existing index;
+ - `#add_foreign_key` - adds foreign key constraint;
+ - `drop_foreign_key` - drops foreign key constraint;
+ - `#rename_table` - renames table.
 
 Also next support methods are available:
 
-- `#table_exists?(name)`
-- `#index_exists?(table, name)`
-- `#column_exists?(table, name)`
-- `#foreign_key_exists?(from_table, to_table)`
-- `#data_type_exists?(name)` for postgres ENUM
-- `#material_view_exists?(name)`
+- `#table_exists?`
+- `#index_exists?`
+- `#column_exists?`
+- `#foreign_key_exists?`
+- `#enum_exists?` (for postgres ENUM only)
+- `#material_view_exists?`
 
-Here is quick example:
+Here is a quick example:
 
 ```crystal
 def up
   change_table(:contacts) do |t|
-    t.change_column(:age, :short, {default: 0})
+    t.change_column(:age, :short, { :default => 0 })
     t.add_column(:description, :text)
-    t.add_index("contacts_description_index", :description, type: :uniq, order: :asc)
+    t.add_index(:description, type: :uniq, order: :asc)
   end
 
   change_table(:addresses) do |t|
@@ -139,7 +139,7 @@ end
 
 def down
   change_table(:contacts) do |t|
-    t.change_column(:age, :integer, {default: 0})
+    t.change_column(:age, :integer, { :default => 0 })
     t.drop_column(:description)
   end
 
@@ -155,33 +155,37 @@ Also plain SQL could be executed as well:
 execute("ALTER TABLE addresses CHANGE street st VARCHAR(20)")
 ```
 
-All changes are executed one by one so you also could add data changes here (in `up` method) but if execution of `up` method fails - `down` method will be called and all process will stop - be ready for such behavior.
+All changes are executed one by one so you also could add data changes here (in `#up` and/or `#down`).
 
-To be sure that your db is up to date before run tests of your application, add `Jennifer::Migration::Runner.migrate`.
+To be sure that your db is up to date, add `Jennifer::Migration::Runner.migrate` in `spec_helper.cr`.
 
 #### Enum
 
-Now enums are supported as well but it has different implementation for adapters. For mysql is enough just write down all values:
+Now enums are supported as well but each adapter has own implementation. For mysql is enough just write down all values:
 
 ```crystal
 create_table(:contacts) do |t|
-  t.enum(:gender, values: ["male", "female"])
+  t.enum(:gender, ["male", "female"])
 end
 ```
 
-Postgres provide much more flexible and complex behavior. Using it you need to create it firstly:
+Postgres provides much more flexible and complex behavior. Using it you need to create enum firstly:
 
 ```crystal
 create_enum(:gender_enum, ["male", "female"])
+
 create_table(:contacts) do |t|
-  t.string :name, {:size => 30}
+  t.string :name, { :size => 30 }
   t.integer :age
   t.field :gender, :gender_enum
   t.timestamps
 end
-change_enum(:gender_enum, {:add_values => ["unknown"]})
-change_enum(:gender_enum, {:rename_values => ["unknown", "other"]})
-change_enum(:gender_enum, {:remove_values => ["other"]})
+
+change_enum(:gender_enum, { :add_values => ["unknown"] })
+
+change_enum(:gender_enum, { :rename_values => ["unknown", "other"] })
+
+change_enum(:gender_enum, { :remove_values => ["other"] })
 ```
 
 For more details check source code and PostgreSQL docs.

@@ -1,105 +1,196 @@
+require "./field_declaration"
+require "./common_mapping"
+
 module Jennifer
   module Model
+    # Contains macros to define model mapping.
+    #
+    # To define model mapping use `.mapping` macro. It accepts hash, tuple and splatted tuple,
+    # where keys are model attributes (they reflects column names but this can be overided) and values -
+    # mapping properties. Mapping value can be `Class`, `HashLiteral`, `NamedTupleLiteral` or constant
+    # that can be resolved as `HashLiteral` or `NamedTupleLiteral`.
+    #
+    # Available mapping properties:
+    #
+    # * `:type` - data type class (e.g. `Int32`);
+    # * `:primary` - whether field is primary - at least one file of a model must be primary;
+    # * `:null` - whether field is nillable; another way to define this is specify `type` as union with
+    # the second `Nil` (e.g. `Int32?`);
+    # * `:default` - attribute default value that is assigned when new object is created and no value
+    # is specified;
+    # * `:column` - database column name associated with this attribute (default is attribute name);
+    # * `:getter` - whether attribute reader should be generated (`true` by default);
+    # * `:setter` - whether attribute writer should be generated (`true` by default);
+    # * `:virtual` - whether attribute is virtual (will not be stored to / retrieved from database);
+    # * `:converter` - class to be used to serialize/deserialize data.
+    # * `:auto` - mark primary key as autoincrementable - it's value will be assigned by database automatically
+    # (`true` for `Int32` & `Int64`)
+    #
+    # ```
+    # class Contact < Jennifer::Model::Base
+    #   with_timestamps
+    #   mapping(
+    #     id: Primary32, # same as { type: Int32, primary: true }
+    #     name: String,
+    #     gender: { type: String? },
+    #     age: { type: Int32, default: 10 },
+    #     description: String?,
+    #     created_at: Time?,
+    #     updated_at: Time | Nil
+    #   )
+    # end
+    # ```
+    #
+    # ### Mapping type
+    #
+    # Constants used as a `:type` value and presents subset of mapping properties are called **mapping type**.
+    # To use them you should firstly register it
+    #
+    # ```
+    # class ApplicationRecord < Jennifer::Model::Base
+    #   EmptyString = {
+    #     type: String,
+    #     default: ""
+    #   }
+    #
+    #   {% TYPES << "EmptyString" %}
+    #   # or if this is outside of model or view scope
+    #   {% ::Jennifer::Macros::TYPES << "EmptyString" %}
+    # end
+    # ```
+    #
+    # For more details about exiting mapping types see `Macros` and `Authentication`.
+    #
+    # ### Inheritance
+    #
+    # Mapping also can be specified in abstract super class to be shared with all subclass models
+    #
+    # ```
+    # class ApplicationRecord < Jennifer::Model::Base
+    #   mapping(
+    #     id: Primary32
+    #   )
+    # end
+    #
+    # class User < ApplicationRecord
+    #   mapping(
+    #     name: String
+    #   )
+    # end
+    # ```
+    #
+    # Or inside of a module
+    #
+    # ```
+    # module SharedMapping
+    #   include Jennifer::Model::Mapping
+    #
+    #   mapping(
+    #     id: Primary32
+    #   )
+    # end
+    #
+    # class User < Jennifer::Model::Base
+    #   include SharedMapping
+    #
+    #   mapping(
+    #     email: String
+    #   )
+    # end
+    # ```
+    #
+    # `.mapping` can be used only once per module/class definition. If class has no field to be added after
+    # inheritance or module inclusion - place `.mapping` without any argument.
+    #
+    # ### STI
+    #
+    # For single table inheritance just define define parent non-abstract class with all common fields and
+    # `type: String` extra field and inherit from it. Any class inherited from non-abstract model automatically
+    # behaves in scope of "single table inheritance".
+    #
+    # ```
+    # class Profile < Jennifer::Model::Base
+    #   mapping(
+    #     id: Primary32,
+    #     login: String,
+    #     contact_id: Int32?,
+    #     type: String,
+    #     virtual_parent_field: {type: String?, virtual: true}
+    #   )
+    # end
+    #
+    # class FacebookProfile < Profile
+    #   mapping(
+    #     uid: String?, # for testing purposes
+    #     virtual_child_field: {type: Int32?, virtual: true}
+    #   )
+    # end
+    # ```
     module Mapping
-      # :nodoc:
-      macro __bool_convert(value, type)
-        {% if type.stringify == "Bool" %}
-          ({{value.id}}.is_a?(Int8) ? {{value.id}} == 1i8 : {{value.id}}.as({{type}}))
-        {% else %}
-          {{value}}.as({{type}})
-        {% end %}
-      end
-
-      # TODO: remove .primary_field_type method as it isn't used anywhere
+      include FieldDeclaration
+      include CommonMapping
 
       # :nodoc:
-      macro __field_declaration(properties, primary_auto_incrementable)
-        {% for key, value in properties %}
-          @{{key.id}} : {{value[:parsed_type].id}}
-          @[JSON::Field(ignore: true)]
-          @{{key.id}}_changed = false
-
-          {% if value[:setter] != false %}
-            def {{key.id}}=(_{{key.id}} : {{value[:parsed_type].id}})
-              {% if !value[:virtual] %}
-                @{{key.id}}_changed = true if _{{key.id}} != @{{key.id}}
-              {% end %}
-              @{{key.id}} = _{{key.id}}
-            end
-
-            def {{key.id}}=(_{{key.id}} : ::Jennifer::DBAny)
-              {% if !value[:virtual] %}
-                @{{key.id}}_changed = true if _{{key.id}} != @{{key.id}}
-              {% end %}
-              @{{key.id}} = _{{key.id}}.as({{value[:parsed_type].id}})
-            end
-          {% end %}
-
-          {% if value[:getter] != false %}
-            def {{key.id}}
-              @{{key.id}}
-            end
-
-            {% if value[:null] != false %}
-              def {{key.id}}!
-                @{{key.id}}.not_nil!
-              end
-            {% end %}
-
-            {% resolved_type = value[:type].resolve %}
-            {% if resolved_type == Bool || (resolved_type.union? && resolved_type.union_types[0] == Bool) %}
-              def {{key.id}}?
-                {{key.id}} == true
-              end
-            {% end %}
-          {% end %}
-
-          {% if !value[:virtual] %}
-            def {{key.id}}_changed?
-              @{{key.id}}_changed
-            end
-
-            def self._{{key}}
-              c("{{key.id}}")
-            end
-
-            {% if value[:primary] %}
-              # :nodoc:
-              def primary
-                @{{key.id}}
-              end
-
-              # :nodoc:
-              def self.primary
-                c("{{key.id}}")
-              end
-
-              # :nodoc:
-              def self.primary_field_name
-                "{{key.id}}"
-              end
-
-              # :nodoc:
-              def self.primary_field_type
-                {{value[:parsed_type].id}}
-              end
-
-              # :nodoc:
-              def init_primary_field(value : Int)
-                {% if primary_auto_incrementable %}
-                  raise ::Jennifer::AlreadyInitialized.new(@{{key.id}}, value) if @{{key.id}}
-                  @{{key.id}} = value{% if value[:parsed_type] =~ /32/ %}.to_i{% else %}.to_i64{% end %}
-                {% end %}
-              end
-
-              # :nodoc:
-              def init_primary_field(value); end
-            {% end %}
-          {% end %}
-        {% end %}
+      macro copy_properties
+        {%
+          properties = COLUMNS_METADATA
+          lookup = @type.constant("INHERITED_COLUMNS_METADATA").to_a.reduce(properties) do |hash, (key, value)|
+            hash[key] = value if hash[key] == nil
+            hash
+          end
+        %}
       end
 
-      # Adds callbacks for `created_at` and `updated_at` fields
+      # :nodoc:
+      macro build_properties(properties)
+        {%
+          new_props = properties.to_a.reduce({} of ASTNode => ASTNode) do |hash, (key, value)|
+            hash[key] = value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral) ? value : {type: value}
+            options = hash[key]
+
+            if options[:type].is_a?(Path) && TYPES.includes?(options[:type].stringify)
+              options[:type].resolve.map do |tkey, tvalue|
+                options[tkey] = tvalue if tkey == :type || options[tkey] == nil
+              end
+            end
+
+            stringified_type = options[:type].stringify
+            options[:converter] = ::Jennifer::Model::JSONConverter if stringified_type =~ Jennifer::Macros::JSON_REGEXP && options[:converter] == nil
+            options[:parsed_type] = stringified_type
+
+            options[:column] = (options[:column] || key).id.stringify
+
+            if stringified_type =~ NILLABLE_REGEXP
+              options[:null] = true
+            elsif options[:null] || options[:primary]
+              options[:parsed_type] = stringified_type + "?"
+            end
+
+            if options[:primary] && options[:auto] != false
+              options[:auto] = AUTOINCREMENTABLE_STR_TYPES.includes?(stringified_type)
+            end
+
+            hash
+          end
+        %}
+
+        # :nodoc:
+        COLUMNS_METADATA = { {{new_props.map { |field, mapping| "#{field}: #{mapping}" }.join(", ").id}} }
+      end
+
+      # Adds callbacks for `created_at` and `updated_at` fields.
+      #
+      # ```
+      # class MyModel < Jennifer::Model::Base
+      #   with_timestamps
+      #
+      #   mapping(
+      #     id: { type: Int32, primary: true },
+      #     created_at: { type: Time, null: true },
+      #     updated_at: { type: Time, null: true }
+      #   )
+      # end
+      # ```
       macro with_timestamps(created_at = true, updated_at = true)
         {% if created_at %}
           before_save :__update_updated_at
@@ -121,114 +212,41 @@ module Jennifer
       end
 
       # :nodoc:
-      private macro single_mapping(properties, strict = true)
-        {%
-          primary = nil
-          primary_auto_incrementable = false
-          add_default_constructor = true
-        %}
+      macro module_mapping
+        __field_declaration({{COLUMNS_METADATA}}, false)
+        copy_properties
+      end
 
-        # generates hash with options
-        {% for key, value in properties %}
-          {%
-            properties[key] = {type: value} unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral)
-            options = properties[key]
-          %}
-          {% if options[:type].is_a?(Path) && TYPES.includes?(options[:type].stringify) %}
-            {% for tkey, tvalue in options[:type].resolve %}
-              {% options[tkey] = tvalue if tkey == :type || options[tkey] == nil %}
-            {% end %}
-          {% end %}
-          {%
-            stringified_type = options[:type].stringify
-            options[:converter] = ::Jennifer::Model::JSONConverter if stringified_type =~ Jennifer::Macros::JSON_REGEXP && options[:converter] == nil
-            if options[:primary]
-              primary = key
-              primary_type = options[:type]
-              primary_auto_incrementable = AUTOINCREMENTABLE_STR_TYPES.includes?(stringified_type)
-            end
-            options[:parsed_type] = stringified_type
-            if stringified_type =~ NILLABLE_REGEXP
-              options[:null] = true
-            elsif options[:null] || options[:primary]
-              options[:parsed_type] = stringified_type + "?"
-            end
-            add_default_constructor = add_default_constructor && (options[:primary] || options[:null] || options.keys.includes?(:default.id))
-          %}
-        {% end %}
+      # :nodoc:
+      macro base_mapping(strict = true)
+        common_mapping({{strict}})
 
         {%
+          primary = COLUMNS_METADATA.keys.find { |field| COLUMNS_METADATA[field][:primary] }
+          add_default_constructor = COLUMNS_METADATA.keys.all? do |field|
+            options = COLUMNS_METADATA[field]
+
+            options[:primary] || options[:null] || options.keys.includes?(:default.id)
+          end
+          properties = COLUMNS_METADATA
           nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] }
-          raise "Model #{@type} has no defined primary field. For now model without primary field is not allowed" if primary == nil
         %}
 
-        __field_declaration({{properties}}, {{primary_auto_incrementable}})
-
-        private def inspect_attributes(io) : Nil
-          io << ' '
-          {% for var, i in properties.keys %}
-            {% if i > 0 %}
-              io << ", "
-            {% end %}
-            io << "{{var.id}}: "
-            @{{var.id}}.inspect(io)
-          {% end %}
-          nil
-        end
+        # :nodoc:
+        WITH_DEFAULT_CONSTRUCTOR = {{!!add_default_constructor}}
 
         # :nodoc:
         def self.primary_auto_incrementable?
-          {{primary_auto_incrementable}}
-        end
-
-        # :nodoc:
-        def self.field_count
-          {{properties.size}}
-        end
-
-        # :nodoc:
-        COLUMNS_METADATA = {{properties}}
-        # :nodoc:
-        FIELD_NAMES = [{{properties.keys.map { |e| "#{e.id.stringify}" }.join(", ").id}}]
-
-        # :nodoc:
-        def self.field_names
-          FIELD_NAMES
-        end
-
-        # :nodoc:
-        def self.columns_tuple
-          COLUMNS_METADATA
-        end
-
-        @[JSON::Field(ignore: true)]
-        @new_record = true
-        @[JSON::Field(ignore: true)]
-        @destroyed = false
-
-        # Creates object from `DB::ResultSet`
-        def initialize(%pull : DB::ResultSet)
-          @new_record = false
-          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(%pull)
-        end
-
-        # Accepts symbol hash or named tuple, stringify it and calls constructor with string-based keys hash.
-        def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-          initialize(Ifrit.stringify_hash(values, Jennifer::DBAny))
-        end
-
-        def initialize(values : Hash(String, ::Jennifer::DBAny))
-          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
-        end
-
-        # :nodoc:
-        def initialize(values : Hash | NamedTuple, @new_record)
-          initialize(values)
+          {{COLUMNS_METADATA[primary][:auto]}}
         end
 
         {% if add_default_constructor %}
-          # :nodoc:
-          WITH_DEFAULT_CONSTRUCTOR = true
+          def self.new
+            instance = {{@type}}.allocate
+            instance.initialize
+            instance.__after_initialize_callback
+            instance
+          end
 
           # Default constructor without any fields
           def initialize
@@ -239,127 +257,10 @@ module Jennifer
 
           # :nodoc:
           def self.build
-            o = new
-            o.__after_initialize_callback
-            o
+            new
           end
-        {% else %}
-          # :nodoc:
-          WITH_DEFAULT_CONSTRUCTOR = false
         {% end %}
 
-        # Extracts arguments due to mapping from *pull* and returns tuple for fields assignment.
-        # It stands on that fact result set has all defined fields in a row
-        # TODO: think about moving it to class scope
-        # NOTE: don't use it manually - there is some dependencies on caller such as reading result set to the end
-        # if exception was raised
-        private def _extract_attributes(pull : DB::ResultSet)
-          requested_columns_count = self.class.actual_table_field_count
-          ::Jennifer::BaseException.assert_column_count(requested_columns_count, pull.column_count)
-          {% for key, value in properties %}
-            %var{key.id} = {{value[:default]}}
-            %found{key.id} = false
-          {% end %}
-          requested_columns_count.times do
-            column = pull.column_name(pull.column_index)
-            case column
-            {% for key in nonvirtual_attrs %}
-              {% value = properties[key] %}
-              when {{(value[:column_name] || key).id.stringify}}
-                %found{key.id} = true
-                begin
-                  %var{key.id} =
-                    {% if value[:converter] %}
-                      {{ value[:converter] }}.from_db(pull, {{value[:null]}})
-                    {% else %}
-                      pull.read({{value[:parsed_type].id}})
-                    {% end %}
-                  %var{key.id} = %var{key.id}.in(::Jennifer::Config.local_time_zone) if %var{key.id}.is_a?(Time)
-                rescue e : Exception
-                  raise ::Jennifer::DataTypeMismatch.build(column, {{@type}}, e)
-                end
-            {% end %}
-            else
-              {% if strict %}
-                raise ::Jennifer::BaseException.new("Undefined column #{column} for model {{@type}}.")
-              {% else %}
-                pull.read
-              {% end %}
-            end
-          end
-          {% if strict %}
-            {% for key in nonvirtual_attrs %}
-              unless %found{key.id}
-                raise ::Jennifer::BaseException.new("Column {{@type}}.{{key.id}} hasn't been found in the result set.")
-              end
-            {% end %}
-          {% end %}
-          {% if properties.size > 1 %}
-            {
-            {% for key, value in properties %}
-              begin
-                %var{key.id}.as({{value[:parsed_type].id}})
-              rescue e : Exception
-                raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
-              end,
-            {% end %}
-            }
-          {% else %}
-            {% key = properties.keys[0] %}
-            begin
-              %var{key}.as({{properties[key][:parsed_type].id}})
-            rescue e : Exception
-              raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
-            end
-          {% end %}
-        end
-
-        private def _extract_attributes(values : Hash(String, ::Jennifer::DBAny))
-          {% for key, value in properties %}
-            %var{key.id} = {{value[:default]}}
-            %found{key.id} = true
-          {% end %}
-
-          {% for key, value in properties %}
-            {% column = (value[:column_name] || key).id.stringify %}
-            if values.has_key?({{column}})
-                %var{key.id} =
-                  {% if value[:converter] %}
-                    {{value[:converter]}}.from_hash(values, {{column}})
-                  {% else %}
-                    values[{{column}}]
-                  {% end %}
-            else
-              %found{key.id} = false
-            end
-          {% end %}
-
-          {% for key, value in properties %}
-            begin
-              %casted_var{key.id} =
-                {% if value[:default] != nil %}
-                  %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
-                {% else %}
-                  __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
-                {% end %}
-              %casted_var{key.id} = %casted_var{key.id}.in(::Jennifer::Config.local_time_zone) if %casted_var{key.id}.is_a?(Time)
-            rescue e : Exception
-              raise ::Jennifer::DataTypeCasting.match?(e) ? ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) : e
-            end
-          {% end %}
-
-          {% if properties.size > 1 %}
-            {
-            {% for key, value in properties %}
-              %casted_var{key.id},
-            {% end %}
-            }
-          {% else %}
-            %casted_var{properties.keys[0]}
-          {% end %}
-        end
-
-        # :nodoc:
         def destroy
           return false if new_record?
           result =
@@ -386,30 +287,12 @@ module Jennifer
         end
 
         # :nodoc:
-        def to_h
-          {
-            {% for key in nonvirtual_attrs %}
-              :{{key.id}} => {{key.id}},
-            {% end %}
-          } of Symbol => ::Jennifer::DBAny
-        end
-
-        # :nodoc:
-        def to_str_h
-          {
-            {% for key in nonvirtual_attrs %}
-              {{key.stringify}} => {{key.id}},
-            {% end %}
-          } of String => ::Jennifer::DBAny
-        end
-
-        # :nodoc:
-        def update_columns(values : Hash(String | Symbol, Jennifer::DBAny))
+        def update_columns(values : Hash(String | Symbol, ::Jennifer::DBAny))
           values.each do |name, value|
             case name.to_s
             {% for key, value in properties %}
               {% if !value[:virtual] %}
-                when "{{key.id}}"
+                when "{{key.id}}" {% if key.id.stringify != value[:column] %}, {{value[:column]}} {% end %}
                   if value.is_a?({{value[:parsed_type].id}})
                     local = value.as({{value[:parsed_type].id}})
                     @{{key.id}} = local
@@ -447,18 +330,6 @@ module Jennifer
         end
 
         # :nodoc:
-        def attribute(name : String, raise_exception : Bool = true)
-          case name
-          {% for attr in properties.keys %}
-          when "{{attr.id}}"
-            @{{attr.id}}
-          {% end %}
-          else
-            raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}") if raise_exception
-          end
-        end
-
-        # :nodoc:
         def arguments_to_save
           args = [] of ::Jennifer::DBAny
           fields = [] of String
@@ -468,7 +339,7 @@ module Jennifer
               if @{{attr.id}}_changed
                 args <<
                   {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
-                fields << "{{attr.id}}"
+                fields << {{options[:column]}}
               end
             {% end %}
           {% end %}
@@ -480,27 +351,138 @@ module Jennifer
           args = [] of ::Jennifer::DBAny
           fields = [] of String
           {% for attr, options in properties %}
-            {% unless options[:virtual] || options[:primary] && primary_auto_incrementable %}
+            {% unless options[:virtual] || options[:primary] && options[:auto] %}
               args <<
                 {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
-              fields << "{{attr.id}}"
+              fields << {{options[:column]}}
             {% end %}
           {% end %}
           {args: args, fields: fields}
+        end
+
+        # Extracts arguments due to mapping from *pull* and returns tuple for fields assignment.
+        # It stands on that fact result set has all defined fields in a row
+        # TODO: think about moving it to class scope
+        # NOTE: don't use it manually - there is some dependencies on caller such as reading result set to the end
+        # if exception was raised
+        private def _extract_attributes(pull : DB::ResultSet)
+          requested_columns_count = self.class.actual_table_field_count
+          ::Jennifer::BaseException.assert_column_count(requested_columns_count, pull.column_count)
+          {% for key, value in properties %}
+            %var{key.id} = {{value[:default]}}
+            %found{key.id} = false
+          {% end %}
+          requested_columns_count.times do
+            column = pull.column_name(pull.column_index)
+            case column
+            {% for key in nonvirtual_attrs %}
+              {% value = properties[key] %}
+              when {{value[:column]}}
+                %found{key.id} = true
+                begin
+                  %var{key.id} =
+                    {% if value[:converter] %}
+                      {{ value[:converter] }}.from_db(pull, {{value[:null]}})
+                    {% else %}
+                      pull.read({{value[:parsed_type].id}})
+                    {% end %}
+                  %var{key.id} = %var{key.id}.in(::Jennifer::Config.local_time_zone) if %var{key.id}.is_a?(Time)
+                rescue e : Exception
+                  raise ::Jennifer::DataTypeMismatch.build(column, {{@type}}, e)
+                end
+            {% end %}
+            else
+              {% if strict %}
+                raise ::Jennifer::BaseException.new("Undefined column #{column} for model {{@type}}.")
+              {% else %}
+                pull.read
+              {% end %}
+            end
+          end
+          {% if strict %}
+            {% for key in nonvirtual_attrs %}
+              unless %found{key.id}
+                raise ::Jennifer::BaseException.new("Column {{@type}}.{{properties[key][:column].id}} hasn't been found in the result set.")
+              end
+            {% end %}
+          {% end %}
+          {% if properties.size > 1 %}
+            {
+            {% for key, value in properties %}
+              begin
+                %var{key.id}.as({{value[:parsed_type].id}})
+              rescue e : Exception
+                raise ::Jennifer::DataTypeCasting.build({{value[:column]}}, {{@type}}, e)
+              end,
+            {% end %}
+            }
+          {% else %}
+            {% key = properties.keys[0] %}
+            begin
+              %var{key}.as({{properties[key][:parsed_type].id}})
+            rescue e : Exception
+              raise ::Jennifer::DataTypeCasting.build({{properties[key][:column]}}, {{@type}}, e)
+            end
+          {% end %}
+        end
+
+        private def _extract_attributes(values : Hash(String, ::Jennifer::DBAny))
+          {% for key, value in properties %}
+            %var{key.id} = {{value[:default]}}
+            %found{key.id} = true
+          {% end %}
+
+          {% for key, value in properties %}
+            {% column1 = key.id.stringify %}
+            {% column2 = value[:column] %}
+            if values.has_key?({{column1}})
+              %var{key.id} =
+                {% if value[:converter] %}
+                  {{value[:converter]}}.from_hash(values, {{column1}})
+                {% else %}
+                  values[{{column1}}]
+                {% end %}
+            elsif values.has_key?({{column2}})
+              %var{key.id} =
+                {% if value[:converter] %}
+                  {{value[:converter]}}.from_hash(values, {{column2}})
+                {% else %}
+                  values[{{column2}}]
+                {% end %}
+            else
+              %found{key.id} = false
+            end
+          {% end %}
+
+          {% for key, value in properties %}
+            begin
+              %casted_var{key.id} =
+                {% if value[:default] != nil %}
+                  %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
+                {% else %}
+                  __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
+                {% end %}
+              %casted_var{key.id} = %casted_var{key.id}.in(::Jennifer::Config.local_time_zone) if %casted_var{key.id}.is_a?(Time)
+            rescue e : Exception
+              raise ::Jennifer::DataTypeCasting.match?(e) ? ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) : e
+            end
+          {% end %}
+
+          {% if properties.size > 1 %}
+            {
+            {% for key, value in properties %}
+              %casted_var{key.id},
+            {% end %}
+            }
+          {% else %}
+            %casted_var{properties.keys[0]}
+          {% end %}
         end
 
         private def __refresh_changes
           {% for attr in nonvirtual_attrs %}
             @{{attr.id}}_changed = false
           {% end %}
-        end
-
-        private def init_attributes(values : Hash)
-          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
-        end
-
-        private def init_attributes(values : DB::ResultSet)
-          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
         private def save_record_under_transaction(skip_validation) : Bool
@@ -524,9 +506,20 @@ module Jennifer
         end
       end
 
+      # :nodoc:
+      macro draw_mapping(strict = true)
+        {% if !@type.ancestors.includes?(Reference) || @type.abstract? %}
+          module_mapping
+        {% elsif !@type.constant("MODEL") %}
+          copy_properties
+          base_mapping({{strict}})
+        {% else %}
+          sti_mapping
+          copy_properties
+        {% end %}
+      end
+
       # Defines model mapping.
-      #
-      # For the detailed description take a look at `.md` documentation file.
       #
       # Acceptable keys:
       # - type
@@ -537,17 +530,58 @@ module Jennifer
       # - virtual
       # - default
       # - converter
+      # - column
+      #
+      # For more details see `Mapping` module documentation.
       macro mapping(properties, strict = true)
-        {% if !@type.constant("MODEL") %}
-          single_mapping({{properties}}, {{strict}})
-        {% else %}
-          sti_mapping({{properties}})
+        {% if properties.size > 0 %}
+          build_properties({{properties}})
         {% end %}
+        draw_mapping({{strict}})
       end
 
       # ditto
       macro mapping(**properties)
-        mapping({{properties}})
+        {% if properties.size > 0 %}
+          mapping({{properties}})
+        {% else %}
+          draw_mapping(true)
+        {% end %}
+      end
+
+      # :nodoc:
+      macro populate
+        macro included
+          populate
+        end
+
+        macro inherited
+          populate
+        end
+
+        {% if @type != Jennifer::Model::Base && @type != Jennifer::View::Mapping %}
+          {% metadata = @type.ancestors[0].constant("COLUMNS_METADATA") || @type.ancestors[0].constant("INHERITED_COLUMNS_METADATA") %}
+          {% if @type.constant("INHERITED_COLUMNS_METADATA") == nil %}
+            {% if metadata == nil %}
+              # :nodoc:
+              INHERITED_COLUMNS_METADATA = {} of Nil => Nil
+            {% else %}
+              # :nodoc:
+              INHERITED_COLUMNS_METADATA = {{metadata}}
+            {% end %}
+          {% elsif metadata != nil %}
+            {%
+              metadata.to_a.reduce(INHERITED_COLUMNS_METADATA) do |hash, (key, value)|
+                hash[key] = value
+                hash
+              end
+            %}
+          {% end %}
+        {% end %}
+      end
+
+      macro included
+        populate
       end
     end
   end

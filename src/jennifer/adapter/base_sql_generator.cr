@@ -8,9 +8,17 @@ module Jennifer
         # Generates query for inserting new record to db
         abstract def insert(obj : Model::Base)
         abstract def json_path(path : QueryBuilder::JSONSelector)
+        abstract def insert_on_duplicate(table, fields, values, unique_fields, on_conflict)
+
+        # Generates SQL for VALUES reference in `INSERT ... ON DUPLICATE` query.
+        abstract def values_expression(field)
       end
 
       extend ClassMethods
+
+      def self.explain(query)
+        "EXPLAIN #{self.select(query)}"
+      end
 
       # Generates insert query
       def self.insert(table, hash)
@@ -34,6 +42,7 @@ module Jennifer
       # Generates common select sql request
       def self.select(query, exact_fields = [] of String)
         String.build do |s|
+          with_clause(s, query)
           select_clause(s, query, exact_fields)
           from_clause(s, query)
           body_section(s, query)
@@ -54,6 +63,7 @@ module Jennifer
 
       def self.exists(query)
         String.build do |s|
+          with_clause(s, query)
           s << "SELECT EXISTS(SELECT 1 "
           from_clause(s, query)
           body_section(s, query)
@@ -63,6 +73,7 @@ module Jennifer
 
       def self.count(query)
         String.build do |s|
+          with_clause(s, query)
           s << "SELECT COUNT(*) "
           from_clause(s, query)
           body_section(s, query)
@@ -114,14 +125,18 @@ module Jennifer
       end
 
       def self.union_clause(io : String::Builder, query)
-        return unless query._unions
-        query._unions.not_nil!.each do |u|
-          io << " UNION " << self.select(u)
+        return unless query._unions?
+
+        query._unions!.each do |union_tuple|
+          io << " UNION "
+          io << "ALL " if union_tuple[:all]
+          io << self.select(union_tuple[:query])
         end
       end
 
       def self.lock_clause(io : String::Builder, query)
         return if query._lock.nil?
+
         io << ' '
         io << (query._lock.is_a?(String) ? query._lock : "FOR UPDATE")
         io << ' '
@@ -136,7 +151,7 @@ module Jennifer
           if !exact_fields.empty?
             exact_fields.join(", ", io) { |f| io << "#{table}.#{f}" }
           else
-            query._select_fields.not_nil!.join(", ", io) { |f| io << f.definition(self) }
+            query._select_fields.join(", ", io) { |f| io << f.definition(self) }
           end
         else
           io << query._raw_select.not_nil!
@@ -144,41 +159,50 @@ module Jennifer
         io << ' '
       end
 
+      def self.from_clause(io : String::Builder, from : String)
+        io << "FROM " << from << ' '
+      end
+
       # Generates `FROM` query clause.
-      def self.from_clause(io : String::Builder, query, from = nil)
-        io << "FROM "
-        return io << (from || query._table) << ' ' unless query._from
-        io << "( " <<
-          if query._from.is_a?(String)
-            query._from
-          else
-            if query.is_a?(QueryBuilder::ModelQuery)
-              self.select(query._from.as(QueryBuilder::ModelQuery))
+      def self.from_clause(io : String::Builder, query)
+        if query._from
+          io << "FROM ( " <<
+            if query._from.is_a?(String)
+              query._from
             else
-              self.select(query._from.as(QueryBuilder::Query))
+              if query.is_a?(QueryBuilder::ModelQuery)
+                self.select(query._from.as(QueryBuilder::ModelQuery))
+              else
+                self.select(query._from.as(QueryBuilder::Query))
+              end
             end
-          end
-        io << " ) "
+          io << " ) "
+        elsif !query._table.empty?
+          from_clause(io, query._table)
+        end
       end
 
       # Generates `GROUP BY` query clause.
       def self.group_clause(io : String::Builder, query)
-        return if !query._groups || query._groups.empty?
+        return unless query._groups?
+
         io << "GROUP BY "
-        query._groups.not_nil!.each.join(", ", io) { |c| io << c.as_sql(self) }
+        query._groups!.each.join(", ", io) { |c| io << c.as_sql(self) }
         io << ' '
       end
 
       # Generates `HAVING` query clause.
       def self.having_clause(io : String::Builder, query)
         return unless query._having
+
         io << "HAVING " << query._having.not_nil!.as_sql(self) << ' '
       end
 
       # Generates `JOIN` query clause.
       def self.join_clause(io : String::Builder, query)
-        return unless query._joins
-        query._joins.not_nil!.join(" ", io) { |j| io << j.as_sql(self) }
+        return unless query._joins?
+
+        query._joins!.join(" ", io) { |j| io << j.as_sql(self) }
       end
 
       # Generates `WHERE` query clause.
@@ -189,6 +213,7 @@ module Jennifer
       # ditto
       def self.where_clause(io : String::Builder, tree)
         return unless tree
+
         io << "WHERE " << tree.not_nil!.as_sql(self) << ' '
       end
 
@@ -200,10 +225,36 @@ module Jennifer
 
       # Generates `ORDER BY` clause.
       def self.order_clause(io : String::Builder, query)
-        return if query._order.blank?
+        return unless query._order?
+
         io << "ORDER BY "
-        query._order.join(", ", io) { |expression| io.print expression.as_sql(self) }
+        query._order!.join(", ", io) { |expression| io.print expression.as_sql(self) }
         io << ' '
+      end
+
+      # Generates `WITH` clause.
+      def self.with_clause(io : String::Builder, query)
+        return unless query._ctes?
+
+        io << "WITH "
+        query._ctes!.each_with_index do |cte, index|
+          cte_query = cte.query
+          io << ", " if index != 0
+          io << "RECURSIVE " if cte.recursive?
+          io << cte.name << " AS ("
+          io <<
+            if cte_query.is_a?(QueryBuilder::ModelQuery)
+              self.select(cte_query.as(QueryBuilder::ModelQuery))
+            else
+              self.select(cte_query.as(QueryBuilder::Query))
+            end
+          io << ") "
+        end
+      end
+
+      # Returns `CAST` expression.
+      def self.cast_expression(expression, type : String)
+        "CAST(#{expression.as_sql(self)} AS #{type})"
       end
 
       # ======== utils

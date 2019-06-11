@@ -52,8 +52,9 @@ class FakeContactView < Jennifer::View::Base
   }, false)
 end
 
-class StrinctBrokenMaleContact < Jennifer::View::Base
+class StrictBrokenMaleContact < Jennifer::View::Base
   view_name "male_contacts"
+
   mapping({
     id:   Primary32,
     name: String,
@@ -74,4 +75,16 @@ class MaleContactWithDescription < Jennifer::View::Base
     id:          Primary32,
     description: String,
   }, false)
+end
+
+class PrintPublication < Jennifer::View::Base
+  mapping({
+    id:         Primary32,
+    title:      String,
+    v:          {type: Int32, column: :version},
+    publisher:  String,
+    pages:      Int32?,
+    url:        String?,
+    type:       String
+  })
 end

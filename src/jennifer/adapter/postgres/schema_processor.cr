@@ -3,30 +3,30 @@ require "../schema_processor"
 module Jennifer
   module Postgres
     class SchemaProcessor < Adapter::SchemaProcessor
-      delegate data_type_exists?, to: adapter.as(Postgres)
+      delegate enum_exists?, to: adapter.as(Postgres)
 
       # ================
       # Builder methods
       # ================
 
       def build_create_enum(name, values)
-        Migration::TableBuilder::CreateEnum.new(@adapter, name, values).process
+        Migration::TableBuilder::CreateEnum.new(@adapter, name, values)
       end
 
       def build_drop_enum(name)
-        Migration::TableBuilder::DropEnum.new(@adapter, name).process
+        Migration::TableBuilder::DropEnum.new(@adapter, name)
       end
 
       def build_change_enum(name, options)
-        Migration::TableBuilder::ChangeEnum.new(@adapter, name, options).process
+        Migration::TableBuilder::ChangeEnum.new(@adapter, name, options)
       end
 
-      def build_create_materialized_view(name, _as)
-        Migration::TableBuilder::CreateMaterializedView.new(@adapter, name, _as).process
+      def build_create_materialized_view(name, source)
+        Migration::TableBuilder::CreateMaterializedView.new(@adapter, name, source)
       end
 
       def build_drop_materialized_view(name)
-        Migration::TableBuilder::DropMaterializedView.new(@adapter, name).process
+        Migration::TableBuilder::DropMaterializedView.new(@adapter, name)
       end
 
       # ============================
@@ -104,6 +104,16 @@ module Jennifer
         end
 
         adapter.exec query[0...-1]
+      end
+
+      def drop_foreign_key(from_table, name)
+        query = String.build do |s|
+          s << "ALTER TABLE " <<
+            from_table <<
+            " DROP CONSTRAINT " <<
+            name
+        end
+        adapter.exec query
       end
 
       private def column_definition(name, options, io)

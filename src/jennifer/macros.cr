@@ -10,13 +10,13 @@ module Jennifer
     # :nodoc:
     AUTOINCREMENTABLE_STR_TYPES = %w(Int32 Int64)
 
-    # Primary key type (Int32).
+    # Mapping type for `Int32` primary key.
     Primary32 = {
       type: Int32,
       primary: true
     }
 
-    # Primary key type (Int64).
+    # Mapping type for `Int64` primary key.
     Primary64 = {
       type: Int64,
       primary: true

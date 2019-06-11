@@ -1,13 +1,12 @@
 require "../migration/table_builder/*"
-require "./table_builder_builders"
 
 module Jennifer
   module Adapter
     abstract class SchemaProcessor
-      include TableBuilderBuilders
-
+      # :nodoc:
       macro unsupported_method(*names)
         {% for name in names %}
+          # :nodoc:
           def {{name.id}}(*args, **opts)
             raise BaseException.new("Current adapter doesn't support this method: #{{{name.id}}}")
           end
@@ -15,7 +14,7 @@ module Jennifer
       end
 
       unsupported_method build_create_enum, build_drop_enum, build_change_enum, build_create_materialized_view,
-        build_drop_materialized_view, drop_enum
+        build_drop_materialized_view, drop_enum, enum_exists?
 
       getter adapter : Adapter::Base
 

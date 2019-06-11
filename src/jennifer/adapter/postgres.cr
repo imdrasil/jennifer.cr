@@ -15,6 +15,8 @@ module Jennifer
       alias EnumType = Bytes
 
       TYPE_TRANSLATIONS = {
+        :bool => "boolean",
+
         :integer => "int",      # Int32
         :short   => "SMALLINT", # Int16
         :bigint  => "BIGINT",   # Int64
@@ -28,7 +30,6 @@ module Jennifer
 
         :string     => "varchar",
         :char       => "char",
-        :bool       => "boolean",
         :text       => "text",
         :var_string => "varchar",
         :varchar    => "varchar",
@@ -123,14 +124,35 @@ module Jennifer
             .join("pg_class") { _pg_attribute__attrelid == _oid }
             .join("pg_namespace") { _oid == _pg_class__relnamespace }
             .where do
-            (_attnum > 0) &
-              (_pg_namespace__nspname == Config.schema) &
-              (_pg_class__relname == table) &
-              _attisdropped.not
-          end.count
+              (_attnum > 0) &
+                (_pg_namespace__nspname == Config.schema) &
+                (_pg_class__relname == table) &
+                _attisdropped.not
+            end.count
         else
           -1
         end
+      end
+
+      def tables_column_count(tables : Array(String))
+        view_request = Query["pg_attribute"]
+          .join("pg_class") { _pg_attribute__attrelid == _oid }
+          .join("pg_namespace") { _oid == _pg_class__relnamespace }
+          .where do
+            (_attnum > 0) &
+              (_pg_namespace__nspname == Config.schema) &
+              (_pg_class__relname.in(tables)) &
+              _attisdropped.not
+          end
+          .group("table_name")
+          .select { [_pg_class__relname.alias("table_name"), count.alias("count")] }
+
+        Query["information_schema.columns"]
+          .where { _table_name.in(tables) }
+          .group(:table_name)
+          .select { [_table_name, count.alias("count")] }
+          .union(view_request)
+          .to_a
       end
 
       def material_view_exists?(name)
@@ -159,25 +181,21 @@ module Jennifer
           .exists?
       end
 
-      def index_exists?(table, name)
+      def index_exists?(_table, name : String)
         Query["pg_class"]
           .join("pg_namespace") { _oid == _pg_class__relnamespace }
           .where { (_pg_class__relname == name) & (_pg_namespace__nspname == Config.schema) }
           .exists?
       end
 
-      def foreign_key_exists?(from_table, to_table)
-        name = self.class.foreign_key_name(from_table, to_table)
-        foreign_key_exists?(name)
-      end
-
-      def foreign_key_exists?(name)
+      def foreign_key_exists?(from_table, to_table = nil, column = nil, name : String? = nil)
+        name = self.class.foreign_key_name(from_table, to_table, column, name)
         Query["information_schema.table_constraints"]
           .where { and(_constraint_name == name, _table_schema == Config.schema) }
           .exists?
       end
 
-      def data_type_exists?(name)
+      def enum_exists?(name)
         Query["pg_type"].where { _typname == name }.exists?
       end
 
@@ -211,6 +229,19 @@ module Jennifer
 
       def exists?(query) : Bool
         scalar(*parse_query(sql_generator.exists(query), query.sql_args)).as(Bool)
+      end
+
+      def explain(q)
+        body = sql_generator.explain(q)
+        args = q.sql_args
+        plan = ""
+        query(*parse_query(body, args)) do |rs|
+          rs.each do
+            plan = rs.read(String)
+          end
+        end
+
+        plan
       end
     end
   end

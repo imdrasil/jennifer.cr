@@ -1,8 +1,11 @@
 module Jennifer
   module Model
+    # :nodoc:
     module STIMapping
+      # TODO: try to make the "type" field customizable
+
       # Defines mapping using single table inheritance. Is automatically called by `.mapping` macro.
-      private macro sti_mapping(properties)
+      private macro sti_mapping
         # :nodoc:
         STI = true
 
@@ -20,116 +23,201 @@ module Jennifer
           raise "You can't specify table name using STI on subclasses"
         end
 
-        # NOTE: next section is a copy-paste from mapping.cr (with removing any parsing of primary option)
-        {% add_default_constructor = @type.superclass.constant("WITH_DEFAULT_CONSTRUCTOR") %}
+        {%
+          super_properties = INHERITED_COLUMNS_METADATA
+          add_default_constructor =
+            super_properties.keys.all? do |field|
+              options = super_properties[field]
 
-        # generates hash with options
-        {% for key, value in properties %}
-          {%
-            properties[key] = {type: value} unless value.is_a?(HashLiteral) || value.is_a?(NamedTupleLiteral)
-            options = properties[key]
-            stringified_type = options[:type].stringify
-            options[:converter] = ::Jennifer::Model::JSONConverter if stringified_type =~ Jennifer::Macros::JSON_REGEXP && options[:converter] == nil
-            if stringified_type =~ Jennifer::Macros::NILLABLE_REGEXP
-              options[:null] = true
-              options[:parsed_type] = stringified_type
-            else
-              options[:parsed_type] = options[:null] ? stringified_type + "?" : stringified_type
-            end
-            add_default_constructor = add_default_constructor && (options[:null] || options.keys.includes?(:default.id))
-          %}
-        {% end %}
+              options[:primary] || options[:null] || options.keys.includes?(:default.id) || field == :type
+            end &&
+              COLUMNS_METADATA.keys.all? do |field|
+                options = COLUMNS_METADATA[field]
 
-        {% nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] } %}
+                options[:null] || options.keys.includes?(:default.id)
+              end
+          properties = COLUMNS_METADATA
+          nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] }
+
+          all_properties = super_properties.to_a.reduce({} of ASTNode => ASTNode) do |hash, (key, value)|
+            hash[key] = value
+            hash
+          end
+          properties.to_a.reduce(all_properties) do |hash, (key, value)|
+            hash[key] = value
+            hash
+          end
+        %}
 
         __field_declaration({{properties}}, false)
 
         private def inspect_attributes(io) : Nil
           super
           {% for var, i in properties.keys %}
-            io << ", "
-            io << "{{var.id}}: "
+            io << ", {{var.id}}: "
             @{{var.id}}.inspect(io)
           {% end %}
           nil
         end
 
-        private def _sti_extract_attributes(values : Hash(String, ::Jennifer::DBAny))
-          {% for key, value in properties %}
+        private def _extract_attributes(pull : DB::ResultSet)
+          requested_columns_count = self.class.actual_table_field_count
+          ::Jennifer::BaseException.assert_column_count(requested_columns_count, pull.column_count)
+          {% for key, value in all_properties %}
+            %var{key.id} = {{value[:default]}}
+            %found{key.id} = false
+          {% end %}
+          requested_columns_count.times do
+            column = pull.column_name(pull.column_index)
+            case column
+            {% for key, value in all_properties %}
+              {% if !value[:virtual] %}
+              when {{value[:column]}}
+                %found{key.id} = true
+                begin
+                  %var{key.id} =
+                    {% if value[:converter] %}
+                      {{ value[:converter] }}.from_db(pull, {{value[:null]}})
+                    {% else %}
+                      pull.read({{value[:parsed_type].id}})
+                    {% end %}
+                  %var{key.id} = %var{key.id}.in(::Jennifer::Config.local_time_zone) if %var{key.id}.is_a?(Time)
+                rescue e : Exception
+                  raise ::Jennifer::DataTypeMismatch.build(column, {{@type}}, e)
+                end
+              {% end %}
+            {% end %}
+            else
+              pull.read
+            end
+          end
+          {% if all_properties.size > 1 %}
+            {
+            {% for key, value in all_properties %}
+              begin
+                %var{key.id}.as({{value[:parsed_type].id}})
+              rescue e : Exception
+                raise ::Jennifer::DataTypeCasting.build({{value[:column]}}, {{@type}}, e)
+              end,
+            {% end %}
+            }
+          {% else %}
+            {% key = all_properties.keys[0] %}
+            begin
+              %var{key}.as({{all_properties[key][:parsed_type].id}})
+            rescue e : Exception
+              raise ::Jennifer::DataTypeCasting.build({{all_properties[key][:column]}}, {{@type}}, e)
+            end
+          {% end %}
+        end
+
+        private def _extract_attributes(values : Hash(String, ::Jennifer::DBAny))
+          {% for key, value in all_properties %}
             %var{key.id} = {{value[:default]}}
             %found{key.id} = true
           {% end %}
 
-          {% for key, value in properties %}
-            {% column = (value[:column_name] || key).id.stringify %}
-            if values.has_key?({{column}})
-              %var{key.id} = values[{{column}}]{% if value[:numeric_converter] %}.as(PG::Numeric).{{value[:numeric_converter].id}}{% end %}
+          {% for key, value in all_properties %}
+            {% column1 = key.id.stringify %}
+            {% column2 = value[:column] %}
+            if values.has_key?({{column1}})
+              %var{key.id} =
+                {% if value[:converter] %}
+                  {{value[:converter]}}.from_hash(values, {{column1}})
+                {% else %}
+                  values[{{column1}}]
+                {% end %}
+            elsif values.has_key?({{column2}})
+              %var{key.id} =
+                {% if value[:converter] %}
+                  {{value[:converter]}}.from_hash(values, {{column2}})
+                {% else %}
+                  values[{{column2}}]
+                {% end %}
             else
               %found{key.id} = false
             end
           {% end %}
 
-          {% for key, value in properties %}
+          {% for key, value in all_properties %}
             begin
-              {% if value[:null] %}
+              %casted_var{key.id} =
                 {% if value[:default] != nil %}
-                  %casted_var{key.id} = %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
+                  %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
                 {% else %}
-                  %casted_var{key.id} = %var{key.id}.as({{value[:parsed_type].id}})
+                  __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
                 {% end %}
-              {% elsif value[:default] != nil %}
-                %casted_var{key.id} = %var{key.id}.is_a?(Nil) ? {{value[:default]}} : __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
-              {% else %}
-                %casted_var{key.id} = __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
-              {% end %}
-              %casted_var{key.id} = !%casted_var{key.id}.is_a?(Time) ? %casted_var{key.id} : %casted_var{key.id}.in(::Jennifer::Config.local_time_zone)
+              %casted_var{key.id} = %casted_var{key.id}.in(::Jennifer::Config.local_time_zone) if %casted_var{key.id}.is_a?(Time)
             rescue e : Exception
-              raise ::Jennifer::DataTypeCasting.build({{key.id.stringify}}, {{@type}}, e)
+              raise ::Jennifer::DataTypeCasting.match?(e) ? ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) : e
             end
           {% end %}
 
-          {% if properties.size > 1 %}
+          {% if all_properties.size > 1 %}
             {
-            {% for key, value in properties %}
+            {% for key, value in all_properties %}
               %casted_var{key.id},
             {% end %}
             }
           {% else %}
-            {% key = properties.keys[0] %}
-            %casted_var{key}
+            %casted_var{all_properties.keys[0]}
           {% end %}
+        end
+
+        def self.new(pull : DB::ResultSet)
+          instance = allocate
+          instance.initialize(pull)
+          instance.__after_initialize_callback
+          instance
         end
 
         # Creates object from db tuple
         def initialize(%pull : DB::ResultSet)
-          initialize(self.class.adapter.result_to_hash(%pull), false)
+          @new_record = false
+          {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(%pull)
+        end
+
+        def self.new(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
+          instance = allocate
+          instance.initialize(values)
+          instance.__after_initialize_callback
+          instance
         end
 
         def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
           initialize(Ifrit.stringify_hash(values, Jennifer::DBAny))
         end
 
+        def self.new(values : Hash(String, ::Jennifer::DBAny))
+          instance = allocate
+          instance.initialize(values)
+          instance.__after_initialize_callback
+          instance
+        end
+
         def initialize(values : Hash(String, ::Jennifer::DBAny))
-          # TODO: try to make the "type" field customizable
           values["type"] = "{{@type.id}}" if values["type"]?.nil?
-          super(values)
-          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _sti_extract_attributes(values)
+          {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
+        end
+
+        def self.new(values : Hash | NamedTuple, new_record : Bool)
+          instance = allocate
+          instance.initialize(values, new_record)
+          instance.__after_initialize_callback
+          instance
         end
 
         def initialize(values : Hash | NamedTuple, @new_record)
           initialize(values)
         end
 
-        {% if add_default_constructor %}
-          # :nodoc:
-          WITH_DEFAULT_CONSTRUCTOR = true
+        # :nodoc:
+        WITH_DEFAULT_CONSTRUCTOR = {{!!add_default_constructor}}
 
+        {% if add_default_constructor %}
           def initialize
-            initialize({} of String => ::Jennifer::DBAny)
+            initialize({ "type" => {{@type.stringify}} } of String => ::Jennifer::DBAny)
           end
-        {% else %}
-          # :nodoc:
-          WITH_DEFAULT_CONSTRUCTOR = false
         {% end %}
 
         # :nodoc:
@@ -160,13 +248,13 @@ module Jennifer
         end
 
         # :nodoc:
-        def update_columns(values : Hash(String | Symbol, Jennifer::DBAny))
+        def update_columns(values : Hash(String | Symbol, ::Jennifer::DBAny))
           missing_values = {} of String | Symbol => Jennifer::DBAny
           values.each do |name, value|
             case name.to_s
             {% for key, value in properties %}
               {% if !value[:virtual] %}
-                when "{{key.id}}"
+                when {{value[:column]}}
                   if value.is_a?({{value[:parsed_type].id}})
                     local = value.as({{value[:parsed_type].id}})
                     @{{key.id}} = local
@@ -184,7 +272,7 @@ module Jennifer
         end
 
         # :nodoc:
-        def set_attribute(name, value)
+        def set_attribute(name : String | Symbol, value : ::Jennifer::DBAny)
           case name.to_s
           {% for key, value in properties %}
             {% if value[:setter] != false %}
@@ -202,11 +290,8 @@ module Jennifer
         end
 
         # :nodoc:
-        def attribute(name : String, raise_exception = true)
-          if raise_exception && !self.class.field_names.includes?(name)
-            raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}")
-          end
-          case name
+        def attribute(name : String | Symbol, raise_exception = true)
+          case name.to_s
           {% for key, value in properties %}
           when "{{key.id}}"
             @{{key.id}}
@@ -218,49 +303,47 @@ module Jennifer
 
         # :nodoc:
         def arguments_to_save
-          res = super
-          args = res[:args]
-          fields = res[:fields]
+          named_tuple = super
+          args = named_tuple[:args]
+          fields = named_tuple[:fields]
           {% for attr, options in properties %}
             {% unless options[:virtual] %}
               if @{{attr.id}}_changed
                 args <<
                   {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
-                fields << "{{attr.id}}"
+                fields << {{options[:column]}}
               end
             {% end %}
           {% end %}
-          {args: args, fields: fields}
+          named_tuple
         end
 
         # :nodoc:
         def arguments_to_insert
-          res = super
-          args = res[:args]
-          fields = res[:fields]
+          named_tuple = super
+          args = named_tuple[:args]
+          fields = named_tuple[:fields]
           {% for attr, options in properties %}
             {% unless options[:virtual] %}
               args <<
                 {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
-              fields << "{{attr.id}}"
+              fields << {{options[:column]}}
             {% end %}
           {% end %}
-
-          { args: args, fields: fields }
+          named_tuple
         end
 
         # :nodoc:
         def self.all : ::Jennifer::QueryBuilder::ModelQuery({{@type}})
-          ::Jennifer::QueryBuilder::ModelQuery({{@type}}).build(table_name).where { _type == {{@type.stringify}} }
+          ::Jennifer::QueryBuilder::ModelQuery({{@type}}).build(table_name).where { {{@type}}.sti_condition }
         end
 
         private def init_attributes(values : Hash)
-          super(values)
-          {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _sti_extract_attributes(values)
+          {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
         private def init_attributes(values : DB::ResultSet)
-          init_attributes(self.class.adapter.result_to_hash(values))
+          {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
         private def __refresh_changes
@@ -270,17 +353,14 @@ module Jennifer
           super
         end
 
-        {% all_properties = properties %}
         {% for key, value in @type.superclass.constant("COLUMNS_METADATA") %}
-          {% all_properties[key] = value if !properties[key] %}
+          {% properties[key] = value if !properties[key] %}
         {% end %}
 
         # :nodoc:
-        COLUMNS_METADATA = {{all_properties}}
-        # :nodoc:
         PRIMARY_AUTO_INCREMENTABLE = {{@type.superclass.constant("PRIMARY_AUTO_INCREMENTABLE")}}
         # :nodoc:
-        FIELD_NAMES = [{{all_properties.keys.map { |e| "#{e.id.stringify}" }.join(", ").id}}]
+        FIELD_NAMES = [{{properties.keys.map { |e| "#{e.id.stringify}" }.join(", ").id}}]
 
         # :nodoc:
         def self.columns_tuple
@@ -289,7 +369,7 @@ module Jennifer
 
         # :nodoc:
         def self.field_count
-          {{all_properties.size}}
+          {{properties.size}}
         end
 
         # :nodoc:

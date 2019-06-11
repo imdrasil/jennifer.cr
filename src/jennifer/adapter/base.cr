@@ -14,8 +14,7 @@ module Jennifer
       include ResultParsers
       include RequestMethods
 
-      alias ArgType = DBAny
-      alias ArgsType = Array(ArgType)
+      alias ArgsType = Array(DBAny)
 
       module AbstractClassMethods
         abstract def command_interface
@@ -34,7 +33,20 @@ module Jennifer
       end
 
       def prepare
-        ::Jennifer::Model::Base.models.each(&.actual_table_field_count)
+        models = Hash(String, Array(Jennifer::Model::Base.class)).new do |hash, name|
+          hash[name] = [] of Jennifer::Model::Base.class
+        end
+
+        ::Jennifer::Model::Base.models.each do |model|
+          models[model.table_name] << model
+        end
+
+        tables_column_count(models.keys).each do |record|
+          count = record.count(Int64).to_i
+          models[record.table_name(String)].each do |model|
+            model.actual_table_field_count = count
+          end
+        end
       end
 
       def exec(query : String, args : ArgsType = [] of DBAny)
@@ -103,6 +115,7 @@ module Jennifer
 
       def bulk_insert(collection : Array(Model::Base))
         return collection if collection.empty?
+
         klass = collection[0].class
         fields = collection[0].arguments_to_insert[:fields]
         values = collection.flat_map(&.arguments_to_insert[:args])
@@ -119,13 +132,39 @@ module Jennifer
         collection
       end
 
-      def bulk_insert(table : String, fields : Array(String), values : Array(ArgsType)) : Nil
+      def bulk_insert(table : String, fields : Array(String), values : Array(ArgsType))
         return if values.empty?
+
         with_table_lock(table) do
           flat_values = values.flatten
           exec(*parse_query(sql_generator.bulk_insert(table, fields, values.size), flat_values))
         end
-        nil
+      end
+
+      def upsert(table : String, fields : Array(String), values : Array(ArgsType), unique_fields, on_conflict : Hash)
+        query = sql_generator.insert_on_duplicate(table, fields, values.size, unique_fields, on_conflict)
+        args = [] of DBAny
+        values.each { |row| args.concat(row) }
+        on_conflict.each { |_, value| add_field_assign_arguments(args, value) }
+
+        exec(*parse_query(query, args))
+      end
+
+      # Returns whether index for the *table` with *name* or *fields* exists.
+      #
+      # ```
+      # # Check an index exists
+      # adapter.index_exists?(:suppliers, :company_id)
+      #
+      # # Check an index on multiple columns exists
+      # adapter.index_exists?(:suppliers, [:company_id, :company_type])
+      #
+      # # Check an index with a custom name exists
+      # adapter.index_exists?(:suppliers, "idx_company_id")
+      # ```
+      def index_exists?(table, fields : Array)
+        index_name = Migration::TableBuilder::CreateIndex.generate_index_name(table, fields, nil)
+        index_exists?(table, index_name)
       end
 
       def parse_query(q : String, args : ArgsType)
@@ -152,6 +191,11 @@ module Jennifer
         command_interface.drop_database
       end
 
+      def self.database_exists?
+        command_interface.database_exists?
+      end
+
+      # Yields to block connection to the database main schema.
       def self.db_connection
         DB.open(connection_string) do |db|
           yield(db)
@@ -167,8 +211,9 @@ module Jennifer
       end
 
       # Generates foreign key name for given tables.
-      def self.foreign_key_name(table1, table2)
-        "fk_cr_#{join_table_name(table1, table2)}"
+      def self.foreign_key_name(from_table, to_table = nil, column = nil, name : String? = nil) : String
+        column_name = Migration::TableBuilder::CreateForeignKey.column_name(to_table, column)
+        Migration::TableBuilder::CreateForeignKey.foreign_key_name(from_table, column_name, name)
       end
 
       def self.connection_string(*options)
@@ -209,9 +254,11 @@ module Jennifer
 
       def ready_to_migrate!
         return if table_exists?(Migration::Version.table_name)
-        schema_processor.build_create_table(Migration::Version.table_name) do |t|
-          t.string(:version, {:size => 17, :null => false})
-        end
+
+        tb = Migration::TableBuilder::CreateTable.new(self, Migration::Version.table_name)
+        tb.integer(:id, { :primary => true, :auto_increment => true })
+        tb.string(:version, { :size => 17, :null => false })
+        tb.process
       end
 
       def query_array(_query : String, klass : T.class, field_count : Int32 = 1) forall T
@@ -230,29 +277,56 @@ module Jennifer
 
       abstract def schema_processor
       abstract def sql_generator
-      abstract def view_exists?(name, silent = true)
+
+      # Check whether view with given *name* exists.
+      #
+      # ```
+      # adapter.view_exists?(:youth_contacts)
+      # ```
+      abstract def view_exists?(name) : Bool
+
       abstract def update(obj)
       abstract def update(q, h)
       abstract def insert(obj)
 
       # Returns where table with given *table* name exists.
+      #
+      # ```
+      # adapter.table_exists?(:developers)
+      # ```
       abstract def table_exists?(table)
 
-      # Returns whether foreign key between *from_table* and *to_table* exists.
-      abstract def foreign_key_exists?(from_table, to_table)
+      # Checks to see if a foreign key exists on a table for a given foreign key definition.
+      #
+      # ```
+      # # Checks to see if a foreign key exists.
+      # adapter.foreign_key_exists?(:accounts, :branches)
+      #
+      # # Checks to see if a foreign key on a specified column exists.
+      # adapter.foreign_key_exists?(:accounts, column: :owner_id)
+      #
+      # # Checks to see if a foreign key with a custom name exists.
+      # adapter.foreign_key_exists?(:accounts, name: "special_fk_name")
+      # ```
+      abstract def foreign_key_exists?(from_table, to_table = nil, column = nil, name : String? = nil) : Bool
 
-      # Returns whether foreign key with given *name* exists.
-      abstract def foreign_key_exists?(name)
-
-      # Returns whether index for the *table` with *name* exists.
-      abstract def index_exists?(table, name)
+      abstract def index_exists?(table, name : String)
 
       # Returns whether column of *table* with *name* exists.
+      #
+      # ```
+      # # Check a column exists
+      # column_exists?(:suppliers, :name)
+      # ```
       abstract def column_exists?(table, name)
+
+      # Translates symbol data type name to database-specific data type.
       abstract def translate_type(name)
       abstract def default_type_size(name)
       abstract def table_column_count(table)
+      abstract def tables_column_count(tables : Array(String))
       abstract def with_table_lock(table : String, type : String = "default", &block)
+      abstract def explain(q)
 
       def refresh_materialized_view(name)
         raise AbstractMethod.new(:refresh_materialized_view, self.class)

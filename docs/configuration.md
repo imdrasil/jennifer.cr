@@ -37,7 +37,7 @@ test:
   <<: *defaults
 ```
 
-Also dsl could be used:
+This also can be written using DSL:
 
 ```crystal
 Jennifer::Config.configure do |conf|
@@ -87,6 +87,7 @@ Jennifer::Config.from_uri(db)
 | `command_shell_sudo` | `false` |
 | `migration_failure_handler_method` | `"none"` |
 | `migration_files_path` | `"./db/migrations"` |
+| `verbose_migrations` | `true` |
 | `model_files_path` | `"./src/models"` |
 | `structure_folder` | parent folder of `migration_files_path` |
 
@@ -105,6 +106,7 @@ Also take into account - some configs can't be initialized using URI string or y
 | --- | --- | --- |
 | `logger` | ❌ | ❌ |
 | `migration_files_path` | ✔ | ❌ |
+| `verbose_migrations` | ✔ | ❌ |
 | `model_files_path` | ✔ | ❌ |
 | `local_time_zone_name` | ✔ | ❌ |
 | `schema` | ✔ | ❌ |

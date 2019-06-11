@@ -66,43 +66,48 @@ class User < ApplicationRecord
   validates_uniqueness :email
 
   has_many :contacts, Contact, inverse_of: :user
+
+  def self.password_digest_cost
+    4
+  end
 end
 
 class Contact < ApplicationRecord
-  with_timestamps
-
   module Mapping
-    macro included
-      {% if env("DB") == "postgres" || env("DB") == nil %}
-        mapping(
-          id:          Primary32,
-          name:        String,
-          ballance:    PG::Numeric?,
-          age:         {type: Int32, default: 10},
-          gender:      {type: String?, default: "male"},
-          description: String?,
-          created_at:  Time?,
-          updated_at:  Time?,
-          user_id:     Int32?,
-          tags:        { type: Array(Int32)? }
-        )
-      {% else %}
-        mapping(
-          id:          Primary32,
-          name:        String,
-          ballance:    Float64?,
-          age:         {type: Int32, default: 10},
-          gender:      {type: String?, default: "male"},
-          description: String?,
-          created_at:  Time?,
-          updated_at:  Time?,
-          user_id:     Int32?
-        )
-      {% end %}
-    end
+    include Jennifer::Model::Mapping
+
+    {% if env("DB") == "postgres" || env("DB") == nil %}
+      mapping(
+        id:          Primary32,
+        name:        String,
+        ballance:    PG::Numeric?,
+        age:         {type: Int32, default: 10},
+        gender:      {type: String?, default: "male"},
+        description: String?,
+        created_at:  Time?,
+        updated_at:  Time?,
+        user_id:     Int32?,
+        tags:        { type: Array(Int32)? }
+      )
+    {% else %}
+      mapping(
+        id:          Primary32,
+        name:        String,
+        ballance:    Float64?,
+        age:         {type: Int32, default: 10},
+        gender:      {type: String?, default: "male"},
+        description: String?,
+        created_at:  Time?,
+        updated_at:  Time?,
+        user_id:     Int32?
+      )
+    {% end %}
   end
 
   include Mapping
+
+  with_timestamps
+  mapping
 
   has_many :addresses, Address, inverse_of: :contact
   has_many :facebook_profiles, FacebookProfile, inverse_of: :contact
@@ -564,4 +569,53 @@ class AddressWithNilableBool < Jennifer::Model::Base
     id: {type: Int32, primary: true},
     main: Bool?
   }, false)
+end
+
+class NoteWithManualId < Jennifer::Model::Base
+  table_name "notes"
+  with_timestamps
+
+  mapping(
+    id: { type: Primary32, auto: false },
+    text: { type: String? },
+    created_at: Time?,
+    updated_at: Time?
+  )
+end
+
+class Author < Jennifer::Model::Base
+  mapping({
+    id:         Primary32,
+    name1:      { type: String, column: :first_name },
+    name2:      { type: String, column: :last_name }
+  })
+end
+
+class Publication < Jennifer::Model::Base
+  mapping({
+    id:         Primary32,
+    name:       { type: String, column: :title },
+    version:    Int32,
+    publisher:  String,
+    type:       String
+  })
+end
+
+class Book < Publication
+  mapping({
+    pages:      Int32?
+  })
+end
+
+class Article < Publication
+  mapping({
+    size:       { type: Int32?, column: :pages }
+  })
+end
+
+class BlogPost < Publication
+  mapping({
+    url:        String?,
+    created_at:    {type: Time?, virtual: true, column: :created}
+  })
 end

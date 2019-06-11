@@ -176,6 +176,28 @@ describe Jennifer::Model::Base do
         model.name.should eq("some name")
       end
     end
+
+    context "model has column aliases" do
+      it "correctly maps column aliases" do
+        a = Author.create(
+          name1: "Samply",
+          name2: "Examplary"
+        )
+
+        Author
+          .where { _first_name == "Samply" }
+          .first!
+          .id
+          .should eq(a.id)
+      end
+    end
+
+    context "with non-auto primary key" do
+      it do
+        NoteWithManualId.create(id: 1)
+        NoteWithManualId.all.where { _id == 1 }.exists?.should be_true
+      end
+    end
   end
 
   describe "::create!" do

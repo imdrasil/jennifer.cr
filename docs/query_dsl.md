@@ -2,7 +2,7 @@
 
 My favorite part. Jennifer allows you to build lazy evaluated queries with chaining syntax. But some of them could be only at the and of a chain (such as `#first` or `#pluck`).
 
-## Where
+## WHERE
 
 `#all` retrieves everything (only at the beginning; creates empty request)
 
@@ -211,25 +211,30 @@ Next methods provide flexible api for passing arguments:
 
 They allows pass argument (tuple, named tuple or hash - depending on context) of `String`, `Symbol` or `Cryteria`. `String` arguments will be parsed as plain sql (`RawSql`) and `Symbol` - as `Criteria`.
 
-## Select
+## SELECT
 
 Raw sql for `SELECT` clause could be passed into `#select` method. This have highest priority during forming this query part.
 
 ```crystal
-Contact.all.select("COUNT(id) as count, contacts.name").group("name")
-       .having { sql("COUNT(id)") > 1 }.pluck(:name)
+Contact
+  .all
+  .select("COUNT(id) as count, contacts.name")
+  .group("name")
+  .having { sql("COUNT(id)") > 1 }
+  .pluck(:name)
 ```
 
 Also `#select` accepts block where all fields could be specified and aliased:
 
 ```crystal
-Contact.all
+Contact
+  .all
   .select { [sql("COUNT(id)").alias("count"), _name] }
   .group("name")
   .having { sql("count") > 1 }.pluck(:name)
 ```
 
-## From
+## FROM
 
 Also you can provide subquery to specify FROM clause (but be careful with source fields during result retrieving and mapping to objects)
 
@@ -238,7 +243,13 @@ Contact.all.from("select * from contacts where id > 2")
 Contacts.all.from(Contact.where { _id > 2 })
 ```
 
-## Joins
+Also it is possible to avoid `FROM` clause setting table name to empty line:
+
+```crystal
+Jennifer::Query[""].select("1 as column").db_results # [{ "column" => 1 }]
+```
+
+## JOIN
 
 To join another table you can use `join` method passing model class or table name (`String`) and join type (default is `:inner`).
 
@@ -287,7 +298,7 @@ To load all related objects after main query being executed use `#includes` meth
 Contact.all.includes(:addresses)
 ```
 
-## Group
+## GROUP BY
 
 ```crystal
 Contact.all.group("name", "id").pluck(:name, :id)
@@ -296,13 +307,15 @@ Contact.all.group("name", "id").pluck(:name, :id)
 `#group` allows to add columns for `GROUP BY` section. If passing arguments are tuple of strings or just one string - all columns will be parsed as current table columns. If there is a need to group on joined table or using fields from several tables use next:
 
 ```crystal
-Contact.all.relation("addresses").group(addresses: ["street"], contacts: ["name"])
-       .pluck("addresses.street", "contacts.name")
+Contact
+  .all
+  .select { [_addresses__street, _contacts__name] }
+  .relation("addresses")
+  .group(addresses: ["street"], contacts: ["name"])
+  .results
 ```
 
- Here keys should be *table names*.
-
-## Having
+## HAVING
 
 ```crystal
 Contact.all.group("name").having { _age > 15 }
@@ -310,7 +323,7 @@ Contact.all.group("name").having { _age > 15 }
 
 `#having` allows to add `HAVING` part of query. It accepts block same way as `#where` does.
 
-## Exists
+## EXISTS
 
 ```crystal
 Contact.where { _age > 42 }.exists? # returns true or false
@@ -318,7 +331,7 @@ Contact.where { _age > 42 }.exists? # returns true or false
 
 `#exists?` check is there is any record with provided conditions. Can be only at the end of query chain - it hit the db.
 
-## Distinct
+## DISTINCT
 
 Adds `DISTINCT` keyword of at the very beginning of `SELECT` statement
 
@@ -326,15 +339,42 @@ Adds `DISTINCT` keyword of at the very beginning of `SELECT` statement
 Contact.all.distinct # Array(Contact) with unique attributes (all)
 ```
 
-## Union
+## UNION
 
 To make common SQL `UNION` you can use `#union` method which accepts other query object. But be careful - all selected fields should have same name and type.
 
 ```crystal
-Address.all.where { _street.like("%St. Paul%") }.union(Profile.all.where { _login.in(["login1", "login2"]) }.select(:contact_id)).select(:contact_id).results
+Address
+  .all
+  .select(:contact_id)
+  .where { _street.like("%St. Paul%") }
+  .union(
+    Profile
+      .all
+      .select(:contact_id)
+      .where { _login.in(["login1", "login2"]) }
+  )
+  .results
 ```
 
-In this example you can't use regular `#to_a` because result records will be not an address or profile so it couldn't be mapped to any of these models. That's why only `Jennifer::Record` could be got.
+In this example you can't use regular `#to_a` because resulted records are not  an address neither profile so they couldn't be mapped to any model. That's why only `Jennifer::Record` could be obtained (which is done by `#results`).
+
+## WITH
+
+You can specify common table expression (even recursive):
+
+```crystal
+Jennifer::Query["cte"].with(
+  "cte",
+  Jennifer::Query[""]
+    .select("1 as n")
+    .union(
+      Jennifer::Query["cte"].select("1 + n AS n").where { _n < 5 },
+      true
+    ),
+  true
+)
+```
 
 ## None
 

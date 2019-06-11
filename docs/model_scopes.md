@@ -10,7 +10,7 @@ scope :query_with_arguments { |a, b| where { (c("f1") == a) && (c("f2").in(b) } 
 As you can see arguments are next:
 
 - scope (query) name
-- block to be executed in query contex (any query part could be passed: join, where, having, etc.)
+- block to be executed in query context (any query part could be passed: join, where, having, etc.)
 
 Also they are chainable, so you could do:
 

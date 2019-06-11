@@ -57,7 +57,7 @@ end
 To lock table use `Jennifer::Adapter#with_table_lock` method
 
 ```crystal
-Jennifer::Adapter.adapter("table_name") do 
+Jennifer::Adapter.adapter("table_name") do
   # some operations here
 end
 ```
@@ -70,7 +70,7 @@ Contact.with_table_lock do
 end
 ```
 
-> But **only** postgres adapter supprots trully table `LOCK` staement - mysql one just wrap call to transation. This is caused by performing queries with prepared statements and mysql doesn't allow lock table via it.
+> But **only** postgres adapter supports the real table `LOCK` statement - mysql one just wraps a call to the transaction. This is caused by performing queries with prepared statements and mysql doesn't allow lock table via it.
 
 Database-specific information on row locking:
 - [MySQL](http://dev.mysql.com/doc/refman/5.7/en/innodb-locking-reads.html)

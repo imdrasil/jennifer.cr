@@ -30,7 +30,7 @@ Password = {
 }
 ```
 
-Mapping automatically resolves it to it's definition. At the moment only top level non generic definition could be used, e.g. `password: { type: Password }` and `password: Password?` are not supported.
+Mapping automatically resolves it to its definition. At the moment only top level non generic definition could be used, e.g. `password: { type: Password }` and `password: Password?` are not supported.
 
 For authentication `Crypto::Bcrypt::Password` is used. This mechanism requires you to have a `password_digest`, `password`, `password_confirmation` attributes defined in your mapping. This attribute can be customized - `with_authentication` macro accepts next arguments:
 

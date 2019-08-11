@@ -1,37 +1,23 @@
-def match_array(expect, target)
-  (expect - target).size.should eq(0)
-  (target - expect).size.should eq(0)
-rescue e
-  puts "Actual array: #{expect}"
-  puts "Expected: #{target}"
-  raise e
-end
-
-def match_each(source, target)
-  source.size.should eq(target.size)
-  source.each do |e|
-    target.includes?(e).should be_true
-  end
-rescue e
-  puts "Actual array: #{source}"
-  puts "Expected: #{target}"
-  raise e
-end
-
-macro match_fields(object, fields)
-  {% for field, value in fields %}
-    {{object}}.{{field.id}}.should eq({{value}})
-  {% end %}
-end
-
-macro match_fields(object, **fields)
-  {% for field, value in fields %}
-    {{object}}.{{field.id}}.should eq({{value}})
-  {% end %}
-end
-
 module Spec
   module Methods
+    def match_array(expect, target)
+      missing = expect - target
+      extra = target - expect
+      fail("Actual array: #{expect}; Expected: #{target}") unless missing.empty? && extra.empty?
+    end
+
+    macro match_fields(object, fields)
+      {% for field, value in fields %}
+        {{object}}.{{field.id}}.should eq({{value}})
+      {% end %}
+    end
+
+    macro match_fields(object, **fields)
+      {% for field, value in fields %}
+        {{object}}.{{field.id}}.should eq({{value}})
+      {% end %}
+    end
+
     # The following construction
     #
     # ```

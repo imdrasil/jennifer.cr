@@ -287,11 +287,13 @@ describe Jennifer::QueryBuilder::Function do
       Factory.create_contact(name: "BBB", gender: "female", age: 19)
       Factory.create_contact(name: "Asd", gender: "male", age: 20)
       Factory.create_contact(name: "BBB", gender: "female", age: 21)
-      res = db_specific(
-        mysql: -> { Query["contacts"].select { [avg(_age).alias("avg")] }.group(:gender).to_a.map(&.avg.as(Float64)) },
-        postgres: -> { Query["contacts"].select { [avg(_age)] }.group(:gender).to_a.map(&.avg.as(PG::Numeric)) }
-      )
-      match_each([19, 20], res)
+      res =
+        {% if env("DB") == "mysql" %}
+          Query["contacts"].select { [avg(_age).alias("avg")] }.group(:gender).to_a.map(&.avg.as(Float64))
+        {% else %}
+          Query["contacts"].select { [avg(_age)] }.group(:gender).to_a.map(&.avg.as(PG::Numeric).to_f)
+        {% end %}
+      match_array([19.0, 20.0], res)
     end
   end
 end

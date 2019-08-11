@@ -82,7 +82,7 @@ class Contact < ApplicationRecord
         name:        String,
         ballance:    PG::Numeric?,
         age:         {type: Int32, default: 10},
-        gender:      {type: String?, default: "male"},
+        gender:      {type: String?, default: "male", converter: Jennifer::Model::EnumConverter},
         description: String?,
         created_at:  Time?,
         updated_at:  Time?,
@@ -429,13 +429,23 @@ end
 class ContactWithDependencies < Jennifer::Model::Base
   table_name "contacts"
 
-  mapping({
-    id:          Primary32,
-    name:        String?,
-    description: String?,
-    age:         {type: Int32, default: 10},
-    gender:      {type: String?, default: "male"},
-  }, false)
+  {% if env("DB") == "postgres" || env("DB") == nil %}
+    mapping({
+      id:          Primary32,
+      name:        String?,
+      description: String?,
+      age:         {type: Int32, default: 10},
+      gender:      {type: String?, default: "male", converter: Jennifer::Model::EnumConverter},
+    }, false)
+  {% else %}
+    mapping({
+      id:          Primary32,
+      name:        String?,
+      description: String?,
+      age:         {type: Int32, default: 10},
+      gender:      {type: String?, default: "male"},
+    }, false)
+  {% end %}
 
   has_many :addresses, Address, dependent: :delete, foreign: :contact_id
   has_many :facebook_profiles, FacebookProfile, dependent: :nullify, foreign: :contact_id
@@ -592,13 +602,23 @@ class Author < Jennifer::Model::Base
 end
 
 class Publication < Jennifer::Model::Base
-  mapping({
-    id:         Primary32,
-    name:       { type: String, column: :title },
-    version:    Int32,
-    publisher:  String,
-    type:       String
-  })
+  {% if env("DB") == "postgres" || env("DB") == nil %}
+    mapping(
+      id:         Primary32,
+      name:       { type: String, column: :title },
+      version:    Int32,
+      publisher:  String,
+      type:       { type: String, converter: Jennifer::Model::EnumConverter }
+    )
+  {% else %}
+    mapping(
+      id:         Primary32,
+      name:       { type: String, column: :title },
+      version:    Int32,
+      publisher:  String,
+      type:       String
+    )
+  {% end %}
 end
 
 class Book < Publication

@@ -86,21 +86,6 @@ module Jennifer
         @schema_processor ||= SchemaProcessor.new(self)
       end
 
-      def prepare
-        _query = <<-SQL
-          SELECT e.enumtypid
-          FROM pg_type t, pg_enum e
-          WHERE t.oid = e.enumtypid
-        SQL
-
-        query(_query) do |rs|
-          rs.each do
-            PG::Decoders.register_decoder PG::Decoders::StringDecoder.new, rs.read(UInt32).to_i
-          end
-        end
-        super
-      end
-
       def translate_type(name)
         TYPE_TRANSLATIONS[name]
       rescue e : KeyError

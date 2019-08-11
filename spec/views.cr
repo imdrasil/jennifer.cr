@@ -15,13 +15,23 @@ class FemaleContact < BaseView
 end
 
 class MaleContact < Jennifer::View::Base
-  mapping({
-    id:         Primary32,
-    name:       String,
-    gender:     String,
-    age:        Int32,
-    created_at: Time?,
-  }, false)
+  {% if env("DB") == "postgres" || env("DB") == nil %}
+    mapping({
+      id:         Primary32,
+      name:       String,
+      gender:     { type: String, converter: Jennifer::Model::EnumConverter },
+      age:        Int32,
+      created_at: Time?,
+    }, false)
+  {% else %}
+    mapping({
+      id:         Primary32,
+      name:       String,
+      gender:     String,
+      age:        Int32,
+      created_at: Time?,
+    }, false)
+  {% end %}
 
   scope :main { where { _age < 50 } }
   scope :older { |age| where { _age >= age } }
@@ -35,13 +45,23 @@ end
 class FakeFemaleContact < Jennifer::View::Base
   view_name "female_contacs"
 
-  mapping({
-    id:         Primary32,
-    name:       String,
-    gender:     String,
-    age:        Int32,
-    created_at: Time?,
-  }, false)
+  {% if env("DB") == "postgres" || env("DB") == nil %}
+    mapping({
+      id:         Primary32,
+      name:       String,
+      gender:     { type: String, converter: Jennifer::Model::EnumConverter },
+      age:        Int32,
+      created_at: Time?,
+    }, false)
+  {% else %}
+    mapping({
+      id:         Primary32,
+      name:       String,
+      gender:     String,
+      age:        Int32,
+      created_at: Time?,
+    }, false)
+  {% end %}
 end
 
 class FakeContactView < Jennifer::View::Base
@@ -78,13 +98,25 @@ class MaleContactWithDescription < Jennifer::View::Base
 end
 
 class PrintPublication < Jennifer::View::Base
-  mapping({
-    id:         Primary32,
-    title:      String,
-    v:          {type: Int32, column: :version},
-    publisher:  String,
-    pages:      Int32?,
-    url:        String?,
-    type:       String
-  })
+  {% if env("DB") == "postgres" || env("DB") == nil %}
+    mapping(
+      id:         Primary32,
+      title:      String,
+      v:          {type: Int32, column: :version},
+      publisher:  String,
+      pages:      Int32?,
+      url:        String?,
+      type:       { type: String, converter: Jennifer::Model::EnumConverter }
+    )
+  {% else %}
+    mapping(
+      id:         Primary32,
+      title:      String,
+      v:          {type: Int32, column: :version},
+      publisher:  String,
+      pages:      Int32?,
+      url:        String?,
+      type:       String
+    )
+  {% end %}
 end

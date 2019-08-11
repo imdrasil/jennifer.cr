@@ -510,7 +510,12 @@ describe Jennifer::Model::STIMapping do
       r.keys.should eq({:args, :fields})
 
       match_array(r[:fields], %w(title version publisher type pages))
-      match_array(r[:args], db_array("MyNameIsDonnieSmith", 5, "PTA", "Article", 1))
+      expected =
+        db_specific(
+          mysql: -> { db_array("MyNameIsDonnieSmith", 5, "PTA",  "Article", 1) },
+          postgres: -> { db_array("MyNameIsDonnieSmith", 5, "PTA",  Bytes[65, 114, 116, 105, 99, 108, 101], 1) }
+        )
+      match_array(r[:args], expected)
     end
   end
 

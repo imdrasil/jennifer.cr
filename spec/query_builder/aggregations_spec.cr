@@ -91,11 +91,8 @@ describe Jennifer::QueryBuilder::Aggregations do
       Factory.create_contact(name: "BBB", gender: "female", age: 19)
       Factory.create_contact(name: "Asd", gender: "male", age: 20)
       Factory.create_contact(name: "BBB", gender: "female", age: 21)
-      {% if env("DB") == "mysql" %}
-        match_each([19, 20], described_class.new("contacts").group(:gender).group_avg(:age, Float64))
-      {% else %}
-        match_each([19, 20], described_class.new("contacts").group(:gender).group_avg(:age, PG::Numeric))
-      {% end %}
+      klass = {% if env("DB") == "mysql" %} Float64 {% else %} PG::Numeric {% end %}
+      match_array([19.0, 20.0], described_class.new("contacts").group(:gender).group_avg(:age, klass).map(&.to_f))
     end
   end
 
@@ -104,7 +101,7 @@ describe Jennifer::QueryBuilder::Aggregations do
       Factory.create_contact(name: "Asd", gender: "male", age: 18)
       Factory.create_contact(name: "BBB", gender: "female", age: 18)
       Factory.create_contact(name: "Asd", gender: "male", age: 20)
-      match_each([2, 1], described_class.new("contacts").group(:age).group_count(:age))
+      match_array([2, 1], described_class.new("contacts").group(:age).group_count(:age))
     end
   end
 end

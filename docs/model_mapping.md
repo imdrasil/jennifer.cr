@@ -127,10 +127,11 @@ To define field converter create a class which implements next methods:
 - `.to_db(SomeType)` - converts field to the db format;
 - `.from_hash(Hash(String, Jennifer::DBAny), String)` - converts field from the given hash (second argument is a field name).
 
-There are 2 predefined converters:
+There are 3 predefined converters:
 
-- `Jennifer::Model::JSONConverter` - default converter for `JSON::Any`;
-- `Jennifer::Model::NumericToFloat64Converter` - converts Postgres `PG::Numeric` to `Float64`.
+- `Jennifer::Model::JSONConverter` - default converter for `JSON::Any` (it is applied automatically for `JSON::Any` fields);
+- `Jennifer::Model::NumericToFloat64Converter` - converts Postgre `PG::Numeric` to `Float64`;
+- `Jennifer::Model::EnumConverter` - converts Postgre `ENUM` value to `String`.
 
 To make some field nillable tou can use any of the next options:
 

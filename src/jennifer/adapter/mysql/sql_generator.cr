@@ -7,12 +7,12 @@ module Jennifer
         opts = obj.arguments_to_insert
         String.build do |s|
           s << "INSERT INTO " << obj.class.table_name
-          unless opts[:fields].empty?
+          if opts[:fields].empty?
+            s << " VALUES ()"
+          else
             s << "("
             opts[:fields].join(", ", s)
             s << ") VALUES (" << escape_string(opts[:fields].size) << ") "
-          else
-            s << " VALUES ()"
           end
         end
       end
@@ -31,7 +31,7 @@ module Jennifer
             _joins[1..-1].join(" ", s) { |e| s << e.as_sql(self) }
           end
           s << " SET "
-          options.join(", ", s) { |(k, v)| s << k << " = " << esc }
+          options.join(", ", s) { |(k, _)| s << k << " = " << esc }
           s << " "
           where_clause(s, query.tree)
         end

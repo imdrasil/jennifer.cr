@@ -93,8 +93,6 @@ describe Jennifer::QueryBuilder::Join do
 end
 
 describe Jennifer::QueryBuilder::LateralJoin do
-  described_class = Jennifer::QueryBuilder::LateralJoin
-
   describe "#as_sql" do
     it "includes source request definition" do
       lateral_join.as_sql.should match(/ \(SELECT tests\.\* FROM tests WHERE tests\.id = %s \) ON /m)

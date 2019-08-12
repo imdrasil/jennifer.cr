@@ -552,7 +552,7 @@ module Jennifer
         raise ArgumentError.new("Condition tree can't be blank.")
       end
 
-      def filterable?
+      def filterable? # ameba:disable Metrics/CyclomaticComplexity
         select_filterable_arguments? ||
           (@from.is_a?(Query) && @from.as(Query).filterable?) ||
           (_joins? && _joins!.any?(&.filterable?)) ||

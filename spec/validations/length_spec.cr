@@ -1,6 +1,7 @@
 require "../spec_helper"
 
 describe Jennifer::Validations::Length do
+  # ameba:disable Lint/UselessAssign
   described_class = Jennifer::Validations::Length
 
   describe "#validate" do

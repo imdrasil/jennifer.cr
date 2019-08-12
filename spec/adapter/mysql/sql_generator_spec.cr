@@ -2,7 +2,6 @@ require "../../spec_helper"
 
 mysql_only do
   describe Jennifer::Mysql::SQLGenerator do
-    adapter = Jennifer::Adapter.adapter
     described_class = Jennifer::Adapter.adapter.sql_generator
 
     describe "::lock_clause" do

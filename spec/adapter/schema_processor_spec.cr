@@ -1,6 +1,6 @@
 require "../spec_helper"
 
-alias DB_OPTION = Jennifer::Migration::TableBuilder::Base::EAllowedTypes | Array(Jennifer::Migration::TableBuilder::Base::EAllowedTypes)
+alias DBOption = Jennifer::Migration::TableBuilder::Base::EAllowedTypes | Array(Jennifer::Migration::TableBuilder::Base::EAllowedTypes)
 
 describe Jennifer::Adapter::SchemaProcessor do
   adapter = Jennifer::Adapter.adapter
@@ -35,14 +35,14 @@ describe Jennifer::Adapter::SchemaProcessor do
   describe "#add_column" do
     it do
       match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column int/) do
-        processor.add_column("table_name", "column", { :type => :integer } of Symbol => DB_OPTION)
+        processor.add_column("table_name", "column", { :type => :integer } of Symbol => DBOption)
       end
     end
 
     describe "serial" do
       it do
         match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column serial/) do
-          processor.add_column("table_name", "column", { :type => :integer, :serial => true } of Symbol => DB_OPTION)
+          processor.add_column("table_name", "column", { :type => :integer, :serial => true } of Symbol => DBOption)
         end
       end
     end
@@ -50,7 +50,7 @@ describe Jennifer::Adapter::SchemaProcessor do
     describe "primary key" do
       it do
         match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column int PRIMARY KEY/) do
-          processor.add_column("table_name", "column", { :type => :integer, :primary => true } of Symbol => DB_OPTION)
+          processor.add_column("table_name", "column", { :type => :integer, :primary => true } of Symbol => DBOption)
         end
       end
     end
@@ -59,7 +59,7 @@ describe Jennifer::Adapter::SchemaProcessor do
       pending "add"
       # it do
       #   match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column int AUTO_INCREMENT/) do
-      #     processor.add_column("table_name", "column", { :type => :integer, :auto_increment => true } of Symbol => DB_OPTION)
+      #     processor.add_column("table_name", "column", { :type => :integer, :auto_increment => true } of Symbol => DBOption)
       #   end
       # end
     end
@@ -67,7 +67,7 @@ describe Jennifer::Adapter::SchemaProcessor do
     context "with default" do
       it do
         match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column int DEFAULT 10/) do
-          processor.add_column("table_name", "column", { :type => :integer, :default => 10 } of Symbol => DB_OPTION)
+          processor.add_column("table_name", "column", { :type => :integer, :default => 10 } of Symbol => DBOption)
         end
       end
     end
@@ -76,7 +76,7 @@ describe Jennifer::Adapter::SchemaProcessor do
       context "with" do
         it do
           match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column int NOT NULL/) do
-            processor.add_column("table_name", "column", { :type => :integer, :null => false } of Symbol => DB_OPTION)
+            processor.add_column("table_name", "column", { :type => :integer, :null => false } of Symbol => DBOption)
           end
         end
       end
@@ -84,7 +84,7 @@ describe Jennifer::Adapter::SchemaProcessor do
       context "without" do
         it do
           match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column int NULL/) do
-            processor.add_column("table_name", "column", { :type => :integer, :null => true } of Symbol => DB_OPTION)
+            processor.add_column("table_name", "column", { :type => :integer, :null => true } of Symbol => DBOption)
           end
         end
       end
@@ -97,7 +97,7 @@ describe Jennifer::Adapter::SchemaProcessor do
     context "with custom size" do
       it do
         match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column int\(2\)/) do
-          processor.add_column("table_name", "column", { :type => :integer, :size => 2 } of Symbol => DB_OPTION)
+          processor.add_column("table_name", "column", { :type => :integer, :size => 2 } of Symbol => DBOption)
         end
       end
     end
@@ -105,7 +105,7 @@ describe Jennifer::Adapter::SchemaProcessor do
     context "with custom SQL type" do
       it do
         match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column smallint/) do
-          processor.add_column("table_name", "column", { :type => :integer, :sql_type => :smallint } of Symbol => DB_OPTION)
+          processor.add_column("table_name", "column", { :type => :integer, :sql_type => :smallint } of Symbol => DBOption)
         end
       end
     end

@@ -91,7 +91,7 @@
   * `#foreign_key_exists?(from_table, to_table = nil, column = nil, name : String? = nil)`
   * `#add_index(table_name : String | Symbol, field : Symbol, type : Symbol? = nil, name : String? = nil, length : Int32? = nil, order : Symbol? = nil)` (same for `TableBuilder::CreateTable#index` and `TableBuilder::ChangeTable#add_index`)
   * `#drop_index(table : String | Symbol, fields : Array(Symbol) = [] of Symbol, name : String? = nil)` (same for `TableBuilder::ChangeTable#drop_index`)
-  *  `#drop_foreign_key(to_table : String | Symbol, column = nil, name = nil)` (same for `TableBuilder::ChangeTable#drop_foreign_key`)
+  * `#drop_foreign_key(to_table : String | Symbol, column = nil, name = nil)` (same for `TableBuilder::ChangeTable#drop_foreign_key`)
 * add `TableBuilder::CreateTable#column` as alias to `TableBuilder::CreateTable#field`
 * new signature of `TableBuilder::CreateTable#reference` - `#reference(name, type : Symbol = :integer, options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)`
 

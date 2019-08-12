@@ -89,7 +89,7 @@ module Jennifer
 
       private def build_hash(rs, size)
         h = {} of String => DBAny
-        size.times do |i|
+        size.times do
           h[rs.current_column_name] = rs.read(DBAny)
         end
         h

@@ -49,8 +49,6 @@ describe Jennifer::Adapter::BaseSQLGenerator do
   end
 
   describe "::select_clause" do
-    s = Contact.all.join(Address) { _id == Contact._id }.with_relation(:addresses)
-
     it "includes definitions of select fields" do
       sb { |io| described_class.select_clause(io, Contact.all.select { [now.alias("now")] }) }.should match(/SELECT NOW\(\) AS now/)
     end

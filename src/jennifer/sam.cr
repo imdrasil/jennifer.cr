@@ -2,12 +2,12 @@ require "./generators/*"
 
 Sam.namespace "db" do
   desc "Will call all pending migrations"
-  task "migrate" do |t, args|
+  task "migrate" do
     Jennifer::Migration::Runner.migrate
   end
 
   desc "Invoke next migration. Usage: db:step [<count>]"
-  task "step" do |t, args|
+  task "step" do |_, args|
     if !args.raw.empty?
       Jennifer::Migration::Runner.migrate(args.raw.last.as(String).to_i)
     else
@@ -16,7 +16,7 @@ Sam.namespace "db" do
   end
 
   desc "Rollback migration. Usage: db:rollback [v=<migration_exclusive_version> | <count_to_rollback>]"
-  task "rollback" do |t, args|
+  task "rollback" do |_, args|
     if !args.raw.empty?
       Jennifer::Migration::Runner.rollback({:count => args.raw.last.as(String).to_i})
     elsif args["v"]?
@@ -27,12 +27,12 @@ Sam.namespace "db" do
   end
 
   desc "Drops database"
-  task "drop" do |t, args|
+  task "drop" do
     Jennifer::Migration::Runner.drop
   end
 
   desc "Creates database"
-  task "create" do |t, args|
+  task "create" do
     Jennifer::Migration::Runner.create
   end
 
@@ -64,12 +64,12 @@ end
 
 Sam.namespace "generate" do
   desc "Generates migration template. Usage - generate:migration <migration_name>"
-  task "migration" do |t, args|
+  task "migration" do |_, args|
     Jennifer::Generators::Migration.new(args).render
   end
 
   desc "Generates model and migrations template. Usage - generate:model <ModelName>"
-  task "model" do |t, args|
+  task "model" do |_, args|
     Jennifer::Generators::Model.new(args).render
   end
 end

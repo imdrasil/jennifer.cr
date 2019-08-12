@@ -6,7 +6,7 @@ describe Jennifer::QueryBuilder::Executables do
   describe "#first" do
     it "returns first record" do
       c1 = Factory.create_contact(age: 15)
-      c2 = Factory.create_contact(age: 15)
+      Factory.create_contact(age: 15)
 
       r = Contact.all.first
       r.not_nil!.id.should eq(c1.id)
@@ -20,7 +20,7 @@ describe Jennifer::QueryBuilder::Executables do
   describe "#first!" do
     it "returns first record" do
       c1 = Factory.create_contact(age: 15)
-      c2 = Factory.create_contact(age: 15)
+      Factory.create_contact(age: 15)
 
       r = Contact.all.first!
       r.id.should eq(c1.id)
@@ -38,14 +38,14 @@ describe Jennifer::QueryBuilder::Executables do
   describe "#last" do
     it "inverse all orders" do
       c1 = Factory.create_contact(age: 15)
-      c2 = Factory.create_contact(age: 16)
+      Factory.create_contact(age: 16)
 
       r = Contact.all.order(age: :desc).last.not_nil!
       r.id.should eq(c1.id)
     end
 
     it "add order by primary key if no order was specified" do
-      c1 = Factory.create_contact(age: 15)
+      Factory.create_contact(age: 15)
       c2 = Factory.create_contact(age: 16)
 
       r = Contact.all.last.not_nil!
@@ -55,7 +55,7 @@ describe Jennifer::QueryBuilder::Executables do
 
   describe "#last!" do
     it "returns last record" do
-      c1 = Factory.create_contact(age: 15)
+      Factory.create_contact(age: 15)
       c2 = Factory.create_contact(age: 15)
 
       r = Contact.all.last!
@@ -109,7 +109,7 @@ describe Jennifer::QueryBuilder::Executables do
   describe "#delete" do
     it "deletes from db using existing conditions" do
       count = Contact.all.count
-      c = Factory.create_contact(name: "Extra content")
+      Factory.create_contact(name: "Extra content")
       Contact.all.count.should eq(count + 1)
       described_class.new("contacts").where { _name == "Extra content" }.delete
       Contact.all.count.should eq(count)
@@ -204,8 +204,8 @@ describe Jennifer::QueryBuilder::Executables do
     context "with block" do
       it do
         c1 = Factory.create_contact(age: 13, name: "a")
-        c2 = Factory.create_contact(age: 14, name: "a")
-        c3 = Factory.create_contact(age: 15, name: "a")
+        Factory.create_contact(age: 14, name: "a")
+        Factory.create_contact(age: 15, name: "a")
 
         Contact.where { _age < 15 }.update do
           {
@@ -344,7 +344,7 @@ describe Jennifer::QueryBuilder::Executables do
         it "yields proper amount of times" do
           Factory.create_contact(3)
           yield_count = 0
-          query.find_in_batches(batch_size: 2, primary_key: pk) do |records|
+          query.find_in_batches(batch_size: 2, primary_key: pk) do
             yield_count += 1
           end
           yield_count.should eq(2)
@@ -366,7 +366,7 @@ describe Jennifer::QueryBuilder::Executables do
         it "properly loads records" do
           Factory.create_contact(3)
           yield_count = 0
-          query.find_in_batches("id", 2) do |records|
+          query.find_in_batches("id", 2) do
             yield_count += 1
           end
           yield_count.should eq(2)
@@ -378,7 +378,7 @@ describe Jennifer::QueryBuilder::Executables do
       it "uses 'start' as a page number" do
         Factory.create_contact(3)
         yield_count = 0
-        query.find_in_batches(batch_size: 2, start: 1) do |records|
+        query.find_in_batches(batch_size: 2, start: 1) do
           yield_count += 1
         end
         yield_count.should eq(1)
@@ -414,7 +414,6 @@ describe Jennifer::QueryBuilder::Executables do
         end
 
         it "use 'start' argument as start primary key value" do
-          yield_count = 0
           ids = Factory.create_contact(3).map(&.id)
           buff = [] of Int32
           query.find_each(pk, 2, ids[1]) do |record|
@@ -428,7 +427,7 @@ describe Jennifer::QueryBuilder::Executables do
         it "properly loads records" do
           Factory.create_contact(3)
           yield_count = 0
-          query.find_each("id", 2) do |records|
+          query.find_each("id", 2) do
             yield_count += 1
           end
           yield_count.should eq(3)
@@ -440,7 +439,7 @@ describe Jennifer::QueryBuilder::Executables do
       it "uses 'start' as a page number" do
         Factory.create_contact(3)
         yield_count = 0
-        query.find_each(batch_size: 2, start: 1) do |records|
+        query.find_each(batch_size: 2, start: 1) do
           yield_count += 1
         end
         yield_count.should eq(1)

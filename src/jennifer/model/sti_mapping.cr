@@ -174,6 +174,7 @@ module Jennifer
         # Creates object from db tuple
         def initialize(%pull : DB::ResultSet)
           @new_record = false
+          # ameba:disable Lint/ShadowingOuterLocalVar
           {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(%pull)
         end
 
@@ -197,6 +198,7 @@ module Jennifer
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))
           values["type"] = "{{@type.id}}" if values["type"]?.nil?
+          # ameba:disable Lint/ShadowingOuterLocalVar
           {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
@@ -339,10 +341,12 @@ module Jennifer
         end
 
         private def init_attributes(values : Hash)
+          # ameba:disable Lint/ShadowingOuterLocalVar
           {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
         private def init_attributes(values : DB::ResultSet)
+          # ameba:disable Lint/ShadowingOuterLocalVar
           {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 

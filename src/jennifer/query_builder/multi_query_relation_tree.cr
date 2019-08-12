@@ -10,8 +10,6 @@ module Jennifer
       end
 
       def preload(collection)
-        primary_fields = [] of DBAny
-        last_primary_field_name = ""
         repo = Array(Array(Model::Resource)).new(@bucket.size + 1)
         (@bucket.size + 1).times { |_| repo << [] of Model::Resource }
         collection.each { |c| repo[0] << c }

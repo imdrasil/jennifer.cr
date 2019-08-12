@@ -24,10 +24,10 @@ module Jennifer
       end
 
       def update
-        unless @rolled_back
-          @commit_observers.each(&.call)
-        else
+        if @rolled_back
           @rollback_observers.each(&.call)
+        else
+          @commit_observers.each(&.call)
         end
       end
     end

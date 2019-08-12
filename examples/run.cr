@@ -4,6 +4,7 @@ require "./migrations/*"
 require "sam"
 require "../src/jennifer/sam"
 
+# ameba:disable Lint/UnusedArgument
 Jennifer::Config.configure do |conf|
   # conf.logger = Logger.new(STDOUT)
   # conf.logger.level = Logger::ERROR

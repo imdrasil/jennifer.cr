@@ -58,7 +58,7 @@ module Jennifer
 
       def join_condition(query, type)
         this = self
-        query.join(model_class, type: type, relation: @name) do |eb|
+        query.join(model_class, type: type, relation: @name) do
           this.condition_clause.not_nil!
         end
       end

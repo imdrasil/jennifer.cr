@@ -1,7 +1,6 @@
 require "../spec_helper"
 
 describe Jennifer::QueryBuilder::LogicOperator do
-  described_class = Jennifer::QueryBuilder::LogicOperator
   expression = Factory.build_expression
   c1 = Factory.build_criteria(field: "f1")
   c2 = Factory.build_criteria(field: "f2")

@@ -173,7 +173,7 @@ module Jennifer
       # ```
       def and(first_condition, second_condition, *conditions)
         g(
-          conditions.reduce(first_condition & second_condition) { |sum, e| sum &= e }
+          conditions.reduce(first_condition & second_condition) { |sum, e| sum & e }
         )
       end
 
@@ -186,7 +186,7 @@ module Jennifer
       # # => WHERE (users.name LIKE '%on' OR users.age > 3)
       # ```
       def or(first_condition, second_condition, *conditions)
-        g(conditions.reduce(first_condition | second_condition) { |sum, e| sum |= e })
+        g(conditions.reduce(first_condition | second_condition) { |sum, e| sum | e })
       end
 
       # Combines given *first_condition*, *second_condition* and all other *conditions* by `XOR` operator.

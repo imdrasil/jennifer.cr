@@ -1,8 +1,6 @@
 require "../spec_helper"
 
 describe Jennifer::QueryBuilder::Criteria do
-  described_class = Jennifer::QueryBuilder::Criteria
-
   # all sql checks are in operator_spec.cr
   {% for op in [:==, :<, :>, :<=, :>=, :!=] %}
     describe "#{{{op.stringify}}}" do

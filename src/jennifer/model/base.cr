@@ -382,12 +382,12 @@ module Jennifer
       # user.save # => true
       # ```
       def save(skip_validation : Bool = false) : Bool
-        unless self.class.adapter.under_transaction?
+        if self.class.adapter.under_transaction?
+          save_record_under_transaction(skip_validation)
+        else
           self.class.transaction do
             save_record_under_transaction(skip_validation)
           end || false
-        else
-          save_record_under_transaction(skip_validation)
         end
       end
 

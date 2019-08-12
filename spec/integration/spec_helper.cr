@@ -29,7 +29,6 @@ class DatabaseSeeder
   end
 
   def self.create(type = :bash)
-    config = Jennifer::Config
     command =
       case Spec.adapter
       when "postgres"

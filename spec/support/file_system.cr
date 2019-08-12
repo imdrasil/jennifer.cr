@@ -12,8 +12,8 @@ class FileSystem
   end
 
   def clean
-    watchable.each do |path|
-      (Dir[File.join(path, "**")] - files).each do |path|
+    watchable.each do |watched_path|
+      (Dir[File.join(watched_path, "**")] - files).each do |path|
         File.delete(path)
       end
     end

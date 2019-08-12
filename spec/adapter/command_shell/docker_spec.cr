@@ -8,8 +8,6 @@ def prepare_docker_config
 end
 
 describe Jennifer::Adapter::Docker do
-  described_class = Jennifer::Adapter::Docker
-
   describe "#execute" do
     context "with environment variables" do
       it do

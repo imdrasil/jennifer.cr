@@ -136,7 +136,7 @@ describe Jennifer::QueryBuilder::EagerLoading do
     context "related model has own request" do
       # TODO: move it to SqlGenerator
       it "it generates proper request" do
-        contact = Factory.create_contact
+        Factory.create_contact
         query = Contact.all.eager_load(:main_address)
         Jennifer::Adapter.adapter.sql_generator.select(query).should match(/addresses\.main/)
       end
@@ -145,7 +145,7 @@ describe Jennifer::QueryBuilder::EagerLoading do
     context "with defined inverse_of" do
       it "sets owner during building collection" do
         c = Factory.create_contact
-        a = Factory.create_address(contact_id: c.id)
+        Factory.create_address(contact_id: c.id)
         expect_queries_to_be_executed(1) do
           res = Contact.all.eager_load(:addresses).to_a
           res[0].addresses[0].contact
@@ -155,7 +155,7 @@ describe Jennifer::QueryBuilder::EagerLoading do
 
     it "properly loads several relations from the same table" do
       c = Factory.create_contact
-      a = Factory.create_address(contact_id: c.id, main: false)
+      Factory.create_address(contact_id: c.id, main: false)
       main_address = Factory.create_address(contact_id: c.id, main: true)
       expect_queries_to_be_executed(1) do
         res = Contact.all.eager_load(:addresses, :main_address).to_a
@@ -277,7 +277,7 @@ describe Jennifer::QueryBuilder::EagerLoading do
     context "with defined inverse_of" do
       it "sets owner during building collection" do
         c = Factory.create_contact
-        a = Factory.create_address(contact_id: c.id)
+        Factory.create_address(contact_id: c.id)
         res = Contact.all.includes(:addresses).to_a
         expect_query_silence do
           res[0].addresses[0].contact

@@ -18,7 +18,7 @@ describe Jennifer::QueryBuilder::MultiQueryRelationTree do
       it do
         tree = builder.call
         c = Factory.create_contact
-        a = Factory.create_address(contact_id: c.id)
+        Factory.create_address(contact_id: c.id)
         collection = query.to_a
         tree.add_relation(query, :passport)
         tree.add_relation(query, :addresses)

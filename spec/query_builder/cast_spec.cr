@@ -1,8 +1,6 @@
 require "../spec_helper"
 
 describe Jennifer::QueryBuilder::Cast do
-  described_class = Jennifer::QueryBuilder::Cast
-
   pending ".new"
   pending "#sql_args"
   pending "#filterable?"

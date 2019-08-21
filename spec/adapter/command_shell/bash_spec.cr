@@ -58,7 +58,6 @@ describe Jennifer::Adapter::Bash do
 
     context "with sudo stream" do
       it do
-        shell = described_class.new(Jennifer::Config.instance)
         Jennifer::Config.command_shell_sudo = true
         shell = Jennifer::Adapter::Bash.new(Jennifer::Config.instance)
         c = Jennifer::Adapter::ICommandShell::Command.new(

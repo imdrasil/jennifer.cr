@@ -78,7 +78,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
     context "with nested objects" do
       it "builds nested objects" do
         c2 = Factory.create_contact(name: "b")
-        p = Factory.create_passport(contact_id: c2.id, enn: "12345")
+        Factory.create_passport(contact_id: c2.id, enn: "12345")
         res = Passport.all.join(Contact) { _id == _passport__contact_id }.with_relation(:contact).first!
 
         res.contact!.name.should eq("b")
@@ -97,10 +97,10 @@ describe Jennifer::QueryBuilder::ModelQuery do
           c1 = Factory.create_contact(name: "a")
           c2 = Factory.create_contact(name: "b")
 
-          a1 = Factory.create_address(street: "a1 st.", contact_id: c1.id)
-          a2 = Factory.create_address(street: "a2 st.", contact_id: c1.id)
+          Factory.create_address(street: "a1 st.", contact_id: c1.id)
+          Factory.create_address(street: "a2 st.", contact_id: c1.id)
 
-          p = Factory.create_passport(contact_id: c2.id, enn: "12345")
+          Factory.create_passport(contact_id: c2.id, enn: "12345")
 
           res = Contact.all.left_join(Address) { _contact_id == _contact__id }
                            .left_join(Passport) { _contact_id == _contact__id }
@@ -118,11 +118,11 @@ describe Jennifer::QueryBuilder::ModelQuery do
       context "retrieving several relation from same table" do
         it "uses auto aliasing" do
           c1 = Factory.create_contact(name: "a")
-          c2 = Factory.create_contact(name: "b")
+          Factory.create_contact(name: "b")
 
-          a1 = Factory.create_address(main: false, contact_id: c1.id)
-          a2 = Factory.create_address(main: false, contact_id: c1.id)
-          a3 = Factory.create_address(main: true, contact_id: c1.id)
+          Factory.create_address(main: false, contact_id: c1.id)
+          Factory.create_address(main: false, contact_id: c1.id)
+          Factory.create_address(main: true, contact_id: c1.id)
 
           q = Contact.all.eager_load(:addresses, :main_address)
           r = q.to_a
@@ -179,7 +179,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
         FROM contacts
       SQL
       expect_raises(Jennifer::BaseException, /includes only/) do
-        res = Contact.all.find_by_sql(_query)
+        Contact.all.find_by_sql(_query)
       end
     end
 
@@ -216,7 +216,6 @@ describe Jennifer::QueryBuilder::ModelQuery do
   describe "#find_each" do
     it "loads each in batches without specifying primary key" do
       ids = Factory.create_contact(3).map(&.id)
-      yield_count = 0
       buff = [] of Int32
       Contact.all.find_each(2, ids[1]) do |record|
         buff << record.id!

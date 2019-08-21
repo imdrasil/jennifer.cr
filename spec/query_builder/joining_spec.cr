@@ -1,7 +1,6 @@
 require "../spec_helper"
 
 describe Jennifer::QueryBuilder::Joining do
-  described_class = Jennifer::QueryBuilder::Query
   query = Factory.build_query
 
   describe "#join" do
@@ -13,13 +12,13 @@ describe Jennifer::QueryBuilder::Joining do
 
     it "raises major table expression builder as 1st argument" do
       table_name = ""
-      q = query.clone.join(Address) { |t| table_name = t.table; t._id }
+      query.clone.join(Address) { |t| table_name = t.table; t._id }
       table_name.should eq("tests")
     end
 
     it "raises joined table expression builder as 2nd argument" do
       table_name = ""
-      q = query.clone.join(Address) { |_, t| table_name = t.table; t._id }
+      query.clone.join(Address) { |_, t| table_name = t.table; t._id }
       table_name.should eq("addresses")
     end
 
@@ -57,13 +56,13 @@ describe Jennifer::QueryBuilder::Joining do
 
     it "raises major table expression builder as 1st argument" do
       table_name = ""
-      q = query.clone.lateral_join(join_query, "addresses") { |t| table_name = t.table; t._id }
+      query.clone.lateral_join(join_query, "addresses") { |t| table_name = t.table; t._id }
       table_name.should eq("tests")
     end
 
     it "raises joined table expression builder as 2nd argument" do
       table_name = ""
-      q = query.clone.lateral_join(join_query, "addresses") { |_, t| table_name = t.table; t._id }
+      query.clone.lateral_join(join_query, "addresses") { |_, t| table_name = t.table; t._id }
       table_name.should eq("addresses")
     end
 
@@ -93,13 +92,13 @@ describe Jennifer::QueryBuilder::Joining do
 
     it "raises major table expression builder as 1st argument" do
       table_name = ""
-      q = query.clone.left_join(Address) { |t| table_name = t.table; t._id }
+      query.clone.left_join(Address) { |t| table_name = t.table; t._id }
       table_name.should eq("tests")
     end
 
     it "raises joined table expression builder as 2nd argument" do
       table_name = ""
-      q = query.clone.left_join(Address) { |_, t| table_name = t.table; t._id }
+      query.clone.left_join(Address) { |_, t| table_name = t.table; t._id }
       table_name.should eq("addresses")
     end
   end
@@ -113,13 +112,13 @@ describe Jennifer::QueryBuilder::Joining do
 
     it "raises major table expression builder as 1st argument" do
       table_name = ""
-      q = query.clone.right_join(Address) { |t| table_name = t.table; t._id }
+      query.clone.right_join(Address) { |t| table_name = t.table; t._id }
       table_name.should eq("tests")
     end
 
     it "raises joined table expression builder as 2nd argument" do
       table_name = ""
-      q = query.clone.right_join(Address) { |_, t| table_name = t.table; t._id }
+      query.clone.right_join(Address) { |_, t| table_name = t.table; t._id }
       table_name.should eq("addresses")
     end
   end

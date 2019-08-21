@@ -18,6 +18,9 @@ development_dependencies:
   factory:
     github: imdrasil/factory
     version: "~> 0.1.4"
+  ameba:
+    github: crystal-ameba/ameba
+    version: ~> 0.10.0
 dependencies:
   sam:
     github: imdrasil/sam.cr

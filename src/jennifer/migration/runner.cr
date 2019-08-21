@@ -44,7 +44,7 @@ module Jennifer
       # Drops database.
       def self.drop
         # TODO: allow to specify adapter
-        r = default_adapter_class.drop_database
+        default_adapter_class.drop_database
         puts "#{Config.db} is dropped!"
       end
 

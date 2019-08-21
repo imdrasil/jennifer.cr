@@ -40,7 +40,7 @@ class ExpressionFactory < Factory::Base
 
   attr :table, "tests"
 
-  initialize_with do |hash, traits|
+  initialize_with do |hash, _traits|
     described_class.new(hash["table"])
   end
 end
@@ -51,7 +51,7 @@ class QueryFactory < Factory::Base
 
   attr :table, "tests"
 
-  initialize_with do |hash, traits|
+  initialize_with do |hash, _traits|
     described_class.new(hash["table"])
   end
 end

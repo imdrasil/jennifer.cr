@@ -87,7 +87,6 @@ module Spec
 
     def match(object)
       raise ArgumentError.new("validation message should be specified.") if @error_message.nil?
-      _error_message = @error_message.not_nil!
 
       object.validate!
       object.errors[@attr].includes?(@error_message)

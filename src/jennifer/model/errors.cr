@@ -87,7 +87,7 @@ module Jennifer
       # Returns all message values.
       def values
         errors = [] of String
-        messages.each do |attr, array|
+        messages.each do |_, array|
           errors += array unless array.empty?
         end
         errors

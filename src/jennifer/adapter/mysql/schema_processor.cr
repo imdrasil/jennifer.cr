@@ -23,7 +23,7 @@ module Jennifer
         end
       end
 
-      private def column_definition(name, options, io)
+      private def column_definition(name, options, io) # ameba:disable Metrics/CyclomaticComplexity
         type = options[:serial]? ? "serial" : (options[:sql_type]? || adapter.translate_type(options[:type].as(Symbol)))
         size = options[:size]? || adapter.default_type_size(options[:type])
         io << name << " " << type

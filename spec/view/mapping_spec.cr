@@ -219,7 +219,7 @@ describe Jennifer::View::Mapping do
 
       describe Time do
         it "stores to db time converted to UTC" do
-          contact = Factory.create_contact
+          Factory.create_contact
           new_time = Time.now(local_time_zone)
 
           with_time_zone("Etc/GMT+1") do
@@ -231,7 +231,7 @@ describe Jennifer::View::Mapping do
         end
 
         it "converts values from utc to local" do
-          contact = Factory.create_contact
+          Factory.create_contact
           with_time_zone("Etc/GMT+1") do
             MaleContact.all.first!.created_at!.should be_close(Time.now(local_time_zone), 2.seconds)
           end

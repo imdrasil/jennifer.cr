@@ -227,7 +227,7 @@ module Jennifer::Model
         context "with defined inverse_of" do
           it "sets owner during building collection" do
             c = Factory.create_contact
-            a = Factory.create_address(contact_id: c.id)
+            Factory.create_address(contact_id: c.id)
             count = query_count
             c.addresses[0].contact
             query_count.should eq(count + 1)
@@ -235,7 +235,7 @@ module Jennifer::Model
 
           it "sets owner during building collection 2" do
             c = Factory.create_contact
-            a = Factory.create_facebook_profile(contact_id: c.id)
+            Factory.create_facebook_profile(contact_id: c.id)
             count = query_count
             c.facebook_profiles[0].contact
             query_count.should eq(count + 1)
@@ -579,7 +579,7 @@ module Jennifer::Model
         context "with defined inverse_of" do
           it "sets owner during building collection" do
             c = Factory.create_contact
-            a = Factory.create_address(contact_id: c.id, main: true)
+            Factory.create_address(contact_id: c.id, main: true)
             count = query_count
             c.main_address!.contact
             query_count.should eq(count + 1)
@@ -587,7 +587,7 @@ module Jennifer::Model
 
           it "sets owner during building collection 2" do
             c = Factory.create_contact
-            a = Factory.create_passport(contact_id: c.id)
+            Factory.create_passport(contact_id: c.id)
             count = query_count
             c.passport!.contact
             query_count.should eq(count + 1)

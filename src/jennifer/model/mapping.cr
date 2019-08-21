@@ -134,7 +134,7 @@ module Jennifer
       macro copy_properties
         {%
           properties = COLUMNS_METADATA
-          lookup = @type.constant("INHERITED_COLUMNS_METADATA").to_a.reduce(properties) do |hash, (key, value)|
+          @type.constant("INHERITED_COLUMNS_METADATA").to_a.reduce(properties) do |hash, (key, value)|
             hash[key] = value if hash[key] == nil
             hash
           end

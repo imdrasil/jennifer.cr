@@ -114,10 +114,10 @@ module Jennifer
           res.concat(@rhs.as(SQLNode).sql_args)
         elsif @rhs.is_a?(Array) && (@operator == :in || @operator == :between)
           @rhs.as(Array).each do |e|
-            unless e.is_a?(SQLNode)
-              res << e.as(DBAny)
-            else
+            if e.is_a?(SQLNode)
               res.concat(e.sql_args)
+            else
+              res << e.as(DBAny)
             end
           end
         elsif @operator != :is && @operator != :is_not

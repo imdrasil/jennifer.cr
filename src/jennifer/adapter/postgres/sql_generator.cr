@@ -3,16 +3,30 @@ require "../base_sql_generator"
 module Jennifer
   module Postgres
     class SQLGenerator < Adapter::BaseSQLGenerator
+      # :nodoc:
+      OPERATORS = {
+        like: "LIKE",
+        not_like: "NOT LIKE",
+        regexp: "~",
+        not_regexp: "!~",
+        "==": "=",
+        is: "IS",
+        is_not: "IS NOT",
+        contain: "@>",
+        contained: "<@",
+        overlap: "&&"
+      }
+
       def self.insert(obj : Model::Base, with_primary_field = true)
         opts = obj.arguments_to_insert
         String.build do |s|
           s << "INSERT INTO " << obj.class.table_name
-          unless opts[:fields].empty?
+          if opts[:fields].empty?
+            s << " DEFAULT VALUES"
+          else
             s << "("
             opts[:fields].join(", ", s)
             s << ") VALUES (" << escape_string(opts[:fields].size) << ") "
-          else
-            s << " DEFAULT VALUES"
           end
 
           if with_primary_field
@@ -28,7 +42,7 @@ module Jennifer
         esc = escape_string(1)
         String.build do |s|
           s << "UPDATE " << query._table << " SET "
-          options.map { |k, v| "#{k.to_s}= #{esc}" }.join(", ", s)
+          options.map { |k, _| "#{k.to_s}= #{esc}" }.join(", ", s)
           s << ' '
 
           from_clause(s, query._joins![0].table_name(self)) if query._joins?
@@ -74,31 +88,8 @@ module Jennifer
         end
       end
 
-      def self.operator_to_sql(operator)
-        case operator
-        when :like
-          "LIKE"
-        when :not_like
-          "NOT LIKE"
-        when :regexp
-          "~"
-        when :not_regexp
-          "!~"
-        when :==
-          "="
-        when :is
-          "IS"
-        when :is_not
-          "IS NOT"
-        when :contain
-          "@>"
-        when :contained
-          "<@"
-        when :overlap
-          "&&"
-        else
-          operator.to_s
-        end
+      def self.operator_to_sql(operator : Symbol)
+        OPERATORS[operator]? || operator.to_s
       end
 
       def self.json_path(path : QueryBuilder::JSONSelector)

@@ -91,7 +91,7 @@ describe Jennifer::Model::STIMapping do
   describe "#initialize" do
     context "ResultSet" do
       it "properly loads from db" do
-        f = c = Factory.create_facebook_profile(uid: "1111", login: "my_login")
+        f = Factory.create_facebook_profile(uid: "1111", login: "my_login")
         res = FacebookProfile.find!(f.id)
         res.uid.should eq("1111")
         res.login.should eq("my_login")
@@ -187,7 +187,7 @@ describe Jennifer::Model::STIMapping do
 
   describe "#to_h" do
     it "sets all fields" do
-      r = c = Factory.build_facebook_profile(uid: "1111", login: "my_login").to_h
+      r = Factory.build_facebook_profile(uid: "1111", login: "my_login").to_h
       r.keys.should eq(%i(id login contact_id type uid))
       r[:login].should eq("my_login")
       r[:type].should eq("FacebookProfile")

@@ -161,7 +161,7 @@ describe Jennifer::Model::Base do
       end
 
       it "result set has no some field" do
-        o = OneFieldModel.create({} of String => Jennifer::DBAny)
+        OneFieldModel.create({} of String => Jennifer::DBAny)
         error_message = "Column OneFieldModelWithExtraArgument.missing_field hasn't been found in the result set."
         expect_raises(Jennifer::BaseException, error_message) do
           OneFieldModelWithExtraArgument.all.to_a
@@ -561,7 +561,7 @@ describe Jennifer::Model::Base do
   describe "::destroy" do
     it "deletes from db by given ids" do
       c = [] of Int32?
-      3.times { |i| c << Factory.create_contact.id }
+      3.times { c << Factory.create_contact.id }
       Contact.destroy(c[0..1])
       Contact.all.count.should eq(1)
     end
@@ -577,7 +577,7 @@ describe Jennifer::Model::Base do
   describe "::delete" do
     it "deletes from db by given ids" do
       c = [] of Int32?
-      3.times { |i| c << Factory.create_contact.id }
+      3.times { c << Factory.create_contact.id }
       Contact.delete(c[0..1])
       Contact.all.count.should eq(1)
     end

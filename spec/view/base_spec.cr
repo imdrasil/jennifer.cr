@@ -86,9 +86,9 @@ describe Jennifer::View::Base do
       end
 
       it "is chainable" do
-        c1 = Factory.create_contact(age: 15)
-        c2 = Factory.create_contact(age: 19)
-        c3 = Factory.create_contact(age: 20, name: "Johny")
+        Factory.create_contact(age: 15)
+        Factory.create_contact(age: 19)
+        Factory.create_contact(age: 20, name: "Johny")
         MaleContact.all.johny.older(14).count.should eq(1)
       end
     end
@@ -111,8 +111,8 @@ describe Jennifer::View::Base do
       end
 
       it "is chainable" do
-        c1 = Factory.create_contact(name: "Johny", age: 19)
-        c3 = Factory.create_contact(name: "Johny", age: 21)
+        Factory.create_contact(name: "Johny", age: 19)
+        Factory.create_contact(name: "Johny", age: 21)
         MaleContact.johny.older(20).count.should eq(1)
       end
     end

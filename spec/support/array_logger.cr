@@ -10,8 +10,8 @@ class ArrayLogger < Logger
     @progname = ""
     @closed = false
     @mutex = Mutex.new
-    @formatter = Formatter.new do |_, _, _, msg, io|
-      io << msg
+    @formatter = Formatter.new do |_, _, _, msg, output|
+      output << msg
     end
   end
 

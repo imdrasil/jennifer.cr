@@ -2,13 +2,12 @@ require "../spec_helper"
 
 describe Jennifer::Adapter::Base do
   adapter = Jennifer::Adapter.adapter
-  described_class = Jennifer::Adapter::Base
 
   describe Jennifer::BadQuery do
     describe "query" do
       it "raises BadRequest if there was problem during method execution" do
         expect_raises(Jennifer::BadQuery, /Original query was/) do
-          adapter.query("SELECT COUNT(id) as count FROM contacts where asd > $1", [1]) do |rs|
+          adapter.query("SELECT COUNT(id) as count FROM contacts where asd > $1", [1]) do
           end
         end
       end
@@ -68,7 +67,7 @@ describe Jennifer::Adapter::Base do
     it "rollbacks if exception was raised" do
       void_transaction do
         expect_raises(DivisionByZeroError) do
-          adapter.transaction do |tx|
+          adapter.transaction do
             Factory.create_contact
             1 / 0
           end
@@ -91,12 +90,12 @@ describe Jennifer::Adapter::Base do
       void_transaction do
         begin
           ch = Channel(Nil).new
-          adapter.transaction do |t|
+          adapter.transaction do
             Factory.create_contact
             raise DB::Rollback.new
           end
           spawn do
-            adapter.transaction do |t|
+            adapter.transaction do
               Factory.create_contact
             end
             ch.send(nil)

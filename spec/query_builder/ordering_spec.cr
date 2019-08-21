@@ -1,8 +1,6 @@
 require "../spec_helper"
 
 describe Jennifer::QueryBuilder::Ordering do
-  described_class = Jennifer::QueryBuilder::Query
-
   describe "#order" do
     context "with named tuple" do
       it "converts all keys to criterion" do

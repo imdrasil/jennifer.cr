@@ -1,7 +1,6 @@
 require "../spec_helper"
 
 describe Jennifer::QueryBuilder::Any do
-  described_class = Jennifer::QueryBuilder::Any
   query = Contact.all.where { _id == 2 }
   expression = Factory.build_expression
 

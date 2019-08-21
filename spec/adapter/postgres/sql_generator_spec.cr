@@ -2,7 +2,6 @@ require "../../spec_helper"
 
 postgres_only do
   describe Jennifer::Postgres::SQLGenerator do
-    adapter = Jennifer::Adapter.adapter
     described_class = Jennifer::Adapter.adapter.sql_generator
 
     describe "::lock_clause" do

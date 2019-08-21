@@ -5,8 +5,6 @@ private def create_table_expr
 end
 
 describe Jennifer::Migration::TableBuilder::CreateTable do
-  described_class = Jennifer::Migration::TableBuilder::CreateTable
-
   describe "#process" do
     pending "add" do
     end

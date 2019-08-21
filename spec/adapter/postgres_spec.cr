@@ -2,7 +2,6 @@ require "../spec_helper"
 
 postgres_only do
   describe Jennifer::Postgres::Adapter do
-    described_class = Jennifer::Postgres::Adapter
     adapter = Jennifer::Adapter.adapter.as(Jennifer::Postgres::Adapter)
 
     describe "#parse_query" do

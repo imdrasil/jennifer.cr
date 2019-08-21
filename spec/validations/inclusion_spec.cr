@@ -1,6 +1,7 @@
 require "../spec_helper"
 
 describe Jennifer::Validations::Inclusion do
+  # ameba:disable Lint/UselessAssign
   described_class = Jennifer::Validations::Inclusion
 
   describe "#validate" do

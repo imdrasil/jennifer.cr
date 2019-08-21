@@ -333,7 +333,7 @@ describe Jennifer::Model::Mapping do
 
       describe Time do
         it "stores to db time converted to UTC" do
-          contact = Factory.create_contact
+          Factory.create_contact
           new_time = Time.now(local_time_zone)
           with_time_zone("Etc/GMT+1") do
             Contact.all.update(created_at: new_time)

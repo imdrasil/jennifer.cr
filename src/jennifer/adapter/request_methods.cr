@@ -22,9 +22,7 @@ module Jennifer
 
       def update(query, options : Hash)
         args = [] of DBAny
-        options.each do |k, v|
-          args << v
-        end
+        options.each { |_, v| args << v }
         args.concat(query.sql_args)
         exec(*parse_query(sql_generator.update(query, options), args))
       end

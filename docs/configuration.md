@@ -63,44 +63,7 @@ db_uri = "mysql://root@somehost/some_database?max_pool_size=111&initial_pool_siz
 Jennifer::Config.from_uri(db)
 ```
 
-## Supported configuration parameters
-
-| Config | Default value |
-| --- | --- |
-| `host` | `"localhost"` |
-| `port` | -1 |
-| `logger` | `Logger.new(STDOUT)` |
-| `schema` | `"public"` |
-| `user` | - |
-| `password` | - |
-| `db` | - |
-| `adapter` | - |
-| `pool_size` | 1 |
-| `retry_attempts` | 1 |
-| `checkout_timeout` | 5.0 |
-| `retry_delay` | 1.0 |
-| `local_time_zone_name` | default time zone name |
-| `skip_dumping_schema_sql` | `false` |
-| `command_shell` | `"bash"` |
-| `docker_container` | `""` |
-| `docker_source_location` | `""` |
-| `command_shell_sudo` | `false` |
-| `migration_failure_handler_method` | `"none"` |
-| `migration_files_path` | `"./db/migrations"` |
-| `verbose_migrations` | `true` |
-| `model_files_path` | `"./src/models"` |
-| `structure_folder` | parent folder of `migration_files_path` |
-
-To avoid port usage set it to `-1`. For doing same with the password - assign to it blank value (`""`). Empty string also turns off `structure_folder` config.
-
-Also configuration can be parsed directly from URI:
-
-```crystal
-db_uri = "mysql://root@somehost/some_database?max_pool_size=111&initial_pool_size=222&max_idle_pool_size=333&retry_attempts=444&checkout_timeout=555&retry_delay=666"
-Jennifer::Config.from_uri(db)
-```
-
-Also take into account - some configs can't be initialized using URI string or yaml file but all of them always can be initialized using `Jennifer::Config.configure`. Here is the list of such configs:
+Take into account - some configs can't be initialized using URI string or yaml file but all of them always can be initialized using `Jennifer::Config.configure`. Here is the list of such configs:
 
 | Config | YAML | URI |
 | --- | --- | --- |
@@ -116,6 +79,37 @@ Also take into account - some configs can't be initialized using URI string or y
 | `docker_source_location` | ✔ | ❌ |
 | `command_shell_sudo` | ✔ | ❌ |
 | `migration_failure_handler_method` | ✔ | ❌ |
+| `allow_outdated_pending_migration` | ✔ | ❌ |
+
+## Supported configuration options
+
+* `host` - database host; default: `"localhost"`
+* `port` - database port; default: `-1` (`-1` value makes adapter to skip port in building connection URL, specify required port number)
+* `logger` - logger instance; default: `Logger.new(STDOUT)`
+* `schema` - PostgreSQL database schema name; default: `"public"`
+* `user` - database user name used to connect to the database
+* `password` - database user password used to connect to the database (if not specified - connection URL will specify only user name)
+* `db` - database name
+* `adapter` - adapter name to be used to connect to the database (e.g. `"postgres"`)
+* `pool_size` - count of simultaneously alive database connection; default: `1`
+* `retry_attempts` - count of attempts to connect to the database before raising an exception; default: `1`
+* `retry_delay` - amount of seconds to wait between connection retries; default: `1.0`
+* `checkout_timeout` - amount of seconds to be wait for connection; default: `5.0`
+* `local_time_zone_name` - local time zone name; automatically taken from `Time::Location.local.name`
+* `skip_dumping_schema_sql` - skip dumping database structure if set to `true`; default: `false`
+* `allow_outdated_pending_migration` - allows outdated pending migrations (which version is below the latest run migration) to be invoked without exception; default: `false`
+* `command_shell` - the name of system command interface to be used for some operations that require system calls; default: `"bash"`; `"docker"` value makes commands to be invoked inside of specified docker container
+* `docker_container` - container name with database instance (is used when `command_shell` set to `"docker"`); default: `""`
+* `docker_source_location` - default source location prefix for the executables inside of docker container (is used when `command_shell` set to `"docker"`); default: `""`
+* `command_shell_sudo` - marks whether system commands should be invoked with `sudo`; default: `false`
+* `migration_failure_handler_method` - strategy used on migration file failure; default: `"none"`; supported:
+  * `"none"` - do nothing
+  * `"reverse_direction"` - invokes an opposite method to migration direction (`#down` for an up-migration)
+  * `"callback"` - invokes `#after_up_failure` on a failed up-migration and `#after_down_failure` on a failed down-migration
+* `migration_files_path` - path to the location with migration files; default: `"./db/migrations"`
+* `verbose_migrations` - outputs basic invoked migration information if set to `true`; default: `true`
+* `model_files_path` - path to the models locations; is used by model and migration generators; default: `"./src/models"`
+* `structure_folder` - path to the database structure file location; if set to empty string - parent folder of `migration_files_path` is used; default: `""`
 
 From `0.5.1` `Jennifer::Config` has started working under singleton pattern instead of using class as a container for all configuration properties.
 
@@ -159,5 +153,3 @@ end
 
 Jennifer::Adapter::DBCommandInterface.register_shell("my_docker", MySimpleDocker)
 ```
-
-`command_shell_sudo` enables using `sudo` in command line. This will force you to enter a password for your admin user.

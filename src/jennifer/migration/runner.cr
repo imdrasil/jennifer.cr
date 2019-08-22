@@ -160,16 +160,17 @@ module Jennifer
       end
 
       private def self.assert_outdated_pending_migrations
-        return unless Version.all.exists?
+        return if !Version.all.exists? || Config.config.allow_outdated_pending_migration
+
         db_version = Version.all.order(version: :desc).limit(1).pluck(:version)[0].as(String)
         broken = pending_versions.select { |version| version < db_version }
-        unless broken.empty?
-          raise <<-MESSAGE
+        return if broken.empty?
+
+        raise <<-MESSAGE
           Can't run migrations because some of them are older then release version.
           They are:
           #{broken.map { |v| "- #{v}" }.join("\n")}
-          MESSAGE
-        end
+        MESSAGE
       end
 
       private def self.transaction

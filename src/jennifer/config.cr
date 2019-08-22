@@ -35,6 +35,7 @@ module Jennifer
   # * `docker_source_location = ""`
   # * `command_shell_sudo = false`
   # * `migration_failure_handler_method = "none"`
+  # * `allow_outdated_pending_migration = false`
   #
   # ```
   # Jennifer::Config.configure do |conf|
@@ -62,7 +63,7 @@ module Jennifer
     # :nodoc:
     FLOAT_FIELDS = {:checkout_timeout, :retry_delay}
     # :nodoc:
-    BOOL_FIELDS = {:command_shell_sudo, :skip_dumping_schema_sql, :verbose_migrations}
+    BOOL_FIELDS = {:command_shell_sudo, :skip_dumping_schema_sql, :verbose_migrations, :allow_outdated_pending_migration}
     # :nodoc:
     ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS = %w(reverse_direction callback none)
 

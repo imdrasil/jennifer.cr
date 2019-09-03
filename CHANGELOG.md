@@ -1,6 +1,29 @@
 # Changelog
 
-## Future release (__-__-2019)
+## 0.8.1 (04-09-2019)
+
+**General**
+
+* add `crystal-pg` 0.18.0 support
+* add ameba check to CI
+* fix bug with not defined `JSON`
+
+**Model**
+
+* Add `EnumConverter` converter for Postgre `ENUM` field convert
+* (pg only) field presenting `ENUM` field should explicitly specify `converter: Jennifer::Model::EnumConverter`
+
+**Adapter**
+
+* `Postgre` adapter now doesn't register decoders for each ENUM type in `#prepare`
+
+**Config**
+
+* add `allow_outdated_pending_migration` configuration to specify whether outdated pending migration should be silently processed or error should be raised
+
+**Migration**
+
+* extend `Jennifer::Migration::TableBuilder::Base::AllowedTypes` alias with `Int64` type.
 
 ## 0.8.0 (11-06-2019)
 

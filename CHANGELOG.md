@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.2 (11-09-2019)
+
+**General**
+
+* upgrade `TechMagister/i18n.cr` dependency to `0.3.1`
+
 ## 0.8.1 (04-09-2019)
 
 **General**

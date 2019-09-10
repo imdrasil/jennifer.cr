@@ -1,5 +1,5 @@
 name: jennifer
-version: 0.8.1
+version: 0.8.2
 
 authors:
   - Roman Kalnytskyi <moranibaca@gmail.com>
@@ -14,7 +14,7 @@ development_dependencies:
     version: "~> 0.8"
   pg:
     github: will/crystal-pg
-    version: "~> 0.18.0"
+    version: "~> 0.18.1"
   factory:
     github: imdrasil/factory
     version: "~> 0.1.4"
@@ -33,4 +33,4 @@ dependencies:
     version: "~> 0.1.2"
   i18n:
     github: TechMagister/i18n.cr
-    version: "~> 0.2.0"
+    version: "~> 0.3.1"

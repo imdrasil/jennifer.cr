@@ -4,7 +4,7 @@ describe Jennifer::Generators::Migration do
   described_class = Jennifer::Generators::Migration
 
   describe "#render" do
-    timestamp = Time.now.to_s("%Y%m%d%H%M%S")
+    timestamp = Time.local.to_s("%Y%m%d%H%M%S")
     args = Sam::Args.new({} of String => String, %w(CreateArticles))
 
     it "creates migration" do

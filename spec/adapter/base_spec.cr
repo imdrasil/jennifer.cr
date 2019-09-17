@@ -69,7 +69,7 @@ describe Jennifer::Adapter::Base do
         expect_raises(DivisionByZeroError) do
           adapter.transaction do
             Factory.create_contact
-            1 / 0
+            1 // 0
           end
         end
         Contact.all.count.should eq(0)

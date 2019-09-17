@@ -517,7 +517,7 @@ describe Jennifer::Model::Base do
           Factory.create_contact.with_lock do
             Factory.create_contact
             Contact.all.count.should eq(2)
-            1 / 0
+            1 // 0
           end
         end
         Contact.all.count.should eq(1)
@@ -537,7 +537,7 @@ describe Jennifer::Model::Base do
         expect_raises(DivisionByZeroError) do
           Contact.transaction do
             Factory.create_contact
-            1 / 0
+            1 // 0
           end
         end
         Contact.all.count.should eq(0)
@@ -628,7 +628,7 @@ describe Jennifer::Model::Base do
       it "imports objects" do
         void_transaction do
           objects = [Factory.build_address(enn: "qwer"), Factory.build_address(enn: "zxcc")]
-          objects.each { |o| o.created_at = o.updated_at = Time.new }
+          objects.each { |o| o.created_at = o.updated_at = Time.local }
           Address.import(objects)
           Address.all.count.should eq(2)
         end

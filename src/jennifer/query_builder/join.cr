@@ -80,7 +80,7 @@ module Jennifer
         @on.alias_tables(aliases)
       end
 
-      def sql_args
+      def sql_args : Array(DBAny)
         @table.is_a?(String) ? @on.sql_args : @table.as(Query).sql_args + @on.sql_args
       end
     end

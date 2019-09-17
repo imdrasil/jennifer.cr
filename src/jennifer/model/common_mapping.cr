@@ -14,7 +14,7 @@ module Jennifer::Model
       __field_declaration({{properties}}, {{primary_auto_incrementable}})
 
       # :nodoc:
-      def self.field_count
+      def self.field_count : Int32
         {{properties.size}}
       end
 
@@ -22,7 +22,7 @@ module Jennifer::Model
       FIELD_NAMES = [{{properties.keys.map { |e| "#{e.id.stringify}" }.join(", ").id}}]
 
       # :nodoc:
-      def self.field_names
+      def self.field_names : Array(String)
         FIELD_NAMES
       end
 

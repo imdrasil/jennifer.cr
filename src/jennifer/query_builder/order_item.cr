@@ -70,7 +70,7 @@ module Jennifer
         sql_generator.order_expression(self)
       end
 
-      def sql_args : Array
+      def sql_args : Array(DBAny)
         @criteria.sql_args
       end
 

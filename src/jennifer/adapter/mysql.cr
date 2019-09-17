@@ -90,7 +90,7 @@ module Jennifer
           .exists?
       end
 
-      def view_exists?(name)
+      def view_exists?(name) : Bool
         Query["information_schema.TABLES"]
           .where { (_table_schema == Config.db) & (_table_type == "VIEW") & (_table_name == name) }
           .exists?

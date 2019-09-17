@@ -133,7 +133,7 @@ class MaleContactFactory < Factory::Jennifer::Base
   attr :name, "Raphael"
   attr :age, 21
   attr :gender, "male"
-  attr :created_at, ->{ Time.utc_now }
+  attr :created_at, ->{ Time.utc }
 end
 
 class NoteFactory < Factory::Jennifer::Base

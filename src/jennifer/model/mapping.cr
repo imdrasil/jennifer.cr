@@ -197,7 +197,7 @@ module Jennifer
 
           # :nodoc:
           def __update_created_at
-            @created_at = Time.new(Jennifer::Config.local_time_zone)
+            @created_at = Time.local(Jennifer::Config.local_time_zone)
           end
         {% end %}
 
@@ -206,7 +206,7 @@ module Jennifer
 
           # :nodoc:
           def __update_updated_at
-            @updated_at = Time.new(Jennifer::Config.local_time_zone)
+            @updated_at = Time.local(Jennifer::Config.local_time_zone)
           end
         {% end %}
       end
@@ -261,7 +261,7 @@ module Jennifer
           end
         {% end %}
 
-        def destroy
+        def destroy : Bool
           return false if new_record?
           result =
             unless self.class.adapter.under_transaction?
@@ -274,12 +274,14 @@ module Jennifer
           if result
             self.class.adapter.subscribe_on_commit(->__after_destroy_commit_callback) if HAS_DESTROY_COMMIT_CALLBACK
             self.class.adapter.subscribe_on_rollback(->__after_destroy_rollback_callback) if HAS_DESTROY_ROLLBACK_CALLBACK
+
+            return true
           end
-          result
+          false
         end
 
         # :nodoc:
-        def changed?
+        def changed? : Bool
           {% for attr in nonvirtual_attrs %}
             @{{attr.id}}_changed ||
           {% end %}

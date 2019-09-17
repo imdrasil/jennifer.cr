@@ -6,12 +6,12 @@ module Jennifer
       # Migration file name timestamp format.
       DATE_FORMAT = "%Y%m%d%H%M%S%L"
 
-      private def file_path
+      private def file_path : String
         File.join(Config.migration_files_path.to_s, file_name)
       end
 
       private def file_name
-        time = Time.now.to_s(DATE_FORMAT)
+        time = Time.local.to_s(DATE_FORMAT)
         "#{time}_#{name.underscore}.cr"
       end
 

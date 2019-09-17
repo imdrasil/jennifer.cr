@@ -3,7 +3,6 @@ module Jennifer
     # Container for the `ALL` sql expression.
     class All < SQLNode
       getter query : Query
-      delegate sql_args, to: @query
 
       def_clone
 
@@ -16,6 +15,10 @@ module Jennifer
 
       def as_sql(generator)
         "ALL (#{@query.as_sql(generator)})"
+      end
+
+      def sql_args(*args, **options) : Array(DBAny)
+        query.sql_args(*args, **options)
       end
     end
   end

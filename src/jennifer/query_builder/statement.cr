@@ -5,7 +5,7 @@ module Jennifer
       abstract def as_sql(sql_generator)
 
       # Returns array of SQL query arguments.
-      abstract def sql_args : Array
+      abstract def sql_args : Array(DBAny)
 
       # Returns whether node has an argument to be added to sql statement arguments.
       abstract def filterable?

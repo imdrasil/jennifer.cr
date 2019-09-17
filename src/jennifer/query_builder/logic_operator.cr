@@ -65,7 +65,7 @@ module Jennifer
         @lhs.as_sql(generator) + " " + operator + " " + @rhs.as_sql(generator)
       end
 
-      def sql_args
+      def sql_args : Array(DBAny)
         @lhs.sql_args + @rhs.sql_args
       end
 

@@ -4,7 +4,7 @@ describe Jennifer::Generators::Model do
   described_class = Jennifer::Generators::Model
 
   describe "#render" do
-    timestamp = Time.now.to_s("%Y%m%d%H%M%S")
+    timestamp = Time.local.to_s("%Y%m%d%H%M%S")
 
     context "with common fields only" do
       args = Sam::Args.new({} of String => String, %w(Article title:string text:text?))

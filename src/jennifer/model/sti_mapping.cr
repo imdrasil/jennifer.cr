@@ -372,12 +372,12 @@ module Jennifer
         end
 
         # :nodoc:
-        def self.field_count
+        def self.field_count : Int32
           {{properties.size}}
         end
 
         # :nodoc:
-        def self.field_names
+        def self.field_names : Array(String)
           FIELD_NAMES
         end
       end

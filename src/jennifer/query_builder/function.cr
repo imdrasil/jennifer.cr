@@ -53,7 +53,7 @@ module Jennifer
         end
       end
 
-      def sql_args
+      def sql_args : Array(DBAny)
         res = [] of DBAny
         operands.each do |operand|
           if operand.is_a?(SQLNode)

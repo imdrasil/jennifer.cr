@@ -43,7 +43,7 @@ module Jennifer
         T
       end
 
-      def nested_relation_tree
+      def nested_relation_tree : NestedRelationTree
         @nested_relation_tree ||= NestedRelationTree.new(T)
       end
 

@@ -397,7 +397,7 @@ describe Jennifer::Model::STIMapping do
         publisher:  "RandomBlogger",
         url:        "www.random-blog.blog"
       )
-      timestamp = Time.utc_now
+      timestamp = Time.utc
       b.created_at = timestamp
       b.attribute(:created_at).should eq timestamp
     end

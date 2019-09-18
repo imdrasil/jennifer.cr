@@ -258,8 +258,8 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     context "with given Time object" do
       it do
         with_time_zone("Etc/GMT+1") do
-          adapter.parse_query("%s", [Time.now(local_time_zone)] of Jennifer::DBAny)[1][0].as(Time)
-            .should be_close(Time.utc_now, 1.second)
+          adapter.parse_query("%s", [Time.local(local_time_zone)] of Jennifer::DBAny)[1][0].as(Time)
+            .should be_close(Time.utc, 1.second)
         end
       end
     end

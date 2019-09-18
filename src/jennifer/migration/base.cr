@@ -139,7 +139,7 @@ module Jennifer
       # Check whether view with given *name* exists.
       #
       # Delegate to `Adapter::Base#view_exists?`.
-      def view_exists?(name : String | Symbol)
+      def view_exists?(name : String | Symbol) : Bool
         adapter.view_exists?(name)
       end
 

@@ -334,7 +334,7 @@ describe Jennifer::Model::Mapping do
       describe Time do
         it "stores to db time converted to UTC" do
           Factory.create_contact
-          new_time = Time.now(local_time_zone)
+          new_time = Time.local(local_time_zone)
           with_time_zone("Etc/GMT+1") do
             Contact.all.update(created_at: new_time)
             Contact.all.select { [_created_at] }.each_result_set do |rs|
@@ -346,7 +346,7 @@ describe Jennifer::Model::Mapping do
         it "converts values from utc to local" do
           contact = Factory.create_contact
           with_time_zone("Etc/GMT+1") do
-            contact.reload.created_at!.should be_close(Time.now(local_time_zone), 1.second)
+            contact.reload.created_at!.should be_close(Time.local(local_time_zone), 1.second)
           end
         end
       end
@@ -382,7 +382,7 @@ describe Jennifer::Model::Mapping do
       describe "TIMESTAMP" do
         it "properly saves and loads" do
           c1 = Factory.create_contact(name: "Sam", age: 18)
-          time = Time.new(2001, 12, 23, 23, 58, 59)
+          time = Time.local(2001, 12, 23, 23, 58, 59)
           c1.created_at = time
           c1.save
           c2 = Contact.find!(c1.id)
@@ -761,7 +761,7 @@ describe Jennifer::Model::Mapping do
       c.created_at.should be_nil
       c.__update_created_at
       c.created_at!.should_not be_nil
-      ((c.created_at! - Time.now).total_seconds < 1).should be_true
+      ((c.created_at! - Time.local).total_seconds < 1).should be_true
     end
   end
 
@@ -771,7 +771,7 @@ describe Jennifer::Model::Mapping do
       c.updated_at.should be_nil
       c.__update_updated_at
       c.updated_at!.should_not be_nil
-      ((c.updated_at! - Time.now).total_seconds < 1).should be_true
+      ((c.updated_at! - Time.local).total_seconds < 1).should be_true
     end
   end
 end

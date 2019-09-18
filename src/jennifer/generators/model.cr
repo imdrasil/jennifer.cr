@@ -15,7 +15,7 @@ module Jennifer
         CreateMigration.new(args, fields).render
       end
 
-      private def file_path
+      private def file_path : String
         File.join(Config.model_files_path.to_s, file_name)
       end
 

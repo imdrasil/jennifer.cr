@@ -32,7 +32,7 @@ module Jennifer
         @use_brackets ? "(" + @field + ")" : @field
       end
 
-      def sql_args
+      def sql_args : Array(DBAny)
         @params
       end
 

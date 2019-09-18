@@ -15,7 +15,7 @@ module Jennifer
         condition.eql?(other.condition)
       end
 
-      def sql_args
+      def sql_args : Array(DBAny)
         condition.sql_args
       end
 

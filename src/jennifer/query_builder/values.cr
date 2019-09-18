@@ -16,7 +16,7 @@ module Jennifer::QueryBuilder
       sql_generator.values_expression(@field)
     end
 
-    def sql_args
+    def sql_args : Array(DBAny)
       [] of DBAny
     end
 

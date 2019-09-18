@@ -154,7 +154,7 @@ module Jennifer
           .exists?
       end
 
-      def view_exists?(name)
+      def view_exists?(name) : Bool
         Query["information_schema.views"]
           .where { (_table_schema == Config.schema) & (_table_name == name) }
           .exists?

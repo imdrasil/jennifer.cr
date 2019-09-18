@@ -232,7 +232,7 @@ module Jennifer
         generator.select(self)
       end
 
-      def sql_args
+      def sql_args : Array(DBAny)
         args = [] of DBAny
         args.concat(select_filterable_arguments) if select_filterable_arguments?
         args.concat(@from.as(Query).sql_args) if @from.is_a?(Query)

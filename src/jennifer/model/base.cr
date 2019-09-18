@@ -328,9 +328,9 @@ module Jennifer
       # Sets attributes based on `values` where keys are attribute names.
       #
       # ```
-      # post.set_attributes({ :title => "New Title", :created_at => Time.now })
-      # post.set_attributes({ title: "New Title", created_at: Time.now })
-      # post.set_attributes(title: "New Title", created_at: Time.now)
+      # post.set_attributes({ :title => "New Title", :created_at => Time.local })
+      # post.set_attributes({ title: "New Title", created_at: Time.local })
+      # post.set_attributes(title: "New Title", created_at: Time.local)
       # ```
       def set_attributes(values : Hash | NamedTuple)
         values.each { |k, v| set_attribute(k, v) }

@@ -129,7 +129,7 @@ describe Jennifer::QueryBuilder::Function do
 
     it do
       Factory.create_contact
-      Jennifer::Query["contacts"].select { [current_date.alias("current_d")] }.first!.current_d(Time).should eq(Time.unix(Time.now.to_unix).at_beginning_of_day)
+      Jennifer::Query["contacts"].select { [current_date.alias("current_d")] }.first!.current_d(Time).should eq(Time.unix(Time.local.to_unix).at_beginning_of_day)
     end
   end
 
@@ -143,7 +143,7 @@ describe Jennifer::QueryBuilder::Function do
     # NOTE: next spec fails on high performance computers
     it do
       Factory.create_contact
-      time = Time.now
+      time = Time.local
       current_t = time - time.at_beginning_of_day - 1.second
       next_t = time - time.at_beginning_of_day + 1.second
 
@@ -160,7 +160,7 @@ describe Jennifer::QueryBuilder::Function do
 
     it do
       Factory.create_contact
-      time = Time.utc_now
+      time = Time.utc
       Jennifer::Query["contacts"].select { [now.alias("now")] }.first!.now(Time).should be_close(time, 1.second)
     end
   end

@@ -51,7 +51,7 @@ module Jennifer
 
       def exec(query : String, args : ArgsType = [] of DBAny)
         time = Time.monotonic
-        res = with_connection { |conn| conn.exec(query, args) }
+        res = with_connection { |conn| conn.exec(query, args: args) }
         time = Time.monotonic - time
         Config.logger.debug { regular_query_message(time, query, args) }
         res
@@ -66,7 +66,7 @@ module Jennifer
 
       def query(query : String, args : ArgsType = [] of DBAny)
         time = Time.monotonic
-        res = with_connection { |conn| conn.query(query, args) { |rs| time = Time.monotonic - time; yield rs } }
+        res = with_connection { |conn| conn.query(query, args: args) { |rs| time = Time.monotonic - time; yield rs } }
         Config.logger.debug { regular_query_message(time, query, args) }
         res
       rescue e : BaseException
@@ -80,7 +80,7 @@ module Jennifer
 
       def scalar(query : String, args : ArgsType = [] of DBAny)
         time = Time.monotonic
-        res = with_connection { |conn| conn.scalar(query, args) }
+        res = with_connection { |conn| conn.scalar(query, args: args) }
         time = Time.monotonic - time
         Config.logger.debug { regular_query_message(time, query, args) }
         res

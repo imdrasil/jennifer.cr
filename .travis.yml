@@ -6,12 +6,14 @@ services:
 addons:
   postgresql: 9.5
 env:
-  - DB=mysql DB_USER=root DB_PASSWORD=""
+  - CRFLAGS="--no-debug" DB=mysql DB_USER=root DB_PASSWORD=""
   - DB=postgres DB_USER=postgres DB_PASSWORD=""
+  - MT=1 DB=postgres DB_USER=postgres DB_PASSWORD=""
   - DB=postgres DB_USER=postgres DB_PASSWORD="" PAIR=1
   - DB=mysql DB_USER=root DB_PASSWORD="" PAIR=1
   # integration tests
   - DB=postgres DB_USER=postgres DB_PASSWORD="" INTEGRATION=1
   - DB=mysql DB_USER=root DB_PASSWORD="" INTEGRATION=1
 before_script: bash .ci/setup.sh
+# before_install: bash .ci/install.sh
 script: bash .ci/test.sh

@@ -8,7 +8,7 @@ Add the shard to your `shards.yml`. Also
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.8.2"
+    version: "~> 0.8.3"
 ```
 
 For MySQL and PostgreSQL you need to add related driver shard - [crystal-mysql](https://github.com/crystal-lang/crystal-mysql) or [crystal-pg](https://github.com/will/crystal-pg):
@@ -17,7 +17,7 @@ For MySQL and PostgreSQL you need to add related driver shard - [crystal-mysql](
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.8.2"
+    version: "~> 0.8.3"
   pg:
     github: will/crystal-pg
   # or for mysql

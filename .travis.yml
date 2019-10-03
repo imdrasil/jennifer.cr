@@ -1,5 +1,5 @@
 language: crystal
-dist: trusty
+dist: xenial
 sudo: required
 services:
   - postgresql
@@ -8,6 +8,7 @@ addons:
 env:
   - DB=mysql DB_USER=root DB_PASSWORD=""
   - DB=postgres DB_USER=postgres DB_PASSWORD=""
+  - MT=1 DB=postgres DB_USER=postgres DB_PASSWORD=""
   - DB=postgres DB_USER=postgres DB_PASSWORD="" PAIR=1
   - DB=mysql DB_USER=root DB_PASSWORD="" PAIR=1
   # integration tests

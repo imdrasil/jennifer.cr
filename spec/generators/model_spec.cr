@@ -4,7 +4,7 @@ describe Jennifer::Generators::Model do
   described_class = Jennifer::Generators::Model
 
   describe "#render" do
-    timestamp = Time.local.to_s("%Y%m%d%H%M%S")
+    timestamp = Time.local.to_s("%Y%m%d%H%M%S%L")[0...-5]
 
     context "with common fields only" do
       args = Sam::Args.new({} of String => String, %w(Article title:string text:text?))
@@ -22,9 +22,8 @@ describe Jennifer::Generators::Model do
         expected_content = File.read("./spec/fixtures/generators/create_migration.cr")
         migration_path = Dir["./examples/migrations/*.cr"].sort.last
 
-        migration_path.ends_with?("_create_articles.cr").should be_true
+        migration_path.should match(/\d{16}_create_articles\.cr/)
         File.basename(migration_path).starts_with?(timestamp).should be_true
-
         File.read(migration_path).should eq(expected_content)
       end
     end

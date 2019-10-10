@@ -101,7 +101,9 @@ module Jennifer
               (options[:to_table]? || Inflector.pluralize(name)).as(String | Symbol),
               options[:column]?.as(String | Symbol?),
               options[:primary_key]?.as(String | Symbol?),
-              options[:key_name]?.as(String?)
+              options[:key_name]?.as(String?),
+              on_update: options[:on_update]?.as(String?),
+              on_delete: options[:on_delete]?.as(String?),
             )
           end
           self
@@ -139,8 +141,8 @@ module Jennifer
         # Creates a foreign key constraint to `to_table` table.
         #
         # For more details see `Migration::Base#add_foreign_key`.
-        def foreign_key(to_table : String | Symbol, column = nil, primary_key = nil, name = nil)
-          @commands << CreateForeignKey.new(@adapter, @name, to_table.to_s, column, primary_key, name)
+        def foreign_key(to_table : String | Symbol, column = nil, primary_key = nil, name = nil, *, on_update = nil, on_delete = nil)
+          @commands << CreateForeignKey.new(@adapter, @name, to_table.to_s, column, primary_key, name, on_update: on_update, on_delete: on_delete)
           self
         end
       end

@@ -1,8 +1,6 @@
 module Jennifer
   module Adapter
     module RequestMethods
-      # query ===========================
-
       def insert(table, opts : Hash)
         values = opts.values
         exec *parse_query(sql_generator.insert(table, opts), values)

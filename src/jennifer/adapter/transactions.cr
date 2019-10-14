@@ -10,12 +10,7 @@ module Jennifer
         if under_transaction?
           yield @locks[fiber_id].connection
         else
-          conn = @db.checkout
-          begin
-            yield conn
-          ensure
-            conn.release
-          end
+          with_manual_connection { |conn| yield conn }
         end
       end
 

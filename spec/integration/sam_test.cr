@@ -40,6 +40,7 @@ describe "Blank application" do
     end
   end
 
+  # NOTE: Is not run on CI
   {% if env("DOCKER") == "1" %}
     context "with dockerized mysql db" do
       it do

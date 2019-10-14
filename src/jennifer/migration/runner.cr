@@ -8,18 +8,16 @@ module Jennifer
       def self.migrate(count : Int)
         performed = false
         default_adapter.ready_to_migrate!
-        migrations = Base.migrations
-        return if migrations.empty? || pending_versions.empty?
+        return unless pending_migration?
+
         assert_outdated_pending_migrations
+        migrations = Base.migrations
 
         pending_versions.each_with_index do |version, i|
           return if count > 0 && i >= count
           process_up_migration(migrations[version].new)
           performed = true
         end
-      rescue e
-        puts e.message
-        puts e.backtrace.join("\n")
       ensure
         # TODO: generate schema for each adapter
         default_adapter.class.generate_schema if performed && !Config.skip_dumping_schema_sql
@@ -73,8 +71,6 @@ module Jennifer
           process_down_migration(migrations[version].new)
           processed = true
         end
-      rescue e
-        puts e.message
       ensure
         # TODO: generate schema for each adapter
         default_adapter_class.generate_schema if processed && !Config.skip_dumping_schema_sql
@@ -86,6 +82,13 @@ module Jennifer
         # TODO: load schema for each adapter
         default_adapter_class.load_schema
         puts "Schema loaded"
+      end
+
+      # Returns whether pending migration exists.
+      #
+      # Pending migration - known Jennifer::Migration::Base subclasses that hasn't been run.
+      def self.pending_migration?
+        !pending_versions.empty?
       end
 
       private def self.default_adapter
@@ -152,11 +155,8 @@ module Jennifer
           end
         header = "== #{migration.class.version} #{migration.class}:"
         puts "#{header} #{words[:start]}" if Config.config.verbose_migrations
-        time = Time.measure do
-          yield
-        end
-        puts "#{header} #{words[:end]} (#{time.milliseconds} ms)" if Config.config.verbose_migrations
-        puts if Config.config.verbose_migrations
+        time = Time.measure { yield }
+        puts "#{header} #{words[:end]} (#{time.milliseconds} ms)\n" if Config.config.verbose_migrations
       end
 
       private def self.assert_outdated_pending_migrations

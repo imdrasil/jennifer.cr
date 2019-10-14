@@ -1,7 +1,7 @@
 require "../../src/jennifer"
 
 DEFAULT_DB = "jennifer_integration_test"
-DEFAULT_DOCKER_CONTAINER = "mysql"
+DEFAULT_DOCKER_CONTAINER = "mysqld"
 
 module Spec
   @@adapter = ""

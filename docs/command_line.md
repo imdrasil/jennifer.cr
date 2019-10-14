@@ -1,6 +1,6 @@
 # Command Line
 
-For command management Jennifer now uses [Sam](https://github.com/imdrasil/sam.cr). So in your `sam.cr` just add loading migrations and Jennifer hooks.
+For command management Jennifer uses [Sam](https://github.com/imdrasil/sam.cr). So in your `sam.cr` just add loading migrations and Jennifer hooks.
 
 ```crystal
 require "./your_configuration_folder/*" # with requiring jennifer and her adapter

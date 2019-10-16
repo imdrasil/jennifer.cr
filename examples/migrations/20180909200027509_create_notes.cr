@@ -1,4 +1,6 @@
-class CreateNote < Jennifer::Migration::Base
+class CreateNotes < Jennifer::Migration::Base
+  with_transaction false
+
   def up
     create_table :notes do |t|
       t.string :text

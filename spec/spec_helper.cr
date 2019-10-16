@@ -17,6 +17,9 @@ require "./models"
 require "./factories"
 require "./support/*"
 
+require "../examples/migrations/20170119011451314_create_contacts"
+require "../examples/migrations/20180909200027509_create_notes"
+
 # Callbacks =======================
 
 Spec.before_each do

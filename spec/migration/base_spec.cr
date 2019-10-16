@@ -1,20 +1,24 @@
 require "../spec_helper"
-require "../../examples/migrations/20170119011451314_create_contacts"
 
 describe Jennifer::Migration::Base do
   described_class = Jennifer::Migration::Base
   migration = CreateContacts.new
 
   describe ".versions" do
-    it { described_class.versions.should eq(["20170119011451314"]) }
+    it { described_class.versions.should eq(["20170119011451314", "20180909200027509"]) }
   end
 
   describe ".migrations" do
-    it { described_class.migrations.should eq({ "20170119011451314" => CreateContacts }) }
+    it { described_class.migrations.should eq({ "20170119011451314" => CreateContacts, "20180909200027509" => CreateNotes }) }
   end
 
   describe ".version" do
     it { CreateContacts.version.should eq("20170119011451314") }
+  end
+
+  describe ".with_transaction?" do
+    it { CreateContacts.with_transaction?.should be_true }
+    it { CreateNotes.with_transaction?.should be_false }
   end
 
   # TODO: add aka transactional schema tests for MySQL

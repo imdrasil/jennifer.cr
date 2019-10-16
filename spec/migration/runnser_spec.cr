@@ -1,5 +1,4 @@
 require "../spec_helper"
-require "../../examples/migrations/20170119011451314_create_contacts"
 
 module Jennifer::Migration::Runner
   def self.reset_pending_versions

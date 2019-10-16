@@ -95,6 +95,22 @@ module Jennifer
     #
     # Such sort of behavior is useful when you have complex migration with several separate
     # changes.
+    #
+    # Also you can disable automatic transaction passing `false` to `.with_transaction` in a migration class body:
+    #
+    # ```
+    # class AddMainFlagToContacts < Jennifer::Migration::Base
+    #   with_transaction false
+    #
+    #   def up
+    #     # ...
+    #   end
+    #
+    #   def down
+    #     # ...
+    #   end
+    # end
+    # ```
     abstract class Base
       module AbstractClassMethods
         # Returns migration version - timestamp part of a class file name.
@@ -111,6 +127,8 @@ module Jennifer
           raise "#{self} migration class has no specified version"
         end
       end
+
+      @@with_transaction = true
 
       delegate adapter, to: Adapter
       delegate schema_processor, to: adapter
@@ -158,10 +176,26 @@ module Jennifer
       end
 
       # Includes all transformations required to implement migration.
+      #
+      # By default it is executed under a transaction.
       abstract def up
 
       # Includes all transformations required to remove migration.
+      #
+      # By default it is executed under a transaction.
       abstract def down
+
+      # Specify whether `#up`, `#down`, `#after_up_failure` and `#after_up_failure` should be wrapped into a transaction.
+      #
+      # `true` by default.
+      def self.with_transaction(value : Bool)
+        @@with_transaction = value
+      end
+
+      # Returns whether `#up`, `#down`, `#after_up_failure` and `#after_up_failure` are wrapped into a transaction.
+      def self.with_transaction?
+        @@with_transaction
+      end
 
       # Creates a new table with the name *name*.
       #
@@ -504,11 +538,15 @@ module Jennifer
         process_builder(TableBuilder::Raw.new(adapter, string))
       end
 
-      # After failed `#up` method invocation.
+      # `#up` failure handler if `migration_failure_handler_method` is set to `:callback`.
+      #
+      # By default it is executed under a transaction.
       def after_up_failure
       end
 
-      # After failed `#down` method invocation.
+      # `#down` failure handler if `migration_failure_handler_method` is set to `:callback`.
+      #
+      # By default it is executed under a transaction.
       def after_down_failure
       end
 

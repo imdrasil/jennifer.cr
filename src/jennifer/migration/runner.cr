@@ -106,14 +106,14 @@ module Jennifer
       end
 
       private def self.process_up_migration(migration)
-        transaction do
+        optional_transaction(migration) do
           process_with_announcement(migration, :up) do
             migration.up
             Version.create(version: migration.class.version)
           end
         end
       rescue e
-        transaction do
+        optional_transaction(migration) do
           case Config.migration_failure_handler_method
           when "reverse_direction"
             migration.down
@@ -126,14 +126,14 @@ module Jennifer
       end
 
       private def self.process_down_migration(migration)
-        transaction do
+        optional_transaction(migration) do
           process_with_announcement(migration, :down) do
             migration.down
             Version.all.where { _version == migration.class.version }.delete
           end
         end
       rescue e
-        transaction do
+        optional_transaction(migration) do
           case Config.migration_failure_handler_method
           when "reverse_direction"
             migration.up
@@ -173,8 +173,12 @@ module Jennifer
         MESSAGE
       end
 
-      private def self.transaction
-        Model::Base.transaction { yield }
+      private def self.optional_transaction(migration)
+        if migration.class.with_transaction?
+          Model::Base.transaction { yield }
+        else
+          yield
+        end
       end
     end
   end

@@ -104,15 +104,15 @@ I18n.init
 
 ### CLI
 
-Now to be able to use [sam](https://github.com/imdrasil/sam.cr) task manager create file `sam.cr` in you application root folder with following content:
+To be able to use CLI install [sam](https://github.com/imdrasil/sam.cr) task manager and modify `sam.cr` file in you application root folder with following content:
 
 ```crystal
-require "./your_configuration_folder/*" # with requiring jennifer and her adapter
-require "./migrations/*"
+# here load jennifer and all required configurations
+require "./db/migrations/*"
 require "sam"
 load_dependencies "jennifer"
 
-# your custom tasks here
+# ...
 
 Sam.help
 ```

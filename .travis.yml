@@ -6,13 +6,15 @@ services:
 addons:
   postgresql: 9.5
 env:
+  # integration tests
+  - DB=postgres DB_USER=postgres DB_PASSWORD="" INTEGRATION=1
+  - DB=mysql DB_USER=root DB_PASSWORD="" INTEGRATION=1
+  # unit tests
   - DB=mysql DB_USER=root DB_PASSWORD=""
   - DB=postgres DB_USER=postgres DB_PASSWORD=""
   - MT=1 DB=postgres DB_USER=postgres DB_PASSWORD=""
   - DB=postgres DB_USER=postgres DB_PASSWORD="" PAIR=1
   - DB=mysql DB_USER=root DB_PASSWORD="" PAIR=1
-  # integration tests
-  - DB=postgres DB_USER=postgres DB_PASSWORD="" INTEGRATION=1
-  - DB=mysql DB_USER=root DB_PASSWORD="" INTEGRATION=1
+
 before_script: bash .ci/setup.sh
 script: bash .ci/test.sh

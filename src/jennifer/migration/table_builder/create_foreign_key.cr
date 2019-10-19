@@ -4,16 +4,16 @@ module Jennifer
   module Migration
     module TableBuilder
       class CreateForeignKey < Base
-        getter from_table : String, to_table : String, column : String, primary_key : String, on_update : String?, on_delete : String?
+        getter from_table : String, to_table : String, column : String, primary_key : String, on_update : Symbol, on_delete : Symbol
 
-        def initialize(adapter, @from_table, @to_table, column, primary_key, name, *, @on_update = nil, @on_delete = nil)
+        def initialize(adapter, @from_table, @to_table, column, primary_key, name, @on_update, @on_delete)
           @column = self.class.column_name(@to_table, column)
           @primary_key = (primary_key || "id").to_s
           super(adapter, self.class.foreign_key_name(@from_table, @column, name))
         end
 
         def process
-          schema_processor.add_foreign_key(from_table, to_table, column, primary_key, name, on_update: @on_update, on_delete: @on_delete)
+          schema_processor.add_foreign_key(from_table, to_table, column, primary_key, name, on_update, on_delete)
         end
 
         def explain

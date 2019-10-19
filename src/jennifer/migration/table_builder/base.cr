@@ -11,6 +11,8 @@ module Jennifer
         # Hash type for options argument
         alias DB_OPTIONS = Hash(Symbol, EAllowedTypes | Array(EAllowedTypes))
 
+        DEFAULT_ON_EVENT_ACTION = :restrict
+
         delegate schema_processor, table_exists?, index_exists?, column_exists?, to: adapter
 
         getter adapter : Adapter::Base, name : String
@@ -20,9 +22,13 @@ module Jennifer
           @commands = [] of Base
         end
 
+        # Invokes current command.
         abstract def process
+
+        # Returns string presentation of invoked changes.
         abstract def explain
 
+        # Invokes underlying commands.
         def process_commands
           @commands.each(&.process)
         end

@@ -1,13 +1,28 @@
 require "./spec_helper"
 
+module H
+  def self.create_foreign_key(table = DEFAULT_TABLE, to_table = "to_tables", column = nil, primary = nil,
+                         name = nil, on_update = :restrict, on_delete = :restrict)
+    Jennifer::Migration::TableBuilder::CreateForeignKey.new(
+      Jennifer::Adapter.adapter,
+      table,
+      to_table,
+      column,
+      primary,
+      name,
+      on_update,
+      on_delete
+    )
+  end
+end
+
 describe Jennifer::Migration::TableBuilder::CreateForeignKey do
   described_class = Jennifer::Migration::TableBuilder::CreateForeignKey
-  adapter = Jennifer::Adapter.adapter
 
   describe ".new" do
     context "with nil value of column" do
       it do
-        command = described_class.new(adapter, DEFAULT_TABLE, "to_tables", nil, "primary", "name")
+        command = H.create_foreign_key(primary: "primary", name: "name")
         command.primary_key.should eq("primary")
         command.name.should eq("name")
         command.column.should eq("to_table_id")
@@ -16,7 +31,7 @@ describe Jennifer::Migration::TableBuilder::CreateForeignKey do
 
     context "with nil value of primary_key" do
       it do
-        command = described_class.new(adapter, DEFAULT_TABLE, "to_tables", "column", nil, "name")
+        command = H.create_foreign_key(column: "column", name: "name")
         command.primary_key.should eq("id")
         command.name.should eq("name")
         command.column.should eq("column")
@@ -25,7 +40,7 @@ describe Jennifer::Migration::TableBuilder::CreateForeignKey do
 
     context "with nil value of name" do
       it do
-        command = described_class.new(adapter, DEFAULT_TABLE, "to_tables", "column", "primary", nil)
+        command = H.create_foreign_key(column: "column", primary: "primary")
         command.primary_key.should eq("primary")
         command.name.should eq("fk_cr_81338c9f68")
         command.column.should eq("column")

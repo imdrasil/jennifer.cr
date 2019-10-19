@@ -10,15 +10,3 @@ Jennifer::Config.config do |conf|
   conf.local_time_zone_name = "Etc/GMT+1"
 end
 ```
-
-Jennifer use own default time zone, so `Time.zone.now` still uses it's own default zone. If you need same time zone for this case as well - just assign it as well or make assignment of default TimeZone zone instead of setting it to the Jennifer itself:
-
-```crystal
-TimeZone::Zone.default = "Etc/GMT+1"
-
-Jennifer::Config.config do |conf|
-  # ...
-  # this isn't needed now
-  # conf.local_time_zone_name = "Etc/GMT+1"
-end
-```

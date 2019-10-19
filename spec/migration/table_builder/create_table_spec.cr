@@ -67,30 +67,45 @@ describe Jennifer::Migration::TableBuilder::CreateTable do
         command.type.should eq(:uniq)
         command.lengths.empty?.should be_true
         command.orders[:uuid].should eq(:asc)
+        command.index_name.should eq("nodes_uuid_index")
+      end
+    end
+
+    context "with index name" do
+      it do
+        table = create_table_expr
+        table.index(:uuid, :uniq, "nodes_uuid_index", length: 10, order: :asc)
+        command = table.@commands[0].as(Jennifer::Migration::TableBuilder::CreateIndex)
+        command.fields.should eq([:uuid])
+        command.type.should eq(:uniq)
+        command.lengths[:uuid].should eq(10)
+        command.orders[:uuid].should eq(:asc)
+        command.index_name.should eq("nodes_uuid_index")
       end
     end
 
     context "with plain arguments and specified length" do
       it do
         table = create_table_expr
-        table.index("nodes_uuid_index", :uuid, :uniq, 10, :asc)
+        table.index(:uuid, :uniq, length: 10)
         command = table.@commands[0].as(Jennifer::Migration::TableBuilder::CreateIndex)
         command.fields.should eq([:uuid])
         command.type.should eq(:uniq)
         command.lengths[:uuid].should eq(10)
-        command.orders[:uuid].should eq(:asc)
+        command.index_name.should eq("test_table_uuid_idx")
       end
     end
 
     context "with multiple fields" do
       it do
         table = create_table_expr
-        table.index("nodes_uuid_index", [:uuid, :name], :uniq, orders: { :uuid => :asc, :name => :desc })
+        table.index([:uuid, :name], :uniq, orders: { :uuid => :asc, :name => :desc })
         command = table.@commands[0].as(Jennifer::Migration::TableBuilder::CreateIndex)
         command.fields.should eq([:uuid, :name])
         command.type.should eq(:uniq)
         command.lengths.empty?.should be_true
         command.orders.should eq({ :uuid => :asc, :name => :desc })
+        command.index_name.should eq("test_table_uuid_name_idx")
       end
     end
   end

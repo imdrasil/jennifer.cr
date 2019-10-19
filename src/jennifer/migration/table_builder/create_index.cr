@@ -11,23 +11,23 @@ module Jennifer
         end
 
         def process
-          schema_processor.add_index(@name, @index_name, fields, @type, orders, @lengths)
+          schema_processor.add_index(name, index_name, fields, type, orders, lengths)
         end
 
         def explain
           String.build do |io|
-            io << "add_foreign_key :" <<
-              @name <<
+            io << "add_index :" <<
+              name <<
               ", " <<
-              @fields.inspect <<
+              fields.inspect <<
               ", " <<
-              @type.inspect <<
+              type.inspect <<
               ", " <<
-              @index_name.inspect <<
+              index_name.inspect <<
               ", " <<
-              @lengths.inspect <<
+              lengths.inspect <<
               ", " <<
-              @orders.inspect
+              orders.inspect
           end
         end
 

@@ -61,7 +61,7 @@ module Jennifer
         # Defines new column *name* of *type* with given *options*.
         #
         # The *type* argument should be one of the following supported data types: `integer`, `short`, `bigint`,
-        # `float`, `double`, `decimal`, `bool`, `string`, `char`, `text`, `var_string`, `varchar`, `timestamp`,
+        # `float`, `double`, `decimal`, `bool`, `string`, `char`, `text`, `varchar`, `timestamp`,
         # `date_time`, `blob`, `json`; PostgreSQL specific: `oid`, `numeric`, `char`, `blchar`, `uuid`, `timestamptz`,
         # `bytea`, `jsonb`, `xml`, `point`, `lseg`, `path`, `box`, `polygon`, `line`, `circle`; MySQL specific: `emum`,
         # `tinyint`.

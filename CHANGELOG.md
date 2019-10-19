@@ -1,10 +1,43 @@
 # Changelog
 
-## 0.8.3 (29-09-2019)
+## 0.8.3 (19-10-2019)
 
 **General**
 
+* add crystal `0.31.1` compatibility
+* add `crystal-db@0.7.0` support
+* remove `sam` from mandatory dependencies
 
+**Model**
+
+* fix bug with primary field presence assertion
+
+**View**
+
+* fix bug with primary field presence assertion
+
+**Adapter**
+
+* add `date` SQL data type
+* `date_time` field type maps to `timestamp` SQL data type (postgres only)
+
+**Migration**
+
+* add `Runner.pending_migration?` to return whether there is pending (not invoked) migration
+* add `Base.with_transaction` method to disable automatic transaction wrapping around migration methods
+* add `Base.with_transaction?` to check whether migration is run under a transaction
+* remove `var_string` field type
+* remove `blob` field type for postgres
+* fix wrong explanation message for `TableBuilder::CreateIndex`
+* add new `TableBuilder::CreateTable#index` signatures (old ones are deprecated):
+  * `#index(fields : Array(Symbol), type : Symbol | ::Nil = nil, name : String | ::Nil = nil, lengths : Hash(Symbol, Int32) = {} of Symbol => Int32, orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)`
+  * `#index(field : Symbol, type : Symbol | ::Nil = nil, name : String | ::Nil = nil, length : Int32 | ::Nil = nil, order : Symbol | ::Nil = nil)`
+* make default `varchar` length `254` (mysql only)
+* add foreign key ON UPDATE and ON DELETE support
+* `Base#add_foreign_key` accepts `on_delete` and `on_update` keyword arguments to specify corresponding actions
+* `TableBuilder::ChangeTable#add_foreign_key` accepts `on_delete` and `on_update` keyword arguments to specify corresponding actions
+* `TableBuilder::CreateTable#reference` accepts `on_delete` and `on_update` options to specify corresponding actions
+* `TableBuilder::CreateTable#foreign_key` accepts `on_delete` and `on_update` keyword arguments to specify corresponding actions
 
 ## 0.8.2 (11-09-2019)
 

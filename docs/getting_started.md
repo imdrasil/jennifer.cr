@@ -31,7 +31,7 @@ If you want to use SQLite3 - add [Jennifer SQLite3 adapter](https://github.com/i
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.8.2"
+    version: "~> 0.8.3"
   jennifer_sqlite3_adapter:
     github: imdrasil/jennifer_sqlite3_adapter
 ```

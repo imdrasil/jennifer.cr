@@ -68,6 +68,11 @@ module Jennifer
       macro base_mapping(strict = true)
         common_mapping({{strict}})
 
+        {%
+          primary = COLUMNS_METADATA.keys.find { |field| COLUMNS_METADATA[field][:primary] }
+          raise "View #{@type} has no defined primary field. For now a view without a primary field is not supported" if !primary
+        %}
+
         # Extracts arguments due to mapping from *pull* and returns tuple for fields assignment.
         # It stands on that fact result set has all defined fields in a raw
         # TODO: think about moving it to class scope

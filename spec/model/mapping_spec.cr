@@ -50,6 +50,9 @@ class UserWithModuleMapping < Jennifer::Model::Base
   )
 end
 
+UTC = Time::Location.load("UTC")
+BERLIN = Time::Location.load("Europe/Berlin")
+
 describe Jennifer::Model::Mapping do
   select_regexp = /[\S\s]*SELECT contacts\.\*/i
 
@@ -321,13 +324,66 @@ describe Jennifer::Model::Mapping do
         end
       end
 
-      describe JSON::Any do
-        it "properly loads json field" do
-          # This checks nillable JSON as well
-          c = Factory.create_address(street: "a st.", details: JSON.parse(%(["a", "b", 1])))
-          c = Address.find!(c.id)
-          c.details.should be_a(JSON::Any)
-          c.details![2].as_i.should eq(1)
+      describe "BOOLEAN" do
+        it "correctly saves and loads" do
+          AllTypeModel.create!(bool_f: true)
+          AllTypeModel.all.last!.bool_f!.should be_true
+        end
+      end
+
+      describe "BIGINT" do
+        it "correctly saves and loads" do
+          AllTypeModel.create!(bigint_f: 15i64)
+          AllTypeModel.all.last!.bigint_f!.should eq(15i64)
+        end
+      end
+
+      describe "INTEGER" do
+        it "correctly saves and loads" do
+          AllTypeModel.create!(integer_f: 32)
+          AllTypeModel.all.last!.integer_f!.should eq(32)
+        end
+      end
+
+      describe "SHORT" do
+        it "correctly saves and loads" do
+          AllTypeModel.create!(short_f: 16i16)
+          AllTypeModel.all.last!.short_f!.should eq(16i16)
+        end
+      end
+
+      describe "FLOAT" do
+        it "correctly saves and loads" do
+          AllTypeModel.create!(float_f: 32f32)
+          AllTypeModel.all.last!.float_f!.should eq(32f32)
+        end
+      end
+
+      describe "DOUBLE" do
+        it "correctly saves and loads" do
+          AllTypeModel.create!(double_f: 64f64)
+          AllTypeModel.all.last!.double_f!.should eq(64f64)
+        end
+      end
+
+      describe "STRING" do
+        it "correctly saves and loads" do
+          AllTypeModel.create!(string_f: "string")
+          AllTypeModel.all.last!.string_f!.should eq("string")
+        end
+      end
+
+      describe "VARCHAR" do
+        it "correctly saves and loads" do
+          AllTypeModel.create!(varchar_f: "string")
+          AllTypeModel.all.last!.varchar_f!.should eq("string")
+        end
+      end
+
+      describe "TEXT" do
+        it "correctly saves and loads" do
+          AllTypeModel.create!(text_f: "string")
+          AllTypeModel.all.last!.text_f!.should eq("string")
         end
       end
 
@@ -347,6 +403,148 @@ describe Jennifer::Model::Mapping do
           contact = Factory.create_contact
           with_time_zone("Etc/GMT+1") do
             contact.reload.created_at!.should be_close(Time.local(local_time_zone), 1.second)
+          end
+        end
+      end
+
+      describe "TIMESTAMP" do
+        it "correctly saves and loads" do
+          AllTypeModel.create!(timestamp_f: Time.utc(2016, 2, 15, 10, 20, 30))
+          AllTypeModel.all.last!.timestamp_f!.in(UTC).should eq(Time.utc(2016, 2, 15, 10, 20, 30))
+        end
+      end
+
+      describe "DATETIME" do
+        it "correctly saves and loads" do
+          AllTypeModel.create!(date_time_f: Time.utc(2016, 2, 15, 10, 20, 30))
+          AllTypeModel.all.last!.date_time_f!.in(UTC).should eq(Time.utc(2016, 2, 15, 10, 20, 30))
+        end
+      end
+
+      describe "DATE" do
+        it "correctly saves and loads" do
+          AllTypeModel.create!(date_f: Time.utc(2016, 2, 15, 10, 20, 30))
+          AllTypeModel.all.last!.date_f!.in(UTC).should eq(Time.utc(2016, 2, 15, 0, 0, 0))
+        end
+      end
+
+      describe "JSON" do
+        it "correctly loads json field" do
+          # This checks nillable JSON as well
+          c = Factory.create_address(street: "a st.", details: JSON.parse(%(["a", "b", 1])))
+          c = Address.find!(c.id)
+          c.details.should be_a(JSON::Any)
+          c.details![2].as_i.should eq(1)
+        end
+      end
+
+      postgres_only do
+        describe "DECIMAL" do
+          it "correctly saves and loads" do
+            AllTypeModel.create!(decimal_f: PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16]))
+            AllTypeModel.all.last!.decimal_f!.should eq(PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [1i16]))
+          end
+        end
+
+        describe "OID" do
+          it "correctly saves and loads" do
+            AllTypeModel.create!(oid_f: 2147483648_u32)
+            AllTypeModel.all.last!.oid_f!.should eq(2147483648_u32)
+          end
+        end
+
+        describe "CHAR" do
+          it "correctly saves and loads" do
+            AllTypeModel.create!(char_f: "a")
+            AllTypeModel.all.last!.char_f!.should eq("a")
+          end
+        end
+
+        describe "UUID" do
+          it "correctly saves and loads" do
+            AllTypeModel.create!(uuid_f: "7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
+            AllTypeModel.all.last!.uuid_f!.should eq("7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
+          end
+        end
+
+        describe "TIMESTAMPTZ" do
+          it "correctly saves and loads" do
+            AllTypeModel.create!(timestamptz_f: Time.local(2016, 2, 15, 10, 20, 30, location: BERLIN))
+            # NOTE: ATM this is expected behavior
+            AllTypeModel.all.last!.timestamptz_f!.in(UTC).should eq(Time.utc(2016, 2, 15, 9, 20, 30))
+          end
+        end
+
+        describe "BYTEA" do
+          it "correctly saves and loads" do
+            AllTypeModel.create!(bytea_f: Bytes[65, 114, 116, 105, 99, 108, 101])
+            AllTypeModel.all.last!.bytea_f!.should eq(Bytes[65, 114, 116, 105, 99, 108, 101])
+          end
+        end
+
+        describe "JSONB" do
+          it "correctly saves and loads" do
+            AllTypeModel.create!(jsonb_f: JSON.parse(%(["a", "b", 1])))
+            AllTypeModel.all.last!.jsonb_f!.should eq(JSON.parse(%(["a", "b", 1])))
+          end
+        end
+
+        describe "XML" do
+          it "correctly saves and loads" do
+            AllTypeModel.create!(xml_f: "<html></html>")
+            AllTypeModel.all.last!.xml_f!.should eq("<html></html>")
+          end
+        end
+
+        describe "POINT" do
+          it "correctly saves and loads" do
+            AllTypeModel.create!(point_f: PG::Geo::Point.new(1.2, 3.4))
+            AllTypeModel.all.last!.point_f!.should eq(PG::Geo::Point.new(1.2, 3.4))
+          end
+        end
+
+        describe "LSEG" do
+          it "correctly saves and loads" do
+            AllTypeModel.create!(lseg_f: PG::Geo::LineSegment.new(1.0, 2.0, 3.0, 4.0))
+            AllTypeModel.all.last!.lseg_f!.should eq(PG::Geo::LineSegment.new(1.0, 2.0, 3.0, 4.0))
+          end
+        end
+
+        describe "PATH" do
+          it "correctly saves and loads" do
+            path = PG::Geo::Path.new([PG::Geo::Point.new(1.0, 2.0), PG::Geo::Point.new(3.0, 4.0)], closed: true)
+            AllTypeModel.create!(path_f: path)
+            AllTypeModel.all.last!.path_f!.should eq(path)
+          end
+        end
+
+        describe "BOX" do
+          it "correctly saves and loads" do
+            AllTypeModel.create!(box_f: PG::Geo::Box.new(1.0, 2.0, 3.0, 4.0))
+            AllTypeModel.all.last!.box_f!.should eq(PG::Geo::Box.new(1.0, 2.0, 3.0, 4.0))
+          end
+        end
+      end
+
+      mysql_only do
+        describe "TINYINT" do
+          it "correctly saves and loads" do
+            AllTypeModel.create!(tinyint_f: 8i8)
+            AllTypeModel.all.last!.tinyint_f!.should eq(8i8)
+          end
+        end
+
+        describe "DECIMAL" do
+          it "correctly saves and loads" do
+            AllTypeModel.create!(decimal_f: 64f64)
+            AllTypeModel.all.last!.decimal_f!.should eq(64f64)
+          end
+        end
+
+        describe "BLOB" do
+          it "correctly saves and loads" do
+            AllTypeModel.create!(blob_f: Bytes[65, 114, 116, 105, 99, 108, 101])
+            AllTypeModel.all.last!.blob_f!.should eq(Bytes[65, 114, 116, 105, 99, 108, 101])
           end
         end
       end
@@ -376,17 +574,6 @@ describe Jennifer::Model::Mapping do
           Factory.create_contact(name: "Jennifer", age: 18, gender: "female")
           Contact.all.count.should eq(2)
           Contact.where { _gender == "male" }.count.should eq(1)
-        end
-      end
-
-      describe "TIMESTAMP" do
-        it "properly saves and loads" do
-          c1 = Factory.create_contact(name: "Sam", age: 18)
-          time = Time.local(2001, 12, 23, 23, 58, 59)
-          c1.created_at = time
-          c1.save
-          c2 = Contact.find!(c1.id)
-          c2.created_at.should eq(time)
         end
       end
 

@@ -42,11 +42,11 @@ There are next methods which presents corresponding types:
 | `#decimal` | `DECIMAL` | `DECIMAL` | `PG::Numeric` (pg); `Float64` (mysql) |
 | `#string` | `varchar(254)` | `varchar(254)` | `String` |
 | `#char` | `char` | - | `String` |
-| `#var_string` / `#varchar` | `varchar(254)` | `varstring` | `String` |
 | `#text` | `TEXT` | `TEXT` | `String` |
 | `#bool` | `boolean` | `bool` | `Bool` |
 | `#timestamp` | `timestamp` | `datetime` | `Time` |
-| `#date_time` | `datetime` | `datetime` | `Time` |
+| `#date_time` | `timestamp` | `datetime` | `Time` |
+| `#date` | `date` | `date` | `Time` |
 | `#blob` | `blob` | `blob` | `Bytes` |
 | `#json` | `json` | `json` | `JSON::Any` |
 | `#enum` | - | `ENUM` | `String` |

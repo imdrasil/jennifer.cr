@@ -14,9 +14,9 @@ module Jennifer
       float double
       numeric decimal
       bool
-      string char text var_string varchar blchar
+      string char text varchar blchar
       uuid
-      timestamp timestamptz date_time
+      timestamp timestamptz date_time date
       blob bytea
       json jsonb xml
       point lseg path box polygon line circle

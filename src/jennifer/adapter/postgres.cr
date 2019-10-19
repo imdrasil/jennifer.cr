@@ -29,26 +29,25 @@ module Jennifer
         :decimal => "decimal", # PG::Numeric - alias for numeric
 
         :string     => "varchar",
-        :char       => "char",
+        :char       => "char", # String
         :text       => "text",
-        :var_string => "varchar",
         :varchar    => "varchar",
         :blchar     => "blchar", # String
 
         :uuid => "uuid", # String
 
-        :timestamp   => "timestamp",
-        :timestamptz => "timestamptz", # Time
-        :date_time   => "datetime",
+        :timestamp   => "timestamp", # Time
+        :timestamptz => "timestamptz",
+        :date_time   => "timestamp",
+        :date        => "date",
 
-        :blob  => "blob",
-        :bytea => "bytea",
+        :bytea => "bytea", # Bytes
 
         :json  => "json",  # JSON
         :jsonb => "jsonb", # JSON
         :xml   => "xml",   # String
 
-        :point   => "point",
+        :point   => "point", # PG::Geo::Point
         :lseg    => "lseg",
         :path    => "path",
         :box     => "box",
@@ -58,8 +57,7 @@ module Jennifer
       }
 
       DEFAULT_SIZES = {
-        :string     => 254,
-        :var_string => 254,
+        :string     => 254
       }
 
       TABLE_LOCK_TYPES = {

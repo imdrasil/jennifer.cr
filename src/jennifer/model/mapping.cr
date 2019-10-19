@@ -230,6 +230,7 @@ module Jennifer
           end
           properties = COLUMNS_METADATA
           nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] }
+          raise "Model #{@type} has no defined primary field. For now a model without a primary field is not supported" if !primary
         %}
 
         # :nodoc:

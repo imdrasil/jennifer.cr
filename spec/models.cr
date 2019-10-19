@@ -327,6 +327,56 @@ class OneFieldModel < Jennifer::Model::Base
   )
 end
 
+class AllTypeModel < ApplicationRecord
+  module SpecificMapping
+    include Jennifer::Model::Mapping
+
+    {% if env("DB") == "postgres" || env("DB") == nil %}
+      mapping(
+        decimal_f: PG::Numeric?,
+        oid_f: UInt32?,
+        char_f: String?,
+        uuid_f: String?,
+        timestamptz_f: Time?,
+        bytea_f: Bytes?,
+        jsonb_f: JSON::Any?,
+        xml_f: String?,
+        point_f: PG::Geo::Point?,
+        lseg_f: PG::Geo::LineSegment?,
+        path_f: PG::Geo::Path?,
+        box_f: PG::Geo::Box?
+      )
+    {% else %}
+      mapping(
+        tinyint_f: Int8?,
+        decimal_f: Float64?,
+        blob_f: Bytes?
+      )
+    {% end %}
+  end
+
+  include SpecificMapping
+
+  table_name "all_types"
+
+  mapping(
+    id: Primary32,
+    bool_f: Bool?,
+    bigint_f: Int64?,
+    integer_f: Int32?,
+    short_f: Int16?,
+    float_f: Float32?,
+    double_f: Float64?,
+    string_f: String?,
+    varchar_f: String?,
+    text_f: String?,
+    timestamp_f: Time?,
+    date_time_f: Time?,
+    date_f: Time?,
+    json_f: JSON::Any?
+  )
+end
+
 # ===================
 # synthetic models
 # ===================

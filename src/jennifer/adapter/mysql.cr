@@ -27,10 +27,10 @@ module Jennifer
         :string     => "varchar",
         :varchar    => "varchar",
         :text       => "text",
-        :var_string => "varstring",
 
         :timestamp => "datetime", # "timestamp",
         :date_time => "datetime",
+        :date => "date",
 
         :blob => "blob",
         :json => "json",
@@ -38,6 +38,7 @@ module Jennifer
 
       DEFAULT_SIZES = {
         :string => 254,
+        :varchar => 254
       }
 
       # NOTE: ATM is not used

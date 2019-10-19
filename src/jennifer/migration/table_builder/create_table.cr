@@ -117,23 +117,37 @@ module Jennifer
 
         # Adds index.
         #
+        # This is deprecated signature - please use one with the filed name at the beginning and optional index name.
+        #
         # For more details see `Migration::Base#add_index`.
         def index(name : String, fields : Array(Symbol), type : Symbol? = nil,
+                  lengths : Hash(Symbol, Int32) = {} of Symbol => Int32,
+                  orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
+          index(fields, type, name, lengths, orders)
+        end
+
+        # ditto
+        def index(name : String, field : Symbol, type : Symbol? = nil, length : Int32? = nil, order : Symbol? = nil)
+          index(field, type, name, length, order)
+        end
+
+        # Adds index.
+        #
+        # For more details see `Migration::Base#add_index`.
+        def index(fields : Array(Symbol), type : Symbol? = nil, name : String? = nil,
                   lengths : Hash(Symbol, Int32) = {} of Symbol => Int32,
                   orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
           @commands << CreateIndex.new(@adapter, @name, name, fields, type, lengths, orders)
           self
         end
 
-        # ditto
-        def index(name : String, field : Symbol, type : Symbol? = nil, length : Int32? = nil, order : Symbol? = nil)
-          index(
-            name,
-            [field],
-            type: type,
-            orders: (order ? {field => order.not_nil!} : {} of Symbol => Symbol),
-            lengths: (length ? {field => length.not_nil!} : {} of Symbol => Int32)
-          )
+        # Adds index.
+        #
+        # For more details see `Migration::Base#add_index`.
+        def index(field : Symbol, type : Symbol? = nil, name : String? = nil, length : Int32? = nil, order : Symbol? = nil)
+          orders = order ? {field => order.not_nil!} : {} of Symbol => Symbol
+          lengths = length ? {field => length.not_nil!} : {} of Symbol => Int32
+          index([field],type, name, lengths, orders)
         end
 
         # Creates a foreign key constraint to `to_table` table.

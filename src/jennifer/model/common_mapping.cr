@@ -8,7 +8,6 @@ module Jennifer::Model
         primary_auto_incrementable = primary && AUTOINCREMENTABLE_STR_TYPES.includes?(COLUMNS_METADATA[primary][:type].stringify)
         properties = COLUMNS_METADATA
         nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] }
-        raise "Model #{@type} has no defined primary field. For now model without primary field is not allowed" if primary == nil
       %}
 
       __field_declaration({{properties}}, {{primary_auto_incrementable}})

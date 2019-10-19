@@ -104,12 +104,18 @@ module Jennifer
         adapter.exec buff
       end
 
-      def add_foreign_key(from_table, to_table, column, primary_key, name)
+      def add_foreign_key(from_table, to_table, column, primary_key, name, *, on_update = nil, on_delete = nil)
         query = String.build do |s|
           s << "ALTER TABLE " << from_table
           s << " ADD CONSTRAINT " << name
           s << " FOREIGN KEY (" << column << ") REFERENCES "
           s << to_table << "(" << primary_key << ")"
+          if on_update
+            s << " ON UPDATE " << on_update
+          end
+          if on_delete
+            s << " ON DELETE " << on_delete
+          end
         end
         adapter.exec query
       end

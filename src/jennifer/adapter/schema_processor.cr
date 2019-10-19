@@ -3,6 +3,13 @@ require "../migration/table_builder/*"
 module Jennifer
   module Adapter
     abstract class SchemaProcessor
+      ON_EVENT_ACTIONS = {
+        :no_action => "NO ACTION",
+        :restrict => "RESTRICT",
+        :cascade => "CASCADE",
+        :set_null => "SET NULL"
+      }
+
       # :nodoc:
       macro unsupported_method(*names)
         {% for name in names %}
@@ -104,18 +111,14 @@ module Jennifer
         adapter.exec buff
       end
 
-      def add_foreign_key(from_table, to_table, column, primary_key, name, *, on_update = nil, on_delete = nil)
+      def add_foreign_key(from_table, to_table, column, primary_key, name, on_update, on_delete)
         query = String.build do |s|
           s << "ALTER TABLE " << from_table
           s << " ADD CONSTRAINT " << name
           s << " FOREIGN KEY (" << column << ") REFERENCES "
           s << to_table << "(" << primary_key << ")"
-          if on_update
-            s << " ON UPDATE " << on_update
-          end
-          if on_delete
-            s << " ON DELETE " << on_delete
-          end
+          s << " ON UPDATE " << ON_EVENT_ACTIONS[on_update]
+          s << " ON DELETE " << ON_EVENT_ACTIONS[on_delete]
         end
         adapter.exec query
       end

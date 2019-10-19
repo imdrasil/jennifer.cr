@@ -185,14 +185,16 @@ module Jennifer
       # By default it is executed under a transaction.
       abstract def down
 
-      # Specify whether `#up`, `#down`, `#after_up_failure` and `#after_up_failure` should be wrapped into a transaction.
+      # Specify whether `#up`, `#down`, `#after_up_failure` and `#after_up_failure`
+      # should be wrapped into a transaction.
       #
       # `true` by default.
       def self.with_transaction(value : Bool)
         @@with_transaction = value
       end
 
-      # Returns whether `#up`, `#down`, `#after_up_failure` and `#after_up_failure` are wrapped into a transaction.
+      # Returns whether `#up`, `#down`, `#after_up_failure` and `#after_up_failure`
+      # are wrapped into a transaction.
       def self.with_transaction?
         @@with_transaction
       end
@@ -381,7 +383,7 @@ module Jennifer
       # * `nil` (default)
       # * `:unique`
       # * `:fulltext` (MySQL only)
-      # * ``spatial` (MySQL only)
+      # * `:spatial` (MySQL only)
       #
       # ```
       # add_index(:contacts, :email)
@@ -488,10 +490,29 @@ module Jennifer
       # ```
       # add_foreign_key(:comments, :posts, name: "comments_posts_fk")
       # ```
+      #
+      # Specify `ON DELETE` or `ON UPDATE` action:
+      #
+      # ```
+      # add_foreign_key(:comments, :posts, on_delete: :cascade)
+      # ```
+      #
+      # Supported values: `:no_action`, `:restrict` (default), `:cascade`, `:set_null`.
       def add_foreign_key(from_table : String | Symbol, to_table : String | Symbol, column : String | Symbol? = nil,
-                          primary_key : String | Symbol? = nil, name : String? = nil)
+                          primary_key : String | Symbol? = nil, name : String? = nil,
+                          on_update : Symbol = TableBuilder::Base::DEFAULT_ON_EVENT_ACTION,
+                          on_delete : Symbol = TableBuilder::Base::DEFAULT_ON_EVENT_ACTION)
         process_builder(
-          TableBuilder::CreateForeignKey.new(adapter, from_table.to_s, to_table.to_s, column, primary_key, name)
+          TableBuilder::CreateForeignKey.new(
+            adapter,
+            from_table.to_s,
+            to_table.to_s,
+            column,
+            primary_key,
+            name,
+            on_update,
+            on_delete
+          )
         )
       end
 

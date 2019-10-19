@@ -130,8 +130,18 @@ module Jennifer
         # Creates a foreign key constraint to `to_table` table.
         #
         # For more details see `Migration::Base#add_foreign_key`.
-        def add_foreign_key(to_table : String | Symbol, column = nil, primary_key = nil, name = nil)
-          @commands << CreateForeignKey.new(@adapter, @name, to_table.to_s, column, primary_key, name)
+        def add_foreign_key(to_table : String | Symbol, column = nil, primary_key = nil, name = nil, *,
+                            on_update : Symbol = DEFAULT_ON_EVENT_ACTION, on_delete : Symbol = DEFAULT_ON_EVENT_ACTION)
+          @commands << CreateForeignKey.new(
+            @adapter,
+            @name,
+            to_table.to_s,
+            column,
+            primary_key,
+            name,
+            on_update,
+            on_delete
+          )
           self
         end
 

@@ -148,8 +148,8 @@ describe Jennifer::Adapter::SchemaProcessor do
 
   describe "#add_foreign_key" do
     it do
-      match_query_from_exception(/ALTER TABLE from_table ADD CONSTRAINT name FOREIGN KEY \(column\) REFERENCES to_table\(primary_key\)/) do
-        processor.add_foreign_key("from_table", "to_table", "column", "primary_key",  "name")
+      match_query_from_exception(/ALTER TABLE from_table ADD CONSTRAINT name FOREIGN KEY \(column\) REFERENCES to_table\(primary_key\) ON UPDATE RESTRICT ON DELETE NO ACTION/) do
+        processor.add_foreign_key("from_table", "to_table", "column", "primary_key",  "name", :restrict, :no_action)
       end
     end
   end

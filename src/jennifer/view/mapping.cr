@@ -172,9 +172,9 @@ module Jennifer
             begin
               %casted_var{key.id} =
                 {% if value[:default] != nil %}
-                  %found{key.id} ? __bool_convert(%var{key.id}, {{value[:parsed_type].id}}) : {{value[:default]}}
+                  %found{key.id} ? %var{key.id}.as({{value[:parsed_type].id}}) : {{value[:default]}}
                 {% else %}
-                  __bool_convert(%var{key.id}, {{value[:parsed_type].id}})
+                  %var{key.id}.as({{value[:parsed_type].id}})
                 {% end %}
               %casted_var{key.id} = %casted_var{key.id}.in(::Jennifer::Config.local_time_zone) if %casted_var{key.id}.is_a?(Time)
             rescue e : Exception

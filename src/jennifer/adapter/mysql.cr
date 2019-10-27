@@ -143,7 +143,7 @@ module Jennifer
           end
         end
 
-        format_query_explain(plan)
+        format_explain_query(plan)
       end
 
       def self.command_interface
@@ -175,7 +175,15 @@ module Jennifer
         end == 1
       end
 
-      private def format_query_explain(plan : Array)
+      def read_column(rs, column : MySql::ColumnSpec)
+        if column.column_type == MySql::Type::Tiny && column.column_length == 1u32
+          (rs.read.as(DBAny) == 1i8).as(Bool)
+        else
+          rs.read.as(DBAny)
+        end
+      end
+
+      private def format_explain_query(plan : Array)
         headers = %w(id select_type table partitions type possible_keys key key_len ref rows filtered Extra)
         column_sizes = headers.map(&.size)
         plan.each do |row|

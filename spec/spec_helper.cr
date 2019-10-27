@@ -35,6 +35,9 @@ end
 
 # Helper methods ================
 
+UTC = Time::Location.load("UTC")
+BERLIN = Time::Location.load("Europe/Berlin")
+
 macro validated_by_record(type, value, field = :age, allow_blank = true)
   Factory.build_contact.tap do |record|
     described_class.instance.validate(record, {{field}}, {{value}}, {{allow_blank}}, **{{type}})

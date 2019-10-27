@@ -29,15 +29,16 @@ module Jennifer
         # All relations model classes
         models = @bucket.map { |e| e[1].model_class }
         # Presents found relation primary keys for i-th relation primary key
-        existence = @bucket.map { |_| {} of DBAny => Set(DBAny) }
+        existence = @bucket.map { {} of DBAny => Set(DBAny) }
         # Stores all found relation records for i-th relation
-        repo = @bucket.map { |_| {} of DBAny => Model::Resource }
+        repo = @bucket.map { {} of DBAny => Model::Resource }
         # Stores context of relation assignment; works similar to callstack
         context = Array(Model::Resource?).new(@bucket.size + 1, nil)
 
         rs.each do
           begin
-            h = build_hash(rs, T.actual_table_field_count)
+            column_index = T.actual_table_field_count
+            h = build_hash(rs, 0, T.actual_table_field_count)
             main_field = T.primary_field_name
 
             if h[main_field]?
@@ -48,7 +49,8 @@ module Jennifer
                 related_context_index = @bucket[i][0]
                 related_context = context[related_context_index].not_nil!
                 relation = @bucket[i][1]
-                h = build_hash(rs, model.actual_table_field_count)
+                h = build_hash(rs, column_index, model.actual_table_field_count)
+                column_index += model.actual_table_field_count
                 pfn = model.primary_field_name
                 if h[pfn].nil?
                   # Row has empty primary field -> empty record
@@ -69,9 +71,6 @@ module Jennifer
                 # Mark relation as retrieved one
                 related_context.relation_retrieved(relation.name) if related_context_index != 0
               end
-            else
-              # Primary field nil -> read to the end
-              (rs.column_count - T.actual_table_field_count).times { |_| rs.read }
             end
           ensure
             rs.read_to_end
@@ -87,12 +86,13 @@ module Jennifer
         collection
       end
 
-      private def build_hash(rs, size)
-        h = {} of String => DBAny
-        size.times do
-          h[rs.current_column_name] = rs.read(DBAny)
+      private def build_hash(rs, start_index, size)
+        hash = {} of String => DBAny
+        size.times do |index_shift|
+          column = rs.columns[start_index + index_shift]
+          hash[column.name] = adapter.read_column(rs, column)
         end
-        h
+        hash
       end
     end
   end

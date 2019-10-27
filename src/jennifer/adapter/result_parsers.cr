@@ -5,12 +5,10 @@ module Jennifer
         buf = {} of String => DBAny
         names.each { |name| buf[name] = nil }
         count = names.size
-        rs.each_column do |column|
-          if buf.has_key?(column)
-            buf[column] = rs.read.as(DBAny)
-            if buf[column].is_a?(Int8)
-              buf[column] = (buf[column] == 1i8).as(Bool)
-            end
+        rs.columns.each do |column|
+          column_name = column.name
+          if buf.has_key?(column_name)
+            buf[column_name] = read_column(rs, column)
             count -= 1
           else
             rs.read
@@ -24,8 +22,17 @@ module Jennifer
       # Converts single ResultSet to hash
       def result_to_hash(rs)
         result = {} of String => DBAny
-        rs.each_column { |column| result[column] = rs.read.as(DBAny) }
+        rs.columns.each do |column|
+          result[column.name] = read_column(rs, column)
+        end
         result
+      end
+
+      # Reads *column*'s value from given result set.
+      abstract def read_column(rs, column)
+
+      def read_column(rs, column)
+        rs.read.as(DBAny)
       end
     end
   end

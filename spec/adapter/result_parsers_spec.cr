@@ -2,10 +2,6 @@ require "../spec_helper"
 
 describe Jennifer::Adapter::ResultParsers do
   adapter = Jennifer::Adapter.default_adapter
-  contact_fields = db_specific(
-    postgres: -> { %w(id name age tags ballance gender created_at updated_at description user_id) },
-    mysql: -> { %w(id name age ballance gender created_at updated_at description user_id) }
-  )
 
   describe "#result_to_hash" do
     describe "data types" do

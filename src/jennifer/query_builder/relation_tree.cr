@@ -14,6 +14,10 @@ module Jennifer
         @bucket = [] of Element
       end
 
+      def adapter
+        @klass.adapter
+      end
+
       def clone
         clone = {{@type}}.allocate
         clone.initialize_copy(self)

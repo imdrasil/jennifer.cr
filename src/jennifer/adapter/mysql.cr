@@ -146,20 +146,6 @@ module Jennifer
         format_explain_query(plan)
       end
 
-      def result_to_hash(rs)
-        result = {} of String => DBAny
-        rs.columns.each do |column|
-          column_name = column.name
-          result[column_name] =
-            if column.column_type == MySql::Type::Tiny && column.column_length == 1u32
-              (rs.read.as(DBAny) == 1i8).as(Bool)
-            else
-              rs.read.as(DBAny)
-            end
-        end
-        result
-      end
-
       def self.command_interface
         @@command_interface ||= CommandInterface.new(Config.instance)
       end
@@ -187,6 +173,14 @@ module Jennifer
           SQL
           Config.db
         end == 1
+      end
+
+      def read_column(rs, column : MySql::ColumnSpec)
+        if column.column_type == MySql::Type::Tiny && column.column_length == 1u32
+          (rs.read.as(DBAny) == 1i8).as(Bool)
+        else
+          rs.read.as(DBAny)
+        end
       end
 
       private def format_explain_query(plan : Array)

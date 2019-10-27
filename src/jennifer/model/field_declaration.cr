@@ -1,15 +1,6 @@
 module Jennifer::Model
   # :nodoc:
   module FieldDeclaration
-    # :nodoc:
-    macro __bool_convert(value, type)
-      {% if type.stringify == "Bool" %}
-        ({{value.id}}.is_a?(Int8) ? {{value.id}} == 1i8 : {{value.id}}.as({{type}}))
-      {% else %}
-        {{value}}.as({{type}})
-      {% end %}
-    end
-
     # TODO: remove .primary_field_type method as it isn't used anywhere
 
     # :nodoc:

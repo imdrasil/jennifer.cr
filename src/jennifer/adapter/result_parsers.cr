@@ -1,19 +1,9 @@
 module Jennifer
   module Adapter
     module ResultParsers
-      def result_to_array(rs)
-        a = [] of DBAny
-        rs.each_column do
-          temp = rs.read(DBAny)
-          temp = (temp == 1i8).as(Bool) if temp.is_a?(Int8)
-          a << temp
-        end
-        a
-      end
-
-      def result_to_array_by_names(rs, names : Array)
+      def result_to_array_by_names(rs, names : Array(String))
         buf = {} of String => DBAny
-        names.each { |n| buf[n] = nil }
+        names.each { |name| buf[name] = nil }
         count = names.size
         rs.each_column do |column|
           if buf.has_key?(column)
@@ -31,16 +21,11 @@ module Jennifer
         buf.values
       end
 
-      # converts single ResultSet to hash
+      # Converts single ResultSet to hash
       def result_to_hash(rs)
-        h = {} of String => DBAny
-        rs.each_column do |column|
-          h[column] = rs.read.as(DBAny)
-          if h[column].is_a?(Int8)
-            h[column] = (h[column] == 1i8).as(Bool)
-          end
-        end
-        h
+        result = {} of String => DBAny
+        rs.each_column { |column| result[column] = rs.read.as(DBAny) }
+        result
       end
     end
   end

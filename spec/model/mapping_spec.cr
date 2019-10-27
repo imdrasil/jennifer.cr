@@ -50,9 +50,6 @@ class UserWithModuleMapping < Jennifer::Model::Base
   )
 end
 
-UTC = Time::Location.load("UTC")
-BERLIN = Time::Location.load("Europe/Berlin")
-
 describe Jennifer::Model::Mapping do
   select_regexp = /[\S\s]*SELECT contacts\.\*/i
 

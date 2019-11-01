@@ -13,11 +13,6 @@ module Jennifer
     def initialize(@attributes : Hash(String, DBAny))
     end
 
-    def initialize(result_set : DB::ResultSet)
-      # TODO: decouple adapter
-      @attributes = Adapter.default_adapter.result_to_hash(result_set)
-    end
-
     def initialize
       @attributes = {} of String => DBAny
     end

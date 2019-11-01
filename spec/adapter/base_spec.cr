@@ -265,8 +265,8 @@ describe Jennifer::Adapter::Base do
     end
   end
 
-  describe "::connection_string" do
-    config = Jennifer::Config
+  describe "#connection_string" do
+    config = Jennifer::Config.instance
 
     context "for db connection" do
       it "generates proper connection string" do
@@ -277,7 +277,7 @@ describe Jennifer::Adapter::Base do
 
         db_connection_string = "#{config.adapter}://user:password@host/db?" \
                                "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
-        adapter.class.connection_string(:db).should eq(db_connection_string)
+        adapter.connection_string(:db).should eq(db_connection_string)
       end
 
       context "with specified port" do
@@ -287,9 +287,9 @@ describe Jennifer::Adapter::Base do
           config.host = "host"
           config.db = "db"
           config.port = 3000
-          db_connection_string = "#{config.adapter}://user:password@host:3000/db?" \
+          db_connection_string = "#{adapter.class.protocol}://user:password@host:3000/db?" \
                                  "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
-          adapter.class.connection_string(:db).should eq(db_connection_string)
+          adapter.connection_string(:db).should eq(db_connection_string)
         end
       end
     end
@@ -300,10 +300,11 @@ describe Jennifer::Adapter::Base do
         config.user = "user"
         config.host = "host"
         config.db = "db"
+        config.port = -1
 
-        connection_string = "#{config.adapter}://user:password@host?" \
+        connection_string = "#{adapter.class.protocol}://user:password@host?" \
                             "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
-        adapter.class.connection_string.should eq(connection_string)
+        adapter.connection_string(:root).should eq(connection_string)
       end
     end
 
@@ -311,17 +312,17 @@ describe Jennifer::Adapter::Base do
       it "generates proper connection string" do
         config.port = 3333
         config.password = ""
-        connection_string = "#{config.adapter}://#{config.user}@#{config.host}:3333?" \
+        connection_string = "#{adapter.class.protocol}://#{config.user}@#{config.host}:3333?" \
                             "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
-        adapter.class.connection_string.should eq(connection_string)
+        adapter.connection_string(:root).should eq(connection_string)
       end
     end
 
     context "without password" do
       it do
         config.password = ""
-        connection_string = /^#{config.adapter}\:\/\/#{config.user}@#{config.host}/
-        adapter.class.connection_string.should match(connection_string)
+        connection_string = /^#{adapter.class.protocol}\:\/\/#{config.user}@#{config.host}/
+        adapter.connection_string(:root).should match(connection_string)
       end
     end
   end

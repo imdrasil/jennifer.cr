@@ -39,20 +39,15 @@ module Jennifer
     end
 
     # Allows to assign newly created adapter and call setup methods with existing adapter
-    private def self.adapter=(_adapter)
-      @@adapter = _adapter
+    private def self.adapter=(value)
+      @@adapter = value
     end
 
     # Returns adapter instance.
     #
     # The first call greps all model's table column numbers.
     def self.adapter
-      @@adapter ||= begin
-        a = adapter_class.not_nil!.build
-        self.adapter = a
-        a.prepare
-        a
-      end
+      @@adapter ||= self.adapter = adapter_class.not_nil!.new(Config.instance)
     end
 
     # Returns default adapter.
@@ -70,6 +65,14 @@ module Jennifer
     # Returns adapter class.
     def self.adapter_class
       @@adapter_class ||= adapters[Config.adapter]
+    rescue e : KeyError
+      if Config.adapter.empty?
+        raise BaseException.new(
+          "It seems you are trying to initialize adapter before setting Jennifer configurations. "\
+          "Ensure that you require adapter and load configurations."
+        )
+      end
+      raise BaseException.new("Unregistered adapter `#{Config.adapter}`")
     end
 
     # Returns hash with all registered adapter classes
@@ -77,9 +80,9 @@ module Jennifer
       @@adapters
     end
 
-    # Registers adapter class *adapter* with name *name*.
-    def self.register_adapter(name, adapter)
-      adapters[name] = adapter
+    # Registers adapter *adapter_class* with name *name*.
+    def self.register_adapter(name : String, adapter_class)
+      adapters[name] = adapter_class
     end
   end
 end

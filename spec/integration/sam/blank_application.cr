@@ -3,10 +3,9 @@ require "sam"
 require "../../../src/jennifer/sam"
 
 Jennifer::Config.configure do |conf|
+  conf.read("./examples/database.yml", Spec.adapter)
   conf.logger.level = Logger::DEBUG
-  conf.host = "localhost"
   conf.adapter = Spec.adapter
-  conf.migration_files_path = "./examples/migrations"
   conf.db = DEFAULT_DB
 
   case Spec.adapter

@@ -4,7 +4,7 @@ def get_record
   result = nil
   Factory.create_contact(name: "Jennifer", age: 20)
   Contact.all.each_result_set do |rs|
-    result = Jennifer::Record.new(rs)
+    result = Jennifer::Record.new(Jennifer::Adapter.adapter.result_to_hash(rs))
   end
   result.not_nil!
 end
@@ -19,20 +19,6 @@ describe Jennifer::Record do
         hash["name"] = "qweqwe"
         hash["age"] = 1
         described_class.new(hash)
-      end
-    end
-
-    context "from result set" do
-      it "properly loads all fields" do
-        executed = false
-        Factory.create_contact(name: "Jennifer", age: 20)
-        Contact.all.each_result_set do |rs|
-          record = described_class.new(rs)
-          record.name.should eq("Jennifer")
-          record.age.should eq(20)
-          executed = true
-        end
-        executed.should be_true
       end
     end
   end

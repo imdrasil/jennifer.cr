@@ -11,6 +11,8 @@ Also you can check out following example applications where you can find how to 
 
 ## Content
 
+### Basics
+
 * [Getting started](./getting_started.md)
 * [Configuration](./configuration.md)
 * [Command Line](./command_line.md)
@@ -31,3 +33,8 @@ Also you can check out following example applications where you can find how to 
 * [Model. Scopes](./model_scopes.md)
 * [Aggregation](./aggregation.md)
 * [Transaction and Lock](./transaction_and_lock.md)
+
+### Advanced
+
+* [Serialization](./serialization.md)
+* [Multiple adapters](./multiple_adapters.md)

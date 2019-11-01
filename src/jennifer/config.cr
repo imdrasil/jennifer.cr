@@ -237,7 +237,7 @@ module Jennifer
 
     # Resets configurations to default ones.
     def self.reset_config
-      @@instance = new
+      @@instance.tap(&.initialize)
     end
 
     delegate_property(:logger, :max_bind_vars_count)

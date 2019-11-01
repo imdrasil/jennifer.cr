@@ -29,12 +29,14 @@ Spec.file_system.tap do |fs|
 end
 
 require "../src/jennifer"
-require "sam"
 require "../src/jennifer/generators/*"
+require "sam"
 
 class Jennifer::Generators::Base
   def puts(_value); end
 end
+
+CONFIG_PATH = File.join(__DIR__, "..", "examples", "database.yml")
 
 {% if env("DB") == "mysql" %}
   require "../src/jennifer/adapter/mysql"
@@ -48,14 +50,33 @@ end
   # Additionally loads opposite adapter
   {% if env("DB") == "mysql" %}
     require "../src/jennifer/adapter/postgres"
-  {% elsif env("DB") == "postgres" %}
+    EXTRA_ADAPTER_NAME = "postgres"
+  {% else %}
     require "../src/jennifer/adapter/mysql"
+    EXTRA_ADAPTER_NAME = "mysql"
   {% end %}
+
+  EXTRA_SETTINGS = Jennifer::Config.new.read(CONFIG_PATH, EXTRA_ADAPTER_NAME).tap do |conf|
+    # conf.logger = Spec.logger
+    # conf.logger.level = Logger::DEBUG
+    conf.logger.level = Logger::ERROR
+    conf.user = ENV["PAIR_DB_USER"] if ENV["PAIR_DB_USER"]?
+    conf.password = ENV["PAIR_DB_PASSWORD"] if ENV["PAIR_DB_PASSWORD"]?
+    conf.verbose_migrations = false
+    conf.db = "jennifer_test_pair"
+  end
+
+  PAIR_ADAPTER =
+    if EXTRA_ADAPTER_NAME == "mysql"
+      Jennifer::Mysql::Adapter.new(EXTRA_SETTINGS)
+    else
+      Jennifer::Postgres::Adapter.new(EXTRA_SETTINGS)
+    end
 {% end %}
 
 def set_default_configuration
   Jennifer::Config.reset_config
-  Jennifer::Config.read(File.join(__DIR__, "..", "examples", "database.yml"), Spec.adapter)
+  Jennifer::Config.read(CONFIG_PATH, Spec.adapter)
 
   Jennifer::Config.configure do |conf|
     conf.logger = Spec.logger

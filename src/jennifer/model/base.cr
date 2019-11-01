@@ -51,6 +51,11 @@ module Jennifer
 
       @@foreign_key_name : String?
 
+      @[JSON::Field(ignore: true)]
+      @new_record : Bool = true
+      @[JSON::Field(ignore: true)]
+      @destroyed : Bool = false
+
       # Returns whether model has a table.
       #
       # NOTE: shouldn't be used outside of tests.

@@ -377,6 +377,25 @@ class AllTypeModel < ApplicationRecord
   )
 end
 
+{% if env("PAIR") == "1" %}
+  abstract class PairApplicationRecord < Jennifer::Model::Base
+    def self.adapter
+      PAIR_ADAPTER
+    end
+  end
+
+  class PairAddress < PairApplicationRecord
+    table_name "addresses"
+
+    mapping(
+      id: Primary32,
+      street: String?,
+      details: JSON::Any?,
+      number: Int32?
+    )
+  end
+{% end %}
+
 # ===================
 # synthetic models
 # ===================

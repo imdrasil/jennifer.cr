@@ -16,23 +16,32 @@ module Jennifer
 
       alias ArgsType = Array(DBAny)
 
-      module AbstractClassMethods
-        abstract def command_interface
+      enum ConnectionType
+        Root
+        DB
+      end
 
+      module AbstractClassMethods
         # Default database specific maximum count of bind variables
         abstract def default_max_bind_vars_count
+
+        abstract def protocol : String
       end
 
       extend AbstractClassMethods
 
-      getter db : DB::Database
+      @db : DB::Database?
+      getter config : Config
 
-      def initialize
-        @db = DB.open(self.class.connection_string(:db))
+      def initialize(@config : Config)
       end
 
-      def self.build
-        new
+      def db : DB::Database
+        @db || begin
+          @db = DB.open(connection_string(:db))
+          prepare
+          @db.not_nil!
+        end
       end
 
       def prepare
@@ -47,6 +56,8 @@ module Jennifer
         tables_column_count(models.keys).each do |record|
           count = record.count(Int64).to_i
           models[record.table_name(String)].each do |model|
+            next if model.adapter != self
+
             model.actual_table_field_count = count
           end
         end
@@ -182,29 +193,29 @@ module Jennifer
         Config.instance.max_bind_vars_count || self.class.default_max_bind_vars_count
       end
 
-      def self.create_database
+      def create_database
         command_interface.create_database
       end
 
-      def self.generate_schema
+      def generate_schema
         command_interface.generate_schema
       end
 
-      def self.load_schema
+      def load_schema
         command_interface.load_schema
       end
 
-      def self.drop_database
+      def drop_database
         command_interface.drop_database
       end
 
-      def self.database_exists?
+      def database_exists?
         command_interface.database_exists?
       end
 
       # Yields to block connection to the database main schema.
-      def self.db_connection
-        DB.open(connection_string) do |db|
+      def db_connection
+        DB.open(connection_string(:root)) do |db|
           yield(db)
         end
       rescue e
@@ -223,21 +234,21 @@ module Jennifer
         Migration::TableBuilder::CreateForeignKey.foreign_key_name(from_table, column_name, name)
       end
 
-      def self.connection_string(*options)
-        auth_part = Config.user
-        auth_part += ":#{Config.password}" if Config.password && !Config.password.empty?
+      def connection_string(type : ConnectionType)
+        auth_part = config.user
+        auth_part += ":#{config.password}" if config.password && !config.password.empty?
 
-        host_part = Config.host
-        host_part += ":#{Config.port}" if Config.port.try(&.>(0))
+        host_part = config.host
+        host_part += ":#{config.port}" if config.port.try(&.>(0))
 
         String.build do |s|
-          s << Config.adapter << "://" << auth_part << "@" << host_part
-          s << "/" << Config.db if options.includes?(:db)
+          s << self.class.protocol << "://" << auth_part << "@" << host_part
+          s << "/" << config.db if type.db?
           s << "?"
           {% begin %}
           [
             {% for arg in Config::CONNECTION_URI_PARAMS %}
-              "{{arg.id}}=#{Config.{{arg.id}}}",
+              "{{arg.id}}=#{config.{{arg.id}}}",
             {% end %}
           ].join("&", s)
           {% end %}
@@ -282,6 +293,7 @@ module Jennifer
         result
       end
 
+      abstract def command_interface
       abstract def schema_processor
       abstract def sql_generator
 

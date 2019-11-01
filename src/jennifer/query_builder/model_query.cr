@@ -10,8 +10,9 @@ module Jennifer
         super
       end
 
-      def initialize(@table)
-        initialize
+      def initialize(table, adapter)
+        @preload_relations = [] of String
+        super(table, adapter)
       end
 
       protected def initialize_copy_without(other, except : Array(String))
@@ -56,6 +57,7 @@ module Jennifer
       def find_by_sql(query : String, args : Array(DBAny) = [] of DBAny)
         results = [] of T
         return results if do_nothing?
+
         adapter.query(query, args) do |rs|
           begin
             rs.each do
@@ -97,10 +99,6 @@ module Jennifer
           nested_relation_tree.read(rs, T)
         end
         add_preloaded(result)
-      end
-
-      private def adapter
-        T.adapter
       end
     end
   end

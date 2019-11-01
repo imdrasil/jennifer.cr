@@ -281,7 +281,7 @@ module Jennifer
       # ```
       def results : Array(Record)
         result = [] of Record
-        each_result_set { |rs| result << Record.new(rs) }
+        each_result_set { |rs| result << Record.new(adapter.result_to_hash(rs)) }
         result
       end
 
@@ -297,9 +297,7 @@ module Jennifer
       # To iterate over records they are loaded from the DB so this may effect memory usage.
       # Prefer #find_each.
       def each
-        to_a.each do |e|
-          yield e
-        end
+        to_a.each { |e| yield e }
       end
 
       # Yields each result set object to a block.
@@ -308,9 +306,7 @@ module Jennifer
 
         adapter.select(self) do |rs|
           begin
-            rs.each do
-              yield rs
-            end
+            rs.each { yield rs }
           rescue e : Exception
             rs.read_to_end
             raise e
@@ -420,9 +416,7 @@ module Jennifer
 
         adapter.query(query, args) do |rs|
           begin
-            rs.each do
-              results << Record.new(rs)
-            end
+            rs.each { results << Record.new(adapter.result_to_hash(rs)) }
           rescue e : Exception
             rs.read_to_end
             raise e

@@ -23,6 +23,11 @@ module Jennifer
     abstract class Base < Model::Resource
       include Mapping
 
+      @[JSON::Field(ignore: true)]
+      @new_record : Bool = true
+      @[JSON::Field(ignore: true)]
+      @destroyed : Bool = false
+
       # Allows registering `after_initialize` callbacks.
       macro after_initialize(*names)
         {% for name in names %}

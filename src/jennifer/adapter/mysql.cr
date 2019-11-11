@@ -150,6 +150,10 @@ module Jennifer
         @@command_interface ||= CommandInterface.new(Config.instance)
       end
 
+      def self.default_max_bind_vars_count
+        32766
+      end
+
       def self.create_database
         db_connection do |db|
           db.exec "CREATE DATABASE #{Config.db}"

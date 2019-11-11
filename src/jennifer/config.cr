@@ -36,6 +36,7 @@ module Jennifer
   # * `command_shell_sudo = false`
   # * `migration_failure_handler_method = "none"`
   # * `allow_outdated_pending_migration = false`
+  # * `max_bind_vars_count = nil`
   #
   # ```
   # Jennifer::Config.configure do |conf|
@@ -117,6 +118,11 @@ module Jennifer
     # Returns local time zone.
     getter local_time_zone : Time::Location
 
+    # Maximum count of bind variables.
+    #
+    # If `nil` - uses default adapter value.
+    property max_bind_vars_count : Int32?
+
     # Returns logger instance.
     #
     # Default is `Logger.new(STDOUT)`. Default logger level - `Logger::DEBUG`.
@@ -156,6 +162,8 @@ module Jennifer
       logger.formatter = Logger::Formatter.new do |_severity, datetime, _progname, message, io|
         io << datetime << ": " << message
       end
+
+      @max_bind_vars_count = nil
     end
 
     # Sets `max_pool_size`, `max_idle_pool_size` and `initial_pool_size` to the given *value*.
@@ -227,7 +235,7 @@ module Jennifer
       @@instance = new
     end
 
-    delegate_property(:logger)
+    delegate_property(:logger, :max_bind_vars_count)
 
     def local_time_zone_name=(value : String)
       @local_time_zone_name = value
@@ -274,21 +282,23 @@ module Jennifer
 
     # Reads configuration properties from the given YAML *source*.
     def from_yaml(source)
+      casted_source = source.as_h
       {% for field in STRING_FIELDS %}
-        @{{field.id}} = string_from_yaml(source, "{{field.id}}") if source["{{field.id}}"]?
+        @{{field.id}} = string_from_yaml(source, "{{field.id}}") if casted_source.has_key?("{{field.id}}")
       {% end %}
       {% for field in INT_FIELDS %}
-        @{{field.id}} = int_from_yaml(source, "{{field.id}}") if source["{{field.id}}"]?
+        @{{field.id}} = int_from_yaml(source, "{{field.id}}") if casted_source.has_key?("{{field.id}}")
       {% end %}
       {% for field in FLOAT_FIELDS %}
-        @{{field.id}} = float_from_yaml(source, "{{field.id}}") if source["{{field.id}}"]?
+        @{{field.id}} = float_from_yaml(source, "{{field.id}}") if casted_source.has_key?("{{field.id}}")
       {% end %}
       {% for field in BOOL_FIELDS %}
-        @{{field.id}} = bool_from_yaml(source, "{{field.id}}") if source["{{field.id}}"]?
+        @{{field.id}} = bool_from_yaml(source, "{{field.id}}") if casted_source.has_key?("{{field.id}}")
       {% end %}
 
-      self.local_time_zone_name = source["local_time_zone_name"].as_s if source["local_time_zone_name"]?
-      self.pool_size = int_from_yaml(source, "pool_size") if source["pool_size"]?
+      self.local_time_zone_name = source["local_time_zone_name"].as_s if casted_source.has_key?("local_time_zone_name")
+      self.pool_size = int_from_yaml(source, "pool_size") if casted_source.has_key?("pool_size")
+      self.max_bind_vars_count = int_from_yaml(source, "max_bind_vars_count") if casted_source.has_key?("max_bind_vars_count")
 
       validate_config
       self

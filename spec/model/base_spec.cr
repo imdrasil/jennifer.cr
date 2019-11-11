@@ -603,35 +603,49 @@ describe Jennifer::Model::Base do
   end
 
   describe "::import" do
+    argument_regex = db_specific(mysql: -> { /\(\?/ }, postgres: -> { /\(\$\d/ })
+    amount = db_specific(mysql: -> { 4096 }, postgres: -> { 3641 })
+
     context "with autoincrementable primary key" do
-      it "imports objects" do
-        void_transaction do
-          objects = Factory.build_contact(2)
+      context "when count of fields doesn't exceed limit" do
+        it "imports objects by " do
+          objects = Factory.build_contact(amount - 1)
+
           Contact.all.count.should eq(0)
           Contact.import(objects)
-          Contact.all.count.should eq(2)
+          query_log[1].should match(argument_regex)
+          Contact.all.count.should eq(amount - 1)
         end
       end
 
-      it "sets ids to all given objects" do
-        void_transaction do
-          objects = Factory.build_contact(2)
-          new_collection = Contact.import(objects)
-          objects.should eq(new_collection)
-          objects[0].id.nil?.should be_false
-          objects[1].id.nil?.should be_false
+      context "when count of fields exceeds limit" do
+        it "imports objects by " do
+          objects = Factory.build_contact(amount)
+
+          Contact.all.count.should eq(0)
+          Contact.import(objects)
+          query_log[1].should_not match(argument_regex)
+          Contact.all.count.should eq(amount)
         end
       end
+
+      # it "sets ids to all given objects" do
+      #   void_transaction do
+      #     objects = Factory.build_contact(2)
+      #     new_collection = Contact.import(objects)
+      #     objects.should eq(new_collection)
+      #     objects[0].id.nil?.should be_false
+      #     objects[1].id.nil?.should be_false
+      #   end
+      # end
     end
 
     context "with custom primary key" do
       it "imports objects" do
-        void_transaction do
-          objects = [Factory.build_address(enn: "qwer"), Factory.build_address(enn: "zxcc")]
-          objects.each { |o| o.created_at = o.updated_at = Time.local }
-          Address.import(objects)
-          Address.all.count.should eq(2)
-        end
+        objects = [Factory.build_address(enn: "qwer"), Factory.build_address(enn: "zxcc")]
+        objects.each { |o| o.created_at = o.updated_at = Time.local }
+        Address.import(objects)
+        Address.all.count.should eq(2)
       end
     end
   end

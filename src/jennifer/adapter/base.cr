@@ -18,6 +18,9 @@ module Jennifer
 
       module AbstractClassMethods
         abstract def command_interface
+
+        # Default database specific maximum count of bind variables
+        abstract def default_max_bind_vars_count
       end
 
       extend AbstractClassMethods
@@ -118,26 +121,26 @@ module Jennifer
 
         klass = collection[0].class
         fields = collection[0].arguments_to_insert[:fields]
-        values = collection.flat_map(&.arguments_to_insert[:args])
-        parsed_query = parse_query(sql_generator.bulk_insert(klass.table_name, fields, collection.size), values)
 
-        with_table_lock(klass.table_name) do
-          exec(*parsed_query)
-          if klass.primary_auto_incrementable?
-            klass.all.order(klass.primary.desc).limit(collection.size).pluck(:id).reverse_each.each_with_index do |id, i|
-              collection[i].init_primary_field(id.as(Int))
-            end
-          end
+        if fields.size * collection.size <= max_bind_vars_count
+          model_prepared_statement_bulk_insert(collection, klass, fields)
+        else
+          model_escaped_bulk_insert(collection, klass, fields)
         end
         collection
       end
 
       def bulk_insert(table : String, fields : Array(String), values : Array(ArgsType))
         return if values.empty?
+        if fields.size != values[0].size
+          raise ArgumentError.new("Expected #{fields.size} values per row to be passed but #{values[0].size} was")
+        end
 
-        with_table_lock(table) do
+        if fields.size * values.size <= max_bind_vars_count
           flat_values = values.flatten
           exec(*parse_query(sql_generator.bulk_insert(table, fields, values.size), flat_values))
+        else
+          exec(sql_generator.bulk_insert(table, fields, values))
         end
       end
 
@@ -173,6 +176,10 @@ module Jennifer
 
       def parse_query(q : String)
         sql_generator.parse_query(q)
+      end
+
+      def max_bind_vars_count
+        Config.instance.max_bind_vars_count || self.class.default_max_bind_vars_count
       end
 
       def self.create_database
@@ -333,6 +340,25 @@ module Jennifer
       end
 
       # private ===========================
+
+      private def model_escaped_bulk_insert(collection : Array, klass, fields : Array)
+        values = extract_attributes(collection, klass, fields)
+        exec(sql_generator.bulk_insert(klass.table_name, fields, values))
+      end
+
+      private def model_prepared_statement_bulk_insert(collection : Array, klass, fields : Array)
+        values = collection.flat_map(&.arguments_to_insert[:args])
+        parsed_query = parse_query(
+          sql_generator.bulk_insert(klass.table_name, fields, collection.size),
+          values
+        )
+
+        exec(*parsed_query)
+      end
+
+      private def extract_attributes(collection : Array, _klass, _fields : Array)
+        collection.map(&.arguments_to_insert[:args])
+      end
 
       private def regular_query_message(time : Time::Span, query : String, args : Array)
         ms = time.nanoseconds / 1000

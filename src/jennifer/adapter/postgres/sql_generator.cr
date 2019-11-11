@@ -1,8 +1,11 @@
 require "../base_sql_generator"
+require "./quoting"
 
 module Jennifer
   module Postgres
     class SQLGenerator < Adapter::BaseSQLGenerator
+      extend Quoting
+
       # :nodoc:
       OPERATORS = {
         like: "LIKE",
@@ -105,17 +108,6 @@ module Jennifer
         "#{path.identifier}#{operator}#{quote(path.path)}"
       end
 
-      # for postgres column name
-      def self.escape(value : String)
-        case value
-        when "NULL", "TRUE", "FALSE"
-          value
-        else
-          value = value.gsub(/\\/, ARRAY_ESCAPE).gsub(/"/, "\\\"")
-          "\"#{value}\""
-        end
-      end
-
       def self.escape(value : Nil)
         quote(value)
       end
@@ -126,10 +118,6 @@ module Jennifer
 
       def self.escape(value : Int32 | Int16 | Float64 | Float32)
         quote(value)
-      end
-
-      def self.quote(value : String)
-        "'#{value.gsub(/\\/, "\&\&").gsub(/'/, "''")}'"
       end
 
       def self.parse_query(query, args : Array(DBAny))

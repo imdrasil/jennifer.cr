@@ -2,6 +2,7 @@ module Jennifer
   module Adapter
     class TransactionObserver
       property transaction : DB::Transaction
+
       @rolled_back = false
       @commit_observers = [] of -> Bool
       @rollback_observers = [] of -> Bool

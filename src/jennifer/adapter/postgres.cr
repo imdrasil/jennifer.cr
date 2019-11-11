@@ -80,6 +80,10 @@ module Jennifer
         @@command_interface ||= CommandInterface.new(Config.instance)
       end
 
+      def self.default_max_bind_vars_count
+        32766
+      end
+
       def schema_processor
         @schema_processor ||= SchemaProcessor.new(self)
       end
@@ -225,6 +229,26 @@ module Jennifer
         end
 
         plan
+      end
+
+      private def extract_attributes(collection : Array, klass, fields : Array)
+        enum_fields = [] of Tuple(Int32, Symbol)
+        values = super
+
+        klass.columns_tuple.each do |field, properties|
+          if properties.has_key?(:converter) && properties.dig(:converter) == ::Jennifer::Model::EnumConverter
+            enum_fields << {fields.index(field.to_s).not_nil!, field}
+          end
+        end
+
+        unless enum_fields.empty?
+          values.each_with_index do |row, row_index|
+            enum_fields.each do |tuple|
+              row[tuple[0]] = collection[row_index].attribute(tuple[1])
+            end
+          end
+        end
+        values
       end
     end
   end

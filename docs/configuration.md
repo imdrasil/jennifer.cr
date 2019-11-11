@@ -80,6 +80,7 @@ Take into account - some configs can't be initialized using URI string or yaml f
 | `command_shell_sudo` | ✔ | ❌ |
 | `migration_failure_handler_method` | ✔ | ❌ |
 | `allow_outdated_pending_migration` | ✔ | ❌ |
+| `max_bind_vars_count` | ✔ | ❌ |
 
 ## Supported configuration options
 
@@ -110,6 +111,7 @@ Take into account - some configs can't be initialized using URI string or yaml f
 * `verbose_migrations` - outputs basic invoked migration information if set to `true`; default: `true`
 * `model_files_path` - path to the models locations; is used by model and migration generators; default: `"./src/models"`
 * `structure_folder` - path to the database structure file location; if set to empty string - parent folder of `migration_files_path` is used; default: `""`
+* `max_bind_vars_count` - maximum allowed count of bind variables; if nothing specified - used adapter's default value; default: `nil`
 
 From `0.5.1` `Jennifer::Config` has started working under singleton pattern instead of using class as a container for all configuration properties.
 

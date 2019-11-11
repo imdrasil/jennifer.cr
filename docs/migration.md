@@ -152,7 +152,7 @@ end
 Also plain SQL could be executed as well:
 
 ```crystal
-execute("ALTER TABLE addresses CHANGE street st VARCHAR(20)")
+exec("ALTER TABLE addresses CHANGE street st VARCHAR(20)")
 ```
 
 All changes are executed one by one so you also could add data changes here (in `#up` and/or `#down`).

@@ -144,10 +144,16 @@ describe Jennifer::Migration::Base do
 
     describe "#change_enum" do
       it do
-        migration.create_enum(:gender, %w(unspecified female male))
-        migration.change_enum(:gender, { :add_values => ["other"] })
+        void_transaction do
+          begin
+            migration.create_enum(:gender, %w(unspecified female male))
+            migration.change_enum(:gender, { :add_values => ["other"] })
 
-        adapter.enum_values(:gender).should eq(%w(unspecified female male other))
+            adapter.enum_values(:gender).should eq(%w(unspecified female male other))
+          ensure
+            migration.drop_enum(:gender)
+          end
+        end
       end
     end
 

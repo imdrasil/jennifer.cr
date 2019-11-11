@@ -33,7 +33,6 @@ module Jennifer
       # Schema manipulating methods
       # ============================
 
-      # TODO: sanitize query
       def define_enum(name : String | Symbol, values : Array)
         adapter.exec "CREATE TYPE #{name} AS ENUM(#{values.map { |e| adapter.sql_generator.quote(e) }.join(", ")})"
       end

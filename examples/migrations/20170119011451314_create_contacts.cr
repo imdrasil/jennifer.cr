@@ -12,7 +12,6 @@ class CreateContacts < Jennifer::Migration::Base
       end
       change_enum(:gender_enum, {:add_values => ["unknown"]})
       change_enum(:gender_enum, {:rename_values => ["unknown", "other"]})
-      change_enum(:gender_enum, {:remove_values => ["other"]})
     {% else %}
       create_table(:contacts) do |t|
         t.string :name, {:size => 30}

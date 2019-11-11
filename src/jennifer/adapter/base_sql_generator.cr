@@ -1,9 +1,9 @@
+require "./json_encoder"
+require "./quoting"
+
 module Jennifer
   module Adapter
     abstract class BaseSQLGenerator
-      ARRAY_ESCAPE           = "\\\\\\\\"
-      ARGUMENT_ESCAPE_STRING = "%s"
-
       module ClassMethods
         # Generates query for inserting new record to db
         abstract def insert(obj : Model::Base)
@@ -15,6 +15,7 @@ module Jennifer
       end
 
       extend ClassMethods
+      extend Quoting
 
       def self.explain(query)
         "EXPLAIN #{self.select(query)}"
@@ -33,9 +34,27 @@ module Jennifer
         String.build do |s|
           s << "INSERT INTO " << table << "("
           field_names.join(", ", s) { |e| s << e }
-          escaped_row = "(" + escape_string(field_names.size) + ")"
           s << ") VALUES "
+          escaped_row = "(" + escape_string(field_names.size) + ")"
           rows.times.join(", ", s) { s << escaped_row }
+        end
+      end
+
+      def self.bulk_insert(table : String, field_names : Array(String), rows : Array)
+        String.build do |s|
+          s << "INSERT INTO " << table << "("
+          field_names.join(", ", s) { |e| s << e }
+          s << ") VALUES "
+
+          rows.each_with_index do |row, index|
+            s << ',' if index != 0
+            s << '('
+            row.each_with_index do |col, col_index|
+              s << ',' if col_index != 0
+              s << quote(col)
+            end
+            s << ')'
+          end
         end
       end
 
@@ -283,47 +302,6 @@ module Jennifer
         else
           operator.to_s
         end
-      end
-
-      def self.quote(value : Nil)
-        "NULL"
-      end
-
-      def self.quote(value : Bool)
-        value ? "TRUE" : "FALSE"
-      end
-
-      def self.quote(value : Int32 | Int16 | Float64 | Float32)
-        value.to_s
-      end
-
-      def self.escape_string
-        ARGUMENT_ESCAPE_STRING
-      end
-
-      def self.escape_string(size : Int32)
-        case size
-        when 1
-          ARGUMENT_ESCAPE_STRING
-        when 2
-          "#{ARGUMENT_ESCAPE_STRING}, #{ARGUMENT_ESCAPE_STRING}"
-        when 3
-          "#{ARGUMENT_ESCAPE_STRING}, #{ARGUMENT_ESCAPE_STRING}, #{ARGUMENT_ESCAPE_STRING}"
-        else
-          size.times.join(", ") { ARGUMENT_ESCAPE_STRING }
-        end
-      end
-
-      def self.filter_out(arg : Array, single : Bool = true)
-        single ? escape_string : arg.join(", ") { |a| filter_out(a) }
-      end
-
-      def self.filter_out(arg : QueryBuilder::SQLNode)
-        arg.as_sql(self)
-      end
-
-      def self.filter_out(arg)
-        escape_string
       end
 
       # TODO: optimize array initializing

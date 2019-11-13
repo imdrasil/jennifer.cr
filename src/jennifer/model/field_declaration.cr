@@ -1,8 +1,6 @@
 module Jennifer::Model
   # :nodoc:
   module FieldDeclaration
-    # TODO: remove .primary_field_type method as it isn't used anywhere
-
     # :nodoc:
     macro __field_declaration(properties, primary_auto_incrementable)
       {% for key, value in properties %}

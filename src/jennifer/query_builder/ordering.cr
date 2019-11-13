@@ -63,11 +63,12 @@ module Jennifer
         self
       end
 
-      # TODO: it seems this doesn't work
       def order(opts : Hash(String | Symbol, String | Symbol))
         opts.each do |k, v|
-          key = k.is_a?(String) ? @expression.sql(k, false) : @expression.c(k.to_s)
-          _order![key] = v.to_s
+          field = k.is_a?(String) ? @expression.sql(k, false) : @expression.c(k.to_s)
+          expression = field.asc
+          expression.direction = v
+          _order! << expression
         end
         self
       end

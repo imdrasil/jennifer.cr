@@ -58,7 +58,6 @@ module Jennifer
           s << index_type_translate(type) if type
 
           s << "INDEX " << name << " ON " << table
-          # TODO: add USING support
           # s << " USING " << options[:using] if options.has_key?(:using)
           s << " ("
           fields.each_with_index do |f, i|
@@ -67,7 +66,6 @@ module Jennifer
             s << " " << order[f].to_s.upcase if order && order[f]?
           end
           s << ")"
-          # TODO: add partial support to migration
           # s << " " << options[:partial] if options.has_key?(:partial)
         end
         adapter.exec query

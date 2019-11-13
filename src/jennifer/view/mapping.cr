@@ -75,7 +75,6 @@ module Jennifer
 
         # Extracts arguments due to mapping from *pull* and returns tuple for fields assignment.
         # It stands on that fact result set has all defined fields in a raw
-        # TODO: think about moving it to class scope
         # NOTE: don't use it manually - there is some dependencies on caller such as reading result set to the end
         # if exception was raised
         private def _extract_attributes(pull : DB::ResultSet)

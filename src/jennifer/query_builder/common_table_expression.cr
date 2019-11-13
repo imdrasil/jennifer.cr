@@ -3,6 +3,7 @@ module Jennifer::QueryBuilder
   class CommonTableExpression
     # Expression name.
     getter name
+
     # Expression query.
     getter query
 

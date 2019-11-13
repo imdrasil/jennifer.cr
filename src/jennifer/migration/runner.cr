@@ -19,7 +19,6 @@ module Jennifer
           performed = true
         end
       ensure
-        # TODO: generate schema for each adapter
         default_adapter.class.generate_schema if performed && !Config.skip_dumping_schema_sql
       end
 
@@ -30,7 +29,6 @@ module Jennifer
 
       # Creates database.
       def self.create
-        # TODO: allow to specify adapter
         if default_adapter_class.database_exists?
           puts "#{Config.db} is already exists"
         else
@@ -41,7 +39,6 @@ module Jennifer
 
       # Drops database.
       def self.drop
-        # TODO: allow to specify adapter
         default_adapter_class.drop_database
         puts "#{Config.db} is dropped!"
       end
@@ -72,14 +69,12 @@ module Jennifer
           processed = true
         end
       ensure
-        # TODO: generate schema for each adapter
         default_adapter_class.generate_schema if processed && !Config.skip_dumping_schema_sql
       end
 
       # Loads schema from the SQL schema file.
       def self.load_schema
         return if Config.skip_dumping_schema_sql
-        # TODO: load schema for each adapter
         default_adapter_class.load_schema
         puts "Schema loaded"
       end
@@ -114,10 +109,9 @@ module Jennifer
         end
       rescue e
         optional_transaction(migration) do
-          case Config.migration_failure_handler_method
-          when "reverse_direction"
+          if Config.instance.migration_failure_handler_method.reverse_direction?
             migration.down
-          when "callback"
+          elsif Config.instance.migration_failure_handler_method.callback?
             migration.after_up_failure
           end
         end
@@ -134,10 +128,9 @@ module Jennifer
         end
       rescue e
         optional_transaction(migration) do
-          case Config.migration_failure_handler_method
-          when "reverse_direction"
+          if Config.instance.migration_failure_handler_method.reverse_direction?
             migration.up
-          when "callback"
+          elsif Config.instance.migration_failure_handler_method.callback?
             migration.after_down_failure
           end
         end

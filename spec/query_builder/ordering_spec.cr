@@ -23,6 +23,13 @@ describe Jennifer::QueryBuilder::Ordering do
       end
     end
 
+    context "with hash with mixed keys" do
+      it do
+        orders = Contact.all.order({:age => :desc, "id" => :asc})._order!
+        orders.should eq([Contact._age.desc, Contact.context.sql("id").asc])
+      end
+    end
+
     context "with array of orders" do
       it "adds them to pool" do
         orders = Contact.all.order([Contact._id.desc])._order!

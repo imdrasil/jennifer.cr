@@ -3,11 +3,18 @@ require "../migration/table_builder/*"
 module Jennifer
   module Adapter
     abstract class SchemaProcessor
-      ON_EVENT_ACTIONS = {
-        :no_action => "NO ACTION",
-        :restrict => "RESTRICT",
-        :cascade => "CASCADE",
-        :set_null => "SET NULL"
+      enum FkEventActions
+        Restrict
+        Cascade
+        SetNull
+        NoAction
+      end
+
+      ON_EVENT_ACTION_TRANSLATIONS = {
+        FkEventActions::NoAction => "NO ACTION",
+        FkEventActions::Restrict => "RESTRICT",
+        FkEventActions::Cascade => "CASCADE",
+        FkEventActions::SetNull => "SET NULL"
       }
 
       # :nodoc:
@@ -112,13 +119,15 @@ module Jennifer
       end
 
       def add_foreign_key(from_table, to_table, column, primary_key, name, on_update, on_delete)
+        on_delete = FkEventActions.parse(on_delete.to_s)
+        on_update = FkEventActions.parse(on_update.to_s)
         query = String.build do |s|
           s << "ALTER TABLE " << from_table
           s << " ADD CONSTRAINT " << name
           s << " FOREIGN KEY (" << column << ") REFERENCES "
           s << to_table << "(" << primary_key << ")"
-          s << " ON UPDATE " << ON_EVENT_ACTIONS[on_update]
-          s << " ON DELETE " << ON_EVENT_ACTIONS[on_delete]
+          s << " ON UPDATE " << ON_EVENT_ACTION_TRANSLATIONS[on_update]
+          s << " ON DELETE " << ON_EVENT_ACTION_TRANSLATIONS[on_delete]
         end
         adapter.exec query
       end

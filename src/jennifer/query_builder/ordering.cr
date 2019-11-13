@@ -78,6 +78,9 @@ module Jennifer
       # Contact.all.order { _name.asc }
       # Contact.all.order { [_name.asc, _age.desc] }
       # ```
+      #
+      # Specified block should return `OrderItem | Array(OrderItem)`. To convert `Criteria` or `RawSql` to
+      # order item call `#asc` or `#desc`.
       def order(&block)
         order(with @expression yield)
       end

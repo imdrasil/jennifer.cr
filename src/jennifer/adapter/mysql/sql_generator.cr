@@ -58,13 +58,8 @@ module Jennifer
       end
 
       def self.json_path(path : QueryBuilder::JSONSelector)
-        value =
-          if path.path.is_a?(Number)
-            quote("$[#{path.path.to_s}]")
-          else
-            quote(path.path)
-          end
-        "#{path.identifier}->#{value}"
+        value = path.path.is_a?(Number) ? "$[#{path.path.to_s}]" : path.path
+        "#{path.identifier}->#{json_quote(value)}"
       end
 
       def self.order_expression(expression : QueryBuilder::OrderItem)
@@ -86,8 +81,24 @@ module Jennifer
         "VALUES(#{field})"
       end
 
+      def self.json_quote(value : String)
+        "\"#{value.gsub(Jennifer::Adapter::Quoting::STRING_QUOTING_PATTERNS)}\""
+      end
+
+      def self.json_quote(value)
+        quote(value)
+      end
+
+      def self.quote_json_string(value : String)
+        if value =~ /[\\"]/
+          raise ArgumentError.new("Mysql adapter doesn't support quoting '\\' or '\"' symbols in JSON strings")
+        end
+
+        super
+      end
+
       def self.quote(value : String)
-        "\"#{value.gsub(/\\/, "\&\&").gsub(/"/, "\"\"")}\""
+        "\'" + value.gsub(Jennifer::Adapter::Quoting::STRING_QUOTING_PATTERNS) + "'"
       end
     end
   end

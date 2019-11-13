@@ -1,8 +1,29 @@
 require "../../spec_helper"
 
+private macro quote_example(value, type_cast = nil)
+  it do
+    executed = false
+    value = {{value}}
+    query = {% if type_cast %}
+        "SELECT CAST(#{described_class.quote(value)} AS {{type_cast.id}})"
+      {% else %}
+        "SELECT #{described_class.quote(value)}"
+      {% end %}
+    adapter.query(query) do |rs|
+      rs.each do
+        result = value.is_a?(Bool) ? rs.read(Bool) :  rs.read
+        result.should eq(value)
+        executed = true
+      end
+    end
+    executed.should be_true
+  end
+end
+
 mysql_only do
   describe Jennifer::Mysql::SQLGenerator do
     described_class = Jennifer::Adapter.adapter.sql_generator
+    adapter = Jennifer::Adapter.adapter
 
     describe "::lock_clause" do
       it "render custom query part if specified" do
@@ -52,6 +73,46 @@ mysql_only do
           Factory.build_criteria.desc.nulls_last.as_sql.should eq("CASE WHEN tests.f1 IS NULL THEN 0 ELSE 1 DESC END, tests.f1 DESC")
         end
       end
+    end
+
+    describe "#quote" do
+      describe "JSON::Any" do
+        it "is raises exception on '\\'" do
+          executed = false
+          expect_raises(ArgumentError) do
+            value = JSON::Any.from_json({ %(this has a \\) => 1}.to_json)
+            described_class.quote(value)
+          end
+        end
+
+        it "is raises exception on '\"'" do
+          executed = false
+          expect_raises(ArgumentError) do
+            value = JSON::Any.from_json({ %(this) => { "b" => [%(what your "name")]}}.to_json)
+            described_class.quote(value)
+          end
+        end
+
+        quote_example(JSON::Any.from_json({ "asd" => { "asd" => [1, 2, 3], "b" => ["asd"]}}.to_json), "json")
+        quote_example(JSON::Any.from_json({ %(this) => { "b" => [%(what's your name)]}}.to_json), "json")
+      end
+
+      it "correctly escapes blob" do
+        value = Bytes[1, 123, 123, 34, 54]
+        adapter.exec("INSERT INTO all_types (blob_f) values(#{described_class.quote(value)})")
+        AllTypeModel.all.first!.blob_f.should eq(value)
+      end
+
+      quote_example(Time.utc(2010, 10, 10, 12, 34, 56), "datetime")
+      quote_example(Time.utc(2010, 10, 10, 0, 0, 0), "date")
+      quote_example(nil)
+      quote_example(true)
+      quote_example(false)
+      quote_example(%(foo))
+      quote_example(%(this has a \\))
+      quote_example(%(what's your "name"))
+      quote_example(1)
+      quote_example(1.0)
     end
   end
 end

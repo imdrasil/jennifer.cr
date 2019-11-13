@@ -107,7 +107,7 @@ I18n.init
 To be able to use CLI install [sam](https://github.com/imdrasil/sam.cr) task manager and modify `sam.cr` file in you application root folder with following content:
 
 ```crystal
-# here load jennifer and all required configurations
+require "./your_configuration_folder/*" # here load jennifer and all required configurations
 require "./db/migrations/*"
 require "sam"
 load_dependencies "jennifer"

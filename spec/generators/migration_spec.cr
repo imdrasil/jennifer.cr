@@ -4,7 +4,6 @@ describe Jennifer::Generators::Migration do
   described_class = Jennifer::Generators::Migration
 
   describe "#render" do
-    timestamp = Time.local.to_s("%Y%m%d%H%M%S%L")[0...-5]
     args = Sam::Args.new({} of String => String, %w(CreateArticles))
 
     it "creates migration" do
@@ -13,7 +12,7 @@ describe Jennifer::Generators::Migration do
       migration_path = Dir["./examples/migrations/*.cr"].sort.last
 
       migration_path.should match(/\d{16}_create_articles\.cr/)
-      File.basename(migration_path).starts_with?(timestamp).should be_true
+      Time.parse(File.basename(migration_path), "%Y%m%d%H%M%S%L", Time::Location.local).should be_close(Time.local, 1.seconds)
       File.read(migration_path).should eq(expected_content)
     end
   end

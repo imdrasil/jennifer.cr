@@ -42,12 +42,12 @@ module Jennifer
           conn.transaction do |tx|
             lock_connection(tx)
             begin
-              Config.logger.debug("TRANSACTION START")
+              Config.logger.debug("BEGIN")
               res = yield(tx)
-              Config.logger.debug("TRANSACTION COMMIT")
+              Config.logger.debug("COMMIT")
             rescue e
               @locks[fiber_id].rollback
-              Config.logger.debug("TRANSACTION ROLLBACK")
+              Config.logger.debug("ROLLBACK")
               raise e
             ensure
               lock_connection(previous_transaction)
@@ -70,7 +70,7 @@ module Jennifer
       # Starts manual transaction for current fiber. Designed for usage in test callback.
       def begin_transaction
         raise ::Jennifer::BaseException.new("Couldn't manually begin non top level transaction") if current_transaction
-        Config.logger.debug("TRANSACTION START")
+        Config.logger.debug("START")
         lock_connection(@db.checkout.begin_transaction)
       end
 
@@ -78,9 +78,10 @@ module Jennifer
       def rollback_transaction
         t = current_transaction
         raise ::Jennifer::BaseException.new("No transaction to rollback") unless t
+
         t = t.not_nil!
         t.rollback
-        Config.logger.debug("TRANSACTION ROLLBACK")
+        Config.logger.debug("ROLLBACK")
         t.connection.release
         lock_connection(nil)
       end

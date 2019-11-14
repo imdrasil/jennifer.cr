@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.8.4 (15-11-2019)
+
+**QueryBuilder**
+
+* use adapter's `#read_column` in `NestedRelationTree`
+* add `RelationTree#adapter`
+* fix `Ordering#order(Hash(String | Symbol, String | Symbol))`
+
+**Adapter**
+
+* fix issue with treating `tinyint` mysql field as `boolean`
+* remove `ResultParser#result_to_array`
+* add `Mysql#read_column`
+* add `Base.default_max_bind_vars_count` which returns default maximum count of bind variables that can be used in `Base#bulk_insert` (default is 32766)
+* `Mysql.default_max_bind_vars_count` and `Postgres.default_max_bind_vars_count` returns `32766`
+* `Base#bulk_insert` doesn't do table lock no more
+* if variables that should be inserted by `Base#bulk_insert` exceed `Base.max_bind_vars` all of them are quoted and put into a query
+* remove `BaseSQLGenerator::ARRAY_ESCAPE`
+* move `BaseSQLGenerator::ARGUMENT_ESCAPE_STRING` to `Quoting`
+* move `BaseSQLGenerator` `.quote`, `.escape_string`, `.filter_out` to `Quoting`
+* add correct values quoting for `postgres` adapter
+* add correct values quoting for `mysql` adapter
+* now logger writes `BEGIN` instead of `TRANSACTION START`, `COMMIT` instead of `TRANSACTION COMMIT` and `ROLLBACK` instead of `TRANSACTION ROLLBACK` on corresponding transaction commands
+* add `SchemaProcessor::FkEventActions` enum to validate `on_delete` and `on_update` action values; `String | Symbol` still should be used as an argument type everywhere
+
+**Config**
+
+* add `max_bind_vars_count` property to present maximum allowed count of bind variables to be used in bulk insert operation
+* add `MigrationFailureHandler` enum to validate `migration_failure_handler_method` value; `Symbol | MigrationFailureHandler` should be used as an argument for it
+* fix `migration_failure_handler_method` config - make it instance property
+
 ## 0.8.3 (19-10-2019)
 
 **General**

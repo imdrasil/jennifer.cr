@@ -4,10 +4,13 @@ module Jennifer
       abstract class Base
         # Base allowed types for migration DSL option values
         alias AllowedTypes = String | Int32 | Int64 | Bool | Float32 | Float64 | JSON::Any | Nil
+
         # Allowed types for migration DSL + Symbol
         alias EAllowedTypes = AllowedTypes | Symbol
+
         # Allowed types for migration DSL including array
         alias AAllowedTypes = EAllowedTypes | Array(EAllowedTypes)
+
         # Hash type for options argument
         alias DB_OPTIONS = Hash(Symbol, EAllowedTypes | Array(EAllowedTypes))
 

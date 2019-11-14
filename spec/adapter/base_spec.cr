@@ -92,14 +92,17 @@ describe Jennifer::Adapter::Base do
           ch = Channel(Nil).new
           adapter.transaction do
             Factory.create_contact
+
+            spawn do
+              adapter.transaction do
+                Factory.create_contact
+              end
+              ch.send(nil)
+            end
+
             raise DB::Rollback.new
           end
-          spawn do
-            adapter.transaction do
-              Factory.create_contact
-            end
-            ch.send(nil)
-          end
+
           ch.receive
 
           adapter.with_manual_connection do |con|

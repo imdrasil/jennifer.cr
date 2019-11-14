@@ -38,8 +38,6 @@ module Jennifer
         before_destroy :__delete_callback_{{name.id}}
       end
 
-      # TODO: add validation for cyclic destroy dependency
-
       # :nodoc:
       macro destroy_dependency(name, relation_type, polymorphic)
         # :nodoc:
@@ -63,8 +61,6 @@ module Jennifer
 
         before_destroy :__restrict_with_exception_callback_{{name.id}}
       end
-
-      # TODO: add "restrict_with_error" strategy
 
       # :nodoc:
       macro declare_dependent(name, type, relation_type, polymorphic = false)

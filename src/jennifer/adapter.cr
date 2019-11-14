@@ -26,11 +26,13 @@ module Jennifer
     @@adapters = {} of String => Base.class
     @@adapter_class : Base.class | Nil
 
-    {% for method in [:exec, :scalar] %}
-      def self.{{method.id}}(*opts)
-        adapter.{{method.id}}(*opts)
-      end
-    {% end %}
+    def self.exec(*opts)
+      adapter.exec(*opts)
+    end
+
+    def self.scalar(*opts)
+      adapter.scalar(*opts)
+    end
 
     def self.query(_query, args = [] of DBAny)
       adapter.query(_query, args) { |rs| yield rs }

@@ -2,8 +2,6 @@ module Jennifer
   module Model
     # :nodoc:
     module STIMapping
-      # TODO: try to make the "type" field customizable
-
       # Defines mapping using single table inheritance. Is automatically called by `.mapping` macro.
       private macro sti_mapping
         # :nodoc:

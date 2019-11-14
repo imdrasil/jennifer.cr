@@ -34,7 +34,7 @@ module Jennifer
   # * `docker_container = ""`
   # * `docker_source_location = ""`
   # * `command_shell_sudo = false`
-  # * `migration_failure_handler_method = "none"`
+  # * `migration_failure_handler_method = :none`
   # * `allow_outdated_pending_migration = false`
   # * `max_bind_vars_count = nil`
   #
@@ -48,6 +48,17 @@ module Jennifer
   # end
   # ```
   class Config
+    # Supported migration execution failure strategies.
+    #
+    # * `MigrationFailureHandler::ReverseDirection` - will invoke an opposite method (`#down` for up-migration and vice versa)
+    # * `MigrationFailureHandler::Callback` - will invoke `#after_up_failure` or `#after_down_failure` method
+    # * `MigrationFailureHandler::None` - do nothing
+    enum MigrationFailureHandler
+      ReverseDirection
+      Callback
+      None
+    end
+
     # :nodoc:
     CONNECTION_URI_PARAMS = {
       :max_pool_size, :initial_pool_size, :max_idle_pool_size,
@@ -57,7 +68,7 @@ module Jennifer
     STRING_FIELDS = {
       :user, :password, :db, :host, :adapter, :migration_files_path, :schema,
       :structure_folder, :local_time_zone_name, :command_shell, :docker_container, :docker_source_location,
-      :migration_failure_handler_method, :model_files_path
+      :model_files_path
     }
     # :nodoc:
     INT_FIELDS = {:port, :max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
@@ -104,12 +115,6 @@ module Jennifer
     getter verbose_migrations = true
 
     # Handler type for the failed migrations; default is `"none"`.
-    #
-    # Allowed types:
-    #
-    # * `"reverse_direction"` - will invoke an opposite method (`#down` for up-migration and vice versa)
-    # * `"callback"` - will invoke `#after_up_failure` or `#after_down_failure` method
-    # * `"none"` - do nothing
     getter migration_failure_handler_method
 
     # Defines postgres database schema name (postgres specific configuration).
@@ -156,7 +161,7 @@ module Jennifer
       @retry_delay = 1.0
 
       @command_shell = "bash"
-      @migration_failure_handler_method = "none"
+      @migration_failure_handler_method = MigrationFailureHandler::None
 
       logger.level = Logger::DEBUG
       logger.formatter = Logger::Formatter.new do |_severity, datetime, _progname, message, io|
@@ -248,12 +253,8 @@ module Jennifer
       instance.local_time_zone
     end
 
-    def self.migration_failure_handler_method=(value)
-      parsed_value = value.to_s
-      unless ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS.includes?(parsed_value)
-        raise Jennifer::InvalidConfig.bad_migration_failure_handler(ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS)
-      end
-      @@migration_failure_handler_method = parsed_value
+    def migration_failure_handler_method=(value : MigrationFailureHandler)
+      @migration_failure_handler_method = value
     end
 
     # Reads configurations from the file with given *path* for given *env*.
@@ -296,9 +297,16 @@ module Jennifer
         @{{field.id}} = bool_from_yaml(source, "{{field.id}}") if casted_source.has_key?("{{field.id}}")
       {% end %}
 
+      if casted_source.has_key?("migration_failure_handler_method")
+        self.migration_failure_handler_method =
+          MigrationFailureHandler.parse(string_from_yaml(source, "migration_failure_handler_method"))
+      end
+
       self.local_time_zone_name = source["local_time_zone_name"].as_s if casted_source.has_key?("local_time_zone_name")
       self.pool_size = int_from_yaml(source, "pool_size") if casted_source.has_key?("pool_size")
-      self.max_bind_vars_count = int_from_yaml(source, "max_bind_vars_count") if casted_source.has_key?("max_bind_vars_count")
+      if casted_source.has_key?("max_bind_vars_count")
+        self.max_bind_vars_count = int_from_yaml(source, "max_bind_vars_count")
+      end
 
       validate_config
       self

@@ -67,11 +67,6 @@ module Jennifer
     def self.bad_database
       new("No database configured")
     end
-
-    def self.bad_migration_failure_handler(allowed)
-      formatted = allowed.map { |e| %("#{e}") }.join(" ")
-      new("migration_failure_handler_method config may be only #{formatted}")
-    end
   end
 
   # Presents case when record is expected but is not found.

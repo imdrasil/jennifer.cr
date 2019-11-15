@@ -41,4 +41,4 @@ end
 # NOTE: This is needed to compile query generic class, otherwise
 # `!query` at src/jennifer/adapter/base_sql_generator.cr:137:12 has no type
 # exception is raised
-Jennifer::Migration::Version.all
+Jennifer::QueryBuilder::ModelQuery(Jennifer::Migration::Version)

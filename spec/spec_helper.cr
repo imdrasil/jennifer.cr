@@ -10,6 +10,12 @@ macro mysql_only
   {% end %}
 end
 
+macro pair_only
+  {% if env("PAIR") == "1" %}
+    {{yield}}
+  {% end %}
+end
+
 require "spec"
 require "factory"
 require "./config"
@@ -24,12 +30,14 @@ require "../examples/migrations/20180909200027509_create_notes"
 
 Spec.before_each do
   Jennifer::Adapter.adapter.begin_transaction
+  pair_only { PAIR_ADAPTER.begin_transaction }
   set_default_configuration
   Spec.logger.clear
 end
 
 Spec.after_each do
   Jennifer::Adapter.adapter.rollback_transaction
+  pair_only { PAIR_ADAPTER.rollback_transaction }
   Spec.file_system.clean
 end
 

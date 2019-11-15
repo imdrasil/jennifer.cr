@@ -316,7 +316,7 @@ module Jennifer
       end
 
       private def self.field_assign_statement(field, value : QueryBuilder::Statement)
-        "#{field} = #{value.as_sql}"
+        "#{field} = #{value.as_sql(self)}"
       end
     end
   end

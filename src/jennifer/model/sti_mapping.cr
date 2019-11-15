@@ -335,7 +335,7 @@ module Jennifer
 
         # :nodoc:
         def self.all : ::Jennifer::QueryBuilder::ModelQuery({{@type}})
-          ::Jennifer::QueryBuilder::ModelQuery({{@type}}).build(table_name).where { {{@type}}.sti_condition }
+          ::Jennifer::QueryBuilder::ModelQuery({{@type}}).build(table_name, adapter).where { {{@type}}.sti_condition }
         end
 
         private def init_attributes(values : Hash)

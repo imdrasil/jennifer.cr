@@ -130,8 +130,8 @@ module Jennifer
 
       @@with_transaction = true
 
+      # Database adapter connection instance.
       delegate adapter, to: Adapter
-      delegate schema_processor, to: adapter
 
       # Returns where table with given *table* name exists.
       #
@@ -570,6 +570,8 @@ module Jennifer
       # By default it is executed under a transaction.
       def after_down_failure
       end
+
+      private delegate schema_processor, to: adapter
 
       private def process_builder(builder)
         builder.process

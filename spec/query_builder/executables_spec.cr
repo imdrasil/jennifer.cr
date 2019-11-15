@@ -250,7 +250,7 @@ describe Jennifer::QueryBuilder::Executables do
   end
 
   describe "#to_a" do
-    context "none was called" do
+    context "with #none" do
       it "doesn't hit db and return empty array" do
         expect_query_silence do
           Jennifer::Query["contacts"].none.to_a.empty?.should be_true
@@ -277,6 +277,16 @@ describe Jennifer::QueryBuilder::Executables do
   describe "#results" do
     it "returns array of records" do
       Contact.all.results.should eq([] of Jennifer::Record)
+    end
+
+    pair_only do
+      it "respects specified adapter" do
+        Factory.create_address
+        PairAddress.create!
+        PairAddress.create!
+        Query["addresses"].count.should eq(1)
+        Query["addresses", PAIR_ADAPTER].count.should eq(2)
+      end
     end
   end
 

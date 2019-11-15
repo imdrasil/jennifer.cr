@@ -162,7 +162,7 @@ module Jennifer
 
       # Returns adapter instance.
       def self.adapter
-        Adapter.adapter
+        Adapter.default_adapter
       end
 
       # Returns `QueryBuilder::ExpressionBuilder` object of this resource's table.
@@ -181,7 +181,7 @@ module Jennifer
       # ```
       def self.all
         {% begin %}
-          QueryBuilder::ModelQuery({{@type}}).build(table_name)
+          QueryBuilder::ModelQuery({{@type}}).build(table_name, adapter)
         {% end %}
       end
 

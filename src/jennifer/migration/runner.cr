@@ -1,11 +1,12 @@
 module Jennifer
   module Migration
-    # :nodoc:
+    # This modules is responsible for processing database migration operations like creation,
+    # dropping and migration.
     module Runner
       @@pending_versions = [] of String
 
       # Invokes migrations. *count* with negative or zero value will invoke all pending migrations.
-      def self.migrate(count : Int)
+      def self.migrate(count : Int = -1)
         performed = false
         default_adapter.ready_to_migrate!
         return unless pending_migration?
@@ -15,39 +16,41 @@ module Jennifer
 
         pending_versions.each_with_index do |version, i|
           return if count > 0 && i >= count
+
           process_up_migration(migrations[version].new)
           performed = true
         end
       ensure
-        default_adapter.class.generate_schema if performed && !Config.skip_dumping_schema_sql
+        default_adapter.generate_schema if performed && !Config.skip_dumping_schema_sql
       end
 
-      # Invokes all migrations.
-      def self.migrate
-        migrate(-1)
-      end
-
-      # Creates database.
-      def self.create
-        if default_adapter_class.database_exists?
-          puts "#{Config.db} is already exists"
+      # Creates database using given *adapter*.
+      #
+      # If database already exists - do nothing.
+      #
+      # By default use application default adapter.
+      def self.create(adapter : Adapter::Base = default_adapter)
+        if adapter.database_exists?
+          puts "#{adapter.config.db} is already exists"
         else
-          default_adapter_class.create_database
-          puts "#{Config.db} is created!"
+          adapter.create_database
+          puts "#{adapter.config.db} is created!"
         end
       end
 
-      # Drops database.
-      def self.drop
-        default_adapter_class.drop_database
-        puts "#{Config.db} is dropped!"
+      # Drops database using given *adapter*.
+      #
+      # By default use application default adapter.
+      def self.drop(adapter : Adapter::Base = default_adapter)
+        adapter.drop_database
+        puts "#{adapter.config.db} is dropped!"
       end
 
       # Rollbacks migrations.
       #
       # Allowed options:
-      # - *count*
-      # - *to*
+      # - *count* - count of migrations to be rolled back
+      # - *to* - migration timestamp to which database should be rolled back
       def self.rollback(options : Hash(Symbol, DBAny))
         processed = true
         default_adapter.ready_to_migrate!
@@ -69,13 +72,14 @@ module Jennifer
           processed = true
         end
       ensure
-        default_adapter_class.generate_schema if processed && !Config.skip_dumping_schema_sql
+        default_adapter.generate_schema if processed && !Config.skip_dumping_schema_sql
       end
 
       # Loads schema from the SQL schema file.
       def self.load_schema
         return if Config.skip_dumping_schema_sql
-        default_adapter_class.load_schema
+
+        default_adapter.load_schema
         puts "Schema loaded"
       end
 

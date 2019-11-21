@@ -1,6 +1,6 @@
 module Jennifer
   module QueryBuilder
-    class OrderItem < SQLNode
+    class OrderExpression < SQLNode
       # Sorting direction
       enum Direction
         ASC
@@ -28,11 +28,11 @@ module Jennifer
         @null_position = other.@null_position.dup
       end
 
-      def ==(other : OrderItem)
+      def ==(other : OrderExpression)
         eql?(other)
       end
 
-      def eql?(other : OrderItem)
+      def eql?(other : OrderExpression)
         criteria.eql?(other.criteria) &&
           direction == other.direction &&
           null_position == other.null_position

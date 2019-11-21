@@ -11,6 +11,14 @@ module SomeModule
   class SomeModel < Jennifer::Model::Base
     mapping(id: Primary32)
   end
+
+  class AnotherModel < Jennifer::Model::Base
+    mapping(id: Primary32)
+
+    def self.table_prefix
+      "custom_table_prefix_"
+    end
+  end
 end
 
 abstract class SuperModel < Jennifer::Model::Base
@@ -362,7 +370,6 @@ describe Jennifer::Model::Base do
 
   describe "::table_name" do
     it { Contact.table_name.should eq("contacts") }
-    it { SomeModule::SomeModel.table_name.should eq("some_models") }
     it { ModelWithTablePrefix.table_name.should eq("custom_table_prefix_model_with_table_prefixes") }
 
     it "returns specified name" do
@@ -372,11 +379,15 @@ describe Jennifer::Model::Base do
     describe "STI" do
       it { TwitterProfile.table_name.should eq("profiles") }
     end
+
+    describe "inside of module" do
+      it { SomeModule::SomeModel.table_name.should eq("some_module_some_models") }
+      it { SomeModule::AnotherModel.table_name.should eq("custom_table_prefix_another_models") }
+    end
   end
 
   describe "::foreign_key_name" do
     it { Contact.foreign_key_name.should eq("contact_id") }
-    it { SomeModule::SomeModel.foreign_key_name.should eq("some_model_id") }
     it { ModelWithTablePrefix.foreign_key_name.should eq("custom_table_prefix_model_with_table_prefix_id") }
 
     it "returns specified name" do
@@ -385,6 +396,11 @@ describe Jennifer::Model::Base do
 
     describe "STI" do
       it { TwitterProfile.foreign_key_name.should eq("profile_id") }
+    end
+
+    describe "inside of module" do
+      it { SomeModule::SomeModel.foreign_key_name.should eq("some_module_some_model_id") }
+      it { SomeModule::AnotherModel.foreign_key_name.should eq("custom_table_prefix_another_model_id") }
     end
   end
 

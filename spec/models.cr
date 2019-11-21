@@ -377,6 +377,53 @@ class AllTypeModel < ApplicationRecord
   )
 end
 
+class Author < Jennifer::Model::Base
+  mapping({
+    id:         Primary32,
+    name1:      { type: String, column: :first_name },
+    name2:      { type: String, column: :last_name }
+  })
+end
+
+class Publication < Jennifer::Model::Base
+  {% if env("DB") == "postgres" || env("DB") == nil %}
+    mapping(
+      id:         Primary32,
+      name:       { type: String, column: :title },
+      version:    Int32,
+      publisher:  String,
+      type:       { type: String, converter: Jennifer::Model::EnumConverter }
+    )
+  {% else %}
+    mapping(
+      id:         Primary32,
+      name:       { type: String, column: :title },
+      version:    Int32,
+      publisher:  String,
+      type:       String
+    )
+  {% end %}
+end
+
+class Book < Publication
+  mapping({
+    pages:      Int32?
+  })
+end
+
+class Article < Publication
+  mapping({
+    size:       { type: Int32?, column: :pages }
+  })
+end
+
+class BlogPost < Publication
+  mapping({
+    url:        String?,
+    created_at:    {type: Time?, virtual: true, column: :created}
+  })
+end
+
 # ===================
 # synthetic models
 # ===================
@@ -643,49 +690,8 @@ class NoteWithManualId < Jennifer::Model::Base
   )
 end
 
-class Author < Jennifer::Model::Base
-  mapping({
-    id:         Primary32,
-    name1:      { type: String, column: :first_name },
-    name2:      { type: String, column: :last_name }
-  })
-end
+class OrderItem < ApplicationRecord
+  table_name "all_types"
 
-class Publication < Jennifer::Model::Base
-  {% if env("DB") == "postgres" || env("DB") == nil %}
-    mapping(
-      id:         Primary32,
-      name:       { type: String, column: :title },
-      version:    Int32,
-      publisher:  String,
-      type:       { type: String, converter: Jennifer::Model::EnumConverter }
-    )
-  {% else %}
-    mapping(
-      id:         Primary32,
-      name:       { type: String, column: :title },
-      version:    Int32,
-      publisher:  String,
-      type:       String
-    )
-  {% end %}
-end
-
-class Book < Publication
-  mapping({
-    pages:      Int32?
-  })
-end
-
-class Article < Publication
-  mapping({
-    size:       { type: Int32?, column: :pages }
-  })
-end
-
-class BlogPost < Publication
-  mapping({
-    url:        String?,
-    created_at:    {type: Time?, virtual: true, column: :created}
-  })
+  mapping(id: Primary32)
 end

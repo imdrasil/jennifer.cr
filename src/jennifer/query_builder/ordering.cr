@@ -43,22 +43,22 @@ module Jennifer
         self
       end
 
-      # Allow to specify an order by *OrderItem*.
+      # Allow to specify an order by *OrderExpression*.
       #
       # ```
       # Contact.all.order(Contact._name.asc)
       # ```
-      def order(opt : OrderItem)
+      def order(opt : OrderExpression)
         _order! << opt
         self
       end
 
-      # Allow to specify an order by *OrderItem* array.
+      # Allow to specify an order by *OrderExpression* array.
       #
       # ```
       # Contact.all.order([Contact._name.asc])
       # ```
-      def order(opts : Array(OrderItem))
+      def order(opts : Array(OrderExpression))
         opts.each { |opt| _order! << opt }
         self
       end
@@ -80,8 +80,8 @@ module Jennifer
       # Contact.all.order { [_name.asc, _age.desc] }
       # ```
       #
-      # Specified block should return `OrderItem | Array(OrderItem)`. To convert `Criteria` or `RawSql` to
-      # order item call `#asc` or `#desc`.
+      # Specified block should return `OrderExpression | Array(OrderExpression)`.
+      # To convert `Criteria` or `RawSql` to order item call `#asc` or `#desc`.
       def order(&block)
         order(with @expression yield)
       end
@@ -106,12 +106,12 @@ module Jennifer
         order(opts)
       end
 
-      def reorder(opt : OrderItem)
+      def reorder(opt : OrderExpression)
         @order = nil
         order(opt)
       end
 
-      def reorder(opts : Array(OrderItem))
+      def reorder(opts : Array(OrderExpression))
         @order = nil
         order(opts)
       end

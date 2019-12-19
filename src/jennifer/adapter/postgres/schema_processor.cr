@@ -103,7 +103,7 @@ module Jennifer
         adapter.exec query[0...-1]
       end
 
-      def drop_foreign_key(from_table, name)
+      def drop_foreign_key(from_table, _to_table, name)
         query = String.build do |s|
           s << "ALTER TABLE " <<
             from_table <<

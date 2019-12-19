@@ -132,10 +132,12 @@ module Jennifer
         adapter.exec query
       end
 
-      def drop_foreign_key(from_table, name)
+      def drop_foreign_key(from_table, _to_table, name)
         query = String.build do |s|
-          s << "ALTER TABLE " << from_table
-          s << " DROP FOREIGN KEY " << name
+          s << "ALTER TABLE " <<
+            from_table <<
+            " DROP FOREIGN KEY " <<
+            name
         end
         adapter.exec query
       end

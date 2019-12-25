@@ -93,7 +93,7 @@ module Jennifer
           column = Inflector.foreign_key(name)
           is_null = options.has_key?(:null) ? options[:null] : true
 
-          integer(column, { :type => type, :null => is_null })
+          field(column, type, { :null => is_null })
           if options[:polymorphic]?
             string("#{name}_type", { :null => is_null })
           else

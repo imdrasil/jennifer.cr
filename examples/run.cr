@@ -25,7 +25,7 @@ end
         t.string :street
         t.integer :number
 
-        t.index :street
+        t.index :street, :unique
       end.process
     end
 

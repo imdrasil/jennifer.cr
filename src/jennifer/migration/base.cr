@@ -31,7 +31,7 @@ module Jennifer
     # `Crystal` code for generating data needed for the transformations.
     #
     # By default each migration invocation (both `up` and `down`) are wrapped into a transaction but not all
-    # RDMS support transactional schema changes (like MySQL). To specify additional mechanism to rollback
+    # RDBMS support transactional schema changes (like MySQL). To specify additional mechanism to rollback
     # after failed invocation you can chose 2 option: run reverse method (`down` for `up` and vise verse) or
     # invoke special callback.
     #

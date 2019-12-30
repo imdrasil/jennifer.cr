@@ -165,6 +165,16 @@ module Jennifer
         Adapter.default_adapter
       end
 
+      # Returns adapter used to write resource to the database.
+      def self.write_adapter
+        adapter
+      end
+
+      # Returns adapter used to read resource from the database.
+      def self.read_adapter
+        adapter
+      end
+
       # Returns `QueryBuilder::ExpressionBuilder` object of this resource's table.
       #
       # ```
@@ -207,7 +217,7 @@ module Jennifer
       # end
       # ```
       def self.transaction
-        adapter.transaction do |t|
+        write_adapter.transaction do |t|
           yield(t)
         end
       end

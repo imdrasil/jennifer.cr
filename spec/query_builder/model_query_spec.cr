@@ -1,8 +1,27 @@
 require "../spec_helper"
 
+pair_only do
+  class WriteAddress < ApplicationRecord
+    table_name "addresses"
+
+    mapping({
+      id: Primary32,
+      details: JSON::Any?,
+      street: String,
+      main: Bool
+    }, false)
+
+    def self.write_adapter
+      PAIR_ADAPTER
+    end
+  end
+end
+
 # TODO: add checking for log entries when we shouldn't hit db
 
 describe Jennifer::QueryBuilder::ModelQuery do
+  adapter = Jennifer::Adapter.adapter
+
   describe "#relation" do
     # TODO: this should be tested under sql generating process
     it "makes join using relation scope" do
@@ -14,19 +33,23 @@ describe Jennifer::QueryBuilder::ModelQuery do
   end
 
   describe "#destroy" do
-    it "invokes destroy of all model objects" do
+    it "invokes #destroy of all model objects" do
       Factory.create_address(2)
       count = Address.destroy_counter
       Address.all.destroy
       Address.destroy_counter.should eq(count + 2)
     end
 
-    it do
-      id = Factory.create_address.id
-      count = Address.destroy_counter
-      Address.destroy(id)
-      # Address.all.destroy
-      Address.destroy_counter.should eq(count + 1)
+    pair_only do
+      it "respects read/write adapters" do
+        Query["addresses", PAIR_ADAPTER].insert({ :id => 1, :street => "asd" })
+        Query["addresses", adapter].insert({ :id => 1, :street => "asd", :created_at => Time.utc, :updated_at => Time.utc })
+        Query["addresses", PAIR_ADAPTER].count.should eq(1)
+        Query["addresses"].count.should eq(1)
+        WriteAddress.all.destroy
+        Query["addresses", PAIR_ADAPTER].count.should eq(0)
+        Query["addresses"].count.should eq(1)
+      end
     end
   end
 
@@ -41,6 +64,18 @@ describe Jennifer::QueryBuilder::ModelQuery do
       Factory.create_contact(age: 20)
       Contact.all.patch(age: 30)
       Contact.all.where { _age == 30 }.exists?.should be_true
+    end
+
+    pair_only do
+      it "respects read/write adapters" do
+        Query["addresses", PAIR_ADAPTER].insert({ :id => 1, :street => "asd" })
+        Query["addresses", adapter].insert({ :id => 1, :street => "asd", :created_at => Time.utc, :updated_at => Time.utc })
+        Query["addresses", PAIR_ADAPTER].count.should eq(1)
+        Query["addresses"].count.should eq(1)
+        WriteAddress.all.patch(street: "qwe")
+        Query["addresses", PAIR_ADAPTER].where { _street == "qwe" }.count.should eq(1)
+        Query["addresses"].where { _street == "qwe" }.count.should eq(0)
+      end
     end
   end
 
@@ -157,6 +192,15 @@ describe Jennifer::QueryBuilder::ModelQuery do
         end
       end
     end
+
+    pair_only do
+      it "respects read/write adapters" do
+        Query["addresses", PAIR_ADAPTER].insert({ :street => "asd" })
+        Query["addresses", PAIR_ADAPTER].count.should eq(1)
+        Query["addresses"].count.should eq(0)
+        WriteAddress.all.to_a.should be_empty
+      end
+    end
   end
 
   describe "#find_by_sql" do
@@ -198,6 +242,15 @@ describe Jennifer::QueryBuilder::ModelQuery do
       end
       expect_query_silence { res[0].addresses.size.should eq(1) }
     end
+
+    pair_only do
+      it "respects read/write adapters" do
+        Query["addresses", PAIR_ADAPTER].insert({ :street => "asd" })
+        Query["addresses", PAIR_ADAPTER].count.should eq(1)
+        Query["addresses"].count.should eq(0)
+        WriteAddress.all.find_by_sql("select * from addresses").size.should eq(0)
+      end
+    end
   end
 
   describe "#find_in_batches" do
@@ -211,6 +264,17 @@ describe Jennifer::QueryBuilder::ModelQuery do
       end
       yield_count.should eq(1)
     end
+
+    pair_only do
+      it "respects read/write adapters" do
+        Query["addresses", PAIR_ADAPTER].insert({ :street => "asd" })
+        Query["addresses", PAIR_ADAPTER].count.should eq(1)
+        Query["addresses"].count.should eq(0)
+        executed = false
+        WriteAddress.all.find_in_batches { executed = true }
+        executed.should be_false
+      end
+    end
   end
 
   describe "#find_each" do
@@ -221,6 +285,15 @@ describe Jennifer::QueryBuilder::ModelQuery do
         buff << record.id!
       end
       buff.should eq(ids[1..2])
+    end
+
+    pair_only do
+      it "respects read/write adapters" do
+        Query["addresses", PAIR_ADAPTER].insert({ :street => "asd" })
+        executed = false
+        WriteAddress.all.find_each { executed = true }
+        executed.should be_false
+      end
     end
   end
 
@@ -356,6 +429,79 @@ describe Jennifer::QueryBuilder::ModelQuery do
           true
         ).db_results.flat_map(&.values)
         results.should eq([1, 2, 3, 4, 5])
+      end
+    end
+  end
+
+  describe "#pluck" do
+    pair_only do
+      it "respects read/write adapters" do
+        Query["addresses", PAIR_ADAPTER].insert({ :street => "asd" })
+        WriteAddress.all.pluck(:street).should be_empty
+      end
+    end
+  end
+
+  describe "#delete" do
+    pair_only do
+      it "respects read/write adapters" do
+        Query["addresses", PAIR_ADAPTER].insert({ :street => "asd" })
+        Query["addresses", adapter].insert({ :street => "asd", :created_at => Time.utc, :updated_at => Time.utc })
+        Query["addresses", PAIR_ADAPTER].count.should eq(1)
+        Query["addresses"].count.should eq(1)
+        WriteAddress.all.delete
+        Query["addresses", PAIR_ADAPTER].count.should eq(0)
+        Query["addresses"].count.should eq(1)
+      end
+    end
+  end
+
+  describe "#exists?" do
+    pair_only do
+      it "respects read/write adapters" do
+        Query["addresses", PAIR_ADAPTER].insert({ :street => "asd" })
+        WriteAddress.all.exists?.should be_false
+      end
+    end
+  end
+
+  describe "#insert" do
+    pair_only do
+      it "respects read/write adapters" do
+        WriteAddress.all.insert({ :street => "asd" })
+        Query["addresses", PAIR_ADAPTER].count.should eq(1)
+        Query["addresses"].count.should eq(0)
+      end
+    end
+  end
+
+  describe "#upsert" do
+    pair_only do
+      it "respects read/write adapters" do
+        WriteAddress.all.upsert(%w(street), [["qwe"]], %w(street))
+        Query["addresses", PAIR_ADAPTER].count.should eq(1)
+        Query["addresses"].count.should eq(0)
+      end
+    end
+  end
+
+  describe "#update" do
+    pair_only do
+      it "respects read/write adapters" do
+        Query["addresses", PAIR_ADAPTER].insert({ :street => "asd" })
+        Query["addresses", adapter].insert({ :street => "asd", :created_at => Time.utc, :updated_at => Time.utc })
+        WriteAddress.all.update({ :street => "qwe" })
+        Query["addresses", PAIR_ADAPTER].where { _street == "qwe" }.count.should eq(1)
+        Query["addresses"].where { _street == "qwe" }.count.should eq(0)
+      end
+    end
+  end
+
+  describe "#db_results" do
+    pair_only do
+      it "respects read/write adapters" do
+        Query["addresses", PAIR_ADAPTER].insert({ :street => "asd" })
+        WriteAddress.all.db_results.should be_empty
       end
     end
   end

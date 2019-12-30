@@ -265,7 +265,7 @@ module Jennifer
         def destroy : Bool
           return false if new_record?
           result =
-            unless self.class.adapter.under_transaction?
+            unless self.class.write_adapter.under_transaction?
               self.class.transaction do
                 destroy_without_transaction
               end
@@ -273,8 +273,8 @@ module Jennifer
               destroy_without_transaction
             end
           if result
-            self.class.adapter.subscribe_on_commit(->__after_destroy_commit_callback) if HAS_DESTROY_COMMIT_CALLBACK
-            self.class.adapter.subscribe_on_rollback(->__after_destroy_rollback_callback) if HAS_DESTROY_ROLLBACK_CALLBACK
+            self.class.write_adapter.subscribe_on_commit(->__after_destroy_commit_callback) if HAS_DESTROY_COMMIT_CALLBACK
+            self.class.write_adapter.subscribe_on_rollback(->__after_destroy_rollback_callback) if HAS_DESTROY_ROLLBACK_CALLBACK
 
             return true
           end
@@ -310,7 +310,7 @@ module Jennifer
             end
           end
 
-          self.class.adapter.update(self)
+          self.class.write_adapter.update(self)
           __refresh_changes
         end
 
@@ -490,15 +490,17 @@ module Jennifer
         private def save_record_under_transaction(skip_validation) : Bool
           is_new_record = new_record?
           return false unless save_without_transaction(skip_validation)
+
+          adapter = self.class.write_adapter
           if is_new_record
-            self.class.adapter.subscribe_on_commit(->__after_create_commit_callback) if HAS_CREATE_COMMIT_CALLBACK
-            self.class.adapter.subscribe_on_rollback(->__after_create_rollback_callback) if HAS_CREATE_ROLLBACK_CALLBACK
+            adapter.subscribe_on_commit(->__after_create_commit_callback) if HAS_CREATE_COMMIT_CALLBACK
+            adapter.subscribe_on_rollback(->__after_create_rollback_callback) if HAS_CREATE_ROLLBACK_CALLBACK
           else
-            self.class.adapter.subscribe_on_commit(->__after_update_commit_callback) if HAS_CREATE_COMMIT_CALLBACK
-            self.class.adapter.subscribe_on_rollback(->__after_update_rollback_callback) if HAS_CREATE_ROLLBACK_CALLBACK
+            adapter.subscribe_on_commit(->__after_update_commit_callback) if HAS_CREATE_COMMIT_CALLBACK
+            adapter.subscribe_on_rollback(->__after_update_rollback_callback) if HAS_CREATE_ROLLBACK_CALLBACK
           end
-          self.class.adapter.subscribe_on_commit(->__after_save_commit_callback) if HAS_SAVE_COMMIT_CALLBACK
-          self.class.adapter.subscribe_on_rollback(->__after_save_rollback_callback) if HAS_SAVE_ROLLBACK_CALLBACK
+          adapter.subscribe_on_commit(->__after_save_commit_callback) if HAS_SAVE_COMMIT_CALLBACK
+          adapter.subscribe_on_rollback(->__after_save_rollback_callback) if HAS_SAVE_ROLLBACK_CALLBACK
           true
         end
 

@@ -60,7 +60,7 @@ module Jennifer
       #
       # NOTE: shouldn't be used outside of tests.
       def self.has_table?
-        @@has_table = adapter.table_exists?(table_name).as(Bool) if @@has_table.nil?
+        @@has_table = read_adapter.table_exists?(table_name).as(Bool) if @@has_table.nil?
         @@has_table
       end
 
@@ -69,7 +69,7 @@ module Jennifer
       # If somewhy you define model with custom table name after the place where adapter is used the first time -
       # manually invoke this method anywhere after table name definition.
       def self.actual_table_field_count
-        @@actual_table_field_count ||= adapter.table_column_count(table_name)
+        @@actual_table_field_count ||= read_adapter.table_column_count(table_name)
       end
 
       # :nodoc:
@@ -127,7 +127,7 @@ module Jennifer
       # Contact.create({ name: "Jennifer" })
       # ```
       def self.create(values : Hash | NamedTuple)
-        o = build(values)
+        o = new(values)
         o.save
         o
       end
@@ -140,7 +140,7 @@ module Jennifer
       # Contact.create
       # ```
       def self.create
-        o = build({} of String => DBAny)
+        o = new({} of String => DBAny)
         o.save
         o
       end
@@ -153,7 +153,7 @@ module Jennifer
       # Contact.create(name: "Jennifer")
       # ```
       def self.create(**values)
-        o = build(**values)
+        o = new(values)
         o.save
         o
       end
@@ -167,7 +167,7 @@ module Jennifer
       # Contact.create!({ name: "Jennifer" })
       # ```
       def self.create!(values : Hash | NamedTuple)
-        o = build(values)
+        o = new(values)
         o.save!
         o
       end
@@ -180,7 +180,7 @@ module Jennifer
       # Contact.create!
       # ```
       def self.create!
-        o = build({} of Symbol => DBAny)
+        o = new({} of Symbol => DBAny)
         o.save!
         o
       end
@@ -193,7 +193,7 @@ module Jennifer
       # Contact.create!(name: "Jennifer")
       # ```
       def self.create!(**values)
-        o = build(**values)
+        o = new(values)
         o.save!
         o
       end
@@ -387,7 +387,7 @@ module Jennifer
       # user.save # => true
       # ```
       def save(skip_validation : Bool = false) : Bool
-        if self.class.adapter.under_transaction?
+        if self.class.write_adapter.under_transaction?
           save_record_under_transaction(skip_validation)
         else
           self.class.transaction do
@@ -400,6 +400,7 @@ module Jennifer
       def save_without_transaction(skip_validation : Bool = false) : Bool
         return false unless skip_validation || validate!
         return false unless __before_save_callback
+
         response = new_record? ? store_record : update_record
         __after_save_callback
         response
@@ -408,6 +409,7 @@ module Jennifer
       # Perform destroy without starting a database transaction.
       def destroy_without_transaction
         return false if new_record? || !__before_destroy_callback
+
         if delete
           @destroyed = true
           __after_destroy_callback
@@ -420,6 +422,7 @@ module Jennifer
       # Any callback is invoked. Doesn't start any transaction.
       def delete
         return if new_record? || errors.any?
+
         this = self
         self.class.all.where { this.class.primary == this.primary }.delete
       end
@@ -441,16 +444,19 @@ module Jennifer
       private def update_record : Bool
         return false unless __before_update_callback
         return true unless changed?
-        res = self.class.adapter.update(self)
+
+        res = self.class.write_adapter.update(self)
         __after_update_callback
         res.rows_affected == 1
       end
 
       private def store_record : Bool
         return false unless __before_create_callback
-        res = self.class.adapter.insert(self)
+
+        res = self.class.write_adapter.insert(self)
         init_primary_field(res.last_insert_id.as(Int)) if primary.nil? && res.last_insert_id > -1
         raise ::Jennifer::BaseException.new("Record hasn't been stored to the db") if res.rows_affected == 0
+
         @new_record = false
         __after_create_callback
         true
@@ -468,6 +474,7 @@ module Jennifer
       # ```
       def reload
         raise ::Jennifer::RecordNotFound.new("It is not persisted yet") if new_record?
+
         this = self
         self.class.all.where { this.class.primary == this.primary }.limit(1).each_result_set do |rs|
           init_attributes(rs)
@@ -479,7 +486,7 @@ module Jennifer
 
       # Performs table lock for current model's table.
       def self.with_table_lock(type : String | Symbol, &block)
-        adapter.with_table_lock(table_name, type.to_s) { |t| yield t }
+        write_adapter.with_table_lock(table_name, type.to_s) { |t| yield t }
       end
 
       # Returns record by given primary field or `nil` otherwise.
@@ -556,7 +563,7 @@ module Jennifer
       # ])
       # ```
       def self.import(collection : Array(self))
-        adapter.bulk_insert(collection)
+        write_adapter.bulk_insert(collection)
       end
 
       macro inherited

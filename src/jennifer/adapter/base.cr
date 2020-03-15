@@ -224,24 +224,15 @@ module Jennifer
       end
 
       def self.connection_string(*options)
-        auth_part = Config.user
-        auth_part += ":#{Config.password}" if Config.password && !Config.password.empty?
-
-        host_part = Config.host
-        host_part += ":#{Config.port}" if Config.port.try(&.>(0))
-
-        String.build do |s|
-          s << Config.adapter << "://" << auth_part << "@" << host_part
-          s << "/" << Config.db if options.includes?(:db)
-          s << "?"
-          {% begin %}
-          [
-            {% for arg in Config::CONNECTION_URI_PARAMS %}
-              "{{arg.id}}=#{Config.{{arg.id}}}",
-            {% end %}
-          ].join("&", s)
-          {% end %}
-        end
+        URI.new(
+          Config.adapter,
+          Config.host,
+          Config.port.try(&.>(0)) ? Config.port : nil,
+          options.includes?(:db) ? Config.db : "/",
+          URI.encode(connection_query),
+          Config.user,
+          Config.password && !Config.password.empty? ? Config.password : nil
+        ).to_s
       end
 
       # filter out value; should be refactored
@@ -340,6 +331,18 @@ module Jennifer
       end
 
       # private ===========================
+
+      private def self.connection_query
+        String.build do |s|
+          {% begin %}
+          [
+            {% for arg in Config::CONNECTION_URI_PARAMS %}
+              "{{arg.id}}=#{Config.{{arg.id}}}",
+            {% end %}
+          ].join("&", s)
+          {% end %}
+        end
+      end
 
       private def model_escaped_bulk_insert(collection : Array, klass, fields : Array)
         values = extract_attributes(collection, klass, fields)

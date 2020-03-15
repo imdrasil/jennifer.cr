@@ -6,14 +6,14 @@ module Jennifer
       OPTIONS_PLACEHOLDER = %("${@}")
       SUDO = "sudo"
 
-      abstract def execute(command)
+      abstract def execute(command) : NamedTuple
 
       getter config : Config
 
       def initialize(@config)
       end
 
-      private def invoke(command_string, options)
+      private def invoke(command_string, options) : NamedTuple
         io = IO::Memory.new
         result = Process.run(command_string, options, shell: true, output: io, error: io)
         raise Command::Failed.new(result.exit_code, io) if result.exit_code != 0

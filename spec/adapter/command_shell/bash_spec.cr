@@ -6,67 +6,62 @@ describe Jennifer::Adapter::Bash do
   describe "#execute" do
     context "with environment variables" do
       it do
+        stub_command_shell
         shell = described_class.new(Jennifer::Config.instance)
         c = Jennifer::Adapter::ICommandShell::Command.new(
           executable: "ls",
           inline_vars: { "var1" => "val1", "var2" => "val2" }
         )
-        res = shell.execute(c)
-        res[0].should eq("var1=val1 var2=val2 ls \"${@}\"")
-        res[1].empty?.should be_true
+        shell.execute(c).should be_executed_as("var1=val1 var2=val2 ls \"${@}\"", %w())
       end
     end
 
     context "with incoming stream" do
       it do
+        stub_command_shell
         shell = described_class.new(Jennifer::Config.instance)
         c = Jennifer::Adapter::ICommandShell::Command.new(
           executable: "ls",
           in_stream: "cat asd |"
         )
-        res = shell.execute(c)
-        res[0].should eq("cat asd | ls \"${@}\"")
-        res[1].empty?.should be_true
+        shell.execute(c).should be_executed_as("cat asd | ls \"${@}\"", %w())
       end
     end
 
     context "with outgoing stream" do
       it do
+        stub_command_shell
         shell = described_class.new(Jennifer::Config.instance)
         c = Jennifer::Adapter::ICommandShell::Command.new(
           executable: "ls",
           out_stream: "> asd"
         )
-        res = shell.execute(c)
-        res[0].should eq("ls \"${@}\" > asd")
-        res[1].empty?.should be_true
+        shell.execute(c).should be_executed_as("ls \"${@}\" > asd", %w())
       end
     end
 
     context "with options" do
       it do
+        stub_command_shell
         shell = described_class.new(Jennifer::Config.instance)
         c = Jennifer::Adapter::ICommandShell::Command.new(
           executable: "ls",
           options: ["asd"]
         )
-        res = shell.execute(c)
-        res[0].should eq("ls \"${@}\"")
-        res[1].should eq(["asd"])
+        shell.execute(c).should be_executed_as("ls \"${@}\"", ["asd"])
       end
     end
 
     context "with sudo stream" do
       it do
+        stub_command_shell
         Jennifer::Config.command_shell_sudo = true
         shell = Jennifer::Adapter::Bash.new(Jennifer::Config.instance)
         c = Jennifer::Adapter::ICommandShell::Command.new(
           executable: "ls",
           in_stream: "cat asd |"
         )
-        res = shell.execute(c)
-        res[0].should eq("cat asd | sudo ls \"${@}\"")
-        res[1].empty?.should be_true
+        shell.execute(c).should be_executed_as("cat asd | sudo ls \"${@}\"", %w())
       end
     end
   end

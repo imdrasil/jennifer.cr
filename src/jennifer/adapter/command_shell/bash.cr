@@ -1,7 +1,7 @@
 module Jennifer
   module Adapter
     class Bash < ICommandShell
-      def execute(command)
+      def execute(command) : NamedTuple
         command_string = String.build do |io|
           add_env_vars(io, command)
           add_income_stream(io, command)

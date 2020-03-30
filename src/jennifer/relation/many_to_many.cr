@@ -1,10 +1,11 @@
 module Jennifer
   module Relation
     class ManyToMany(T, Q) < Base(T, Q)
-      getter join_table : String?, association_foreign : String?
+      getter join_table : String?, association_foreign : String?, association_primary : String?
 
-      def initialize(@name, foreign : String | Symbol?, primary : String | Symbol?, query, @join_table = nil, _join_foreign = nil)
+      def initialize(@name, foreign : String | Symbol?, primary : String | Symbol?, query, @join_table = nil, _join_foreign = nil, _join_primary = nil)
         @association_foreign = _join_foreign.to_s if _join_foreign
+        @association_primary = _join_primary.to_s if _join_primary
         @foreign = foreign.to_s if foreign
         @primary = primary.to_s if primary
         @join_query = query.tree
@@ -39,10 +40,11 @@ module Jennifer
 
       def query(primary_value)
         afk = association_foreign_key
+        apk = association_primary_key
         _primary_value = primary_value
         mfk = foreign_field
         q = T.all.join(join_table!) do
-          (c(afk) == T.primary) &
+          (c(afk) == apk) &
             (_primary_value.is_a?(Array) ? c(mfk).in(_primary_value) : c(mfk) == _primary_value)
         end
         if @join_query
@@ -70,6 +72,14 @@ module Jennifer
 
       def association_foreign_key
         @association_foreign || Inflector.foreign_key(T.to_s)
+      end
+
+      def association_primary_key
+        if (association_primary = @association_primary)
+          return Jennifer::QueryBuilder::Criteria.new(association_primary, T.table_name)
+        end
+
+        T.primary
       end
 
       def preload_relation(collection, out_collection : Array(Model::Resource), pk_repo)

@@ -226,6 +226,7 @@ module Jennifer
       # - *primary* - specify the name of the column to use as the primary key for the relation
       # - *join_table* - specifies the name of the join table if the default based on lexical order isn't what you want
       # - *association_foreign* - specifies the foreign key used for the association on the receiving side of the association
+      # - *association_primary* - specifies the primary key used for the association on the receiving side of the association
       #
       # The following methods for retrieval and query of a single associated object will be added:
       #
@@ -238,11 +239,11 @@ module Jennifer
       # - `#remove_association(rel)`
       # - `#association_query`
       # - `#association_reload`
-      macro has_and_belongs_to_many(name, klass, request = nil, foreign = nil, primary = nil, join_table = nil, association_foreign = nil)
+      macro has_and_belongs_to_many(name, klass, request = nil, foreign = nil, primary = nil, join_table = nil, association_foreign = nil, association_primary = nil)
         {{"{% RELATION_NAMES << #{name.id.stringify} %}".id}}
         RELATIONS["{{name.id}}"] =
           ::Jennifer::Relation::ManyToMany({{klass}}, {{@type}}).new("{{name.id}}", {{foreign}}, {{primary}},
-            {{klass}}.all{% if request %}.exec {{request}} {% end %}, {{join_table}}, {{association_foreign}})
+            {{klass}}.all{% if request %}.exec {{request}} {% end %}, {{join_table}}, {{association_foreign}}, {{association_primary}})
 
         before_destroy :__{{name.id}}_clean
 

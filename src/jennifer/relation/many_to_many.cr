@@ -60,6 +60,7 @@ module Jennifer
         _primary = primary_field
         jt = join_table!
         q = query.join(jt, type: type) { Q.c(_primary) == c(_foreign) }.join(T, type: type) do
+          # TODO: Replace `T.primary` with `association_primary_key`?
           T.primary == c(association_foreign_key, jt)
         end
         if @join_query
@@ -75,11 +76,7 @@ module Jennifer
       end
 
       def association_primary_key
-        if (association_primary = @association_primary)
-          return Jennifer::QueryBuilder::Criteria.new(association_primary, T.table_name)
-        end
-
-        T.primary
+        (ap = association_primary) ? T.c(ap) : T.primary
       end
 
       def preload_relation(collection, out_collection : Array(Model::Resource), pk_repo)

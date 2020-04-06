@@ -111,7 +111,8 @@ module Jennifer
           join_table!,
           {
             foreign_field           => obj.attribute(primary_field),
-            association_foreign_key => rel.primary,
+            association_foreign_key =>
+              association_primary ? rel.to_h.transform_keys { |key| key.to_s }[association_primary] : rel.primary,
           }
         )
       end

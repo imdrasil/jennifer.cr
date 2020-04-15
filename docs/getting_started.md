@@ -17,12 +17,14 @@ For MySQL and PostgreSQL you need to add related driver shard - [crystal-mysql](
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.8.4"
+    version: "= 0.8.4"
   pg:
     github: will/crystal-pg
+    version: "= 0.21.0"
   # or for mysql
   crystal-mysql:
     github: crystal-lang/crystal-mysql
+    version: "= 0.11.0"
 ```
 
 If you want to use SQLite3 - add [Jennifer SQLite3 adapter](https://github.com/imdrasil/jennifer_sqlite3_adapter):
@@ -31,9 +33,10 @@ If you want to use SQLite3 - add [Jennifer SQLite3 adapter](https://github.com/i
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.8.4"
+    version: "= 0.8.4"
   jennifer_sqlite3_adapter:
     github: imdrasil/jennifer_sqlite3_adapter
+    version: "= 0.2.2"
 ```
 
 It is shipped with SQLite driver so you don't need add it explicitly.

@@ -16,7 +16,7 @@ dependencies:
 ### Requirements
 
 - you need to choose one of the existing drivers for your DB: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgres](https://github.com/will/crystal-pg); sqlite3 adapter automatically installs required driver for it;
-- crystal `>= 0.31.0`.
+- crystal `>= 0.34.0`.
 
 ## Usage
 

@@ -81,8 +81,8 @@ module Jennifer
         self
       end
 
-      def to_s
-        as_sql
+      def to_s(io : IO)
+        io << as_sql
       end
 
       def as_sql

@@ -132,8 +132,8 @@ module Jennifer
         to_condition.xor(other)
       end
 
-      def to_s
-        as_sql
+      def to_s(io : IO)
+        io << as_sql
       end
 
       def as_sql(_generator) : String
@@ -141,7 +141,7 @@ module Jennifer
       end
 
       def identifier : String
-        "#{@table}.#{@field.to_s}"
+        "#{@table}.#{@field}"
       end
 
       def definition

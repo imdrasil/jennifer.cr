@@ -37,7 +37,7 @@ module Jennifer
       # ditto
       def quote(value : Time::Span)
         # NOTE: isn't user by pg driver ATM
-        "'#{value.to_s}'"
+        "'#{value}'"
       end
 
       # ditto

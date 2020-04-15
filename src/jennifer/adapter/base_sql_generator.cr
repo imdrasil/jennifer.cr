@@ -112,7 +112,7 @@ module Jennifer
         esc = escape_string(1)
         String.build do |s|
           s << "UPDATE " << query.table << " SET "
-          options.map { |k, _| "#{k.to_s}= #{esc}" }.join(", ", s)
+          options.map { |k, _| "#{k}= #{esc}" }.join(", ", s)
           s << ' '
           body_section(s, query)
         end

@@ -8,7 +8,7 @@ require "jennifer/adapter/mysql" # for mysql
 require "jennifer/adapter/postgres" # for postgres
 ```
 
-> Be attentive - adapter should be required **after** main staff. From `0.5.0` several adapters could be required at the same time.
+> Be attentive - adapter should be required **after** Jennifer. From `0.5.0` several adapters could be required at the same time.
 
 [SQLite3](https://github.com/imdrasil/jennifer_sqlite3_adapter) adapter is in a separate shard.
 
@@ -112,8 +112,6 @@ Take into account - some configs can't be initialized using URI string or yaml f
 * `model_files_path` - path to the models locations; is used by model and migration generators; default: `"./src/models"`
 * `structure_folder` - path to the database structure file location; if set to empty string - parent folder of `migration_files_path` is used; default: `""`
 * `max_bind_vars_count` - maximum allowed count of bind variables; if nothing specified - used adapter's default value; default: `nil`
-
-From `0.5.1` `Jennifer::Config` has started working under singleton pattern instead of using class as a container for all configuration properties.
 
 ## Logging
 

@@ -5,7 +5,7 @@ require "../src/jennifer/sam"
 
 # ameba:disable Lint/UnusedArgument
 Jennifer::Config.configure do |conf|
-  conf.logger.level = :error
+  # conf.logger.level = :error
 end
 
 Sam.namespace "script" do

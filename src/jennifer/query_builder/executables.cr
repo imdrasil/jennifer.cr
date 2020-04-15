@@ -144,9 +144,11 @@ module Jennifer
         insert(fields, [values])
       end
 
-      # Inserts given *values* and ignores ones that would cause a duplicate values of `UNIQUE` index on given *unique_fields*.
+      # Inserts given *values* and ignores ones that would cause a duplicate values of `UNIQUE` index on given
+      # *unique_fields*.
       #
-      # Some RDMS (like MySQL) doesn't require specifying exact constraint to be violated, therefore *unique_fields* argument by default
+      # Some RDMS (like MySQL) doesn't require specifying exact constraint to be violated, therefore *unique_fields*
+      # argument by default
       # is `[] of String`.
       #
       # ```
@@ -162,7 +164,8 @@ module Jennifer
 
       # Inserts given *values* modifies existing row using hash returned by the block.
       #
-      # Some RDMS (like MySQL) doesn't require specifying exact constraint to be violated, therefore *unique_fields* argument by default
+      # Some RDMS (like MySQL) doesn't require specifying exact constraint to be violated, therefore *unique_fields*
+      # argument by default
       # is `[] of String`.
       #
       # ```
@@ -328,7 +331,8 @@ module Jennifer
       #
       # NOTE: any given ordering will be ignored and query will be reordered based on the
       # *primary_key* and *direction*.
-      def find_in_batches(primary_key : String, batch_size : Int32 = 1000, start : Int32? = nil, direction : String | Symbol = "asc", &block)
+      def find_in_batches(primary_key : String, batch_size : Int32 = 1000, start : Int32? = nil,
+                          direction : String | Symbol = "asc", &block)
         find_in_batches(@expression.c(primary_key.not_nil!), batch_size, start, direction) { |records| yield records }
       end
 
@@ -336,25 +340,32 @@ module Jennifer
         find_in_batches(nil, batch_size, start) { |records| yield records }
       end
 
-      def find_in_batches(primary_key : Criteria, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
-        Config.logger.warn("#find_in_batches is invoked with already ordered query - it will be reordered") if ordered?
+      def find_in_batches(primary_key : Criteria, batch_size : Int32 = 1000, start = nil,
+                          direction : String | Symbol = "asc", &block)
+        if ordered?
+          Config.logger.warn { "#find_in_batches is invoked with already ordered query - it will be reordered" }
+        end
         request = clone.reorder(primary_key.order(direction)).limit(batch_size)
-
         records = start ? request.clone.where { primary_key >= start }.to_a : request.to_a
+
         while records.any?
           records_size = records.size
           primary_key_offset = records.last.attribute(primary_key.field)
           yield records
           break if records_size < batch_size
+
           records = request.clone.where { primary_key > primary_key_offset }.to_a
         end
       end
 
       def find_in_batches(primary_key : Nil, batch_size : Int32 = 1000, start : Int32 = 0, &block)
-        Config.logger.warn("#find_in_batches is invoked with already ordered query - it will be reordered") if ordered?
-        Config.logger.warn("#find_in_batches methods was invoked without passing primary_key" \
-                          " key field name which may results in incorrect records extraction; 'start' argument" \
-                          " was realized as page number.")
+        if ordered?
+          Config.logger.warn { "#find_in_batches is invoked with already ordered query - it will be reordered" }
+        end
+        Config.logger.warn do
+          "#find_in_batches methods was invoked without passing primary_key key field name which may results in "\
+          "incorrect records extraction; 'start' argument was realized as page number."
+        end
         request = clone.reorder.limit(batch_size)
 
         records = request.offset(start * batch_size).to_a
@@ -369,7 +380,8 @@ module Jennifer
 
       # Yields each record in batches from #find_in_batches.
       #
-      # Looping through a collection of records from the database is very inefficient since it will instantiate all the objects
+      # Looping through a collection of records from the database is very inefficient since it will instantiate all the
+      # objects
       # at once. In that case batch processing methods allow you to work with the records
       # in batches, thereby greatly reducing memory consumption.
       #
@@ -378,19 +390,22 @@ module Jennifer
       #   puts contact.id
       # end
       # ```
-      def find_each(primary_key : String, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
+      def find_each(primary_key : String, batch_size : Int32 = 1000, start = nil,
+                    direction : String | Symbol = "asc", &block)
         find_in_batches(primary_key, batch_size, start, direction) do |records|
           records.each { |rec| yield rec }
         end
       end
 
-      def find_each(primary_key : Criteria, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
+      def find_each(primary_key : Criteria, batch_size : Int32 = 1000, start = nil,
+                    direction : String | Symbol = "asc", &block)
         find_in_batches(primary_key, batch_size, start, direction) do |records|
           records.each { |rec| yield rec }
         end
       end
 
-      def find_each(primary_key : Nil, batch_size : Int32 = 1000, start : Int32 = 0, direction : String | Symbol = "asc", &block)
+      def find_each(primary_key : Nil, batch_size : Int32 = 1000, start : Int32 = 0,
+                    direction : String | Symbol = "asc", &block)
         find_in_batches(batch_size, start) do |records|
           records.each { |rec| yield rec }
         end

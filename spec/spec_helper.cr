@@ -32,7 +32,7 @@ Spec.before_each do
   Jennifer::Adapter.adapter.begin_transaction
   pair_only { PAIR_ADAPTER.begin_transaction }
   set_default_configuration
-  Spec.logger.clear
+  Spec.logger_backend.entries.clear
 end
 
 Spec.after_each do
@@ -63,7 +63,7 @@ end
 macro void_transaction
   begin
     Jennifer::Adapter.adapter.rollback_transaction
-    Spec.logger.clear
+    Spec.logger_backend.entries.clear
     {{yield}}
   ensure
     clean_db
@@ -84,11 +84,11 @@ def db_array(*element)
 end
 
 def query_count
-  Spec.logger.container.size
+  Spec.logger_backend.entries.size
 end
 
 def query_log
-  Spec.logger.container.map { |e| e[:msg] }
+  Spec.logger_backend.entries.map(&.message)
 end
 
 def read_to_end(rs)

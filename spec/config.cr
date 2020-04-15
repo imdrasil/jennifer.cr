@@ -1,26 +1,10 @@
-require "./support/array_logger"
 require "./support/file_system"
 
 module Spec
-  @@adapter = ""
-  @@logger : ArrayLogger?
-  @@file_system = FileSystem.new("./")
-
-  def self.file_system
-    @@file_system
-  end
-
-  def self.adapter
-    @@adapter
-  end
-
-  def self.adapter=(v)
-    @@adapter = v
-  end
-
-  def self.logger
-    @@logger ||= ArrayLogger.new(STDOUT)
-  end
+  class_property adapter = ""
+  class_getter file_system = FileSystem.new("./")
+  class_getter logger_backend = Log::MemoryBackend.new
+  class_getter logger = Log.for("db", Log::Severity::Debug)
 end
 
 Spec.file_system.tap do |fs|
@@ -57,9 +41,7 @@ CONFIG_PATH = File.join(__DIR__, "..", "examples", "database.yml")
   {% end %}
 
   EXTRA_SETTINGS = Jennifer::Config.new.read(CONFIG_PATH, EXTRA_ADAPTER_NAME).tap do |conf|
-    # conf.logger = Spec.logger
-    # conf.logger.level = Logger::DEBUG
-    conf.logger.level = Logger::ERROR
+    conf.logger = Spec.logger
     conf.user = ENV["PAIR_DB_USER"] if ENV["PAIR_DB_USER"]?
     conf.password = ENV["PAIR_DB_PASSWORD"] if ENV["PAIR_DB_PASSWORD"]?
     conf.verbose_migrations = false
@@ -80,7 +62,6 @@ def set_default_configuration
 
   Jennifer::Config.configure do |conf|
     conf.logger = Spec.logger
-    conf.logger.level = Logger::DEBUG
     conf.user = ENV["DB_USER"] if ENV["DB_USER"]?
     conf.password = ENV["DB_PASSWORD"] if ENV["DB_PASSWORD"]?
     conf.verbose_migrations = false
@@ -88,6 +69,8 @@ def set_default_configuration
 end
 
 set_default_configuration
+
+Log.builder.bind "*", :debug, Spec.logger_backend
 
 I18n.load_path += ["spec/fixtures/locales/**"]
 I18n.default_locale = "en"

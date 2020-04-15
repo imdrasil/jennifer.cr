@@ -1,6 +1,3 @@
-require "yaml"
-require "logger"
-
 module Jennifer
   # Configuration container.
   #
@@ -18,7 +15,7 @@ module Jennifer
   # * `structure_folder` parent folder of `migration_files_path`
   # * `host = "localhost"`
   # * `port = -1`
-  # * `logger = Logger.new(STDOUT)`
+  # * `logger = Log.for("db", :debug)`
   # * `schema = "public"`
   # * `user`
   # * `password`
@@ -50,7 +47,8 @@ module Jennifer
   class Config
     # Supported migration execution failure strategies.
     #
-    # * `MigrationFailureHandler::ReverseDirection` - will invoke an opposite method (`#down` for up-migration and vice versa)
+    # * `MigrationFailureHandler::ReverseDirection` - will invoke an opposite method
+    # (`#down` for up-migration and vice versa)
     # * `MigrationFailureHandler::Callback` - will invoke `#after_up_failure` or `#after_down_failure` method
     # * `MigrationFailureHandler::None` - do nothing
     enum MigrationFailureHandler
@@ -58,6 +56,9 @@ module Jennifer
       Callback
       None
     end
+
+    # Context name used for logger.
+    LOG_CONTEXT = "db"
 
     # :nodoc:
     CONNECTION_URI_PARAMS = {
@@ -75,7 +76,12 @@ module Jennifer
     # :nodoc:
     FLOAT_FIELDS = {:checkout_timeout, :retry_delay}
     # :nodoc:
-    BOOL_FIELDS = {:command_shell_sudo, :skip_dumping_schema_sql, :verbose_migrations, :allow_outdated_pending_migration}
+    BOOL_FIELDS = {
+      :command_shell_sudo,
+      :skip_dumping_schema_sql,
+      :verbose_migrations,
+      :allow_outdated_pending_migration
+    }
     # :nodoc:
     ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS = %w(reverse_direction callback none)
 
@@ -128,11 +134,10 @@ module Jennifer
     # If `nil` - uses default adapter value.
     property max_bind_vars_count : Int32?
 
-    # Returns logger instance.
+    # `Log` instance.
     #
-    # Default is `Logger.new(STDOUT)`. Default logger level - `Logger::DEBUG`.
-    getter logger : Logger = Logger.new(STDOUT)
-    setter logger
+    # Default is `Log.for("db", Log::Severity::Debug)`
+    property logger : Log
 
     @@instance = new
 
@@ -145,12 +150,6 @@ module Jennifer
       @local_time_zone = Time::Location.local
       @local_time_zone_name = @local_time_zone.name
 
-      # NOTE: Uncomment common default values after resolving https://github.com/crystal-lang/crystal-db/issues/77
-
-      # @initial_pool_size = 1
-      # @max_pool_size = 5
-      # @max_idle_pool_size = 1
-
       @initial_pool_size = 1
       @max_pool_size = 1
       @max_idle_pool_size = 1
@@ -162,11 +161,7 @@ module Jennifer
 
       @command_shell = "bash"
       @migration_failure_handler_method = MigrationFailureHandler::None
-
-      logger.level = Logger::DEBUG
-      logger.formatter = Logger::Formatter.new do |_severity, datetime, _progname, message, io|
-        io << datetime << ": " << message
-      end
+      @logger = Log.for(LOG_CONTEXT, Log::Severity::Debug)
 
       @max_bind_vars_count = nil
     end
@@ -320,7 +315,7 @@ module Jennifer
     def from_uri(uri : String)
       from_uri(URI.parse(uri))
     rescue e
-      logger.error("Error parsing database uri #{uri}")
+      logger.error { "Error parsing database uri #{uri}" }
     end
 
     # Reads configuration properties from the given *uri*.
@@ -357,9 +352,11 @@ module Jennifer
       raise Jennifer::InvalidConfig.bad_adapter if adapter.empty?
       raise Jennifer::InvalidConfig.bad_database if db.empty?
       if max_idle_pool_size != max_pool_size || max_pool_size != initial_pool_size
-        logger.warn("It is highly recommended to set max_idle_pool_size = max_pool_size = initial_pool_size to " \
-                    "prevent blowing up count of DB connections. For any details take a look at " \
-                    "https://github.com/crystal-lang/crystal-db/issues/77")
+        logger.warn do
+          "It is highly recommended to set max_idle_pool_size = max_pool_size = initial_pool_size to prevent "\
+          "blowing up count of DB connections. For any details take a look at "\
+          "https://github.com/crystal-lang/crystal-db/issues/77"
+        end
       end
     end
 

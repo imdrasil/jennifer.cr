@@ -11,7 +11,7 @@ end
 
 Jennifer::Config.configure do |conf|
   conf.read("./examples/database.yml", Spec.adapter)
-  conf.logger.level = Logger::INFO
+  conf.logger.level = :info
   conf.max_pool_size = POOL_SIZE
   conf.initial_pool_size = POOL_SIZE
   conf.max_idle_pool_size = POOL_SIZE

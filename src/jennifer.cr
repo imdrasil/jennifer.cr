@@ -1,4 +1,6 @@
 require "json"
+require "yaml"
+require "log"
 require "inflector"
 require "ifrit/converter"
 require "ifrit/core"

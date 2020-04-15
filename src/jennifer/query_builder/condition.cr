@@ -180,6 +180,8 @@ module Jennifer
           "UNKNOWN"
         when :nil
           generator.quote(nil)
+        else
+          raise BaseException.new("Unexpected value`#{@rhs}` for translation")
         end
       end
     end

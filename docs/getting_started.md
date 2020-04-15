@@ -46,14 +46,15 @@ Create `./config` folder - it will contain all your configurations. Also create 
 
 ```crystal
 require "jennifer"
-require "jennifer/adapter/postgres"
-# require "jennifer/adapter/mysql" for mysql
+require "jennifer/adapter/postgres" # for PostgreSQL
+# require "jennifer/adapter/mysql" for MySQL
 
-Jennifer::Config.read("config/database.yml", ENV["APP_ENV"]? || "development")
+APP_ENV = ENV["APP_ENV"]? || "development"
+Jennifer::Config.read("config/database.yml", APP_ENV)
 jennifer::Config.from_uri(ENV["DATABASE_URI"]) if ENV.has_key?("DATABASE_URI")
 
 Jennifer::Config.configure do |conf|
-  conf.logger.level = Logger::DEBUG
+  conf.logger.level = APP_ENV == "development" ? :debug : :error
 end
 ```
 

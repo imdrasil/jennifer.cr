@@ -86,7 +86,7 @@ Take into account - some configs can't be initialized using URI string or yaml f
 
 * `host` - database host; default: `"localhost"`
 * `port` - database port; default: `-1` (`-1` value makes adapter to skip port in building connection URL, specify required port number)
-* `logger` - logger instance; default: `Logger.new(STDOUT)`
+* `logger` - logger instance; default: `Log.for("db", :debug)`
 * `schema` - PostgreSQL database schema name; default: `"public"`
 * `user` - database user name used to connect to the database
 * `password` - database user password used to connect to the database (if not specified - connection URL will specify only user name)
@@ -117,17 +117,12 @@ From `0.5.1` `Jennifer::Config` has started working under singleton pattern inst
 
 ## Logging
 
-Jennifer uses regular Crystal logging mechanism so you could specify your own logger or formatter:
+Jennifer uses [standard](https://crystal-lang.org/api/0.34.0/Log.html) Crystal logging mechanism so you could specify your own logger or formatter:
 
 ```crystal
-# Here is default logger configuration
+# This is default logger configuration
 Jennifer::Config.configure do |conf|
-  conf.logger = Logger.new(STDOUT)
-
-  conf.logger.formatter = Logger::Formatter.new do |severity, datetime, progname, message, io|
-    io << datetime << ": " << message
-  end
-  conf.logger.level = Logger::DEBUG
+  conf.logger = Log.for("db", :debug)
 end
 ```
 

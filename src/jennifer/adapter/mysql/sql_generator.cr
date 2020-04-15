@@ -58,7 +58,7 @@ module Jennifer
       end
 
       def self.json_path(path : QueryBuilder::JSONSelector)
-        value = path.path.is_a?(Number) ? "$[#{path.path.to_s}]" : path.path
+        value = path.path.is_a?(Number) ? "$[#{path.path}]" : path.path
         "#{path.identifier}->#{json_quote(value)}"
       end
 

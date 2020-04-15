@@ -4,7 +4,7 @@ module Jennifer
       class Command
         class Failed < BaseException
           def initialize(code, io)
-            @message = "DB command interface exit code #{code}: #{io.to_s}"
+            @message = "DB command interface exit code #{code}: #{io}"
           end
         end
 

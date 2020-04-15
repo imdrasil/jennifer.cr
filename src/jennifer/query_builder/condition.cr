@@ -81,8 +81,8 @@ module Jennifer
         self
       end
 
-      def to_s
-        as_sql
+      def to_s(io : IO)
+        io << as_sql
       end
 
       def as_sql
@@ -180,6 +180,8 @@ module Jennifer
           "UNKNOWN"
         when :nil
           generator.quote(nil)
+        else
+          raise BaseException.new("Unexpected value`#{@rhs}` for translation")
         end
       end
     end

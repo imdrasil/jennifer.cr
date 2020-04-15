@@ -1,5 +1,3 @@
-require "json"
-
 struct MySql::Type
   def self.type_for(t : ::JSON::Any.class)
     MySql::Type::Json

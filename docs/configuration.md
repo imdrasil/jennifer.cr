@@ -8,7 +8,7 @@ require "jennifer/adapter/mysql" # for mysql
 require "jennifer/adapter/postgres" # for postgres
 ```
 
-> Be attentive - adapter should be required **after** main staff. From `0.5.0` several adapters could be required at the same time.
+> Be attentive - adapter should be required **after** Jennifer. From `0.5.0` several adapters could be required at the same time.
 
 [SQLite3](https://github.com/imdrasil/jennifer_sqlite3_adapter) adapter is in a separate shard.
 
@@ -86,7 +86,7 @@ Take into account - some configs can't be initialized using URI string or yaml f
 
 * `host` - database host; default: `"localhost"`
 * `port` - database port; default: `-1` (`-1` value makes adapter to skip port in building connection URL, specify required port number)
-* `logger` - logger instance; default: `Logger.new(STDOUT)`
+* `logger` - logger instance; default: `Log.for("db", :debug)`
 * `schema` - PostgreSQL database schema name; default: `"public"`
 * `user` - database user name used to connect to the database
 * `password` - database user password used to connect to the database (if not specified - connection URL will specify only user name)
@@ -113,21 +113,14 @@ Take into account - some configs can't be initialized using URI string or yaml f
 * `structure_folder` - path to the database structure file location; if set to empty string - parent folder of `migration_files_path` is used; default: `""`
 * `max_bind_vars_count` - maximum allowed count of bind variables; if nothing specified - used adapter's default value; default: `nil`
 
-From `0.5.1` `Jennifer::Config` has started working under singleton pattern instead of using class as a container for all configuration properties.
-
 ## Logging
 
-Jennifer uses regular Crystal logging mechanism so you could specify your own logger or formatter:
+Jennifer uses [standard](https://crystal-lang.org/api/0.34.0/Log.html) Crystal logging mechanism so you could specify your own logger or formatter:
 
 ```crystal
-# Here is default logger configuration
+# This is default logger configuration
 Jennifer::Config.configure do |conf|
-  conf.logger = Logger.new(STDOUT)
-
-  conf.logger.formatter = Logger::Formatter.new do |severity, datetime, progname, message, io|
-    io << datetime << ": " << message
-  end
-  conf.logger.level = Logger::DEBUG
+  conf.logger = Log.for("db", :debug)
 end
 ```
 

@@ -122,8 +122,10 @@ module Jennifer
 
       def with_table_lock(table : String, type : String = "default", &block)
         transaction do |t|
-          config.logger.debug("MySQL doesn't support manual locking table from prepared statement." \
-                              " Instead of this only transaction was started.")
+          config.logger.debug do
+            "MySQL doesn't support manual locking table from prepared statement. " \
+            "Instead of this only transaction was started."
+          end
           yield t
         end
       end

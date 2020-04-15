@@ -16,7 +16,7 @@ dependencies:
 ### Requirements
 
 - you need to choose one of the existing drivers for your DB: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgres](https://github.com/will/crystal-pg); sqlite3 adapter automatically installs required driver for it;
-- crystal `>= 0.31.0`.
+- crystal `>= 0.34.0`.
 
 ## Usage
 
@@ -148,18 +148,12 @@ You can easily configure error message generated for certain validation violatio
 
 ### Logging & Debugging
 
-Jennifer uses a regular Crystal logging mechanism so you could specify your own logger or formatter:
+Jennifer uses a [standard](https://crystal-lang.org/api/0.34.0/Log.html) Crystal logging mechanism so you could specify your own logger or formatter:
 
 ```crystal
-# Here is default logger configuration
+# This is the default logger configuration
 Jennifer::Config.configure do |conf|
-  conf.logger = Logger.new(STDOUT).tap do |logger|
-    logger.formatter = Logger::Formatter.new do |_severity, datetime, _progname, message, io|
-      io << datetime << ": " << message
-    end
-
-    logger.level = Logger::DEBUG
-  end
+  conf.logger = Log.for("db", :debug)
 end
 ```
 

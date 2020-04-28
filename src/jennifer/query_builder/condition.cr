@@ -180,6 +180,8 @@ module Jennifer
           "UNKNOWN"
         when :nil
           generator.quote(nil)
+        else
+          raise "impossible condition #{generator.inspect}"
         end
       end
     end

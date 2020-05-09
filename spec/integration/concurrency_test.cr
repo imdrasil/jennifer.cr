@@ -10,7 +10,7 @@ if Spec.adapter != "mysql"
 end
 
 Jennifer::Config.configure do |conf|
-  conf.read("./examples/database.yml", Spec.adapter)
+  conf.read("./scripts/database.yml", Spec.adapter)
   conf.logger.level = :info
   conf.max_pool_size = POOL_SIZE
   conf.initial_pool_size = POOL_SIZE

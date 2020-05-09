@@ -204,7 +204,7 @@ If there is a branch for the next release - it will be removed 1 month after the
 
 > Before developing any feature please create an issue where you describe your idea.
 
-To setup dev environment run `./examples/setup.sh` - it creates `./examples/database.yml` configuration file. You can override there any values specific to your environment (like db user of password).
+To setup dev environment run `./scripts/setup.sh` - it creates `./scripts/database.yml` configuration file. You can override there any values specific to your environment (like DB user & password).
 
 To create the databases:
 
@@ -218,7 +218,7 @@ $ DB=mysql make sam db:setup
 
 ### Running tests
 
-All unit tests are written using `spec`. Apart from default matchers `spec/spec_helper.cr` includes some custom ones. All migrations are under the `./examples/migrations` directory.
+All unit tests are written using core `spec`. Also in `spec/spec_helper.cr` some custom unit test matchers are defined. All migrations are under the `./scripts/migrations` directory.
 
 The common way to run tests is just use using regular crystal spec tool:
 

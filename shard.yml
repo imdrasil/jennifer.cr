@@ -24,6 +24,9 @@ development_dependencies:
   ameba:
     github: crystal-ameba/ameba
     version: "= 0.12.1"
+  micrate:
+    github: "amberframework/micrate"
+    version: "= 0.7.0"
 dependencies:
   inflector:
     github: phoffer/inflector.cr

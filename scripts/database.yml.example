@@ -1,7 +1,7 @@
 default: &default
   host: localhost
-  migration_files_path: "./examples/migrations"
-  model_files_path: "./examples/models"
+  migration_files_path: "./scripts/migrations"
+  model_files_path: "./scripts/models"
   db: jennifer_test
   # command_shell: docker
 

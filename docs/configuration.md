@@ -26,7 +26,7 @@ defaults : &defaults
   adapter: postgres
   user: developer
   password: 1qazxsw2
-  migration_files_path: ./examples/migrations
+  migration_files_path: ./any/path/migrations # ./db/migrations by default
 
 development:
   db: jennifer_develop
@@ -46,7 +46,7 @@ Jennifer::Config.configure do |conf|
   conf.password = ""
   conf.adapter = "mysql"
   conf.db = "crystal"
-  conf.migration_files_path = "./examples/migrations"
+  conf.migration_files_path = "./any/path/migrations"
 end
 ```
 

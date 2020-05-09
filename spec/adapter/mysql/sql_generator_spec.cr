@@ -22,8 +22,8 @@ end
 
 mysql_only do
   describe Jennifer::Mysql::SQLGenerator do
-    described_class = Jennifer::Adapter.adapter.sql_generator
-    adapter = Jennifer::Adapter.adapter
+    described_class = Jennifer::Adapter.default_adapter.sql_generator
+    adapter = Jennifer::Adapter.default_adapter
 
     describe "::lock_clause" do
       it "render custom query part if specified" do

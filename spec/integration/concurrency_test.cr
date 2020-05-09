@@ -26,7 +26,7 @@ Spec.before_each do
 end
 
 describe "Concurrent execution" do
-  adapter = Jennifer::Adapter.adapter
+  adapter = Jennifer::Adapter.default_adapter
   tread_count = POOL_SIZE + 1
 
   describe "Jennifer::Adapter::Base" do

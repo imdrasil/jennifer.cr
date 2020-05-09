@@ -176,11 +176,11 @@ The fastest way to rollback all changes in the DB after test case is by using a 
 
 ```crystal
 Spec.before_each do
-  Jennifer::Adapter.adapter.begin_transaction
+  Jennifer::Adapter.default_adapter.begin_transaction
 end
 
 Spec.after_each do
-  Jennifer::Adapter.adapter.rollback_transaction
+  Jennifer::Adapter.default_adapter.rollback_transaction
 end
 ```
 

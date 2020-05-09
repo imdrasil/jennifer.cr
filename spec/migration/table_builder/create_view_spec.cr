@@ -1,7 +1,7 @@
 require "./spec_helper"
 
 def create_view_expr
-  Jennifer::Migration::TableBuilder::CreateView.new(Jennifer::Adapter.adapter, DEFAULT_TABLE)
+  Jennifer::Migration::TableBuilder::CreateView.new(Jennifer::Adapter.default_adapter, DEFAULT_TABLE)
 end
 
 describe Jennifer::Migration::TableBuilder::CreateView do

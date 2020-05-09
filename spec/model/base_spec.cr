@@ -53,16 +53,6 @@ describe Jennifer::Model::Base do
     end
   end
 
-  describe "::primary_field_type" do
-    it "returns type of custom primary field" do
-      Passport.primary_field_type.should eq(String?)
-    end
-
-    it "returns type of default primary field name" do
-      Contact.primary_field_type.should eq(Int32?)
-    end
-  end
-
   describe "#init_primary_field" do
     it "sets primary field" do
       c = Factory.build_contact
@@ -415,7 +405,7 @@ describe Jennifer::Model::Base do
   describe "%scope" do
     context "with block" do
       it "executes in query context" do
-        ::Jennifer::Adapter.adapter.sql_generator.select(Contact.all.ordered).should match(/ORDER BY contacts\.name ASC/)
+        ::Jennifer::Adapter.default_adapter.sql_generator.select(Contact.all.ordered).should match(/ORDER BY contacts\.name ASC/)
       end
 
       context "without argument" do
@@ -450,7 +440,7 @@ describe Jennifer::Model::Base do
 
     context "with query object class" do
       it "executes in class context" do
-        ::Jennifer::Adapter.adapter.sql_generator.select(Contact.johny).should match(/name =/)
+        ::Jennifer::Adapter.default_adapter.sql_generator.select(Contact.johny).should match(/name =/)
       end
 
       context "without argument" do

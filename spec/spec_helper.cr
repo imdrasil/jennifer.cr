@@ -29,14 +29,14 @@ require "../scripts/migrations/20180909200027509_create_notes"
 # Callbacks =======================
 
 Spec.before_each do
-  Jennifer::Adapter.adapter.begin_transaction
+  Jennifer::Adapter.default_adapter.begin_transaction
   pair_only { PAIR_ADAPTER.begin_transaction }
   set_default_configuration
   Spec.logger_backend.entries.clear
 end
 
 Spec.after_each do
-  Jennifer::Adapter.adapter.rollback_transaction
+  Jennifer::Adapter.default_adapter.rollback_transaction
   pair_only { PAIR_ADAPTER.rollback_transaction }
   Spec.file_system.clean
 end
@@ -54,7 +54,9 @@ end
 
 def clean_db
   postgres_only do
-    Jennifer::Adapter.adapter.as(Jennifer::Postgres::Adapter).refresh_materialized_view(FemaleContact.table_name)
+    Jennifer::Adapter.default_adapter
+      .as(Jennifer::Postgres::Adapter)
+      .refresh_materialized_view(FemaleContact.table_name)
   end
   (Jennifer::Model::Base.models - [Jennifer::Migration::Version]).select { |t| t.has_table? }.each(&.all.delete)
 end
@@ -62,12 +64,12 @@ end
 # Ends current transaction, yields to the block, clear and starts next one
 macro void_transaction
   begin
-    Jennifer::Adapter.adapter.rollback_transaction
+    Jennifer::Adapter.default_adapter.rollback_transaction
     Spec.logger_backend.entries.clear
     {{yield}}
   ensure
     clean_db
-    Jennifer::Adapter.adapter.begin_transaction
+    Jennifer::Adapter.default_adapter.begin_transaction
   end
 end
 
@@ -76,7 +78,7 @@ def grouping(exp)
 end
 
 def select_query(query)
-  ::Jennifer::Adapter.adapter.sql_generator.select(query)
+  ::Jennifer::Adapter.default_adapter.sql_generator.select(query)
 end
 
 def db_array(*element)
@@ -127,7 +129,7 @@ end
 # SQL query clauses =============
 
 private def sql_generator
-  ::Jennifer::Adapter.adapter.sql_generator
+  ::Jennifer::Adapter.default_adapter.sql_generator
 end
 
 def sb

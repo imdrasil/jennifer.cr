@@ -69,11 +69,6 @@ module Jennifer::Model
             end
 
             # :nodoc:
-            def self.primary_field_type
-              {{value[:parsed_type].id}}
-            end
-
-            # :nodoc:
             def init_primary_field(value : Int)
               {% if primary_auto_incrementable %}
                 raise ::Jennifer::AlreadyInitialized.new(@{{key.id}}, value) if @{{key.id}}

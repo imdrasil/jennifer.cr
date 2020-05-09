@@ -321,13 +321,13 @@ describe Jennifer::Model::Mapping do
       describe "mapping types" do
         describe "Primary32" do
           it "makes field nillable" do
-            Contact.primary_field_type.should eq(Int32?)
+            Contact.columns_tuple[:id][:parsed_type].should eq("Int32?")
           end
         end
 
         describe "Primary64" do
           it "makes field nillable" do
-            ContactWithInValidation.primary_field_type.should eq(Int64?)
+            ContactWithInValidation.columns_tuple[:id][:parsed_type].should eq("Int64?")
           end
         end
 

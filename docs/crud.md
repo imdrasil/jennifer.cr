@@ -103,9 +103,9 @@ end
 
 To truncate entire table use:
 ```crystal
-Jennifer::Adapter.adapter.truncate("contacts")
+Jennifer::Adapter.default_adapter.truncate("contacts")
 # or
-Jennifer::Adapter.adapter.truncate(Contact)
+Jennifer::Adapter.default_adapter.truncate(Contact)
 ```
 
 This functionality could be useful to clear db between test cases.

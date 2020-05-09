@@ -3,7 +3,7 @@ require "sam"
 require "../../../src/jennifer/sam"
 
 Jennifer::Config.configure do |conf|
-  conf.read("./examples/database.yml", Spec.adapter)
+  conf.read("./scripts/database.yml", Spec.adapter)
   conf.logger.level = :debug
   conf.adapter = Spec.adapter
   conf.db = DEFAULT_DB

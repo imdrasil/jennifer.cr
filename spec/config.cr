@@ -8,8 +8,8 @@ module Spec
 end
 
 Spec.file_system.tap do |fs|
-  fs.watch "examples/models"
-  fs.watch "examples/migrations"
+  fs.watch "scripts/models"
+  fs.watch "scripts/migrations"
 end
 
 require "../src/jennifer"
@@ -20,7 +20,7 @@ class Jennifer::Generators::Base
   def puts(_value); end
 end
 
-CONFIG_PATH = File.join(__DIR__, "..", "examples", "database.yml")
+CONFIG_PATH = File.join(__DIR__, "..", "scripts", "database.yml")
 
 {% if env("DB") == "mysql" %}
   require "../src/jennifer/adapter/mysql"
@@ -58,7 +58,7 @@ CONFIG_PATH = File.join(__DIR__, "..", "examples", "database.yml")
 
 def set_default_configuration
   Jennifer::Config.reset_config
-  Jennifer::Config.read(CONFIG_PATH, Spec.adapter)
+  Jennifer::Config.read(File.join(__DIR__, "..", "scripts", "database.yml"), Spec.adapter)
 
   Jennifer::Config.configure do |conf|
     conf.logger = Spec.logger

@@ -4,7 +4,7 @@ defaults : &defaults
   adapter: postgres
   user: developer
   password: 1qazxsw2
-  migration_files_path: ./examples/migrations
+  migration_files_path: ./scripts/migrations
 
 development:
   db: jennifer_develop

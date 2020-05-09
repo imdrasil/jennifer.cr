@@ -81,6 +81,30 @@ describe Jennifer::Model::Mapping do
     end
   end
 
+  describe "#attribute_metadata" do
+    describe "with symbol argument" do
+      it do
+        Factory.build_contact.attribute_metadata(:id)
+          .should eq({type: Int32, primary: true, parsed_type: "Int32?", column: "id", auto: true})
+        Factory.build_contact.attribute_metadata(:name)
+          .should eq({type: String, parsed_type: "String", column: "name"})
+        Factory.build_address.attribute_metadata(:street)
+          .should eq({type: String, parsed_type: "String", column: "street"})
+      end
+    end
+
+    describe "with string argument" do
+      it do
+        Factory.build_contact.attribute_metadata("id")
+          .should eq({type: Int32, primary: true, parsed_type: "Int32?", column: "id", auto: true})
+        Factory.build_contact.attribute_metadata("name")
+          .should eq({type: String, parsed_type: "String", column: "name"})
+        Factory.build_address.attribute_metadata("street")
+          .should eq({type: String, parsed_type: "String", column: "street"})
+      end
+    end
+  end
+
   describe "%mapping" do
     describe "converter" do
       postgres_only do

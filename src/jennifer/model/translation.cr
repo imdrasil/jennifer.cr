@@ -4,9 +4,6 @@ module Jennifer
     #
     # Depends of parent class `::lookup_ancestors` and `::i18n_scope` methods.
     module Translation
-      # Default global translation scope.
-      GLOBAL_SCOPE = "jennifer"
-
       module ClassMethods
         # Search translation for given attribute.
         def human_attribute_name(attribute : String | Symbol)
@@ -60,12 +57,21 @@ module Jennifer
       # All possible types to be used for localization.
       alias LocalizeableTypes = Int32 | Int64 | Nil | Float32 | Float64 | Time | String | Symbol | Bool
 
+      # Default global translation scope.
+      GLOBAL_SCOPE = "jennifer"
+
+      # Delegates the call to `self.class`.
       def lookup_ancestors(&block)
         self.class.lookup_ancestors { |ancestor| yield ancestor }
       end
 
+      # Delegates the call to `self.class`.
       def human_attribute_name(attribute : String | Symbol)
         self.class.human_attribute_name(attribute)
+      end
+
+      def class_name : String
+        self.class.to_s.underscore.gsub(/::/, "_")
       end
 
       macro included

@@ -58,11 +58,9 @@ module Jennifer
         results = [] of T
         return results if do_nothing?
 
-        adapter.query(query, args) do |rs|
+        read_adapter.query(query, args) do |rs|
           begin
-            rs.each do
-              results << T.new(rs)
-            end
+            rs.each { results << T.new(rs) }
           rescue e : Exception
             rs.read_to_end
             raise e
@@ -79,7 +77,7 @@ module Jennifer
         return to_a_with_relations if @eager_load
 
         result = [] of T
-        adapter.select(self) do |rs|
+        read_adapter.select(self) do |rs|
           rs.each do
             begin
               result << T.new(rs)
@@ -95,7 +93,7 @@ module Jennifer
       # Perform request and maps resultset to objects and related objects grepping fields from joined tables; preloading also
       # are performed
       private def to_a_with_relations
-        result = adapter.select(self) do |rs|
+        result = read_adapter.select(self) do |rs|
           nested_relation_tree.read(rs, T)
         end
         add_preloaded(result)

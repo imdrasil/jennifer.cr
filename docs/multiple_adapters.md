@@ -1,6 +1,6 @@
 # Multiple adapters
 
-If you have multiple data sources (databases) it is possible to connect to all of them. For this just create a separate `Jennifer::Config` instance apart of the main one and initialize new adapter instance:
+If you have multiple data sources (databases) it is possible to connect to all of them. For this just create a separate `Jennifer::Config` instance apart of the main one and initialize new adapter:
 
 ```crystal
 separate_config = Jennifer::Config.new.tap do |config|
@@ -14,11 +14,11 @@ end
 SEPARATE_ADAPTER = Jennifer::Mysql::Adapter.new(separate_config)
 ```
 
-Now created above adapter can be used to connect to specified database. You are going to use it in two places: for model connection and for migration one.
+Now created above adapter can be used to connect to specified database. It should be used at least in two places: for model connection and for migration one.
 
 ## Model
 
-To override model adapter (specify connection) - override `.adapter` method:
+To override model adapter (in other words specify connection) - override `.adapter` method:
 
 ```crystal
 class User < Jennifer::Model::Base
@@ -30,9 +30,9 @@ class User < Jennifer::Model::Base
 end
 ```
 
-In this case `SEPARATE_ADAPTER` is used for **both** read and write. ATM it is impossible to specify different connection for read and write operations; also you can specify only one adapter per model.
+In this case `SEPARATE_ADAPTER` is used for **both** read and write operations. If you need to connect to the specified database only for read or write operation you can override `.read_adapter` or `.write_adapter`.
 
-It is possible to define associations between models that are in different databases but be careful with `JOIN`s - obviously it isn't possible. But you can preload (as it does separate requests per association).
+It is possible to define associations between models that are in different databases but be careful with `JOIN`s - obviously it isn't possible. But you can preload them (as it does separate requests per association).
 
 ## Migration
 

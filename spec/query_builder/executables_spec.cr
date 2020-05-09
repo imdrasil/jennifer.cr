@@ -74,7 +74,7 @@ describe Jennifer::QueryBuilder::Executables do
       it "returns array of arrays" do
         Factory.create_contact(name: "a", age: 13)
         Factory.create_contact(name: "b", age: 14)
-        res = Contact.all.pluck(:name, :age)
+        res = Query["contacts"].pluck(:name, :age)
         res.size.should eq(2)
         res[0][0].should eq("a")
         res[1][1].should eq(14)
@@ -84,12 +84,12 @@ describe Jennifer::QueryBuilder::Executables do
     context "given one argument" do
       it "correctly extracts json" do
         Factory.create_address(details: JSON.parse({:city => "Duplin"}.to_json))
-        Address.all.pluck(:details)[0].should be_a(JSON::Any)
+        Query["addresses"].pluck(:details)[0].should be_a(JSON::Any)
       end
 
       it "accepts plain sql" do
         Factory.create_contact(name: "a", age: 13)
-        res = Contact.all.select("COUNT(id) + 1 as test").pluck(:test)
+        res = Query["contacts"].select("COUNT(id) + 1 as test").pluck(:test)
         res[0].should eq(2)
       end
     end
@@ -98,7 +98,7 @@ describe Jennifer::QueryBuilder::Executables do
       it "returns array of arrays" do
         Factory.create_contact(name: "a", age: 13)
         Factory.create_contact(name: "b", age: 14)
-        res = Contact.all.pluck([:name, :age])
+        res = Query["contacts"].pluck([:name, :age])
         res.size.should eq(2)
         res[0][0].should eq("a")
         res[1][1].should eq(14)

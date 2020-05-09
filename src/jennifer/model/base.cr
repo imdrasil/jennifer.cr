@@ -3,6 +3,7 @@ require "../relation/*"
 require "../model/errors"
 
 require "./resource"
+require "./presentable"
 require "./mapping"
 require "./sti_mapping"
 require "./validation"
@@ -44,6 +45,7 @@ module Jennifer
       end
 
       extend AbstractClassMethods
+      include Presentable
       include Mapping
       include STIMapping
       include Validation

@@ -130,6 +130,15 @@ module Jennifer
       include FieldDeclaration
       include CommonMapping
 
+      def attribute_metadata(name : String | Symbol)
+        name = name.to_s
+        self.class.columns_tuple.each do |key, props|
+          return props if key.to_s == name
+        end
+
+        raise ArgumentError.new("Unknown attribute #{name}")
+      end
+
       # :nodoc:
       macro copy_properties
         {%

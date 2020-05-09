@@ -1,7 +1,7 @@
 require "../spec_helper"
 
 describe Jennifer::Adapter::Base do
-  adapter = Jennifer::Adapter.adapter
+  adapter = Jennifer::Adapter.default_adapter
 
   describe Jennifer::BadQuery do
     describe "query" do

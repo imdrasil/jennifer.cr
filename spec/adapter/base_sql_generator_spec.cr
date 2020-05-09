@@ -1,8 +1,8 @@
 require "../spec_helper"
 
 describe Jennifer::Adapter::BaseSQLGenerator do
-  adapter = Jennifer::Adapter.adapter
-  described_class = Jennifer::Adapter.adapter.sql_generator
+  adapter = Jennifer::Adapter.default_adapter
+  described_class = Jennifer::Adapter.default_adapter.sql_generator
   expression_builder = Factory.build_expression
 
   describe "::filter_out" do
@@ -250,7 +250,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
 
     it "adds next query to current one" do
       query = Jennifer::Query["contacts"].union(Jennifer::Query["users"])
-      sb { |s| described_class.union_clause(s, query) }.should match(Regex.new(Jennifer::Adapter.adapter.sql_generator.select(Jennifer::Query["users"])))
+      sb { |s| described_class.union_clause(s, query) }.should match(Regex.new(Jennifer::Adapter.default_adapter.sql_generator.select(Jennifer::Query["users"])))
     end
   end
 

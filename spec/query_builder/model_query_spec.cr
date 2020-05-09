@@ -20,12 +20,12 @@ end
 # TODO: add checking for log entries when we shouldn't hit db
 
 describe Jennifer::QueryBuilder::ModelQuery do
-  adapter = Jennifer::Adapter.adapter
+  adapter = Jennifer::Adapter.default_adapter
 
   describe "#relation" do
     # TODO: this should be tested under sql generating process
     it "makes join using relation scope" do
-      ::Jennifer::Adapter.adapter
+      adapter
         .sql_generator
         .select(Contact.all.relation(:addresses))
         .should match(/LEFT JOIN addresses ON addresses.contact_id = contacts.id/)

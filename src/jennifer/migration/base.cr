@@ -131,7 +131,9 @@ module Jennifer
       @@with_transaction = true
 
       # Database adapter connection instance.
-      delegate adapter, to: Adapter
+      def adapter
+        Adapter.default_adapter
+      end
 
       # Returns where table with given *table* name exists.
       #

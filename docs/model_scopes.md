@@ -15,7 +15,9 @@ As you can see arguments are next:
 Also they are chainable, so you could do:
 
 ```crystal
-ModelName.all.where { _some_field > 1 }
-         .query_with_arguments("done", [1,2])
-         .order(f1: :asc).no_argument_query
+ModelName.all
+  .where { _some_field > 1 }
+  .query_with_arguments("done", [1,2])
+  .order(f1: :asc)
+  .no_argument_query
 ```

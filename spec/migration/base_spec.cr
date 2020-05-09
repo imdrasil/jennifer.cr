@@ -23,7 +23,7 @@ describe Jennifer::Migration::Base do
 
   # TODO: add aka transactional schema tests for MySQL
   postgres_only do
-    adapter = Jennifer::Adapter.adapter.as(Jennifer::Postgres::Adapter)
+    adapter = Jennifer::Adapter.default_adapter.as(Jennifer::Postgres::Adapter)
 
     describe "#create_table" do
       it "creates table" do

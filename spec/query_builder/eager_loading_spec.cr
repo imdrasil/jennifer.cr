@@ -138,7 +138,7 @@ describe Jennifer::QueryBuilder::EagerLoading do
       it "it generates proper request" do
         Factory.create_contact
         query = Contact.all.eager_load(:main_address)
-        Jennifer::Adapter.adapter.sql_generator.select(query).should match(/addresses\.main/)
+        Jennifer::Adapter.default_adapter.sql_generator.select(query).should match(/addresses\.main/)
       end
     end
 

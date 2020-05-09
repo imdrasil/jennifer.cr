@@ -1,7 +1,7 @@
 require "./spec_helper"
 
 private def create_table_expr
-  Jennifer::Migration::TableBuilder::CreateTable.new(Jennifer::Adapter.adapter, DEFAULT_TABLE)
+  Jennifer::Migration::TableBuilder::CreateTable.new(Jennifer::Adapter.default_adapter, DEFAULT_TABLE)
 end
 
 describe Jennifer::Migration::TableBuilder::CreateTable do

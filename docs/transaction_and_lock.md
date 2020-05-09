@@ -5,7 +5,7 @@
 Transaction mechanism provides block-like syntax:
 
 ```crystal
-Jennifer::Adapter.adapter.transaction do |tx|
+Jennifer::Adapter.default_adapter.transaction do |tx|
   Contact.create({:name => "Chose", :age => 20})
 end
 ```
@@ -57,7 +57,7 @@ end
 To lock table use `Jennifer::Adapter#with_table_lock` method
 
 ```crystal
-Jennifer::Adapter.adapter("table_name") do
+Jennifer::Adapter.default_adapter("table_name") do
   # some operations here
 end
 ```

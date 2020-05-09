@@ -2,7 +2,7 @@ require "../../spec_helper"
 
 mysql_only do
   describe Jennifer::Mysql::SchemaProcessor do
-    adapter = Jennifer::Adapter.adapter
+    adapter = Jennifer::Adapter.default_adapter
     processor = adapter.schema_processor
 
     describe "#rename_table" do

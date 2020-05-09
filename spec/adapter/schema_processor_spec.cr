@@ -3,7 +3,7 @@ require "../spec_helper"
 alias DBOption = Jennifer::Migration::TableBuilder::Base::EAllowedTypes | Array(Jennifer::Migration::TableBuilder::Base::EAllowedTypes)
 
 describe Jennifer::Adapter::SchemaProcessor do
-  adapter = Jennifer::Adapter.adapter
+  adapter = Jennifer::Adapter.default_adapter
   processor = adapter.schema_processor
 
   describe "#add_index" do

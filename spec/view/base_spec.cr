@@ -24,12 +24,6 @@ describe Jennifer::View::Base do
     end
   end
 
-  describe "::primary_field_type" do
-    it "returns type of primary field" do
-      MaleContact.primary_field_type.should eq(Int32?)
-    end
-  end
-
   describe "::view_name" do
     it "loads from class name automatically" do
       FemaleContact.view_name.should eq("female_contacts")
@@ -63,7 +57,8 @@ describe Jennifer::View::Base do
   describe "%scope" do
     context "with block" do
       it "executes in query context" do
-        ::Jennifer::Adapter.adapter.sql_generator.select(MaleContact.all.older(18)).should match(/male_contacts.age >/)
+        ::Jennifer::Adapter.default_adapter.sql_generator.select(MaleContact.all.older(18))
+          .should match(/male_contacts.age >/)
       end
 
       context "without arguemnt" do
@@ -95,7 +90,7 @@ describe Jennifer::View::Base do
 
     context "with query object class" do
       it "executes in class context" do
-        ::Jennifer::Adapter.adapter.sql_generator.select(MaleContact.johny).should match(/name =/)
+        ::Jennifer::Adapter.default_adapter.sql_generator.select(MaleContact.johny).should match(/name =/)
       end
 
       context "without arguemnt" do

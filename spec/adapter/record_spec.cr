@@ -4,7 +4,7 @@ def get_record
   result = nil
   Factory.create_contact(name: "Jennifer", age: 20)
   Contact.all.each_result_set do |rs|
-    result = Jennifer::Record.new(Jennifer::Adapter.adapter.result_to_hash(rs))
+    result = Jennifer::Record.new(Jennifer::Adapter.default_adapter.result_to_hash(rs))
   end
   result.not_nil!
 end

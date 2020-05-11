@@ -426,7 +426,7 @@ module Jennifer
       # # => CREATE INDEX by_branch_desc_party ON accounts(branch_id DESC, party_id ASC, surname)
       # ```
       #
-      # NOTE: MySQL only supports index order from  onwards (earlier versions will raise an exception).
+      # NOTE: MySQL only supports index order from 8.0.1 onwards (earlier versions will raise an exception).
       def add_index(table_name : String | Symbol, fields : Array(Symbol), type : Symbol? = nil, name : String? = nil,
                     lengths : Hash(Symbol, Int32) = {} of Symbol => Int32,
                     orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)

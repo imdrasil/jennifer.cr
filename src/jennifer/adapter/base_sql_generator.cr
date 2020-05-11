@@ -278,7 +278,7 @@ module Jennifer
 
       # ======== utils
 
-      def self.order_expression(expression : QueryBuilder::OrderItem)
+      def self.order_expression(expression : QueryBuilder::OrderExpression)
         "#{expression.criteria.identifier} #{expression.direction}"
       end
 

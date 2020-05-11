@@ -5,6 +5,8 @@ module Spec
     include ::Note::Mapping
 
     belongs_to :notable, Union(::User | ::Spec::Contact), polymorphic: true
+
+    def self.table_prefix; end
   end
 
   class Contact < ApplicationRecord
@@ -13,6 +15,8 @@ module Spec
     mapping
 
     has_one :note, Note, inverse_of: :notable, polymorphic: true, dependent: :nullify
+
+    def self.table_prefix; end
   end
 end
 

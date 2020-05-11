@@ -41,7 +41,7 @@ postgres_only do
     describe "#drop_foreign_key" do
       it do
         match_query_from_exception(/ALTER TABLE table_name DROP CONSTRAINT key_name/) do
-          processor.drop_foreign_key("table_name", "key_name")
+          processor.drop_foreign_key("table_name", "to_table", "key_name")
         end
       end
     end

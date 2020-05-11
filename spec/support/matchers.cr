@@ -120,6 +120,23 @@ module Spec
     end
   end
 
+  struct MatchCommandExpectation
+    def initialize(@command : String, @options : Array(String))
+    end
+
+    def match(tuple)
+      value = tuple[:output]
+      raise "Stub command execution before using expectation" if value.is_a?(IO::Memory)
+
+      output = value.as(Array)
+      output[0].as(String) == @command && output[1].as(Array) == @options
+    end
+
+    def failure_message(tuple)
+      "Expected command to be #{@command} and have options #{@options} but got #{tuple[:output]}"
+    end
+  end
+
   struct EqlExpectation(T)
     def initialize(@expected_value : T)
     end
@@ -181,6 +198,10 @@ module Spec
 
     def status(value)
       ExecStatusExpectation.new(value)
+    end
+
+    def be_executed_as(command, options)
+      MatchCommandExpectation.new(command, options)
     end
   end
 end

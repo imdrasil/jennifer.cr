@@ -1,11 +1,11 @@
 require "../spec_helper"
 
-describe Jennifer::QueryBuilder::OrderItem do
-  described_class = Jennifer::QueryBuilder::OrderItem
+describe Jennifer::QueryBuilder::OrderExpression do
+  described_class = Jennifer::QueryBuilder::OrderExpression
 
   describe ".new" do
     it "makes RawSQL not to use brackets" do
-      described_class.new(Factory.build_expression.sql("raw sql"), Jennifer::QueryBuilder::OrderItem::Direction::ASC).as_sql.should eq("raw sql ASC")
+      described_class.new(Factory.build_expression.sql("raw sql"), Jennifer::QueryBuilder::OrderExpression::Direction::ASC).as_sql.should eq("raw sql ASC")
     end
   end
 

@@ -26,6 +26,30 @@ require "./support/*"
 require "../scripts/migrations/20170119011451314_create_contacts"
 require "../scripts/migrations/20180909200027509_create_notes"
 
+class Jennifer::Adapter::ICommandShell
+  class_property stub = false
+end
+
+class Jennifer::Adapter::Bash < Jennifer::Adapter::ICommandShell
+  private def invoke(string, options)
+    if Jennifer::Adapter::ICommandShell.stub
+      { result: 0, output: [string, options] }
+    else
+      super
+    end
+  end
+end
+
+class Jennifer::Adapter::Docker < Jennifer::Adapter::ICommandShell
+  private def invoke(string, options)
+    if Jennifer::Adapter::ICommandShell.stub
+      { result: 0, output: [string, options] }
+    else
+      super
+    end
+  end
+end
+
 # Callbacks =======================
 
 Spec.before_each do
@@ -39,6 +63,7 @@ Spec.after_each do
   Jennifer::Adapter.default_adapter.rollback_transaction
   pair_only { PAIR_ADAPTER.rollback_transaction }
   Spec.file_system.clean
+  Jennifer::Adapter::ICommandShell.stub = false
 end
 
 # Helper methods ================
@@ -142,4 +167,8 @@ end
 
 def join_clause(query)
   sb { |io| sql_generator.join_clause(io, query) }
+end
+
+def stub_command_shell
+  Jennifer::Adapter::ICommandShell.stub = true
 end

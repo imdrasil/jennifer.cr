@@ -1,5 +1,5 @@
 require "./json_selector"
-require "./order_item"
+require "./order_expression"
 
 module Jennifer
   module QueryBuilder
@@ -159,11 +159,11 @@ module Jennifer
       end
 
       def asc
-        OrderItem.new(self, OrderItem::Direction::ASC)
+        OrderExpression.new(self, OrderExpression::Direction::ASC)
       end
 
       def desc
-        OrderItem.new(self, OrderItem::Direction::DESC)
+        OrderExpression.new(self, OrderExpression::Direction::DESC)
       end
 
       def sql_args : Array(DBAny)

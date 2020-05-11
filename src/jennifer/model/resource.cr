@@ -93,6 +93,11 @@ module Jennifer
         # User.new({ "name" => "John Smith" })
         # ```
         abstract def new(values : Hash(String, ::Jennifer::DBAny))
+
+        # Returns table prefix.
+        #
+        # If `nil` (default) is returned - adds nothing.
+        abstract def table_prefix
       end
 
       extend AbstractClassMethods
@@ -103,6 +108,11 @@ module Jennifer
 
       # :nodoc:
       def self.superclass; end
+
+      # :nodoc:
+      def self.table_prefix
+        Inflector.underscore(to_s).split('/')[0...-1].join("_") + "_" if to_s =~ /:/
+      end
 
       @@expression_builder : QueryBuilder::ExpressionBuilder?
       @@actual_table_field_count : Int32?
@@ -143,6 +153,8 @@ module Jennifer
       end
 
       # Sets custom table name.
+      #
+      # Specified table name should include table name prefix as it is used "as is".
       def self.table_name(value : String | Symbol)
         @@table_name = value.to_s
         @@actual_table_field_count = nil
@@ -150,12 +162,26 @@ module Jennifer
       end
 
       # Returns resource's table name.
+      #
+      # ```
+      # User.table_name # "users"
+      # Admin::User.table_name # "admin_users"
+      #
+      # class Admin::Post < Jennifer::Model::Base
+      #   # ...
+      #
+      #   def self.table_prefix; end
+      # end
+      #
+      # Admin::Post.table_name # "posts"
+      # ```
       def self.table_name : String
         @@table_name ||=
           begin
             name = ""
             class_name = Inflector.demodulize(to_s)
-            name = self.table_prefix if self.responds_to?(:table_prefix)
+            prefix = table_prefix
+            name = prefix.to_s if prefix
             Inflector.pluralize(name + class_name.underscore)
           end
       end

@@ -28,7 +28,7 @@ module Jennifer
         end
 
         {% for method in Jennifer::Adapter::TYPES %}
-          # Defines new column *name* of type `{{method}}` with given *options*.
+          # Defines new column *name* of type `{{method.id}}` with given *options*.
           #
           # For more details see `ChangeTable#add_column`.
           def {{method.id}}(name : String | Symbol, options = DB_OPTIONS.new)
@@ -42,8 +42,10 @@ module Jennifer
         # *values* argument specified allowed enum values.
         #
         # For more details see `ChangeTable#add_column`
-        def enum(name : String | Symbol, values : Array(String), options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
-          options = Ifrit.sym_hash_cast(options, AAllowedTypes).merge!({ :values => Ifrit.typed_array_cast(values, EAllowedTypes) })
+        def enum(name : String | Symbol, values : Array(String),
+                 options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
+          options = Ifrit.sym_hash_cast(options, AAllowedTypes)
+            .merge!({ :values => Ifrit.typed_array_cast(values, EAllowedTypes) })
           @fields[name.to_s] = build_column_options(:enum, options)
           self
         end
@@ -62,7 +64,8 @@ module Jennifer
         # ```
         #
         # Migration above will create PostreSQL enum and a table with column of that type.
-        def field(name : String | Symbol, type : Symbol | String, options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
+        def field(name : String | Symbol, type : Symbol | String,
+                  options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
           @fields[name.to_s] = ({ :sql_type => type } of Symbol => AAllowedTypes).merge(options)
           self
         end
@@ -74,7 +77,7 @@ module Jennifer
 
         # Adds a reference.
         #
-        # The reference column is an `integer` by default, the *type` argument can be used to specify a different type.
+        # The reference column is an `integer` by default, *type* argument can be used to specify a different type.
         #
         # If *polymorphic* option is `true` - additional string field `"#{name}_type"` is created and foreign key is
         # not added.
@@ -84,9 +87,7 @@ module Jennifer
         #
         # ```
         # reference :user
-        #
         # reference :order, :bigint
-        #
         # reference :taggable, { :polymorphic => true }
         # ```
         def reference(name, type : Symbol = :integer, options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
@@ -115,25 +116,9 @@ module Jennifer
         # Defines `created_at` and `updated_at` timestamp fields.
         #
         # Argument *null* sets `:null` option for both fields.
-        def timestamps(null = false)
+        def timestamps(null : Bool = false)
           timestamp(:created_at, { :null => null })
           timestamp(:updated_at, { :null => null })
-        end
-
-        # Adds index.
-        #
-        # This is deprecated signature - please use one with the filed name at the beginning and optional index name.
-        #
-        # For more details see `Migration::Base#add_index`.
-        def index(name : String, fields : Array(Symbol), type : Symbol? = nil,
-                  lengths : Hash(Symbol, Int32) = {} of Symbol => Int32,
-                  orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
-          index(fields, type, name, lengths, orders)
-        end
-
-        # ditto
-        def index(name : String, field : Symbol, type : Symbol? = nil, length : Int32? = nil, order : Symbol? = nil)
-          index(field, type, name, length, order)
         end
 
         # Adds index.
@@ -149,7 +134,8 @@ module Jennifer
         # Adds index.
         #
         # For more details see `Migration::Base#add_index`.
-        def index(field : Symbol, type : Symbol? = nil, name : String? = nil, length : Int32? = nil, order : Symbol? = nil)
+        def index(field : Symbol, type : Symbol? = nil, name : String? = nil, length : Int32? = nil,
+                  order : Symbol? = nil)
           orders = order ? {field => order.not_nil!} : {} of Symbol => Symbol
           lengths = length ? {field => length.not_nil!} : {} of Symbol => Int32
           index([field],type, name, lengths, orders)
@@ -159,7 +145,8 @@ module Jennifer
         #
         # For more details see `Migration::Base#add_foreign_key`.
         def foreign_key(to_table : String | Symbol, column = nil, primary_key = nil, name = nil, *,
-                        on_update : Symbol = DEFAULT_ON_EVENT_ACTION, on_delete : Symbol = DEFAULT_ON_EVENT_ACTION)
+                        on_update : Symbol = DEFAULT_ON_EVENT_ACTION,
+                        on_delete : Symbol = DEFAULT_ON_EVENT_ACTION)
           @commands << CreateForeignKey.new(
             @adapter,
             @name,

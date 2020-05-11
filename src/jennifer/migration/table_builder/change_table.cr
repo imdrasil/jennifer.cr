@@ -52,7 +52,8 @@ module Jennifer
         #
         # change_column :price, { :default => :none }
         # ```
-        def change_column(name : String | Symbol, type : Symbol? = nil, options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
+        def change_column(name : String | Symbol, type : Symbol? = nil,
+                          options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
           @changed_columns[name.to_s] = build_column_options(type, options)
           @changed_columns[name.to_s][:new_name] ||= name
           self
@@ -60,13 +61,9 @@ module Jennifer
 
         # Defines new column *name* of *type* with given *options*.
         #
-        # The *type* argument should be one of the following supported data types: `integer`, `short`, `bigint`,
-        # `float`, `double`, `decimal`, `bool`, `string`, `char`, `text`, `varchar`, `timestamp`,
-        # `date_time`, `blob`, `json`; PostgreSQL specific: `oid`, `numeric`, `char`, `blchar`, `uuid`, `timestamptz`,
-        # `bytea`, `jsonb`, `xml`, `point`, `lseg`, `path`, `box`, `polygon`, `line`, `circle`; MySQL specific: `emum`,
-        # `tinyint`.
+        # The *type* argument should be one of the following supported data types (see *Jennifer::Adapter::TYPES*).
         #
-        # You may use any type not in this list as long as it is supported by your database by living *type* blank
+        # You may use any type that isn't in this list as long as it is supported by your database by skipping *type*
         # and passing `sql_type` option.
         #
         # Available options are (none of these exists by default):
@@ -82,12 +79,11 @@ module Jennifer
         #
         # ```
         # add_column :picture, :blob
-        #
         # add_column :status, :string, { :size => 20, :default => "draft", :null => false }
-        #
         # add_column :skills, :text, { :array => true }
         # ```
-        def add_column(name : String | Symbol, type : Symbol? = nil, options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
+        def add_column(name : String | Symbol, type : Symbol? = nil,
+                       options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
           @new_columns[name.to_s] = build_column_options(type, options)
           self
         end
@@ -96,6 +92,69 @@ module Jennifer
         def drop_column(name : String | Symbol)
           @drop_columns << name.to_s
           self
+        end
+
+        # Adds a reference.
+        #
+        # The reference column is an `integer` by default, *type* argument can be used to specify a different type.
+        #
+        # If *polymorphic* option is `true` - additional string field `"#{name}_type"` is created and foreign key is
+        # not added.
+        #
+        # `:to_table`, `:column`, `:primary_key` and `:key_name` options are used to create a foreign key constraint.
+        # See `Migration::Base#add_foreign_key` for details.
+        #
+        # ```
+        # add_reference :user
+        # add_reference :order, :bigint
+        # add_reference :taggable, { :polymorphic => true }
+        # ```
+        def add_reference(name, type : Symbol = :integer, options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
+          column = Inflector.foreign_key(name)
+          is_null = options.has_key?(:null) ? options[:null] : true
+          field_internal_type = options.has_key?(:sql_type) ? nil : type
+
+          @new_columns[column.to_s] = build_column_options(field_internal_type, options.merge({ :null => is_null }))
+          if options[:polymorphic]?
+            add_column("#{name}_type", :string, { :null => is_null })
+          else
+            add_foreign_key(
+              (options[:to_table]? || Inflector.pluralize(name)).as(String | Symbol),
+              options[:column]?.as(String | Symbol?),
+              options[:primary_key]?.as(String | Symbol?),
+              options[:key_name]?.as(String?),
+              on_update: options[:on_update]?.as(Symbol?) || DEFAULT_ON_EVENT_ACTION,
+              on_delete: options[:on_delete]?.as(Symbol?) || DEFAULT_ON_EVENT_ACTION,
+            )
+          end
+          self
+        end
+
+        # Drops the reference.
+        #
+        # *options* can include `:polymorphic`, `:to_table` and `:column` options. For more details see
+        # `#add_reference`.
+        def drop_reference(name, options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
+          column = Inflector.foreign_key(name)
+
+          drop_column(column)
+          if options[:polymorphic]?
+            drop_column("#{name}_type")
+          else
+            drop_foreign_key(
+              (options[:to_table]? || Inflector.pluralize(name)).as(String | Symbol),
+              options[:column]?.as(String | Symbol?)
+            )
+          end
+          self
+        end
+
+        # Add `created_at` and `updated_at` timestamp columns.
+        #
+        # Argument *null* sets `:null` option for both columns.
+        def add_timestamps(null : Bool = false)
+          add_column(:created_at, :timestamp, { :null => null })
+          add_column(:updated_at, :timestamp, { :null => null })
         end
 
         # Adds new index.
@@ -124,6 +183,11 @@ module Jennifer
         # For more details see `Migration::Base#drop_index`.
         def drop_index(fields : Array(Symbol) = [] of Symbol, name : String? = nil)
           @commands << DropIndex.new(@adapter, @name, fields, name)
+          self
+        end
+
+        def drop_index(field : Symbol? = nil, name : String? = nil)
+          @commands << DropIndex.new(@adapter, @name, field ? [field] : %i(), name)
           self
         end
 

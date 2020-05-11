@@ -10,7 +10,7 @@ module Jennifer
         end
 
         def process
-          schema_processor.drop_foreign_key(from_table, name)
+          schema_processor.drop_foreign_key(from_table, to_table, name)
         end
 
         def explain

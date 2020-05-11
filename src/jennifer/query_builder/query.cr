@@ -53,7 +53,7 @@ module Jennifer
       @joins : Array(Join)?
       @unions : Array(UnionType)?
       @groups : Array(Criteria)?
-      @order : Array(OrderItem)?
+      @order : Array(OrderExpression)?
       @select_fields : Array(Criteria)?
       @ctes : Array(CommonTableExpression)?
       @do_nothing = false
@@ -123,7 +123,7 @@ module Jennifer
 
       # :nodoc:
       def _order!
-        @order ||= [] of OrderItem
+        @order ||= [] of OrderExpression
       end
 
       # :nodoc:

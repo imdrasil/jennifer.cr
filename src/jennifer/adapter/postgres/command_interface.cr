@@ -23,8 +23,8 @@ module Jennifer
         execute(command)
       end
 
-      def database_exists?
-        options = ["-U", config.user, "-l"] of Command::Option
+      def database_exists? : Bool
+        options = ["-U", config.user, "-h", config.host, "-l"] of Command::Option
         command = Command.new(
           executable: "psql",
           options: options,

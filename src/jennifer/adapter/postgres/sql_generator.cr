@@ -83,7 +83,7 @@ module Jennifer
         "excluded.#{field}"
       end
 
-      def self.order_expression(expression : QueryBuilder::OrderItem)
+      def self.order_expression(expression : QueryBuilder::OrderExpression)
         if expression.null_position.none?
           super
         else

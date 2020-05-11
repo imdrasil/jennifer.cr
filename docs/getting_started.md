@@ -91,9 +91,6 @@ Now create `./config/config.cr` which is responsible for loading all dependency'
 
 ```crystal
 require "./initializers/**"
-
-# This is optional; it depends how you would like to load your models - centralized or by demand.
-require "../src/models/*"
 ```
 
 ### Translations
@@ -112,7 +109,6 @@ To be able to use CLI install [sam](https://github.com/imdrasil/sam.cr) task man
 
 ```crystal
 require "./your_configuration_folder/*" # here load jennifer and all required configurations
-require "./db/migrations/*"
 require "sam"
 load_dependencies "jennifer"
 
@@ -166,6 +162,27 @@ This generates 2 files:
     end
   end
   ```
+
+Now you could add next lines at the bottom of your `./config/config.cr`
+
+```crystal
+require "../src/models/*"
+```
+
+This is optional; it depends how you would like to load your models - centralized or on demand.
+
+Also you need to extend `sam.cr` file:
+
+```crystal
+require "./your_configuration_folder/*" # here load jennifer and all required configurations
+require "sam"
+require "./db/migrations/*"
+load_dependencies "jennifer"
+
+# ...
+
+Sam.help
+```
 
 To be able to use our new model we need to populate schema changes to the database. For this invoke next commands:
 

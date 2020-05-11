@@ -138,21 +138,21 @@ module Jennifer
       # Returns where table with given *table* name exists.
       #
       # Delegate to `Adapter::Base#table_exists?`.
-      def table_exists?(table : String | Symbol)
+      def table_exists?(table : String | Symbol) : Bool
         adapter.table_exists?(table)
       end
 
       # Returns whether index for the *table` with *name* or *fields* exists.
       #
       # Delegate to `Adapter::Base#index_exists?`.
-      def index_exists?(*args, **opts)
+      def index_exists?(*args, **opts) : Bool
         adapter.index_exists?(*args, **opts)
       end
 
       # Returns whether column of *table* with *name* exists.
       #
       # Delegate to `Adapter::Base#column_exists?`.
-      def column_exists?(table, name)
+      def column_exists?(table, name) : Bool
         adapter.column_exists?(table, name)
       end
 
@@ -173,8 +173,8 @@ module Jennifer
       # Checks whether enum with given *name* exists.
       #
       # NOTE: PostreSQL only.
-      def enum_exists?(name : String | Symbol)
-        schema_processor.enum_exists?(name.to_s)
+      def enum_exists?(name : String | Symbol) : Bool
+        schema_processor.enum_exists?(name)
       end
 
       # Includes all transformations required to implement migration.
@@ -318,7 +318,7 @@ module Jennifer
       # # The source query can't have any arguments therefore all literals should be escaped manually and passed using
       # `QueryBuilder::Expression#sql`.
       #
-      # NOTE: not all adapters support this method.
+      # NOTE: only Postgres supports this method.
       def create_materialized_view(name : String | Symbol, source)
         process_builder(schema_processor.build_create_materialized_view(name, source))
       end
@@ -548,7 +548,7 @@ module Jennifer
         )
       end
 
-      # Executes given query.
+      # Executes given string SQL.
       #
       # ```
       # exec <<-SQL

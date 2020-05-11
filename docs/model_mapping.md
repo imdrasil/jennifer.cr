@@ -265,19 +265,20 @@ end
 
 ## Table name
 
-Automatically model is associated with table with underscored pluralized name of it's class, but custom one can be specified defining `::table_name`. This means no modules will affect name generating.
+By default model determines related table name by underscoring and pluralizing own class name. In the case when model is define under some namespace, it's underscored name is considered as table name prefix.
 
 ```crystal
-Admin::User.table_name # "users"
+User.table_name # "users"
+API::Admin::User.table_name # "api_admin_users"
 ```
 
-To provide special table prefix per module basis use super class with defined `::table_prefix` method:
+To override table name prefix define own `.table_prefix`
 
 ```crystal
 module Admin
   class Base < Jennifer::Model::Base
     def self.table_prefix
-      "admin_"
+      "private_"
     end
   end
 
@@ -286,8 +287,30 @@ module Admin
   end
 end
 
-Admin::User.table_name # "admin_users"
+Admin::User.table_name # "private_users"
 ```
+
+> As you see `.table_prefix` should return `"_"` at the end to keep naming across application consistent.
+
+> Also to prevent adding table prefix at all - return `nil`.
+
+To override table name just call `.table_name`:
+
+```crystal
+class User < Jennifer::Model::Base
+  table_name :posts
+  # ...
+end
+
+class Admin::User < Jennifer::Model::Base
+  table_name "users"
+end
+
+User.table_name # "posts"
+Admin::User.table_name # "users"
+```
+
+> `.table_name` accepts table name that already includes prefix.
 
 ## Virtual attributes
 

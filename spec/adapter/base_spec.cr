@@ -280,6 +280,17 @@ describe Jennifer::Adapter::Base do
         adapter.connection_string(:db).should eq(db_connection_string)
       end
 
+      it "escapes user, password and query" do
+        config.password = "\/ @&?"
+        config.user = "weird@name"
+        config.host = "host"
+        config.db = "database"
+
+        db_connection_string = "#{config.adapter}://weird%40name:%2F+%40%26%3F@host/database?" \
+                               "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
+        adapter.connection_string(:db).should eq(db_connection_string)
+      end
+
       context "with specified port" do
         it do
           config.password = "password"

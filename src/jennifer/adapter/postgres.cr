@@ -187,7 +187,7 @@ module Jennifer
       end
 
       def enum_exists?(name)
-        Query["pg_type", self].where { _typname == name }.exists?
+        Query["pg_type", self].where { _typname == name.to_s }.exists?
       end
 
       def enum_values(name)

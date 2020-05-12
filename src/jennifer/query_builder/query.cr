@@ -306,6 +306,21 @@ module Jennifer
       # Yields the expression builder and block is also executed with expression builder context.
       #
       # ```
+      # User.where(email: "example@test.com")
+      # ```
+      def where(**opts)
+        data = self
+        opts.each do |k, v|
+          data = data.where { c(k.to_s) == v }
+        end
+        data
+      end
+
+      # Mutates query applying all modification returned from the block.
+      #
+      # Yields the expression builder and block is also executed with expression builder context.
+      #
+      # ```
       # User.where { _email == "example@test.com" }
       # ```
       def where(&block)

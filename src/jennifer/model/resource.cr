@@ -224,6 +224,19 @@ module Jennifer
       # Is a shortcut for `.all.where` call.
       #
       # ```
+      # User.where(name: "John")
+      # ```
+      def self.where(**opts)
+        data = all
+        opts.each do |k, v|
+          data = data.where { c(k.to_s) == v }
+        end
+        data
+      end
+
+      # Is a shortcut for `.all.where` call.
+      #
+      # ```
       # User.where { _name == "John" }
       # ```
       def self.where(&block)

@@ -254,7 +254,7 @@ Each test file is required to be invoked separately as it may have own configura
 
 To run docker-related tests (by the way, all of them run only with mysql) firstly you should run docker container and specify environment variable `DOCKER=1`. For more details take a look at `spec/integration/sam/*` application files and `examples/run_docker_mysql.sh` docker boot script.
 
-## Documentation
+### Documentation generation
 
 Self documentation is not fully support yet but docs can be compiled using this shell script:
 
@@ -279,7 +279,7 @@ NB. It also depends on then chosen adapter (postgres by default).
 4. Push to the branch (git push origin my-new-feature)
 5. Create a new Pull Request
 
-Please ask me before starting work on smth.
+Please ask me before starting work on smth. Also often there is a separate branch for the future minor release that includes all breaking changes.
 
 ## Contributors
 

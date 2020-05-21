@@ -204,7 +204,7 @@ module Jennifer
           {% if !models.empty? %}
             [
               {% for model in models %}
-                {{model.id}},
+                ::{{model.name}},
               {% end %}
             ]
           {% else %}

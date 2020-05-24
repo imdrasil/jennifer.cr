@@ -59,13 +59,13 @@ describe Jennifer::QueryBuilder::Join do
   end
 
   describe "#sql_args" do
-    it "returns sql args of @on" do
+    it "returns SQL args of @on" do
       c = Factory.build_criteria(field: "f2")
       Factory.build_join(on: c).sql_args.should eq(c.sql_args)
     end
 
     context "source is a query" do
-      it "includes source query sql arguments" do
+      it "includes source query SQL arguments" do
         args = Factory.build_join(table: Query["tests2"].where { _id == "asd" }).sql_args
         args.size.should eq(2)
         args[0].should eq("asd")

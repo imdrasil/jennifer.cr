@@ -82,7 +82,7 @@ module Jennifer
         end
       end
 
-      # Translates given sql node to SQL using *generator*.
+      # Translates given SQL node to SQL using *generator*.
       #
       # ```
       # def as_sql(generator)
@@ -118,7 +118,7 @@ module Jennifer
       #
       # ```
       # Function.define( "lower", arity: 1, comment: <<-TEXT
-      #     Creates `LOWER` sql function instance with the given
+      #     Creates `LOWER` SQL function instance with the given
       #
       #     next line
       #

@@ -87,7 +87,7 @@ describe Jennifer::QueryBuilder::Executables do
         Query["addresses"].pluck(:details)[0].should be_a(JSON::Any)
       end
 
-      it "accepts plain sql" do
+      it "accepts plain SQL" do
         Factory.create_contact(name: "a", age: 13)
         res = Query["contacts"].select("COUNT(id) + 1 as test").pluck(:test)
         res[0].should eq(2)

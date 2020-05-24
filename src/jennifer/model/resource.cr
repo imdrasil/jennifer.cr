@@ -111,7 +111,7 @@ module Jennifer
 
       # :nodoc:
       def self.table_prefix
-        Inflector.underscore(to_s).split('/')[0...-1].join("_") + "_" if to_s =~ /:/
+        Inflector.underscore(to_s).split('/')[0...-1].join("_") + "_" if to_s.includes?(':')
       end
 
       @@expression_builder : QueryBuilder::ExpressionBuilder?

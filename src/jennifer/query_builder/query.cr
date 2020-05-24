@@ -163,7 +163,7 @@ module Jennifer
         @expression = ExpressionBuilder.new(@table)
       end
 
-      # Compare current object with given comparing generated sql query and parameters.
+      # Compare current object with given comparing generated SQL query and parameters.
       #
       # Is used for testing.
       def eql?(other : Query)

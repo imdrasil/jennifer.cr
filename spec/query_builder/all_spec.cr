@@ -5,7 +5,7 @@ describe Jennifer::QueryBuilder::All do
   expression = Factory.build_expression
 
   describe "#as_sql" do
-    it "wrap sql with ALL operator" do
+    it "wrap SQL with ALL operator" do
       expression.all(query).as_sql.should match(/ALL \(SELECT .*\)/m)
     end
 

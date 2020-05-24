@@ -1,6 +1,6 @@
 module Jennifer
   module QueryBuilder
-    # Container for the `ANY` sql expression.
+    # Container for the `ANY` SQL expression.
     class Any < SQLNode
       getter query : Query
 

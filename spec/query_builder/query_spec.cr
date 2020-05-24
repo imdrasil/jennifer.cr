@@ -4,7 +4,7 @@ describe Jennifer::QueryBuilder::Query do
   described_class = Jennifer::QueryBuilder::Query
 
   describe "#as_sql" do
-    it "returns sql presentation of condition" do
+    it "returns SQL presentation of condition" do
       q = Factory.build_query
       c = Factory.build_criteria
       q.where { c }.as_sql.should eq("SELECT tests.* FROM tests WHERE tests.f1 ")
@@ -104,7 +104,7 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#select" do
     context "with string argument" do
-      it "uses argument as raw sql" do
+      it "uses argument as raw SQL" do
         described_class["table"].select("raw sql")._raw_select.should eq("raw sql")
       end
     end
@@ -135,7 +135,7 @@ describe Jennifer::QueryBuilder::Query do
         fields[0].table.should eq("contacts")
       end
 
-      context "as raw sql" do
+      context "as raw SQL" do
         it "removes brackets" do
           field = described_class["table"].select(Contact.context.sql("some sql"))._select_fields[0]
           field.identifier.should eq("some sql")
@@ -144,7 +144,7 @@ describe Jennifer::QueryBuilder::Query do
     end
 
     context "with array of criterion" do
-      it "removes brackets for all raw sql" do
+      it "removes brackets for all raw SQL" do
         fields = described_class["table"].select([Contact._id, Contact.context.sql("some sql")])._select_fields
         fields.size.should eq(2)
         fields[1].identifier.should eq("some sql")
@@ -159,7 +159,7 @@ describe Jennifer::QueryBuilder::Query do
         fields[0].table.should eq("table")
       end
 
-      it "removes brackets from raw sql" do
+      it "removes brackets from raw SQL" do
         field = described_class["table"].select { [sql("f1")] }._select_fields[0]
         field.identifier.should eq("f1")
       end
@@ -172,7 +172,7 @@ describe Jennifer::QueryBuilder::Query do
       q1.tree.to_s.should match(/tests\.f1 AND tests\.f2/)
     end
 
-    it "generates proper request for given raw sql as condition part with arguments" do
+    it "generates proper request for given raw SQL as condition part with arguments" do
       q1 = Query["contacts"].where { (_name == "John") & sql("age > %s", [12]) }
       q1.tree.to_s.should eq("contacts.name = %s AND (age > %s)")
     end
@@ -233,7 +233,7 @@ describe Jennifer::QueryBuilder::Query do
         fields[0].table.should eq("contacts")
       end
 
-      context "as raw sql" do
+      context "as raw SQL" do
         it "removes brackets" do
           field = described_class["table"].group(Contact.context.sql("some sql"))._groups![0]
           field.identifier.should eq("some sql")
@@ -249,7 +249,7 @@ describe Jennifer::QueryBuilder::Query do
         fields[0].table.should eq("table")
       end
 
-      it "removes brackets from raw sql" do
+      it "removes brackets from raw SQL" do
         field = described_class["table"].group { [sql("f1")] }._groups![0]
         field.identifier.should eq("f1")
       end

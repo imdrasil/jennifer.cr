@@ -58,7 +58,7 @@ module Jennifer
         end
       end
 
-      # Generates common select sql request
+      # Generates common select SQL request
       def self.select(query, exact_fields = [] of String)
         String.build do |s|
           with_clause(s, query)
@@ -130,7 +130,7 @@ module Jennifer
         end
       end
 
-      # ========== sql clauses ================
+      # ========== SQL clauses ================
 
       def self.body_section(io : String::Builder, query)
         join_clause(io, query)

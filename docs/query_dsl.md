@@ -168,7 +168,7 @@ end
 
 #### Functions
 
-There is special mechanism to define sql functions like `CURRENT_DATE`, `ABS` or `CONCAT`. There is already a predefined list of such functions so you can use them in the expression builder context:
+There is special mechanism to define SQL functions like `CURRENT_DATE`, `ABS` or `CONCAT`. There is already a predefined list of such functions so you can use them in the expression builder context:
 
 ```crystal
 Contact.all.where { ceil(_balance) > 10 }
@@ -198,7 +198,7 @@ Jennifer::QueryBuilder::Function.define("ceil", arity: 1) do
 end
 ```
 
-It is necessary to define `#as_sql` method, which returns function sql. `#operands` is an array of given function arguments. `#operand_sql` is a helper method to automatically parse how a given argument should be inserted to the sql.
+It is necessary to define `#as_sql` method, which returns function SQL. `#operands` is an array of given function arguments. `#operand_sql` is a helper method to automatically parse how a given argument should be inserted to the SQL.
 
 #### Smart arguments parsing
 
@@ -209,11 +209,11 @@ Next methods provide flexible api for passing arguments:
 * `#group`
 * `#select`
 
-They allows pass argument (tuple, named tuple or hash - depending on context) of `String`, `Symbol` or `Cryteria`. `String` arguments will be parsed as plain sql (`RawSql`) and `Symbol` - as `Criteria`.
+They allows pass argument (tuple, named tuple or hash - depending on context) of `String`, `Symbol` or `Cryteria`. `String` arguments will be parsed as plain SQL (`RawSql`) and `Symbol` - as `Criteria`.
 
 ## SELECT
 
-Raw sql for `SELECT` clause could be passed into `#select` method. This have highest priority during forming this query part.
+Raw SQL for `SELECT` clause could be passed into `#select` method. This have highest priority during forming this query part.
 
 ```crystal
 Contact

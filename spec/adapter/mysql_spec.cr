@@ -19,7 +19,7 @@ mysql_only do
     end
 
     describe "#translate_type" do
-      it "returns sql type associated with given synonim" do
+      it "returns SQL type associated with given synonim" do
         adapter.translate_type(:string).should eq("varchar")
       end
     end

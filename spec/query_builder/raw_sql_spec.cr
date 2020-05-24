@@ -4,7 +4,7 @@ describe Jennifer::QueryBuilder::RawSql do
   described_class = Jennifer::QueryBuilder::RawSql
 
   describe "#initialize" do
-    context "with % in raw sql" do
+    context "with % in raw SQL" do
       it "raises AmbiguousSQL exception" do
         expect_raises(Jennifer::AmbiguousSQL) do
           described_class.new("field LIKE '%asd'")
@@ -21,7 +21,7 @@ describe Jennifer::QueryBuilder::RawSql do
     end
 
     context "without brackets" do
-      it "puts raw sql content if object is marked to be without brackets" do
+      it "puts raw SQL content if object is marked to be without brackets" do
         described_class.new("some sql", false).identifier.should eq("some sql")
       end
     end

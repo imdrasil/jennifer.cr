@@ -82,7 +82,18 @@ All those methods accepts additional options:
 - `:auto_increment` - marks field to use auto increment (properly works only with `Int32` fields, another crystal types have cut functionality for it);
 - `:array` - mark field to be array type (postgres only)
 
-Also there is `#field` method which allows to directly define sql type.
+Also there is `#field` method which allows to directly define SQL type.
+
+To define reference to other table you can use `#reference`:
+
+```crystal
+create_table :pictures do |t|
+  t.reference :user
+  t.reference :attachable, { :polymorphic => true } # for polymorphic relation
+end
+```
+
+For more details about this and other methods see [`Jennifer::Migration::TableBuilder::CreateTable`](https://imdrasil.github.io/jennifer.cr/latest/Jennifer/Migration/TableBuilder/CreateTable.html)
 
 To drop table just write:
 
@@ -112,6 +123,8 @@ To alter existing table use next methods:
  - `#add_foreign_key` - adds foreign key constraint;
  - `drop_foreign_key` - drops foreign key constraint;
  - `#rename_table` - renames table.
+
+ For more details about this and other methods see [`Jennifer::Migration::TableBuilder::CreateTable`](https://imdrasil.github.io/jennifer.cr/latest/Jennifer/Migration/TableBuilder/ChangeTable.html)
 
 Also next support methods are available:
 

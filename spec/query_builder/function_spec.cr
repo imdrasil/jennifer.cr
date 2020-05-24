@@ -36,7 +36,7 @@ describe Jennifer::QueryBuilder::Function do
   end
 
   describe "#filterable?" do
-    context "with filterable sql node" do
+    context "with filterable SQL node" do
       it { DummyFunction.new(Factory.build_expression.sql("asd", 2)).filterable?.should be_true }
       it { DummyFunction.new(Factory.build_criteria).filterable?.should be_false }
     end

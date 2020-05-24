@@ -55,11 +55,6 @@ module Jennifer
             def self.primary_field_name
               {{key.stringify}}
             end
-
-            # :nodoc:
-            def self.primary_field_type
-              {{value[:parsed_type].id}}
-            end
           {% end %}
         {% end %}
       end

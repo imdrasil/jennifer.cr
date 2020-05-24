@@ -81,6 +81,30 @@ describe Jennifer::Model::Mapping do
     end
   end
 
+  describe "#attribute_metadata" do
+    describe "with symbol argument" do
+      it do
+        Factory.build_contact.attribute_metadata(:id)
+          .should eq({type: Int32, primary: true, parsed_type: "Int32?", column: "id", auto: true})
+        Factory.build_contact.attribute_metadata(:name)
+          .should eq({type: String, parsed_type: "String", column: "name"})
+        Factory.build_address.attribute_metadata(:street)
+          .should eq({type: String, parsed_type: "String", column: "street"})
+      end
+    end
+
+    describe "with string argument" do
+      it do
+        Factory.build_contact.attribute_metadata("id")
+          .should eq({type: Int32, primary: true, parsed_type: "Int32?", column: "id", auto: true})
+        Factory.build_contact.attribute_metadata("name")
+          .should eq({type: String, parsed_type: "String", column: "name"})
+        Factory.build_address.attribute_metadata("street")
+          .should eq({type: String, parsed_type: "String", column: "street"})
+      end
+    end
+  end
+
   describe "%mapping" do
     describe "converter" do
       postgres_only do
@@ -297,13 +321,13 @@ describe Jennifer::Model::Mapping do
       describe "mapping types" do
         describe "Primary32" do
           it "makes field nillable" do
-            Contact.primary_field_type.should eq(Int32?)
+            Contact.columns_tuple[:id][:parsed_type].should eq("Int32?")
           end
         end
 
         describe "Primary64" do
           it "makes field nillable" do
-            ContactWithInValidation.primary_field_type.should eq(Int64?)
+            ContactWithInValidation.columns_tuple[:id][:parsed_type].should eq("Int64?")
           end
         end
 

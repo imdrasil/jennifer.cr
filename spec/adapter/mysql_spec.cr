@@ -2,7 +2,7 @@ require "../spec_helper"
 
 mysql_only do
   describe Jennifer::Mysql::Adapter do
-    adapter = Jennifer::Adapter.adapter.as(Jennifer::Mysql::Adapter)
+    adapter = Jennifer::Adapter.default_adapter.as(Jennifer::Mysql::Adapter)
 
     describe "#index_exists?" do
       it "returns true if table has index with given name" do
@@ -19,7 +19,7 @@ mysql_only do
     end
 
     describe "#translate_type" do
-      it "returns sql type associated with given synonim" do
+      it "returns SQL type associated with given synonim" do
         adapter.translate_type(:string).should eq("varchar")
       end
     end

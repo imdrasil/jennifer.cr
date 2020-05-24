@@ -70,8 +70,8 @@ module Jennifer
 
       def table_column_count(table)
         if table_exists?(table)
-          Query["information_schema.COLUMNS"].where do
-            (_table_name == table) & (_table_schema == Config.db)
+          Query["information_schema.COLUMNS", self].where do
+            (_table_name == table) & (_table_schema == config.db)
           end.count
         else
           -1
@@ -79,51 +79,53 @@ module Jennifer
       end
 
       def tables_column_count(tables)
-        Query["information_schema.COLUMNS"]
-          .where { _table_name.in(tables) & (_table_schema == Config.db) }
+        Query["information_schema.COLUMNS", self]
+          .where { _table_name.in(tables) & (_table_schema == config.db) }
           .group(:table_name)
           .select { [_table_name.alias("table_name"), count.alias("count")] }
       end
 
       def table_exists?(table)
-        Query["information_schema.TABLES"]
-          .where { (_table_schema == Config.db) & (_table_name == table) }
+        Query["information_schema.TABLES", self]
+          .where { (_table_schema == config.db) & (_table_name == table) }
           .exists?
       end
 
       def view_exists?(name) : Bool
-        Query["information_schema.TABLES"]
-          .where { (_table_schema == Config.db) & (_table_type == "VIEW") & (_table_name == name) }
+        Query["information_schema.TABLES", self]
+          .where { (_table_schema == config.db) & (_table_type == "VIEW") & (_table_name == name) }
           .exists?
       end
 
       def index_exists?(table, name : String)
-        Query["information_schema.statistics"].where do
+        Query["information_schema.statistics", self].where do
           (_table_name == table) &
             (_index_name == name) &
-            (_table_schema == Config.db)
+            (_table_schema == config.db)
         end.exists?
       end
 
       def column_exists?(table, name)
-        Query["information_schema.COLUMNS"].where do
+        Query["information_schema.COLUMNS", self].where do
           (_table_name == table) &
             (_column_name == name) &
-            (_table_schema == Config.db)
+            (_table_schema == config.db)
         end.exists?
       end
 
       def foreign_key_exists?(from_table, to_table = nil, column = nil, name : String? = nil)
         name = self.class.foreign_key_name(from_table, to_table, column, name)
-        Query["information_schema.KEY_COLUMN_USAGE"]
-          .where { and(_constraint_name == name, _table_schema == Config.db) }
+        Query["information_schema.KEY_COLUMN_USAGE", self]
+          .where { and(_constraint_name == name, _table_schema == config.db) }
           .exists?
       end
 
       def with_table_lock(table : String, type : String = "default", &block)
         transaction do |t|
-          Config.logger.debug("MySQL doesn't support manual locking table from prepared statement." \
-                              " Instead of this only transaction was started.")
+          config.logger.debug do
+            "MySQL doesn't support manual locking table from prepared statement. " \
+            "Instead of this only transaction was started."
+          end
           yield t
         end
       end
@@ -146,27 +148,27 @@ module Jennifer
         format_explain_query(plan)
       end
 
-      def self.command_interface
-        @@command_interface ||= CommandInterface.new(Config.instance)
+      def command_interface
+        @command_interface ||= CommandInterface.new(config)
       end
 
       def self.default_max_bind_vars_count
         32766
       end
 
-      def self.create_database
+      def create_database
         db_connection do |db|
-          db.exec "CREATE DATABASE #{Config.db}"
+          db.exec "CREATE DATABASE #{config.db}"
         end
       end
 
-      def self.drop_database
+      def drop_database
         db_connection do |db|
-          db.exec "DROP DATABASE #{Config.db}"
+          db.exec "DROP DATABASE #{config.db}"
         end
       end
 
-      def self.database_exists? : Bool
+      def database_exists? : Bool
         db_connection do |db|
           db.scalar <<-SQL,
             SELECT EXISTS(
@@ -175,8 +177,12 @@ module Jennifer
               WHERE SCHEMA_NAME = ?
             )
           SQL
-          Config.db
+          config.db
         end == 1
+      end
+
+      def self.protocol : String
+        "mysql"
       end
 
       def read_column(rs, column : MySql::ColumnSpec)

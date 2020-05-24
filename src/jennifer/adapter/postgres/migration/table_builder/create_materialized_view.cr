@@ -15,7 +15,12 @@ module Jennifer
           end
 
           def explain
-            source = @query.is_a?(QueryBuilder::Query) ? @query.as(QueryBuilder::Query).as_sql : @query
+            source =
+              if @query.is_a?(QueryBuilder::Query)
+                @query.as(QueryBuilder::Query).as_sql(adapter.sql_generator)
+              else
+                @query
+              end
             "create_materialized_view :#{@name}, \"#{source}\""
           end
 

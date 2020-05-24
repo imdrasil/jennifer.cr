@@ -76,8 +76,12 @@ module Jennifer
         SQLGenerator
       end
 
-      def self.command_interface
-        @@command_interface ||= CommandInterface.new(Config.instance)
+      def command_interface
+        @command_interface ||= CommandInterface.new(config)
+      end
+
+      def self.protocol : String
+        "postgres"
       end
 
       def self.default_max_bind_vars_count
@@ -104,15 +108,15 @@ module Jennifer
 
       def table_column_count(table)
         if table_exists?(table)
-          Query["information_schema.columns"].where { _table_name == table }.count
+          Query["information_schema.columns", self].where { _table_name == table }.count
         elsif material_view_exists?(table)
           # materialized view
-          Query["pg_attribute"]
+          Query["pg_attribute", self]
             .join("pg_class") { _pg_attribute__attrelid == _oid }
             .join("pg_namespace") { _oid == _pg_class__relnamespace }
             .where do
               (_attnum > 0) &
-                (_pg_namespace__nspname == Config.schema) &
+                (_pg_namespace__nspname == config.schema) &
                 (_pg_class__relname == table) &
                 _attisdropped.not
             end.count
@@ -122,19 +126,19 @@ module Jennifer
       end
 
       def tables_column_count(tables : Array(String))
-        view_request = Query["pg_attribute"]
+        view_request = Query["pg_attribute", self]
           .join("pg_class") { _pg_attribute__attrelid == _oid }
           .join("pg_namespace") { _oid == _pg_class__relnamespace }
           .where do
             (_attnum > 0) &
-              (_pg_namespace__nspname == Config.schema) &
+              (_pg_namespace__nspname == config.schema) &
               (_pg_class__relname.in(tables)) &
               _attisdropped.not
           end
           .group("table_name")
           .select { [_pg_class__relname.alias("table_name"), count.alias("count")] }
 
-        Query["information_schema.columns"]
+        Query["information_schema.columns", self]
           .where { _table_name.in(tables) }
           .group(:table_name)
           .select { [_table_name, count.alias("count")] }
@@ -143,47 +147,47 @@ module Jennifer
       end
 
       def material_view_exists?(name)
-        Query["pg_class"].join("pg_namespace") { _oid == _pg_class__relnamespace }.where do
+        Query["pg_class", self].join("pg_namespace") { _oid == _pg_class__relnamespace }.where do
           (_relkind == "m") &
-            (_pg_namespace__nspname == Config.schema) &
+            (_pg_namespace__nspname == config.schema) &
             (_relname == name)
         end.exists?
       end
 
       def table_exists?(table)
-        Query["information_schema.tables"]
+        Query["information_schema.tables", self]
           .where { _table_name == table }
           .exists?
       end
 
       def view_exists?(name) : Bool
-        Query["information_schema.views"]
-          .where { (_table_schema == Config.schema) & (_table_name == name) }
+        Query["information_schema.views", self]
+          .where { (_table_schema == config.schema) & (_table_name == name) }
           .exists?
       end
 
       def column_exists?(table, name)
-        Query["information_schema.columns"]
+        Query["information_schema.columns", self]
           .where { (_table_name == table) & (_column_name == name) }
           .exists?
       end
 
       def index_exists?(_table, name : String)
-        Query["pg_class"]
+        Query["pg_class", self]
           .join("pg_namespace") { _oid == _pg_class__relnamespace }
-          .where { (_pg_class__relname == name) & (_pg_namespace__nspname == Config.schema) }
+          .where { (_pg_class__relname == name) & (_pg_namespace__nspname == config.schema) }
           .exists?
       end
 
       def foreign_key_exists?(from_table, to_table = nil, column = nil, name : String? = nil)
         name = self.class.foreign_key_name(from_table, to_table, column, name)
-        Query["information_schema.table_constraints"]
-          .where { and(_constraint_name == name, _table_schema == Config.schema) }
+        Query["information_schema.table_constraints", self]
+          .where { and(_constraint_name == name, _table_schema == config.schema) }
           .exists?
       end
 
-      def enum_exists?(name : String | Symbol)
-        Query["pg_type"].where { _typname == name.to_s }.exists?
+      def enum_exists?(name)
+        Query["pg_type", self].where { _typname == name.to_s }.exists?
       end
 
       def enum_values(name)

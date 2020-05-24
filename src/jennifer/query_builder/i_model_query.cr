@@ -6,6 +6,8 @@ module Jennifer
     abstract class IModelQuery < Query
       include EagerLoading
 
+      private delegate :write_adapter, :read_adapter, to: model_class
+
       # NOTE: improperly detects source of #abstract_class if run sam with only Version model
       def model_class
         raise AbstractMethod.new(:model_class, {{@type}})
@@ -109,11 +111,16 @@ module Jennifer
 
       # ========= private ==============
 
+      private def adapter
+        model_class.adapter
+      end
+
       private def add_aliases
         table_names = [table]
         table_names.concat(_joins!.map { |e| e.table unless e.has_alias? }.compact) if _joins?
         duplicates = extract_duplicates(table_names)
         return if duplicates.empty?
+
         i = 0
         @table_aliases.clear
         if _joins?

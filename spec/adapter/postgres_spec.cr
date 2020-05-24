@@ -2,7 +2,7 @@ require "../spec_helper"
 
 postgres_only do
   describe Jennifer::Postgres::Adapter do
-    adapter = Jennifer::Adapter.adapter.as(Jennifer::Postgres::Adapter)
+    adapter = Jennifer::Adapter.default_adapter.as(Jennifer::Postgres::Adapter)
 
     describe "#parse_query" do
       it "replaces %s by dollar-and-numbers" do

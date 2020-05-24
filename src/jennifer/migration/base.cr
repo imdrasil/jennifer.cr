@@ -31,7 +31,7 @@ module Jennifer
     # `Crystal` code for generating data needed for the transformations.
     #
     # By default each migration invocation (both `up` and `down`) are wrapped into a transaction but not all
-    # RDMS support transactional schema changes (like MySQL). To specify additional mechanism to rollback
+    # RDBMS support transactional schema changes (like MySQL). To specify additional mechanism to rollback
     # after failed invocation you can chose 2 option: run reverse method (`down` for `up` and vise verse) or
     # invoke special callback.
     #
@@ -130,9 +130,10 @@ module Jennifer
 
       @@with_transaction = true
 
-      delegate adapter, to: Adapter
-      # :nodoc:
-      delegate schema_processor, to: adapter
+      # Database adapter connection instance.
+      def adapter
+        Adapter.default_adapter
+      end
 
       # Returns where table with given *table* name exists.
       #
@@ -425,7 +426,7 @@ module Jennifer
       # # => CREATE INDEX by_branch_desc_party ON accounts(branch_id DESC, party_id ASC, surname)
       # ```
       #
-      # NOTE: MySQL only supports index order from  onwards (earlier versions will raise an exception).
+      # NOTE: MySQL only supports index order from 8.0.1 onwards (earlier versions will raise an exception).
       def add_index(table_name : String | Symbol, fields : Array(Symbol), type : Symbol? = nil, name : String? = nil,
                     lengths : Hash(Symbol, Int32) = {} of Symbol => Int32,
                     orders : Hash(Symbol, Symbol) = {} of Symbol => Symbol)
@@ -571,6 +572,8 @@ module Jennifer
       # By default it is executed under a transaction.
       def after_down_failure
       end
+
+      private delegate schema_processor, to: adapter
 
       private def process_builder(builder)
         builder.process

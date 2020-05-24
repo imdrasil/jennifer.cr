@@ -38,8 +38,8 @@ module Jennifer
 
       abstract def operator
 
-      def to_s
-        as_sql
+      def to_s(io : IO)
+        io << as_sql
       end
 
       def alias_tables(aliases)

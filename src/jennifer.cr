@@ -1,4 +1,6 @@
 require "json"
+require "yaml"
+require "log"
 require "inflector"
 require "ifrit/converter"
 require "ifrit/core"
@@ -22,7 +24,7 @@ require "./jennifer/view/base"
 require "./jennifer/migration/*"
 
 module Jennifer
-  VERSION = "0.8.4"
+  VERSION = "0.9.0"
 
   {% if Jennifer.constant("AFTER_LOAD_SCRIPT") == nil %}
     # :nodoc:
@@ -41,4 +43,4 @@ end
 # NOTE: This is needed to compile query generic class, otherwise
 # `!query` at src/jennifer/adapter/base_sql_generator.cr:137:12 has no type
 # exception is raised
-Jennifer::Migration::Version.all
+Jennifer::QueryBuilder::ModelQuery(Jennifer::Migration::Version)

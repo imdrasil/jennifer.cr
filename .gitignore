@@ -12,8 +12,8 @@ sam.cr
 # Libraries don't need dependency lock
 # Dependencies will be locked in application that uses them
 /shard.lock
-/examples/structure.sql
-/examples/test.cr
-/examples/test.db
-/examples/database.yml
-/examples/models
+/scripts/structure.sql
+/scripts/test.cr
+/scripts/test.db
+/scripts/database.yml
+/scripts/models

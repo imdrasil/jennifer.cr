@@ -10,7 +10,7 @@ describe Jennifer::QueryBuilder::Ordering do
     end
 
     context "with hash with string keys" do
-      it "treats all keys as raw sql" do
+      it "treats all keys as raw SQL" do
         orders = Contact.all.order({"age" => :desc})._order!
         orders.should eq([Contact.context.sql("age").desc])
       end
@@ -36,7 +36,7 @@ describe Jennifer::QueryBuilder::Ordering do
         orders.should eq([Contact._id.desc])
       end
 
-      it "marks raw sql not to use brackets" do
+      it "marks raw SQL not to use brackets" do
         orders = Contact.all.order([Contact.context.sql("raw sql").desc, Contact._id.asc])._order!
         orders.should eq([Contact.context.sql("raw sql").desc, Contact._id.asc])
         orders[0].criteria.identifier.should eq("raw sql")
@@ -44,7 +44,7 @@ describe Jennifer::QueryBuilder::Ordering do
     end
 
     context "with block" do
-      it "marks raw sql not to use brackets" do
+      it "marks raw SQL not to use brackets" do
         orders = Contact.all.order { [sql("raw sql").desc, _id.asc] }._order!
         orders.should eq([Contact.context.sql("raw sql").desc, Contact._id.asc])
         orders[0].criteria.identifier.should eq("raw sql")
@@ -62,7 +62,7 @@ describe Jennifer::QueryBuilder::Ordering do
     end
 
     context "with hash with string keys" do
-      it "treats all keys as raw sql without brackets" do
+      it "treats all keys as raw SQL without brackets" do
         orders = Contact.all.order(id: :desc).reorder({"age" => :desc})._order!
         orders.should eq([Contact.context.sql("age").desc])
       end
@@ -82,7 +82,7 @@ describe Jennifer::QueryBuilder::Ordering do
         orders.should eq([Contact._id.desc])
       end
 
-      it "marks raw sql not to use brackets" do
+      it "marks raw SQL not to use brackets" do
         base_query = Contact.all.order(id: :desc)
         orders = base_query.reorder([Contact.context.sql("raw sql").desc, Contact._id.asc])._order!
         orders.should eq([Contact.context.sql("raw sql").desc, Contact._id.asc])
@@ -91,7 +91,7 @@ describe Jennifer::QueryBuilder::Ordering do
     end
 
     context "with block" do
-      it "marks raw sql not to use brackets" do
+      it "marks raw SQL not to use brackets" do
         base_query = Contact.all.order(id: :desc)
         orders = base_query.reorder { [sql("raw sql").desc, _id.asc] }._order!
         orders.should eq([Contact.context.sql("raw sql").desc, Contact._id.asc])

@@ -30,11 +30,6 @@ module Jennifer::Model
         COLUMNS_METADATA
       end
 
-      @[JSON::Field(ignore: true)]
-      @new_record = true
-      @[JSON::Field(ignore: true)]
-      @destroyed = false
-
       # Creates object from `DB::ResultSet`
       def initialize(%pull : DB::ResultSet)
         @new_record = false

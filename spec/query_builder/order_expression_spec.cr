@@ -97,13 +97,13 @@ describe Jennifer::QueryBuilder::OrderExpression do
   end
 
   describe "#sql_args" do
-    context "with no sql args" do
+    context "with no SQL args" do
       it do
         Factory.build_criteria.asc.sql_args.empty?.should be_true
       end
     end
 
-    context "with sql args" do
+    context "with SQL args" do
       it do
         Factory.build_expression.sql("raw sql %s", [1]).asc.sql_args.should eq(db_array(1))
       end
@@ -111,13 +111,13 @@ describe Jennifer::QueryBuilder::OrderExpression do
   end
 
   describe "#filterable?" do
-    context "with no sql args" do
+    context "with no sSQLql args" do
       it do
         Factory.build_criteria.filterable?.should be_false
       end
     end
 
-    context "with sql args" do
+    context "with SQL args" do
       it do
         Factory.build_expression.sql("raw sql %s", [1]).asc.filterable?.should be_true
       end

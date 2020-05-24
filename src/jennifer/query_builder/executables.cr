@@ -33,6 +33,7 @@ module Jennifer
       def last!
         result = last
         raise RecordNotFound.from_query(self, adapter) if result.nil?
+
         result
       end
 
@@ -61,6 +62,7 @@ module Jennifer
       def first!
         result = first
         raise RecordNotFound.from_query(self, adapter) if result.nil?
+
         result
       end
 
@@ -76,7 +78,7 @@ module Jennifer
       def pluck(fields : Array) : Array(Array(DBAny))
         return [] of Array(DBAny) if do_nothing?
 
-        adapter.pluck(self, fields.map(&.to_s))
+        read_adapter.pluck(self, fields.map(&.to_s))
       end
 
       def pluck(*fields : String | Symbol) : Array(Array(DBAny))
@@ -86,7 +88,7 @@ module Jennifer
       def pluck(field : String | Symbol) : Array(DBAny)
         return [] of DBAny if do_nothing?
 
-        adapter.pluck(self, field.to_s)
+        read_adapter.pluck(self, field.to_s)
       end
 
       # Delete all records which satisfy given conditions.
@@ -99,7 +101,7 @@ module Jennifer
       def delete
         return if do_nothing?
 
-        adapter.delete(self)
+        write_adapter.delete(self)
       end
 
       # Returns whether any record satisfying given conditions exists.
@@ -110,7 +112,7 @@ module Jennifer
       def exists? : Bool
         return false if do_nothing?
 
-        adapter.exists?(self)
+        read_adapter.exists?(self)
       end
 
       # Creates new record in a database with given *fields* and *values*.
@@ -126,7 +128,7 @@ module Jennifer
         unless values.is_a?(Array(Array(DBAny)))
           values = values.map { |row| Ifrit.typed_array_cast(row, DBAny) }
         end
-        adapter.bulk_insert(table, fields, values)
+        write_adapter.bulk_insert(table, fields, values)
       end
 
       # Creates new record in a database with given *options*.
@@ -144,9 +146,11 @@ module Jennifer
         insert(fields, [values])
       end
 
-      # Inserts given *values* and ignores ones that would cause a duplicate values of `UNIQUE` index on given *unique_fields*.
+      # Inserts given *values* and ignores ones that would cause a duplicate values of `UNIQUE` index on given
+      # *unique_fields*.
       #
-      # Some RDMS (like MySQL) doesn't require specifying exact constraint to be violated, therefore *unique_fields* argument by default
+      # Some RDBMS (like MySQL) doesn't require specifying exact constraint to be violated, therefore *unique_fields*
+      # argument by default
       # is `[] of String`.
       #
       # ```
@@ -157,12 +161,13 @@ module Jennifer
       def upsert(fields : Array(String), values : Array(Array(DBAny)), unique_fields : Array = [] of String)
         return if do_nothing? || values.empty?
 
-        adapter.upsert(table, fields, values, unique_fields, {} of String => String)
+        write_adapter.upsert(table, fields, values, unique_fields, {} of String => String)
       end
 
       # Inserts given *values* modifies existing row using hash returned by the block.
       #
-      # Some RDMS (like MySQL) doesn't require specifying exact constraint to be violated, therefore *unique_fields* argument by default
+      # Some RDBMS (like MySQL) doesn't require specifying exact constraint to be violated, therefore *unique_fields*
+      # argument by default
       # is `[] of String`.
       #
       # ```
@@ -176,7 +181,7 @@ module Jennifer
         return if do_nothing? || values.empty?
 
         definition = (with @expression yield)
-        adapter.upsert(table, fields, values, unique_fields, definition)
+        write_adapter.upsert(table, fields, values, unique_fields, definition)
       end
 
       # Updates specified fields by given value retrieved from the block.
@@ -190,7 +195,7 @@ module Jennifer
         definition = (with @expression yield)
         return DB::ExecResult.new(0i64, 0i64) if do_nothing?
 
-        adapter.modify(self, definition)
+        write_adapter.modify(self, definition)
       end
 
       # Updates records with given *options*.
@@ -201,7 +206,7 @@ module Jennifer
       def update(options : Hash)
         return DB::ExecResult.new(0i64, 0i64) if do_nothing?
 
-        adapter.update(self, options)
+        write_adapter.update(self, options)
       end
 
       # Updates records with given *options*.
@@ -268,7 +273,7 @@ module Jennifer
       def db_results : Array(Hash(String, DBAny))
         result = [] of Hash(String, DBAny)
         each_result_set do |rs|
-          result << adapter.result_to_hash(rs)
+          result << read_adapter.result_to_hash(rs)
         end
         result
       end
@@ -281,7 +286,7 @@ module Jennifer
       # ```
       def results : Array(Record)
         result = [] of Record
-        each_result_set { |rs| result << Record.new(rs) }
+        each_result_set { |rs| result << Record.new(read_adapter.result_to_hash(rs)) }
         result
       end
 
@@ -297,20 +302,16 @@ module Jennifer
       # To iterate over records they are loaded from the DB so this may effect memory usage.
       # Prefer #find_each.
       def each
-        to_a.each do |e|
-          yield e
-        end
+        to_a.each { |e| yield e }
       end
 
       # Yields each result set object to a block.
       def each_result_set(&block)
         return if do_nothing?
 
-        adapter.select(self) do |rs|
+        read_adapter.select(self) do |rs|
           begin
-            rs.each do
-              yield rs
-            end
+            rs.each { yield rs }
           rescue e : Exception
             rs.read_to_end
             raise e
@@ -332,7 +333,8 @@ module Jennifer
       #
       # NOTE: any given ordering will be ignored and query will be reordered based on the
       # *primary_key* and *direction*.
-      def find_in_batches(primary_key : String, batch_size : Int32 = 1000, start : Int32? = nil, direction : String | Symbol = "asc", &block)
+      def find_in_batches(primary_key : String, batch_size : Int32 = 1000, start : Int32? = nil,
+                          direction : String | Symbol = "asc", &block)
         find_in_batches(@expression.c(primary_key.not_nil!), batch_size, start, direction) { |records| yield records }
       end
 
@@ -340,25 +342,32 @@ module Jennifer
         find_in_batches(nil, batch_size, start) { |records| yield records }
       end
 
-      def find_in_batches(primary_key : Criteria, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
-        Config.logger.warn("#find_in_batches is invoked with already ordered query - it will be reordered") if ordered?
+      def find_in_batches(primary_key : Criteria, batch_size : Int32 = 1000, start = nil,
+                          direction : String | Symbol = "asc", &block)
+        if ordered?
+          Config.logger.warn { "#find_in_batches is invoked with already ordered query - it will be reordered" }
+        end
         request = clone.reorder(primary_key.order(direction)).limit(batch_size)
-
         records = start ? request.clone.where { primary_key >= start }.to_a : request.to_a
+
         while records.any?
           records_size = records.size
           primary_key_offset = records.last.attribute(primary_key.field)
           yield records
           break if records_size < batch_size
+
           records = request.clone.where { primary_key > primary_key_offset }.to_a
         end
       end
 
       def find_in_batches(primary_key : Nil, batch_size : Int32 = 1000, start : Int32 = 0, &block)
-        Config.logger.warn("#find_in_batches is invoked with already ordered query - it will be reordered") if ordered?
-        Config.logger.warn("#find_in_batches methods was invoked without passing primary_key" \
-                          " key field name which may results in incorrect records extraction; 'start' argument" \
-                          " was realized as page number.")
+        if ordered?
+          Config.logger.warn { "#find_in_batches is invoked with already ordered query - it will be reordered" }
+        end
+        Config.logger.warn do
+          "#find_in_batches methods was invoked without passing primary_key key field name which may results in "\
+          "incorrect records extraction; 'start' argument was realized as page number."
+        end
         request = clone.reorder.limit(batch_size)
 
         records = request.offset(start * batch_size).to_a
@@ -373,7 +382,8 @@ module Jennifer
 
       # Yields each record in batches from #find_in_batches.
       #
-      # Looping through a collection of records from the database is very inefficient since it will instantiate all the objects
+      # Looping through a collection of records from the database is very inefficient since it will instantiate all the
+      # objects
       # at once. In that case batch processing methods allow you to work with the records
       # in batches, thereby greatly reducing memory consumption.
       #
@@ -382,19 +392,22 @@ module Jennifer
       #   puts contact.id
       # end
       # ```
-      def find_each(primary_key : String, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
+      def find_each(primary_key : String, batch_size : Int32 = 1000, start = nil,
+                    direction : String | Symbol = "asc", &block)
         find_in_batches(primary_key, batch_size, start, direction) do |records|
           records.each { |rec| yield rec }
         end
       end
 
-      def find_each(primary_key : Criteria, batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
+      def find_each(primary_key : Criteria, batch_size : Int32 = 1000, start = nil,
+                    direction : String | Symbol = "asc", &block)
         find_in_batches(primary_key, batch_size, start, direction) do |records|
           records.each { |rec| yield rec }
         end
       end
 
-      def find_each(primary_key : Nil, batch_size : Int32 = 1000, start : Int32 = 0, direction : String | Symbol = "asc", &block)
+      def find_each(primary_key : Nil, batch_size : Int32 = 1000, start : Int32 = 0,
+                    direction : String | Symbol = "asc", &block)
         find_in_batches(batch_size, start) do |records|
           records.each { |rec| yield rec }
         end
@@ -418,11 +431,9 @@ module Jennifer
         results = [] of Record
         return results if do_nothing?
 
-        adapter.query(query, args) do |rs|
+        read_adapter.query(query, args) do |rs|
           begin
-            rs.each do
-              results << Record.new(rs)
-            end
+            rs.each { results << Record.new(read_adapter.result_to_hash(rs)) }
           rescue e : Exception
             rs.read_to_end
             raise e
@@ -439,7 +450,15 @@ module Jennifer
       # Jennifer::Query["contacts"].explain # => "Seq Scan on contacts  (cost=0.00..13.40 rows=340 width=206)"
       # ```
       def explain : String
-        adapter.explain(self)
+        read_adapter.explain(self)
+      end
+
+      private def read_adapter
+        adapter
+      end
+
+      private def write_adapter
+        adapter
       end
     end
   end

@@ -21,7 +21,7 @@ As was said Jennifer provide lazy query evaluation so it will be performed only 
 - `#each_result_set` - perform request and yield each result set;
 - `#find_in_batches` - retrieves from db result sets of given size and yields them;
 - `#find_each` - same as `#find_in_batches` but yields each result instead of array;
-- `#find_records_by_sql` - returns array of `Jennifer::Record` found by given plain sql request;
+- `#find_records_by_sql` - returns array of `Jennifer::Record` found by given plain SQL request;
 - `#destroy` - invokes `#to_a` and calls `#destroy` on each record`.
 
 `#pluck` returns array of values if only one field was given and array of arrays otherwise. By default it uses scope of current table (e.g. in previous example select clause included `contacts.id`). To allow grepping custom fields or any statement you need to specify custom select clause:

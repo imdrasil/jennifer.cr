@@ -13,7 +13,7 @@ module Jennifer
         end
 
         def explain
-          "create_view :#{@name}, \"#{@query.as_sql}\""
+          "create_view :#{@name}, \"#{@query.as_sql(adapter.sql_generator)}\""
         end
       end
     end

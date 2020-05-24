@@ -92,7 +92,7 @@ describe Jennifer::QueryBuilder::Condition do
     end
 
     context "BETWEEN operator" do
-      it "generates proper sql" do
+      it "generates proper SQL" do
         expression._age.between(20, 30).as_sql.should match(/age BETWEEN %s AND %s/)
       end
     end
@@ -204,19 +204,19 @@ describe Jennifer::QueryBuilder::Condition do
         (Factory.build_criteria > Factory.build_criteria).sql_args.empty?.should be_true
       end
 
-      describe "raw sql" do
+      describe "raw SQL" do
         it do
           (expression._name == expression.sql("lower(%s)", ["A"])).sql_args.should eq(["A"])
         end
       end
     end
 
-    context "when lhs is raw sql" do
+    context "when lhs is raw SQL" do
       it do
         expression.sql("lower(%s)", ["A"]).sql_args.should eq(["A"])
       end
 
-      context "when rhs is raw sql" do
+      context "when rhs is raw SQL" do
         it do
           (expression.sql("lower(%s)", ["A"]) == expression.sql("lower(%s)", ["Q"])).sql_args.should eq(%w(A Q))
         end
@@ -233,7 +233,7 @@ describe Jennifer::QueryBuilder::Condition do
       it { expression._id.to_condition.filterable?.should be_false }
     end
 
-    context "with lhs sql node" do
+    context "with lhs SQL node" do
       it { expression._id.==(expression._age).filterable?.should be_false }
       it { expression._id.==(expression.sql("asd", [1])).filterable?.should be_true }
     end

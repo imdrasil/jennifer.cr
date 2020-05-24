@@ -9,7 +9,7 @@ module Jennifer
       @errors : Errors?
 
       # Returns container with object's validation errors.
-      def errors
+      def errors : Errors
         @errors ||= Errors.new(self)
       end
 

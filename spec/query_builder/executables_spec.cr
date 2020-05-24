@@ -74,7 +74,7 @@ describe Jennifer::QueryBuilder::Executables do
       it "returns array of arrays" do
         Factory.create_contact(name: "a", age: 13)
         Factory.create_contact(name: "b", age: 14)
-        res = Contact.all.pluck(:name, :age)
+        res = Query["contacts"].pluck(:name, :age)
         res.size.should eq(2)
         res[0][0].should eq("a")
         res[1][1].should eq(14)
@@ -84,12 +84,12 @@ describe Jennifer::QueryBuilder::Executables do
     context "given one argument" do
       it "correctly extracts json" do
         Factory.create_address(details: JSON.parse({:city => "Duplin"}.to_json))
-        Address.all.pluck(:details)[0].should be_a(JSON::Any)
+        Query["addresses"].pluck(:details)[0].should be_a(JSON::Any)
       end
 
-      it "accepts plain sql" do
+      it "accepts plain SQL" do
         Factory.create_contact(name: "a", age: 13)
-        res = Contact.all.select("COUNT(id) + 1 as test").pluck(:test)
+        res = Query["contacts"].select("COUNT(id) + 1 as test").pluck(:test)
         res[0].should eq(2)
       end
     end
@@ -98,7 +98,7 @@ describe Jennifer::QueryBuilder::Executables do
       it "returns array of arrays" do
         Factory.create_contact(name: "a", age: 13)
         Factory.create_contact(name: "b", age: 14)
-        res = Contact.all.pluck([:name, :age])
+        res = Query["contacts"].pluck([:name, :age])
         res.size.should eq(2)
         res[0][0].should eq("a")
         res[1][1].should eq(14)
@@ -250,7 +250,7 @@ describe Jennifer::QueryBuilder::Executables do
   end
 
   describe "#to_a" do
-    context "none was called" do
+    context "with #none" do
       it "doesn't hit db and return empty array" do
         expect_query_silence do
           Jennifer::Query["contacts"].none.to_a.empty?.should be_true
@@ -277,6 +277,16 @@ describe Jennifer::QueryBuilder::Executables do
   describe "#results" do
     it "returns array of records" do
       Contact.all.results.should eq([] of Jennifer::Record)
+    end
+
+    pair_only do
+      it "respects specified adapter" do
+        Factory.create_address
+        PairAddress.create!
+        PairAddress.create!
+        Query["addresses"].count.should eq(1)
+        Query["addresses", PAIR_ADAPTER].count.should eq(2)
+      end
     end
   end
 

@@ -25,7 +25,7 @@ Contact.all.order{ [_name.asc] }
 Contact.all.order(Contact._name.asc)
 ```
 
-Any symbol-based names are considered as a column names. Any string-based - as raw sql.
+Any symbol-based names are considered as a column names. Any string-based - as raw SQL.
 
 ### Reorder
 

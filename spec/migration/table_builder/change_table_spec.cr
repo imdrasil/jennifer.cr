@@ -1,7 +1,7 @@
 require "./spec_helper"
 
 def change_table_expr
-  Jennifer::Migration::TableBuilder::ChangeTable.new(Jennifer::Adapter.adapter, DEFAULT_TABLE)
+  Jennifer::Migration::TableBuilder::ChangeTable.new(Jennifer::Adapter.default_adapter, DEFAULT_TABLE)
 end
 
 describe Jennifer::Migration::TableBuilder::ChangeTable do
@@ -87,6 +87,62 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
     end
   end
 
+  describe "#add_reference" do
+    it "creates column based on given field" do
+      table = change_table_expr
+      table.add_reference(:user)
+      table.@new_columns["user_id"].should eq({ :type => :integer, :null => true })
+
+      command = table.@commands[0].as(Jennifer::Migration::TableBuilder::CreateForeignKey)
+      command.from_table.should eq(DEFAULT_TABLE)
+      command.to_table.should eq("users")
+      command.column.should eq("user_id")
+      command.primary_key.should eq("id")
+      command.name.starts_with?("fk_cr_").should be_true
+    end
+
+    describe "polymorphic" do
+      it "adds foreign and polymorphic columns" do
+        table = change_table_expr
+        table.add_reference(:user, options: { :polymorphic => true })
+        table.@new_columns["user_id"].should eq({ :polymorphic => true, :type => :integer, :null => true })
+        table.@new_columns["user_type"].should eq({ :type => :string, :null => true })
+        table.@commands.should be_empty
+      end
+    end
+  end
+
+  describe "#drop_reference" do
+    it do
+      table = change_table_expr
+      table.drop_reference(:user)
+      table.drop_columns.should eq(["user_id"])
+
+      command = table.@commands[0].as(Jennifer::Migration::TableBuilder::DropForeignKey)
+      command.from_table.should eq(DEFAULT_TABLE)
+      command.to_table.should eq("users")
+      command.name.starts_with?("fk_cr_").should be_true
+    end
+
+    describe "polymorphic" do
+      it do
+        table = change_table_expr
+        table.drop_reference(:user, options: { :polymorphic => true })
+        table.drop_columns.should eq(["user_id", "user_type"])
+        table.@commands.should be_empty
+      end
+    end
+  end
+
+  describe "#add_timestamps" do
+    it "creates updated_at and created_at columns" do
+      table = change_table_expr
+      table.add_timestamps
+      table.@new_columns["created_at"].should eq({ :type => :timestamp, :null => false })
+      table.@new_columns["updated_at"].should eq({ :type => :timestamp, :null => false })
+    end
+  end
+
   describe "#add_index" do
     context "with named arguments" do
       it do
@@ -122,6 +178,15 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
         command.lengths.empty?.should be_true
         command.orders.should eq({ :uuid => :asc, :name => :desc })
       end
+    end
+  end
+
+  describe "#drop_index" do
+    it "creates DropIndex" do
+      table = change_table_expr
+      table.drop_index(:uuid)
+      command = table.@commands[0].as(Jennifer::Migration::TableBuilder::DropIndex)
+      command.@fields.should eq([:uuid])
     end
   end
 

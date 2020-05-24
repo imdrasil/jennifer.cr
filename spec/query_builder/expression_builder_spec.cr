@@ -77,7 +77,7 @@ describe ::Jennifer::QueryBuilder::ExpressionBuilder do
   end
 
   describe "#sql" do
-    it "creates raw sql criteria with given sql and parameters" do
+    it "creates raw SQL criteria from given SQL and parameters" do
       c = Factory.build_expression.sql("contacts.name LIKE ?", ["%jo%"])
       c.should be_a(Jennifer::QueryBuilder::RawSql)
       c.field.should eq("contacts.name LIKE ?")

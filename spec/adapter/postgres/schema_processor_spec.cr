@@ -2,7 +2,7 @@ require "../../spec_helper"
 
 postgres_only do
   describe Jennifer::Postgres::SchemaProcessor do
-    adapter = Jennifer::Adapter.adapter
+    adapter = Jennifer::Adapter.default_adapter
     processor = adapter.schema_processor
 
     context "index manipulation" do

@@ -5,7 +5,7 @@ describe Jennifer::QueryBuilder::Any do
   expression = Factory.build_expression
 
   describe "#as_sql" do
-    it "wrap sql with ANY operator" do
+    it "wrap SQL with ANY operator" do
       expression.any(query).as_sql.should match(/ANY \(SELECT .*\)/m)
     end
 

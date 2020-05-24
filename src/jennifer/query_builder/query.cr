@@ -41,6 +41,8 @@ module Jennifer
       # Table name to be specified in `FROM` clause.
       getter table : String = ""
 
+      getter adapter : Adapter::Base
+
       @having : Condition | LogicOperator?
       @limit : Int32?
       @distinct : Bool = false
@@ -54,21 +56,49 @@ module Jennifer
       @order : Array(OrderExpression)?
       @select_fields : Array(Criteria)?
       @ctes : Array(CommonTableExpression)?
-
-      def_clone
+      @do_nothing = false
+      @relation_used = false
+      @table_aliases = {} of String => String
 
       # Query filter to be rendered in `WHERE` clause.
       property tree : Condition | LogicOperator?
 
       def initialize
-        @do_nothing = false
         @expression = ExpressionBuilder.new(@table)
-        @relation_used = false
-        @table_aliases = {} of String => String
+        @adapter = Adapter.default_adapter
       end
 
-      def initialize(@table)
-        initialize
+      def initialize(@table, @adapter = Adapter.default_adapter)
+        @expression = ExpressionBuilder.new(@table)
+      end
+
+      def clone
+        clone = {{@type}}.allocate
+        clone.initialize_copy(self)
+        clone
+      end
+
+      protected def initialize_copy(other)
+        @table = other.@table
+        @adapter = other.@adapter
+        @having = other.@having.clone
+        @limit = other.@limit
+        @distinct = other.@distinct
+        @offset = other.@offset
+        @raw_select = other.@raw_select
+        @from = other.@from.clone
+        @lock = other.@lock
+        @joins = other.@joins.clone
+        @unions = other.@unions.clone
+        @groups = other.@groups.clone
+        @order = other.@order.clone
+        @select_fields = other.@select_fields.clone
+        @ctes = other.@ctes.clone
+        @do_nothing = other.@do_nothing
+        @relation_used = other.@relation_used
+        @table_aliases = other.@table_aliases.clone
+        @tree = other.@tree.clone
+        @expression = other.@expression.clone
       end
 
       # :nodoc:
@@ -116,6 +146,8 @@ module Jennifer
           @{{segment.id}} = other.@{{segment.id}}.clone unless except.includes?({{segment}})
         {% end %}
 
+        @adapter = other.@adapter
+
         @joins = other.@joins.clone unless except.includes?("join")
         @unions = other.@unions.clone unless except.includes?("union")
         @groups = other.@groups.clone unless except.includes?("group")
@@ -131,7 +163,7 @@ module Jennifer
         @expression = ExpressionBuilder.new(@table)
       end
 
-      # Compare current object with given comparing generated sql query and parameters.
+      # Compare current object with given comparing generated SQL query and parameters.
       #
       # Is used for testing.
       def eql?(other : Query)
@@ -522,8 +554,8 @@ module Jennifer
         self
       end
 
-      def to_s
-        as_sql
+      def to_s(io : IO)
+        io << as_sql
       end
 
       # Joins given *other* condition statement to the main condition tree.
@@ -580,10 +612,6 @@ module Jennifer
 
       private def _groups(name : String)
         @group[name] ||= [] of String
-      end
-
-      private def adapter
-        Adapter.default_adapter
       end
     end
   end

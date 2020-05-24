@@ -2,16 +2,16 @@ require "./shared_helpers"
 require "./spec_helper"
 
 POOL_SIZE = 3
-TIME_TO_SLEEP = 2
+TIME_TO_SLEEP = 3
 
 if Spec.adapter != "mysql"
   puts "This test only available for mysql adapter"
   exit 0
 end
 
-Jennifer::Config.read(File.join(__DIR__, "..", "..", "examples", "database.yml"), Spec.adapter)
 Jennifer::Config.configure do |conf|
-  conf.logger.level = Logger::INFO
+  conf.read("./scripts/database.yml", Spec.adapter)
+  conf.logger.level = :info
   conf.max_pool_size = POOL_SIZE
   conf.initial_pool_size = POOL_SIZE
   conf.max_idle_pool_size = POOL_SIZE
@@ -26,7 +26,7 @@ Spec.before_each do
 end
 
 describe "Concurrent execution" do
-  adapter = Jennifer::Adapter.adapter
+  adapter = Jennifer::Adapter.default_adapter
   tread_count = POOL_SIZE + 1
 
   describe "Jennifer::Adapter::Base" do
@@ -55,7 +55,7 @@ describe "Concurrent execution" do
         end
 
         responses = (0...tread_count).map { ch.receive }
-        responses.includes?("DB::PoolTimeout").should be_true
+        responses.should contain("DB::PoolTimeout")
       end
     end
 
@@ -81,7 +81,7 @@ describe "Concurrent execution" do
         end
 
         responses = (0...tread_count).map { ch.receive }
-        responses.includes?("DB::PoolTimeout").should be_true
+        responses.should contain("DB::PoolTimeout")
       end
     end
 
@@ -100,7 +100,7 @@ describe "Concurrent execution" do
         end
 
         responses = (0...tread_count).map { ch.receive }
-        responses.includes?("DB::PoolTimeout").should be_true
+        responses.should contain("DB::PoolTimeout")
       end
     end
   end

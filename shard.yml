@@ -1,20 +1,20 @@
 name: jennifer
-version: 0.8.4
+version: 0.9.0
 
 authors:
   - Roman Kalnytskyi <moranibaca@gmail.com>
 
-crystal: 0.33.0
+crystal: 0.34.0
 
 license: MIT
 
 development_dependencies:
   mysql:
     github: crystal-lang/crystal-mysql
-    version: "~> 0.10.0"
+    version: "= 0.11"
   pg:
     github: will/crystal-pg
-    version: "~> 0.20.0"
+    version: "= 0.21.0"
   factory:
     github: imdrasil/factory
     version: "~> 0.1.4"
@@ -23,14 +23,17 @@ development_dependencies:
     version: "~> 0.3.0"
   ameba:
     github: crystal-ameba/ameba
-    version: "~> 0.11.0"
+    version: "= 0.12.1"
+  micrate:
+    github: "amberframework/micrate"
+    version: "= 0.7.0"
 dependencies:
   inflector:
     github: phoffer/inflector.cr
-    version: "~> 0.1.8"
+    version: "= 0.1.8"
   ifrit:
     github: imdrasil/ifrit
-    version: "~> 0.1.2"
+    version: "= 0.1.2"
   i18n:
     github: TechMagister/i18n.cr
-    version: "~> 0.3.1"
+    version: "= 0.3.1"

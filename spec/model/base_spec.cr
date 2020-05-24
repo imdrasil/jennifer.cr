@@ -61,16 +61,6 @@ describe Jennifer::Model::Base do
     end
   end
 
-  describe "::primary_field_type" do
-    it "returns type of custom primary field" do
-      Passport.primary_field_type.should eq(String?)
-    end
-
-    it "returns type of default primary field name" do
-      Contact.primary_field_type.should eq(Int32?)
-    end
-  end
-
   describe "#init_primary_field" do
     it "sets primary field" do
       c = Factory.build_contact
@@ -356,7 +346,7 @@ describe Jennifer::Model::Base do
       end
     end
 
-    context "brakes unique index" do
+    context "when brakes unique index" do
       it "raises exception" do
         void_transaction do
           Factory.create_address(street: "st. 2")
@@ -364,6 +354,14 @@ describe Jennifer::Model::Base do
             Factory.create_address(street: "st. 2")
           end
         end
+      end
+    end
+
+    pair_only do
+      it "respects specified adapter" do
+        PairAddress.new.save
+        PairAddress.all.count.should eq(1)
+        Address.all.count.should eq(0)
       end
     end
   end
@@ -423,7 +421,7 @@ describe Jennifer::Model::Base do
   describe "%scope" do
     context "with block" do
       it "executes in query context" do
-        ::Jennifer::Adapter.adapter.sql_generator.select(Contact.all.ordered).should match(/ORDER BY contacts\.name ASC/)
+        ::Jennifer::Adapter.default_adapter.sql_generator.select(Contact.all.ordered).should match(/ORDER BY contacts\.name ASC/)
       end
 
       context "without argument" do
@@ -458,7 +456,7 @@ describe Jennifer::Model::Base do
 
     context "with query object class" do
       it "executes in class context" do
-        ::Jennifer::Adapter.adapter.sql_generator.select(Contact.johny).should match(/name =/)
+        ::Jennifer::Adapter.default_adapter.sql_generator.select(Contact.johny).should match(/name =/)
       end
 
       context "without argument" do
@@ -571,6 +569,12 @@ describe Jennifer::Model::Base do
   describe "::all" do
     it "returns empty query" do
       Contact.all.empty?.should be_true
+    end
+
+    pair_only do
+      it "creates query with right adapter" do
+        PairAddress.all.@adapter.should eq(PAIR_ADAPTER)
+      end
     end
   end
 
@@ -794,6 +798,18 @@ describe Jennifer::Model::Base do
       profile.inspect.should eq("#<FacebookProfile:0x#{profile.object_id.to_s(16)} id: nil, login: \"some_login\", "\
         "contact_id: nil, type: \"FacebookProfile\", virtual_parent_field: nil, uid: \"1234\", "\
         "virtual_child_field: nil>")
+    end
+  end
+
+  describe "::actual_table_field_count" do
+    it "returns count of fields that has corresponding db table" do
+      Address.actual_table_field_count.should eq(7)
+    end
+
+    pair_only do
+      it "respects connection" do
+        PairAddress.actual_table_field_count.should eq(4)
+      end
     end
   end
 end

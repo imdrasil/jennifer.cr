@@ -1,5 +1,63 @@
 # Changelog
 
+## 0.9.0 (24-05-2020)
+
+**General**
+
+* add Crystal `0.34.0` support
+* add `Jennifer::Presentable` with abstract methods declarations (`#attribute`, `#errors`, `#human_attribute_name`, `#attribute_metadata`, `#class_name`)
+
+**QueryBuilder**
+
+* `Query#initialize` now accept `Adapter::Base` as a second (optional) argument
+* `OrderItem` is renamed to `OrderExpression` to avoid possible name collisions
+
+**Model**
+
+* fix an issue with rendering `new_record` and `destroyed` system variables by `#to_json`
+* `Resource.table_prefix` now returns underscored namespace name (if any) by default
+* `Base` includes `Jennifer::Presentable`
+* add `Translation#class_name` method to return underscored class name
+* add `Mapping#attribute_metadata` to return attribute metadata by it's name
+* remove `Base::primary_field_type`
+* Prevent compile time error with models named `Model` or `Record`
+
+**View**
+
+* fix an issue with rendering `new_record` and `destroyed` system variables by `#to_json`
+* remove `Base::primary_field_type`
+
+**Adapter**
+
+* db connection is established on the first request no on adapter initialization
+* `Adapter.adapter_class` raises `BaseException` if no valid `Config.adapter` is specified
+*  `.command_interface`, `.create_database`, `.drop_database`, `.generate_schema`, `.load_schema`, `.db_connection`, `.connection_string`, `.database_exists?` now are instance methods
+* `Base#initialize` now excepts `Config` instance
+* respect host in `Jennifer::Postgres::CommandInterface#database_exists?`
+* escape connection URI segments
+* `Config#logger` now is `Log` instead of `Logger`
+* add read/write adapter segregation
+* deprecate `.adapter` & `.adapter_class`
+* remove `.query`, `.exec` & `.scalar`
+
+**Config**
+
+* `.reset_config` invokes `#initialize` instead of creating new instance
+
+**Migration**
+
+* `Base#schema_processor` is no more public api
+* `Runner.create` and `Runner.drop` now accept option `Adapter::Base` instance
+* pass `to_table` in `TableBuilder::DropForeignKey#process`
+* fix `TableBuilder::CreateTable#reference` - now it takes into account given SQL type for the foreign key column
+* add `#add_reference`, `#drop_reference`, `#add_timestamps` to `TableBuilder::CHangeTable`
+* `TableBuilder::CHangeTable#drop_index` also accepts single column name
+* remove deprecated `TableBuilder::CreateTable#index` overrides
+
+**Record**
+
+* `#initialize(DB::ResultSet)` is removed
+
 ## 0.8.4 (15-11-2019)
 
 **QueryBuilder**
@@ -123,7 +181,7 @@
 * add `Query#merge`
 * `Query#where` yields expression builder
 * `Query`'s `#join`, `#right_join`, `#left_join` and `#lateral_join` yield expression builders of a main query and joined context
-* add next SQL functions: `count`, `sum`, `avg`, `min`, `max`, `coalesce` and `concat_ws` sql functions
+* add next SQL functions: `count`, `sum`, `avg`, `min`, `max`, `coalesce` and `concat_ws` SQL functions
 * `round` function now accepts second optional argument specifying precision
 * `Function`'s `#operands_to_sql` and `#operand_sql` now are public
 * `Function.define` macro accepts `comment` key to specify function class documentation comment
@@ -393,11 +451,11 @@
 
 **QueryBuilder**
 
-* allows listing any `SQLNode` instance in SELECT clause (like raw sql or functions)
+* allows listing any `SQLNode` instance in SELECT clause (like raw SQL or functions)
 * removes redundant `SQLNode#sql_args_count`
-* adds `SQLNode#filterable?` function which presents if node has filterable sql parameter
+* adds `SQLNode#filterable?` function which presents if node has filterable SQL parameter
 * refactors `Condition#sql_arg`
-* adds `Function` base abstract class for defining custom sql functions
+* adds `Function` base abstract class for defining custom SQL functions
 * adds `lower`, `upper`, `current_timestamp`, `current_date`, `current_time`, `now`, `concat`, `abs`, `ceil`, `floor`, `round`
 * adds `Join#filterable?` and `Query#filterable?`
 * raise `AmbiguousSQL` when `%` symbol is found in the raw SQL (except `%s`)
@@ -489,7 +547,7 @@
 **QueryBuilder**
 
 * fixes bug with compiling application without defined any model (as a result no `ModelQuery` class is defined as well)
-* allows to pass sql arguments to left hand condition statement
+* allows to pass SQL arguments to left hand condition statement
 * fixes bug with invalid order direction type interpretation (#124)
 
 **Adapter**
@@ -648,7 +706,7 @@
 * moved all executable methods to `Executables` module
 * change behavior of `#distinct` - now it accepts no arguments and just prepend `DISTINCT` to common select query
 * added `#find_in_batches` - allows to search over requested collection required only determined amount of records per iteration
-* `#find_records_by_sql` - returns array of `Record` by given sql string
+* `#find_records_by_sql` - returns array of `Record` by given SQL string
 * added `:full_outer` join type
 * added `#lateral_join` to make `LATERAL JOIN` (for now is supported only by PostgreSQL)
 * extracted all join methods to `Joining` module
@@ -695,7 +753,7 @@
 * `Query#order` realize same idea as with `Query#select` but with hashes
 * added `Criteria#alias` method which allows to alias field in the `SELECT` clause
 * `ExpressionBuilder#star` creates "all" attribute; allows optional argument specifying table name
-* `RawSql` now has `@use_brakets` attribute presenting whether sql statement should be surrounded by brackets
+* `RawSql` now has `@use_brakets` attribute presenting whether SQL statement should be surrounded by brackets
 * `Criteria#sql` method now accepts `use_brackets` argument which is passed to `RawSql`
 
 **Migration**

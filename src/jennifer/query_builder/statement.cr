@@ -7,7 +7,7 @@ module Jennifer
       # Returns array of SQL query arguments.
       abstract def sql_args : Array(DBAny)
 
-      # Returns whether node has an argument to be added to sql statement arguments.
+      # Returns whether node has an argument to be added to SQL statement arguments.
       abstract def filterable?
     end
   end

@@ -1,15 +1,15 @@
 require "../spec_helper"
 
 describe Jennifer::Adapter::BaseSQLGenerator do
-  adapter = Jennifer::Adapter.adapter
-  described_class = Jennifer::Adapter.adapter.sql_generator
+  adapter = Jennifer::Adapter.default_adapter
+  described_class = Jennifer::Adapter.default_adapter.sql_generator
   expression_builder = Factory.build_expression
 
   describe "::filter_out" do
     c2 = Factory.build_criteria
 
     context "with Criteria" do
-      it "renders sql of criteria" do
+      it "renders SQL of criteria" do
         described_class.filter_out(c2).should eq(c2.as_sql)
       end
     end
@@ -135,7 +135,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
       sb { |io| described_class.group_clause(io, Contact.all) }.should_not match(/GROUP/)
     end
 
-    it "correctly generates sql" do
+    it "correctly generates SQL" do
       sb { |io| described_class.group_clause(io, Contact.all.group(:age)) }.should match(/GROUP BY contacts.age/)
     end
   end
@@ -189,7 +189,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
 
   describe "::where_clause" do
     context "condition exists" do
-      it "includes its sql" do
+      it "includes its SQL" do
         sb { |io| described_class.where_clause(io, Contact.where { _id == 1 }) }
           .should eq("WHERE contacts.id = %s ")
       end
@@ -250,7 +250,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
 
     it "adds next query to current one" do
       query = Jennifer::Query["contacts"].union(Jennifer::Query["users"])
-      sb { |s| described_class.union_clause(s, query) }.should match(Regex.new(Jennifer::Adapter.adapter.sql_generator.select(Jennifer::Query["users"])))
+      sb { |s| described_class.union_clause(s, query) }.should match(Regex.new(Jennifer::Adapter.default_adapter.sql_generator.select(Jennifer::Query["users"])))
     end
   end
 
@@ -279,7 +279,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
 
   describe ".order_expression" do
     context "without specifying position of null" do
-      context "with raw sql" do
+      context "with raw SQL" do
         it do
           Factory.build_expression.sql("some sql").asc.as_sql.should eq("some sql ASC")
           Factory.build_expression.sql("some sql").desc.as_sql.should eq("some sql DESC")

@@ -82,7 +82,18 @@ All those methods accepts additional options:
 - `:auto_increment` - marks field to use auto increment (properly works only with `Int32` fields, another crystal types have cut functionality for it);
 - `:array` - mark field to be array type (postgres only)
 
-Also there is `#field` method which allows to directly define sql type.
+Also there is `#field` method which allows to directly define SQL type.
+
+To define reference to other table you can use `#reference`:
+
+```crystal
+create_table :pictures do |t|
+  t.reference :user
+  t.reference :attachable, { :polymorphic => true } # for polymorphic relation
+end
+```
+
+For more details about this and other methods see [`Jennifer::Migration::TableBuilder::CreateTable`](https://imdrasil.github.io/jennifer.cr/latest/Jennifer/Migration/TableBuilder/CreateTable.html)
 
 To drop table just write:
 
@@ -112,6 +123,8 @@ To alter existing table use next methods:
  - `#add_foreign_key` - adds foreign key constraint;
  - `drop_foreign_key` - drops foreign key constraint;
  - `#rename_table` - renames table.
+
+ For more details about this and other methods see [`Jennifer::Migration::TableBuilder::CreateTable`](https://imdrasil.github.io/jennifer.cr/latest/Jennifer/Migration/TableBuilder/ChangeTable.html)
 
 Also next support methods are available:
 
@@ -189,3 +202,41 @@ change_enum(:gender_enum, { :remove_values => ["other"] })
 ```
 
 For more details check source code and PostgreSQL docs.
+
+## Micrate
+
+It it is more convenient to you to store migrations in a plain SQL it is possible to use [micrate]() together with Jennifer. To do so you need to add it to you dependencies and add `micrate.cr` file at the root (or any other convenient place) of your project with the following content:
+
+```crystal
+require "micrate"
+# Load here the part your your app responsible for Jennifer initialization
+# require "./config/db.cr"
+
+# These overrides are required to specify custom `db_dir`
+module Micrate
+  # Add here the path from your app root to the directory with `migration` folder
+  # inside
+  def self.db_dir
+    "db"
+  end
+
+  private def self.migrations_by_version
+    Dir.entries(migrations_dir)
+       .select { |name| File.file?(File.join(migrations_dir, name)) }
+       .select { |name| /^\d+_.+\.sql$/ =~ name }
+       .map { |name| Migration.from_file(name) }
+       .index_by { |migration| migration.version }
+  end
+end
+
+Micrate::DB.connection_url = Jennifer::Adapter.default_adapter.connection_string(:db)
+puts Dir.
+Micrate::Cli.run
+
+```
+
+After this all migration files located in the specified directory is accessible for Micrate and you can use commands like
+
+```sh
+$ crystal /micrate.cr -- up
+```

@@ -22,54 +22,38 @@ module Jennifer
       point lseg path box polygon line circle
     )
 
-    @@adapter : Base?
+    @@default_adapter : Base?
     @@adapters = {} of String => Base.class
-    @@adapter_class : Base.class | Nil
-
-    def self.exec(*opts)
-      adapter.exec(*opts)
-    end
-
-    def self.scalar(*opts)
-      adapter.scalar(*opts)
-    end
-
-    def self.query(_query, args = [] of DBAny)
-      adapter.query(_query, args) { |rs| yield rs }
-    end
-
-    # Allows to assign newly created adapter and call setup methods with existing adapter
-    private def self.adapter=(_adapter)
-      @@adapter = _adapter
-    end
+    @@default_adapter_class : Base.class | Nil
 
     # Returns adapter instance.
     #
-    # The first call greps all model's table column numbers.
-    def self.adapter
-      @@adapter ||= begin
-        a = adapter_class.not_nil!.build
-        self.adapter = a
-        a.prepare
-        a
-      end
-    end
-
-    # Returns default adapter.
-    #
-    # NOTE: this is a temporary solution to decouple adapter dependency or query class.
+    # The first call of this method greps all models table column numbers.
     def self.default_adapter
-      adapter
+      @@default_adapter ||= default_adapter_class.not_nil!.new(Config.instance)
     end
 
-    # Returns default adapter class.
-    def self.default_adapter_class
-      adapter_class
+    @[Deprecated("Use .default_adapter instead")]
+    def self.adapter
+      default_adapter
+    end
+
+    @[Deprecated("Use .default_adapter_class instead")]
+    def self.adapter_class
+      default_adapter_class
     end
 
     # Returns adapter class.
-    def self.adapter_class
-      @@adapter_class ||= adapters[Config.adapter]
+    def self.default_adapter_class
+      @@default_adapter_class ||= adapters[Config.adapter]
+    rescue e : KeyError
+      if Config.adapter.empty?
+        raise BaseException.new(
+          "It seems you are trying to initialize adapter before setting Jennifer configurations. "\
+          "Ensure that you require adapter and load configurations."
+        )
+      end
+      raise BaseException.new("Unregistered adapter `#{Config.adapter}`")
     end
 
     # Returns hash with all registered adapter classes
@@ -77,9 +61,9 @@ module Jennifer
       @@adapters
     end
 
-    # Registers adapter class *adapter* with name *name*.
-    def self.register_adapter(name, adapter)
-      adapters[name] = adapter
+    # Registers adapter *adapter_class* with name *name*.
+    def self.register_adapter(name : String, adapter_class)
+      adapters[name] = adapter_class
     end
   end
 end

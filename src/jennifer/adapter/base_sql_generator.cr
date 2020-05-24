@@ -58,7 +58,7 @@ module Jennifer
         end
       end
 
-      # Generates common select sql request
+      # Generates common select SQL request
       def self.select(query, exact_fields = [] of String)
         String.build do |s|
           with_clause(s, query)
@@ -112,7 +112,7 @@ module Jennifer
         esc = escape_string(1)
         String.build do |s|
           s << "UPDATE " << query.table << " SET "
-          options.map { |k, _| "#{k.to_s}= #{esc}" }.join(", ", s)
+          options.map { |k, _| "#{k}= #{esc}" }.join(", ", s)
           s << ' '
           body_section(s, query)
         end
@@ -130,7 +130,7 @@ module Jennifer
         end
       end
 
-      # ========== sql clauses ================
+      # ========== SQL clauses ================
 
       def self.body_section(io : String::Builder, query)
         join_clause(io, query)
@@ -316,7 +316,7 @@ module Jennifer
       end
 
       private def self.field_assign_statement(field, value : QueryBuilder::Statement)
-        "#{field} = #{value.as_sql}"
+        "#{field} = #{value.as_sql(self)}"
       end
     end
   end

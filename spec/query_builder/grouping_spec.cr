@@ -15,7 +15,7 @@ describe Jennifer::QueryBuilder::Grouping do
   end
 
   describe "#as_sql" do
-    it "wrap sql with parenthesis" do
+    it "wrap SQL with parenthesis" do
       g = described_class.new(c1 & c2)
       g.as_sql.should match(/\(tests\.f1 AND tests\.f1 = %s\)/)
     end

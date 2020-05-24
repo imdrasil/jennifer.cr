@@ -158,7 +158,6 @@ If you don't want to define all the table fields - pass `false` as second argume
 | `#primary` | | value of primary key field |
 | `::primary` | | returns criterion for primary field (query DSL) |
 | `::primary_field_name` | | name of primary field |
-| `::primary_field_type` | | type of primary key |
 | `#new_record?` | | returns `true` if record has `nil` primary key (is not stored to db) |
 | `::create` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | creates object, stores it to db and returns it |
 | `::create!` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | creates object, stores it to db and returns it; otherwise raise exception |

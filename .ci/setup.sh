@@ -37,5 +37,5 @@ if [ "$DB" == 'mysql' ] || [ "$PAIR" == '1' ]; then
     new_mysql_setup
 fi
 
-bash ./examples/setup.sh .ci/database.yml
+bash ./scripts/setup.sh .ci/database.yml
 make sam db:setup

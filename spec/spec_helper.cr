@@ -10,6 +10,12 @@ macro mysql_only
   {% end %}
 end
 
+macro pair_only
+  {% if env("PAIR") == "1" %}
+    {{yield}}
+  {% end %}
+end
+
 require "spec"
 require "factory"
 require "./config"
@@ -17,8 +23,8 @@ require "./models"
 require "./factories"
 require "./support/*"
 
-require "../examples/migrations/20170119011451314_create_contacts"
-require "../examples/migrations/20180909200027509_create_notes"
+require "../scripts/migrations/20170119011451314_create_contacts"
+require "../scripts/migrations/20180909200027509_create_notes"
 
 class Jennifer::Adapter::ICommandShell
   class_property stub = false
@@ -47,13 +53,15 @@ end
 # Callbacks =======================
 
 Spec.before_each do
-  Jennifer::Adapter.adapter.begin_transaction
+  Jennifer::Adapter.default_adapter.begin_transaction
+  pair_only { PAIR_ADAPTER.begin_transaction }
   set_default_configuration
-  Spec.logger.clear
+  Spec.logger_backend.entries.clear
 end
 
 Spec.after_each do
-  Jennifer::Adapter.adapter.rollback_transaction
+  Jennifer::Adapter.default_adapter.rollback_transaction
+  pair_only { PAIR_ADAPTER.rollback_transaction }
   Spec.file_system.clean
   Jennifer::Adapter::ICommandShell.stub = false
 end
@@ -71,7 +79,9 @@ end
 
 def clean_db
   postgres_only do
-    Jennifer::Adapter.adapter.as(Jennifer::Postgres::Adapter).refresh_materialized_view(FemaleContact.table_name)
+    Jennifer::Adapter.default_adapter
+      .as(Jennifer::Postgres::Adapter)
+      .refresh_materialized_view(FemaleContact.table_name)
   end
   (Jennifer::Model::Base.models - [Jennifer::Migration::Version]).select { |t| t.has_table? }.each(&.all.delete)
 end
@@ -79,12 +89,12 @@ end
 # Ends current transaction, yields to the block, clear and starts next one
 macro void_transaction
   begin
-    Jennifer::Adapter.adapter.rollback_transaction
-    Spec.logger.clear
+    Jennifer::Adapter.default_adapter.rollback_transaction
+    Spec.logger_backend.entries.clear
     {{yield}}
   ensure
     clean_db
-    Jennifer::Adapter.adapter.begin_transaction
+    Jennifer::Adapter.default_adapter.begin_transaction
   end
 end
 
@@ -93,7 +103,7 @@ def grouping(exp)
 end
 
 def select_query(query)
-  ::Jennifer::Adapter.adapter.sql_generator.select(query)
+  ::Jennifer::Adapter.default_adapter.sql_generator.select(query)
 end
 
 def db_array(*element)
@@ -101,11 +111,11 @@ def db_array(*element)
 end
 
 def query_count
-  Spec.logger.container.size
+  Spec.logger_backend.entries.size
 end
 
 def query_log
-  Spec.logger.container.map { |e| e[:msg] }
+  Spec.logger_backend.entries.map(&.message)
 end
 
 def read_to_end(rs)
@@ -144,7 +154,7 @@ end
 # SQL query clauses =============
 
 private def sql_generator
-  ::Jennifer::Adapter.adapter.sql_generator
+  ::Jennifer::Adapter.default_adapter.sql_generator
 end
 
 def sb

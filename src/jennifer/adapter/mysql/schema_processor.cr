@@ -4,7 +4,7 @@ module Jennifer
   module Mysql
     class SchemaProcessor < Adapter::SchemaProcessor
       def rename_table(old_name, new_name)
-        adapter.exec "ALTER TABLE #{old_name.to_s} RENAME #{new_name.to_s}"
+        adapter.exec "ALTER TABLE #{old_name} RENAME #{new_name}"
       end
 
       # NOTE: adding here type will bring a lot of small issues around

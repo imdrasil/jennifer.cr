@@ -10,13 +10,13 @@ Add this to your application's `shard.yml`:
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.8.4"
+    version: "~> 0.9.0"
 ```
 
 ### Requirements
 
 - you need to choose one of the existing drivers for your DB: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgres](https://github.com/will/crystal-pg); sqlite3 adapter automatically installs required driver for it;
-- crystal `>= 0.31.0`.
+- crystal `>= 0.34.0`.
 
 ## Usage
 
@@ -148,18 +148,12 @@ You can easily configure error message generated for certain validation violatio
 
 ### Logging & Debugging
 
-Jennifer uses a regular Crystal logging mechanism so you could specify your own logger or formatter:
+Jennifer uses a [standard](https://crystal-lang.org/api/0.34.0/Log.html) Crystal logging mechanism so you could specify your own logger or formatter:
 
 ```crystal
-# Here is default logger configuration
+# This is the default logger configuration
 Jennifer::Config.configure do |conf|
-  conf.logger = Logger.new(STDOUT).tap do |logger|
-    logger.formatter = Logger::Formatter.new do |_severity, datetime, _progname, message, io|
-      io << datetime << ": " << message
-    end
-
-    logger.level = Logger::DEBUG
-  end
+  conf.logger = Log.for("db", :debug)
 end
 ```
 
@@ -182,11 +176,11 @@ The fastest way to rollback all changes in the DB after test case is by using a 
 
 ```crystal
 Spec.before_each do
-  Jennifer::Adapter.adapter.begin_transaction
+  Jennifer::Adapter.default_adapter.begin_transaction
 end
 
 Spec.after_each do
-  Jennifer::Adapter.adapter.rollback_transaction
+  Jennifer::Adapter.default_adapter.rollback_transaction
 end
 ```
 
@@ -210,7 +204,7 @@ If there is a branch for the next release - it will be removed 1 month after the
 
 > Before developing any feature please create an issue where you describe your idea.
 
-To setup dev environment run `./examples/setup.sh` - it creates `./examples/database.yml` configuration file. You can override there any values specific to your environment (like db user of password).
+To setup dev environment run `./scripts/setup.sh` - it creates `./scripts/database.yml` configuration file. You can override there any values specific to your environment (like DB user & password).
 
 To create the databases:
 
@@ -224,7 +218,7 @@ $ DB=mysql make sam db:setup
 
 ### Running tests
 
-All unit tests are written using core `spec`. Also in `spec/spec_helper.cr` some custom unit test matchers are defined. All migrations are under the `./examples/migrations` directory.
+All unit tests are written using core `spec`. Also in `spec/spec_helper.cr` some custom unit test matchers are defined. All migrations are under the `./scripts/migrations` directory.
 
 The common way to run tests is just use using regular crystal spec tool:
 
@@ -232,7 +226,7 @@ The common way to run tests is just use using regular crystal spec tool:
 $ crystal spec
 ```
 
-PostgreSQL is used by default, but MySql is also supported while running tests by specifying environment variable `DB=mysql`:
+By default `postgres` adapter is used. To run tests against `mysql` add `DB=mysql` before command. Also custom database user and password could be specified:
 
 In case you need to set the database user or password, use:
 
@@ -240,9 +234,15 @@ In case you need to set the database user or password, use:
 $ DB_USER=user DB_PASSWORD=pass crystal spec
 ```
 
+#### Testing multiadapter support
+
+To run tests with multiple adapter involved you should create and migrate database with `PAIR=1` environment variable defined. For testing purpose `mysql` adapter will be created when `postgres` one is used as a main one and vice verse. Therefore both databases should be available to receive connections.
+
+Also `PAIR` variable should be defined when running tests.
+
 #### Integration tests
 
-Except unit tests there are also several *integration* tests. These tests checks possibility to compile and invoke jennifer functionality in some special edge cases (e.g. without defined models, migrations, etc.).
+Except unit tests there are also several *integration* tests. These tests checks opportunity to compile and invoke Jennifer functionality in some special edge cases (e.g. without defined models, migrations, etc.).
 
 To run integration test just use standard spec runner:
 
@@ -251,8 +251,6 @@ $ crystal spec spec/integration/<test_name>.cr
 ```
 
 Each test file is required to be invoked separately as it may have own configuration.
-
-To run docker-related tests (by the way, all of them run only with mysql) firstly you should run docker container and specify environment variable `DOCKER=1`. For more details take a look at `spec/integration/sam/*` application files and `examples/run_docker_mysql.sh` docker boot script.
 
 ### Documentation generation
 
@@ -268,7 +266,6 @@ NB. It also depends on then chosen adapter (postgres by default).
 
 - [crecto](https://github.com/Crecto/crecto) - based on Phoenix's Ecto lib and follows the repository pattern
 - [granite-orm](https://github.com/amberframework/granite) - lightweight ORM focusing on mapping fields from request to your objects
-- [topaz](https://github.com/topaz-crystal/topaz) - inspired by AR ORM with migration mechanism
 - [micrate](https://github.com/juanedi/micrate) - standalone database migration tool for crystal
 
 ## Contributing

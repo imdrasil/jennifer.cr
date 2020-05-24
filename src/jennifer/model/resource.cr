@@ -111,7 +111,7 @@ module Jennifer
 
       # :nodoc:
       def self.table_prefix
-        Inflector.underscore(to_s).split('/')[0...-1].join("_") + "_" if to_s =~ /:/
+        Inflector.underscore(to_s).split('/')[0...-1].join("_") + "_" if to_s.includes?(':')
       end
 
       @@expression_builder : QueryBuilder::ExpressionBuilder?
@@ -188,7 +188,17 @@ module Jennifer
 
       # Returns adapter instance.
       def self.adapter
-        Adapter.adapter
+        Adapter.default_adapter
+      end
+
+      # Returns adapter used to write resource to the database.
+      def self.write_adapter
+        adapter
+      end
+
+      # Returns adapter used to read resource from the database.
+      def self.read_adapter
+        adapter
       end
 
       # Returns `QueryBuilder::ExpressionBuilder` object of this resource's table.
@@ -207,7 +217,7 @@ module Jennifer
       # ```
       def self.all
         {% begin %}
-          QueryBuilder::ModelQuery({{@type}}).build(table_name)
+          QueryBuilder::ModelQuery({{@type}}).build(table_name, adapter)
         {% end %}
       end
 
@@ -233,7 +243,7 @@ module Jennifer
       # end
       # ```
       def self.transaction
-        adapter.transaction do |t|
+        write_adapter.transaction do |t|
           yield(t)
         end
       end

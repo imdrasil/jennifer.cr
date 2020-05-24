@@ -272,7 +272,7 @@ module Jennifer
     #
     # It is considered that all configuration properties are located at the root level.
     def read(path : String)
-      source = yield YAML.parse(File.read(path))
+      source = yield YAML.parse(ECR.render(path))
       from_yaml(source)
     end
 

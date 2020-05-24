@@ -227,11 +227,7 @@ module Jennifer
       # User.where(name: "John")
       # ```
       def self.where(**opts)
-        data = all
-        opts.each do |k, v|
-          data = data.where { c(k.to_s) == v }
-        end
-        data
+        all.where(**opts)
       end
 
       # Is a shortcut for `.all.where` call.

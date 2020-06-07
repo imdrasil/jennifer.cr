@@ -68,6 +68,19 @@ describe Jennifer::QueryBuilder::EagerLoading do
       end
     end
 
+    context "with nested relation when intermediate relation is empty" do
+      it do
+        c = Factory.create_contact(name: "contact 1")
+        country = Factory.create_country
+
+        res = Contact.all.eager_load(countries: [:cities]).to_a
+        expect_query_silence do
+          res.size.should eq(1)
+          res[0].countries.size.should eq(0)
+        end
+      end
+    end
+
     context "with nested relation defined as array" do
       it do
         c = Factory.create_contact(name: "contact 1")

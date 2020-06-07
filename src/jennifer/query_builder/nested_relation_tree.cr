@@ -47,6 +47,7 @@ module Jennifer
               context[0] = obj
               models.each_with_index do |model, i|
                 related_context_index = @bucket[i][0]
+                next if context[related_context_index].nil?
                 related_context = context[related_context_index].not_nil!
                 relation = @bucket[i][1]
                 h = build_hash(rs, column_index, model.actual_table_field_count)

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+**General**
+
+- add Crystal `0.35.0` support
+
 ## 0.9.0 (24-05-2020)
 
 **General**

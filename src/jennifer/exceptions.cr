@@ -1,4 +1,8 @@
-CallStack.skip(__FILE__)
+{% if compare_versions(Crystal::VERSION, "0.35.0") >= 0 %}
+  Exception::CallStack.skip(__FILE__)
+{% else %}
+  CallStack.skip(__FILE__)
+{% end %}
 
 module Jennifer
   # Is raised when pseudo-abstract method is invoked.

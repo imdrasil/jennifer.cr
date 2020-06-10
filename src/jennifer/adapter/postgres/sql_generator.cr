@@ -123,7 +123,7 @@ module Jennifer
       def self.parse_query(query, args : Array(DBAny))
         arr = Array(String).new(args.size)
         args.each_with_index do |arg, i|
-          args[i] = arg.as(Time).to_utc if arg.is_a?(Time)
+          args[i] = arg.to_utc if arg.is_a?(Time)
           arr << "$#{i + 1}"
         end
         {query % arr, args}

@@ -1,7 +1,7 @@
 require "./shared_helpers"
 require "./spec_helper"
 
-POOL_SIZE = 3
+POOL_SIZE = 2
 TIME_TO_SLEEP = 3
 
 if Spec.adapter != "mysql"
@@ -11,7 +11,6 @@ end
 
 Jennifer::Config.configure do |conf|
   conf.read("./scripts/database.yml", Spec.adapter)
-  conf.logger.level = :info
   conf.max_pool_size = POOL_SIZE
   conf.initial_pool_size = POOL_SIZE
   conf.max_idle_pool_size = POOL_SIZE
@@ -46,7 +45,9 @@ describe "Concurrent execution" do
         tread_count.times do
           spawn do
             begin
+              puts Time.utc
               adapter.exec("CREATE temporary table table1 select #{sleep_command} as col")
+              puts "finish: #{Time.utc}"
               ch.send("")
             rescue e : Exception
               ch.send(e.class.to_s)

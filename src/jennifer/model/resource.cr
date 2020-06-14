@@ -127,7 +127,7 @@ module Jennifer
       # ```
       def inspect(io) : Nil
         io << "#<" << {{@type.name.id.stringify}} << ":0x"
-        object_id.to_s(16, io)
+        object_id.to_s(io, 16)
         inspect_attributes(io)
         io << '>'
         nil

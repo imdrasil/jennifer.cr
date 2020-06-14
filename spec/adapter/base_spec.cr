@@ -239,17 +239,15 @@ describe Jennifer::Adapter::Base do
       fields = %w(name ballance age description created_at updated_at user_id)
       values = ["Deepthi", nil, 28, nil, nil, nil, nil] of Jennifer::DBAny
 
-      context "when count of fields doesn't exceed limit" do
-        it "imports objects by " do
-          Contact.all.count.should eq(0)
-          adapter.bulk_insert(Contact.table_name, fields, (amount - 1).times.map { values }.to_a)
-          query_log[1].should match(argument_regex)
-          Contact.all.count.should eq(amount - 1)
-        end
+      it "imports objects by prepared statement" do
+        Contact.all.count.should eq(0)
+        adapter.bulk_insert(Contact.table_name, fields, (amount - 1).times.map { values }.to_a)
+        query_log[1].should match(argument_regex)
+        Contact.all.count.should eq(amount - 1)
       end
 
-      context "when count of fields exceeds limit" do
-        it "imports objects by " do
+      context "when count of fields exceeds supported limit" do
+        it "imports objects escaping their values in query" do
           Contact.all.count.should eq(0)
           adapter.bulk_insert(Contact.table_name, fields, amount.times.map { values }.to_a)
           query_log[1].should_not match(argument_regex)

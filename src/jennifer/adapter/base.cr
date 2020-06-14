@@ -351,7 +351,7 @@ module Jennifer
             {% for arg in Config::CONNECTION_URI_PARAMS %}
               "{{arg.id}}=#{config.{{arg.id}}}",
             {% end %}
-          ].join("&", s)
+          ].join(s, "&")
           {% end %}
         end
       end

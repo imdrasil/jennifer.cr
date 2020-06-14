@@ -1,4 +1,4 @@
-CallStack.skip(__FILE__)
+Exception::CallStack.skip(__FILE__)
 
 module Jennifer
   # Is raised when pseudo-abstract method is invoked.

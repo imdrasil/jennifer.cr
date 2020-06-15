@@ -11,7 +11,7 @@ module Jennifer
             s << " VALUES ()"
           else
             s << "("
-            opts[:fields].join(", ", s)
+            opts[:fields].join(s, ", ")
             s << ") VALUES (" << escape_string(opts[:fields].size) << ") "
           end
         end
@@ -28,10 +28,10 @@ module Jennifer
 
           unless _joins.nil?
             where_clause(s, _joins[0].on)
-            _joins[1..-1].join(" ", s) { |e| s << e.as_sql(self) }
+            _joins[1..-1].join(s, " ") { |e| s << e.as_sql(self) }
           end
           s << " SET "
-          options.join(", ", s) { |(k, _)| s << k << " = " << esc }
+          options.join(s, ", ") { |(k, _)| s << k << " = " << esc }
           s << " "
           where_clause(s, query.tree)
         end
@@ -43,10 +43,10 @@ module Jennifer
           io << "INSERT "
           io << "IGNORE " if is_ignore
           io << "INTO " << table << " ("
-          fields.join(", ", io)
+          fields.join(io, ", ")
           escaped_row = "(" + escape_string(fields.size) + ")"
           io << ") VALUES "
-          rows.times.join(", ", io) { io << escaped_row }
+          rows.times.join(io, ", ") { io << escaped_row }
           unless is_ignore
             io << " ON DUPLICATE KEY UPDATE "
             on_conflict.each_with_index do |(field, value), index|

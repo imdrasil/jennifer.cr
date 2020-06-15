@@ -11,7 +11,7 @@ def execute(command, options)
   {status, io.to_s}
 end
 
-def clean(type = :bash)
+def clean(type = DatabaseSeeder.default_interface)
   yield
 ensure
   DatabaseSeeder.drop(type)

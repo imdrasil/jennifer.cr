@@ -26,6 +26,7 @@ require "./support/*"
 require "../scripts/migrations/20170119011451314_create_contacts"
 require "../scripts/migrations/20180909200027509_create_notes"
 
+
 class Jennifer::Adapter::ICommandShell
   class_property stub = false
 end
@@ -52,11 +53,15 @@ end
 
 # Callbacks =======================
 
+Spec.before_suite do
+  Log.setup "db", :debug, Spec.logger_backend
+end
+
 Spec.before_each do
-  Jennifer::Adapter.default_adapter.begin_transaction
-  pair_only { PAIR_ADAPTER.begin_transaction }
   set_default_configuration
   Spec.logger_backend.entries.clear
+  Jennifer::Adapter.default_adapter.begin_transaction
+  pair_only { PAIR_ADAPTER.begin_transaction }
 end
 
 Spec.after_each do
@@ -115,7 +120,8 @@ def query_count
 end
 
 def query_log
-  Spec.logger_backend.entries.map(&.message)
+  offset = ENV["PAIR"]? == "1" ? 2 : 1
+  Spec.logger_backend.entries[offset..-1].map(&.message)
 end
 
 def read_to_end(rs)

@@ -25,7 +25,7 @@ module Jennifer
       def self.insert(table, hash)
         String.build do |s|
           s << "INSERT INTO " << table << "("
-          hash.keys.join(", ", s)
+          hash.keys.join(s, ", ")
           s << ") VALUES (" << escape_string(hash.size) << ")"
         end
       end
@@ -33,17 +33,17 @@ module Jennifer
       def self.bulk_insert(table : String, field_names : Array(String), rows : Int32)
         String.build do |s|
           s << "INSERT INTO " << table << "("
-          field_names.join(", ", s) { |e| s << e }
+          field_names.join(s, ", ") { |e| s << e }
           s << ") VALUES "
           escaped_row = "(" + escape_string(field_names.size) + ")"
-          rows.times.join(", ", s) { s << escaped_row }
+          rows.times.join(s, ", ") { s << escaped_row }
         end
       end
 
       def self.bulk_insert(table : String, field_names : Array(String), rows : Array)
         String.build do |s|
           s << "INSERT INTO " << table << "("
-          field_names.join(", ", s) { |e| s << e }
+          field_names.join(s, ", ") { |e| s << e }
           s << ") VALUES "
 
           rows.each_with_index do |row, index|
@@ -103,7 +103,7 @@ module Jennifer
         esc = escape_string(1)
         String.build do |s|
           s << "UPDATE " << obj.class.table_name << " SET "
-          obj.arguments_to_save[:fields].map { |f| "#{f}= #{esc}" }.join(", ", s)
+          obj.arguments_to_save[:fields].map { |f| "#{f}= #{esc}" }.join(s, ", ")
           s << " WHERE " << obj.class.primary_field_name << " = " << esc
         end
       end
@@ -112,7 +112,7 @@ module Jennifer
         esc = escape_string(1)
         String.build do |s|
           s << "UPDATE " << query.table << " SET "
-          options.map { |k, _| "#{k}= #{esc}" }.join(", ", s)
+          options.map { |k, _| "#{k}= #{esc}" }.join(s, ", ")
           s << ' '
           body_section(s, query)
         end
@@ -168,9 +168,9 @@ module Jennifer
         if !query._raw_select
           table = query._table
           if !exact_fields.empty?
-            exact_fields.join(", ", io) { |f| io << "#{table}.#{f}" }
+            exact_fields.join(io, ", ") { |f| io << "#{table}.#{f}" }
           else
-            query._select_fields.join(", ", io) { |f| io << f.definition(self) }
+            query._select_fields.join(io, ", ") { |f| io << f.definition(self) }
           end
         else
           io << query._raw_select.not_nil!
@@ -206,7 +206,7 @@ module Jennifer
         return unless query._groups?
 
         io << "GROUP BY "
-        query._groups!.each.join(", ", io) { |c| io << c.as_sql(self) }
+        query._groups!.each.join(io, ", ") { |c| io << c.as_sql(self) }
         io << ' '
       end
 
@@ -221,7 +221,7 @@ module Jennifer
       def self.join_clause(io : String::Builder, query)
         return unless query._joins?
 
-        query._joins!.join(" ", io) { |j| io << j.as_sql(self) }
+        query._joins!.join(io, " ") { |j| io << j.as_sql(self) }
       end
 
       # Generates `WHERE` query clause.
@@ -247,7 +247,7 @@ module Jennifer
         return unless query._order?
 
         io << "ORDER BY "
-        query._order!.join(", ", io) { |expression| io.print expression.as_sql(self) }
+        query._order!.join(io, ", ") { |expression| io.print expression.as_sql(self) }
         io << ' '
       end
 

@@ -37,7 +37,7 @@ module Jennifer
         private def self.hexdigest(text)
           alg = OpenSSL::Digest.new("SHA256")
           alg.update(text)
-          alg.hexdigest
+          alg.final.hexstring
         end
       end
     end

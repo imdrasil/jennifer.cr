@@ -69,8 +69,7 @@ def set_default_configuration
 end
 
 set_default_configuration
-
-Log.builder.bind "*", :debug, Spec.logger_backend
+Log.setup "db", :debug, Spec.logger_backend
 
 I18n.load_path += ["spec/fixtures/locales/**"]
 I18n.default_locale = "en"

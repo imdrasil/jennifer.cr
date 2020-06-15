@@ -28,7 +28,7 @@ module Jennifer
             s << " DEFAULT VALUES"
           else
             s << "("
-            opts[:fields].join(", ", s)
+            opts[:fields].join(s, ", ")
             s << ") VALUES (" << escape_string(opts[:fields].size) << ") "
           end
 
@@ -45,14 +45,14 @@ module Jennifer
         esc = escape_string(1)
         String.build do |s|
           s << "UPDATE " << query._table << " SET "
-          options.map { |k, _| "#{k}= #{esc}" }.join(", ", s)
+          options.map { |k, _| "#{k}= #{esc}" }.join(s, ", ")
           s << ' '
 
           from_clause(s, query._joins![0].table_name(self)) if query._joins?
           where_clause(s, query.tree)
           if query._joins?
             where_clause(s, query._joins![0].on)
-            query._joins![1..-1].join(" ", s) { |e| s << e.as_sql(self) }
+            query._joins![1..-1].join(s, " ") { |e| s << e.as_sql(self) }
           end
         end
       end
@@ -60,10 +60,10 @@ module Jennifer
       def self.insert_on_duplicate(table, fields, rows : Int32, unique_fields, on_conflict)
         String.build do |io|
           io << "INSERT INTO " << table << " ("
-          fields.join(", ", io)
+          fields.join(io, ", ")
           escaped_row = "(" + escape_string(fields.size) + ")"
           io << ") VALUES "
-          rows.times.join(", ", io) { io << escaped_row }
+          rows.times.join(io, ", ") { io << escaped_row }
           io << " ON CONFLICT (" << unique_fields.join(", ") << ") "
           if on_conflict.empty?
             io << "DO NOTHING"

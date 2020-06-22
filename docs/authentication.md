@@ -61,5 +61,5 @@ user.save # => true
 user.authenticate("notright")  # => false
 user.authenticate("mUc3m00RsqyRe") # => user
 User.all.where { _name == "david" }.first.try(&.authenticate("notright")) # nil
-User.wll.where { _(_name == "david" }.first.try(&.authenticate("mUc3m00RsqyRe")) # => User
+User.all.where { _name == "david" }.first.try(&.authenticate("mUc3m00RsqyRe")) # => User
 ```

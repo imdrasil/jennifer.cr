@@ -63,12 +63,12 @@ module Jennifer
       #   validates_inclusion :code, in: Country::KNOWN_COUNTRIES
       # end
       # ```
-      macro validates_inclusion(field, in, allow_blank = false, if if_value = nil)
+      macro validates_inclusion(field, in in_value, allow_blank = false, if if_value = nil)
         validates_with_method(%validate_method, if: {{if_value}})
 
         # :nodoc:
         def %validate_method
-          ::Jennifer::Validations::Inclusion.instance.validate(self, {{field}}, {{field.id}}, {{allow_blank}}, {{in}})
+          ::Jennifer::Validations::Inclusion.instance.validate(self, {{field}}, {{field.id}}, {{allow_blank}}, {{in_value}})
         end
       end
 
@@ -84,12 +84,12 @@ module Jennifer
       #   validates_exclusion :code, in: %w(AA DD)
       # end
       # ```
-      macro validates_exclusion(field, in, allow_blank = false, if if_value = nil)
+      macro validates_exclusion(field, in in_value, allow_blank = false, if if_value = nil)
         validates_with_method(%validate_method, if: {{if_value}})
 
         # :nodoc:
         def %validate_method
-          ::Jennifer::Validations::Exclusion.instance.validate(self, {{field}}, {{field.id}}, {{allow_blank}}, {{in}})
+          ::Jennifer::Validations::Exclusion.instance.validate(self, {{field}}, {{field.id}}, {{allow_blank}}, {{in_value}})
         end
       end
 

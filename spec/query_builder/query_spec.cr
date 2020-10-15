@@ -295,6 +295,22 @@ describe Jennifer::QueryBuilder::Query do
         Jennifer::Query["cte"].with("cte", Jennifer::Query["contacts"]).count.should eq(1)
       end
     end
+
+    describe "varying query types" do
+      it do
+        c1 = Factory.create_contact(name: "Anton", age: 32)
+        Factory.create_contact(name: "Bertha", age: 43)
+        c3 = Factory.create_contact(name: "Caesar", age: 37)
+
+        Factory.create_address(street: "Test street 1", contact_id: c1.id!)
+        Factory.create_address(street: "Test street 2", contact_id: c3.id!)
+
+        Address.all
+          .with("acontacts", Contact.all.where { sql("contacts.name LIKE %s", ["A%"]) }, false)
+          .join("acontacts") { _acontacts__id == _addresses__contact_id }
+          .pluck(:street).should eq ["Test street 1"]
+      end
+    end
   end
 
   describe "#_select_fields" do

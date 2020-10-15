@@ -302,10 +302,25 @@ describe Jennifer::Adapter::BaseSQLGenerator do
       end
     end
 
+    describe "multiple recursive" do
+      it do
+        query = Jennifer::Query["contacts"].with("test", Contact.all, true).with("test2", Address.all, true)
+        expected_sql = "WITH RECURSIVE test AS (SELECT contacts.* FROM contacts ) , test2 AS (SELECT addresses.* FROM addresses ) "
+        sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
+      end
+    end
+
     context "with multiple expressions" do
       it do
         query = Jennifer::Query["contacts"].with("test", Contact.all).with("test 2", Contact.all)
         expected_sql = "WITH test AS (SELECT contacts.* FROM contacts ) , "\
+          "test 2 AS (SELECT contacts.* FROM contacts ) "
+        sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
+      end
+
+      it "hoists the RECURSIVE keyword to the query beginning" do
+        query = Jennifer::Query["contacts"].with("test", Contact.all).with("test 2", Contact.all, true)
+        expected_sql = "WITH RECURSIVE test AS (SELECT contacts.* FROM contacts ) , "\
           "test 2 AS (SELECT contacts.* FROM contacts ) "
         sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
       end

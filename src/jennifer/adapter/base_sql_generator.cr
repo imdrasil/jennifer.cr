@@ -256,10 +256,13 @@ module Jennifer
         return unless query._ctes?
 
         io << "WITH "
+        if query._ctes!.any?(&.recursive?)
+          io << "RECURSIVE "
+        end
+
         query._ctes!.each_with_index do |cte, index|
           cte_query = cte.query
           io << ", " if index != 0
-          io << "RECURSIVE " if cte.recursive?
           io << cte.name << " AS ("
           io <<
             if cte_query.is_a?(QueryBuilder::ModelQuery)

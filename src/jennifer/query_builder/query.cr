@@ -468,7 +468,7 @@ module Jennifer
       # # WITH RECURSIVE test AS (SELECT users.* FROM users )
       # Jennifer::Query["contacts"].with("test", Jennifer::Query["users"], true)
       # ```
-      def with(name : String | Symbol, query : self, recursive : Bool = false)
+      def with(name : String | Symbol, query : Query, recursive : Bool = false)
         _ctes! << CommonTableExpression.new(name.to_s, query, recursive)
         self
       end

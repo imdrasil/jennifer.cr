@@ -2,6 +2,7 @@ require "./relation_tree"
 
 module Jennifer
   module QueryBuilder
+    # Wrapper class to store information what model relations structure should be loaded in the separate requests.
     class MultiQueryRelationTree < RelationTree
       def add_relation(query, rel, context = @klass, index : Int32 = 0)
         name = rel.to_s

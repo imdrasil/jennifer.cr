@@ -514,7 +514,7 @@ describe Jennifer::Model::Base do
   describe "#lock!" do
     it "lock current record" do
       Factory.create_contact.lock!
-      query_log.last.should match(/FOR UPDATE/)
+      query_log.last[:query].to_s.should match(/FOR UPDATE/)
     end
 
     it "raises exception if transaction is not started" do
@@ -540,7 +540,7 @@ describe Jennifer::Model::Base do
 
     it "locks for update" do
       Factory.create_contact.with_lock do
-        query_log.last.should match(/FOR UPDATE/)
+        query_log.last[:query].to_s.should match(/FOR UPDATE/)
       end
     end
   end
@@ -633,7 +633,7 @@ describe Jennifer::Model::Base do
 
           Contact.all.count.should eq(0)
           Contact.import(objects)
-          query_log[1].should match(argument_regex)
+          query_log[1][:query].to_s.should match(argument_regex)
           Contact.all.count.should eq(amount - 1)
         end
       end
@@ -644,7 +644,7 @@ describe Jennifer::Model::Base do
 
           Contact.all.count.should eq(0)
           Contact.import(objects)
-          query_log[1].should_not match(argument_regex)
+          query_log[1][:query].to_s.should_not match(argument_regex)
           Contact.all.count.should eq(amount)
         end
       end

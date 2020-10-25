@@ -101,12 +101,12 @@ postgres_only do
 
       it "starts table lock with given type" do
         adapter.with_table_lock(table, "as") { }
-        query_log.any? { |entry| entry =~ /LOCK TABLE \w* IN ACCESS SHARE/ }.should be_true
+        query_log.any? { |entry| entry[:query].to_s =~ /LOCK TABLE \w* IN ACCESS SHARE/ }.should be_true
       end
 
       it "starts table lock with given type" do
         adapter.with_table_lock(table) { }
-        query_log.any? { |entry| entry =~ /LOCK TABLE \w* IN SHARE/ }.should be_true
+        query_log.any? { |entry| entry[:query].to_s =~ /LOCK TABLE \w* IN SHARE/ }.should be_true
       end
 
       it "raise BaseException if given invalid lock type" do

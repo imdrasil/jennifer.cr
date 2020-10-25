@@ -58,18 +58,20 @@ CONFIG_PATH = File.join(__DIR__, "..", "scripts", "database.yml")
 
 def set_default_configuration
   Jennifer::Config.reset_config
-  Jennifer::Config.read(File.join(__DIR__, "..", "scripts", "database.yml"), Spec.adapter)
 
   Jennifer::Config.configure do |conf|
+    conf.read(File.join(__DIR__, "..", "scripts", "database.yml"), Spec.adapter)
     conf.logger = Spec.logger
     conf.user = ENV["DB_USER"] if ENV["DB_USER"]?
     conf.password = ENV["DB_PASSWORD"] if ENV["DB_PASSWORD"]?
     conf.verbose_migrations = false
   end
+
+  Log.setup "db", :debug, Spec.logger_backend
+  # Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::DBFormat)
 end
 
 set_default_configuration
-Log.setup "db", :debug, Spec.logger_backend
 
 I18n.load_path += ["spec/fixtures/locales/**"]
 I18n.default_locale = "en"

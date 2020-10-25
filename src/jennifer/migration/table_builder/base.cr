@@ -12,7 +12,7 @@ module Jennifer
         alias AAllowedTypes = EAllowedTypes | Array(EAllowedTypes)
 
         # Hash type for options argument
-        alias DB_OPTIONS = Hash(Symbol, EAllowedTypes | Array(EAllowedTypes))
+        alias DbOptions = Hash(Symbol, EAllowedTypes | Array(EAllowedTypes))
 
         # Default ON UPDATE/ON DELETE for foreign key.
         DEFAULT_ON_EVENT_ACTION = :restrict

@@ -483,8 +483,8 @@ describe Jennifer::Model::Mapping do
 
         describe "UUID" do
           it "correctly saves and loads" do
-            AllTypeModel.create!(uuid_f: "7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
-            AllTypeModel.all.last!.uuid_f!.should eq("7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
+            AllTypeModel.create!(uuid_f: UUID.new("7d61d548-124c-4b38-bc05-cfbb88cfd1d1"))
+            AllTypeModel.all.last!.uuid_f!.should eq(UUID.new("7d61d548-124c-4b38-bc05-cfbb88cfd1d1"))
           end
         end
 

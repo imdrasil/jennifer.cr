@@ -1,6 +1,8 @@
 require "json"
 require "yaml"
 require "log"
+require "uuid"
+
 require "inflector"
 require "ifrit/converter"
 require "ifrit/core"
@@ -11,6 +13,7 @@ require "./jennifer/macros"
 require "./jennifer/exceptions"
 require "./jennifer/adapter"
 require "./jennifer/adapter/record"
+require "./jennifer/adapter/db_formatter"
 require "./jennifer/config"
 
 require "./jennifer/query_builder"

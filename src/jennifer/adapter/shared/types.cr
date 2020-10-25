@@ -45,3 +45,8 @@ end
 struct JSON::Any
   def_clone
 end
+
+# :nodoc:
+struct UUID
+  def_clone
+end

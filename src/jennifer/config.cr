@@ -351,12 +351,12 @@ module Jennifer
     protected def validate_config
       raise Jennifer::InvalidConfig.bad_adapter if adapter.empty?
       raise Jennifer::InvalidConfig.bad_database if db.empty?
-      if max_idle_pool_size != max_pool_size || max_pool_size != initial_pool_size
-        logger.warn do
-          "It is highly recommended to set max_idle_pool_size = max_pool_size = initial_pool_size to prevent "\
-          "blowing up count of DB connections. For any details take a look at "\
-          "https://github.com/crystal-lang/crystal-db/issues/77"
-        end
+      return if max_idle_pool_size == max_pool_size && max_pool_size == initial_pool_size
+
+      logger.warn do
+        "It is highly recommended to set max_idle_pool_size = max_pool_size = initial_pool_size to prevent "\
+        "blowing up count of DB connections. For any details take a look at "\
+        "https://github.com/crystal-lang/crystal-db/issues/77"
       end
     end
 

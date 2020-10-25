@@ -18,4 +18,6 @@ Jennifer::Config.configure do |conf|
   end
 end
 
+Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::Adapter::DBFormatter)
+
 Sam.help

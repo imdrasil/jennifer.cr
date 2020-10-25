@@ -2,7 +2,7 @@
 
 ## Installation
 
-Add the shard to your `shards.yml`. Also
+Add the shard to your `shard.yml`. Also
 
 ```yml
 dependencies:
@@ -20,14 +20,14 @@ dependencies:
     version: "= 0.9.0"
   pg:
     github: will/crystal-pg
-    version: "= 0.21.0"
+    version: "= 0.22.1"
   # or for mysql
   crystal-mysql:
     github: crystal-lang/crystal-mysql
-    version: "= 0.11.0"
+    version: "= 0.12.0"
 ```
 
-If you want to use SQLite3 - add [Jennifer SQLite3 adapter](https://github.com/imdrasil/jennifer_sqlite3_adapter):
+If you want to use SQLite3 - add [Jennifer SQLite3 **adapter**](https://github.com/imdrasil/jennifer_sqlite3_adapter):
 
 ```yml
 dependencies:
@@ -39,7 +39,7 @@ dependencies:
     version: "~> 0.3.0"
 ```
 
-It is shipped with SQLite driver so you don't need add it explicitly.
+It is shipped with SQLite driver.
 
 In this tutorial we will be using PostgreSQL adapter.
 
@@ -53,12 +53,14 @@ require "jennifer/adapter/postgres" # for PostgreSQL
 # require "jennifer/adapter/mysql" for MySQL
 
 APP_ENV = ENV["APP_ENV"]? || "development"
-Jennifer::Config.read("config/database.yml", APP_ENV)
-jennifer::Config.from_uri(ENV["DATABASE_URI"]) if ENV.has_key?("DATABASE_URI")
 
 Jennifer::Config.configure do |conf|
+  conf.read("config/database.yml", APP_ENV)
+  conf.from_uri(ENV["DATABASE_URI"]) if ENV.has_key?("DATABASE_URI")
   conf.logger.level = APP_ENV == "development" ? :debug : :error
 end
+
+Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::Adapter::DBFormatter)
 ```
 
 This allows you to put all database related configuration to structured yml file and override it with custom database connection URI passing it in `DATABASE_URI`.

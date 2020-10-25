@@ -336,7 +336,7 @@ class AllTypeModel < ApplicationRecord
         decimal_f: PG::Numeric?,
         oid_f: UInt32?,
         char_f: String?,
-        uuid_f: String?,
+        uuid_f: UUID?,
         timestamptz_f: Time?,
         bytea_f: Bytes?,
         jsonb_f: JSON::Any?,

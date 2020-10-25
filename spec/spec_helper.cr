@@ -53,10 +53,6 @@ end
 
 # Callbacks =======================
 
-Spec.before_suite do
-  Log.setup "db", :debug, Spec.logger_backend
-end
-
 Spec.before_each do
   set_default_configuration
   Spec.logger_backend.entries.clear
@@ -121,7 +117,7 @@ end
 
 def query_log
   offset = ENV["PAIR"]? == "1" ? 2 : 1
-  Spec.logger_backend.entries[offset..-1].map(&.message)
+  Spec.logger_backend.entries[offset..-1].map(&.data)
 end
 
 def read_to_end(rs)

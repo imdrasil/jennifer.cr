@@ -16,7 +16,7 @@ module Jennifer
       # end
       # ```
       class CreateTable < Base
-        getter fields = {} of String => DB_OPTIONS
+        getter fields = {} of String => DbOptions
 
         def process
           schema_processor.create_table(self)
@@ -31,7 +31,7 @@ module Jennifer
           # Defines new column *name* of type `{{method.id}}` with given *options*.
           #
           # For more details see `ChangeTable#add_column`.
-          def {{method.id}}(name : String | Symbol, options = DB_OPTIONS.new)
+          def {{method.id}}(name : String | Symbol, options = DbOptions.new)
             @fields[name.to_s] = build_column_options({{method}}, options)
             self
           end
@@ -43,7 +43,7 @@ module Jennifer
         #
         # For more details see `ChangeTable#add_column`
         def enum(name : String | Symbol, values : Array(String),
-                 options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
+                 options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
           options = Ifrit.sym_hash_cast(options, AAllowedTypes)
             .merge!({ :values => Ifrit.typed_array_cast(values, EAllowedTypes) })
           @fields[name.to_s] = build_column_options(:enum, options)
@@ -65,13 +65,13 @@ module Jennifer
         #
         # Migration above will create PostreSQL enum and a table with column of that type.
         def field(name : String | Symbol, type : Symbol | String,
-                  options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
+                  options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
           @fields[name.to_s] = ({ :sql_type => type } of Symbol => AAllowedTypes).merge(options)
           self
         end
 
         # Alias for `#field`.
-        def column(name, type, options = DB_OPTIONS.new)
+        def column(name, type, options = DbOptions.new)
           field(name, type, options)
         end
 
@@ -90,7 +90,7 @@ module Jennifer
         # reference :order, :bigint
         # reference :taggable, { :polymorphic => true }
         # ```
-        def reference(name, type : Symbol = :integer, options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
+        def reference(name, type : Symbol = :integer, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
           column = Inflector.foreign_key(name)
           is_null = options.has_key?(:null) ? options[:null] : true
 

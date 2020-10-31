@@ -63,12 +63,8 @@ module Jennifer
         end
       end
 
-      def exec(query : String, args : ArgsType = [] of DBAny)
-        time = Time.monotonic
-        res = with_connection { |conn| conn.exec(query, args: args) }
-        time = Time.monotonic - time
-        Config.logger.debug { regular_query_message(time, query, args) }
-        res
+      def exec(query : String, args : ArgsType = [] of DBAny) : DB::ExecResult
+        with_connection { |conn| log_query(query, args) { conn.exec(query, args: args) } }
       rescue e : BaseException
         BadQuery.prepend_information(e, query, args)
         raise e
@@ -79,10 +75,7 @@ module Jennifer
       end
 
       def query(query : String, args : ArgsType = [] of DBAny)
-        time = Time.monotonic
-        res = with_connection { |conn| conn.query(query, args: args) { |rs| time = Time.monotonic - time; yield rs } }
-        Config.logger.debug { regular_query_message(time, query, args) }
-        res
+        with_connection { |conn| log_query(query, args) { conn.query(query, args: args) { |rs| yield rs } } }
       rescue e : BaseException
         BadQuery.prepend_information(e, query, args)
         raise e
@@ -93,11 +86,7 @@ module Jennifer
       end
 
       def scalar(query : String, args : ArgsType = [] of DBAny)
-        time = Time.monotonic
-        res = with_connection { |conn| conn.scalar(query, args: args) }
-        time = Time.monotonic - time
-        Config.logger.debug { regular_query_message(time, query, args) }
-        res
+        with_connection { |conn| log_query(query, args) { conn.scalar(query, args: args) } }
       rescue e : BaseException
         BadQuery.prepend_information(e, query, args)
         raise e
@@ -162,6 +151,26 @@ module Jennifer
         on_conflict.each { |_, value| add_field_assign_arguments(args, value) }
 
         exec(*parse_query(query, args))
+      end
+
+      def log_query(query : String, args : Enumerable)
+        time = Time.monotonic
+        res = yield
+        time = Time.monotonic - time
+        Config.logger.debug &.emit(
+          query: query,
+          args: DB::MetadataValueConverter.arg_to_log(args),
+          time: time.nanoseconds / 1000
+        )
+        res
+      end
+
+      def log_query(query : String)
+        time = Time.monotonic
+        res = yield
+        time = Time.monotonic - time
+        Config.logger.debug &.emit(query: query, time: time.nanoseconds / 1000)
+        res
       end
 
       # Returns whether index for the *table` with *name* or *fields* exists.
@@ -373,16 +382,6 @@ module Jennifer
 
       private def extract_attributes(collection : Array, _klass, _fields : Array)
         collection.map(&.arguments_to_insert[:args])
-      end
-
-      private def regular_query_message(time : Time::Span, query : String, args : Array)
-        ms = time.nanoseconds / 1000
-        args.empty? ? "#{ms} µs #{query}" : "#{ms} µs #{query} | #{args.inspect}"
-      end
-
-      private def regular_query_message(time : Time::Span, query : String, arg = nil)
-        ms = time.nanoseconds / 1000
-        arg ? "#{ms} µs #{query} | #{arg}" : "#{ms} µs #{query}"
       end
     end
   end

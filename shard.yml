@@ -23,10 +23,11 @@ development_dependencies:
     version: "~> 0.3.0"
   ameba:
     github: crystal-ameba/ameba
-    version: "= 0.12.1"
-  micrate:
-    github: "amberframework/micrate"
-    version: "= 0.7.0"
+    version: "= 0.13.2"
+  # TODO: add back after they add support of latest pg
+  # micrate:
+  #   github: "amberframework/micrate"
+  #   version: "= 0.9.0"
 dependencies:
   inflector:
     github: phoffer/inflector.cr

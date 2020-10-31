@@ -4,9 +4,9 @@ module Jennifer
   # All possible database types for any driver.
   alias DBAny = Array(Int32) | Array(Char) | Array(Float32) | Array(Float64) |
                 Array(Int16) | Array(Int64) | Array(String) |
-                Bool | Char | Float32 | Float64 | Int8 | Int16 | Int32 | Int64 | JSON::Any | PG::Geo::Box |
-                PG::Geo::Circle | PG::Geo::Line | PG::Geo::LineSegment | PG::Geo::Path | PG::Geo::Point |
-                PG::Geo::Polygon | PG::Numeric | Slice(UInt8) | String | Time | Time::Span | UInt32 | Nil
+                Bool | Char | Float32 | Float64 | Int8 | Int16 | Int32 | Int64 | JSON::Any | String | Time | Nil |
+                PG::Geo::Box | PG::Geo::Circle | PG::Geo::Line | PG::Geo::LineSegment | PG::Geo::Path |
+                PG::Geo::Point | PG::Geo::Polygon | PG::Numeric | Slice(UInt8) | Time::Span | UInt32 | UUID
 
   module Adapter
     TYPES = %i(

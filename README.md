@@ -148,16 +148,17 @@ You can easily configure error message generated for certain validation violatio
 
 ### Logging & Debugging
 
-Jennifer uses a [standard](https://crystal-lang.org/api/0.34.0/Log.html) Crystal logging mechanism so you could specify your own logger or formatter:
+Jennifer uses a [standard](https://crystal-lang.org/api/latest/Log.html) Crystal logging mechanism so you could specify your own logger, backend and formatter:
 
 ```crystal
 # This is the default logger configuration
 Jennifer::Config.configure do |conf|
   conf.logger = Log.for("db", :debug)
 end
+Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::Adapter::DBFormatter)
 ```
 
-All errors occurred during executing query includes query itself with arguments along side description. `Jennifer::Model::Base#inspect` returns model debug information filtered out all unnecessary information.
+`Jennifer::Model::Base#inspect` returns formatted information about model attributes filtering out all unnecessary information.
 
 ```crystal
 Address.first!.inspect
@@ -261,12 +262,6 @@ $ ./generate-docs.sh
 ```
 
 NB. It also depends on then chosen adapter (postgres by default).
-
-## Similar shards
-
-- [crecto](https://github.com/Crecto/crecto) - based on Phoenix's Ecto lib and follows the repository pattern
-- [granite-orm](https://github.com/amberframework/granite) - lightweight ORM focusing on mapping fields from request to your objects
-- [micrate](https://github.com/juanedi/micrate) - standalone database migration tool for crystal
 
 ## Contributing
 

@@ -63,7 +63,7 @@ db_uri = "mysql://root@somehost/some_database?max_pool_size=111&initial_pool_siz
 Jennifer::Config.from_uri(db)
 ```
 
-Take into account - some configs can't be initialized using URI string or yaml file but all of them always can be initialized using `Jennifer::Config.configure`. Here is the list of such configs:
+Take into account - some configs can't be initialized using URI or yaml file but all of them always can be initialized using `Jennifer::Config.configure`. Here is the list of such configs:
 
 | Config | YAML | URI |
 | --- | --- | --- |
@@ -115,7 +115,7 @@ Take into account - some configs can't be initialized using URI string or yaml f
 
 ## Logging
 
-Jennifer uses [standard](https://crystal-lang.org/api/0.34.0/Log.html) Crystal logging mechanism so you could specify your own logger or formatter:
+Jennifer uses [standard](https://crystal-lang.org/api/latest/Log.html) Crystal logging mechanism so you could specify your own logger:
 
 ```crystal
 # This is default logger configuration
@@ -123,6 +123,14 @@ Jennifer::Config.configure do |conf|
   conf.logger = Log.for("db", :debug)
 end
 ```
+
+As a default formatter `Jennifer::Adapter::DBFormatter` could be used:
+
+```crystal
+Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::Adapter::DBFormatter)
+```
+
+More about logging could be found [in the crystal doc](https://crystal-lang.org/api/latest/Log.html).
 
 ## Command Shell
 

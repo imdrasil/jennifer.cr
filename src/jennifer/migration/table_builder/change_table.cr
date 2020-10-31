@@ -18,8 +18,8 @@ module Jennifer
 
         def initialize(adapter, name)
           super
-          @changed_columns = {} of String => DB_OPTIONS
-          @new_columns = {} of String => DB_OPTIONS
+          @changed_columns = {} of String => DbOptions
+          @new_columns = {} of String => DbOptions
           @drop_columns = [] of String
           @new_table_name = ""
         end
@@ -53,7 +53,7 @@ module Jennifer
         # change_column :price, { :default => :none }
         # ```
         def change_column(name : String | Symbol, type : Symbol? = nil,
-                          options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
+                          options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
           @changed_columns[name.to_s] = build_column_options(type, options)
           @changed_columns[name.to_s][:new_name] ||= name
           self
@@ -83,7 +83,7 @@ module Jennifer
         # add_column :skills, :text, { :array => true }
         # ```
         def add_column(name : String | Symbol, type : Symbol? = nil,
-                       options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
+                       options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
           @new_columns[name.to_s] = build_column_options(type, options)
           self
         end
@@ -109,7 +109,7 @@ module Jennifer
         # add_reference :order, :bigint
         # add_reference :taggable, { :polymorphic => true }
         # ```
-        def add_reference(name, type : Symbol = :integer, options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
+        def add_reference(name, type : Symbol = :integer, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
           column = Inflector.foreign_key(name)
           is_null = options.has_key?(:null) ? options[:null] : true
           field_internal_type = options.has_key?(:sql_type) ? nil : type
@@ -134,7 +134,7 @@ module Jennifer
         #
         # *options* can include `:polymorphic`, `:to_table` and `:column` options. For more details see
         # `#add_reference`.
-        def drop_reference(name, options : Hash(Symbol, AAllowedTypes) = DB_OPTIONS.new)
+        def drop_reference(name, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
           column = Inflector.foreign_key(name)
 
           drop_column(column)

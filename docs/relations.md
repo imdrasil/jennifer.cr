@@ -48,7 +48,7 @@ contact.remove_addresses(address)
 
 As you can see primary field of related model can't be specified - defined primary key (in the mapping) will be got.
 
-Also `mas_many`, `belongs_to` and `has_one` relations have `dependent` parameter - defines extra callback for cleaning up related data after destroying parent one. Allowed types are:
+Also `has_many`, `belongs_to` and `has_one` relations have `dependent` parameter - defines extra callback for cleaning up related data after destroying parent one. Allowed types are:
 
 - `nullify` - sets foreign key to `null` (`belongs_to` doesn't support it) - default for `has_many` and `has_one`
 - `delete` - deletes all related objects

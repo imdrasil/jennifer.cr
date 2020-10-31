@@ -8,6 +8,8 @@ Jennifer::Config.configure do |conf|
   # conf.logger.level = :error
 end
 
+Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::Adapter::DBFormatter)
+
 Sam.namespace "script" do
   task "drop_models" do
     Jennifer::Model::Base.models.select(&.has_table?).each(&.all.delete)

@@ -202,7 +202,7 @@ describe Jennifer::Adapter::Base do
     #   void_transaction do
     #     c = Factory.build_contact
     #     adapter.bulk_insert([c])
-    #     query_log.any? { |entry| entry =~ /BEGIN/ }.should be_true
+    #     query_log.any? { |entry| entry[:query].to_s =~ /BEGIN/ }.should be_true
     #   end
     # end
 
@@ -211,7 +211,7 @@ describe Jennifer::Adapter::Base do
     #     void_transaction do
     #       c = Factory.build_contact
     #       adapter.bulk_insert([c])
-    #       query_log.any? { |entry| entry =~ /LOCK TABLE/ }.should be_true
+    #       query_log.any? { |entry| entry[:query].to_s =~ /LOCK TABLE/ }.should be_true
     #     end
     #   end
     # end
@@ -242,7 +242,7 @@ describe Jennifer::Adapter::Base do
       it "imports objects by prepared statement" do
         Contact.all.count.should eq(0)
         adapter.bulk_insert(Contact.table_name, fields, (amount - 1).times.map { values }.to_a)
-        query_log[1].should match(argument_regex)
+        query_log[1][:query].to_s.should match(argument_regex)
         Contact.all.count.should eq(amount - 1)
       end
 
@@ -250,7 +250,7 @@ describe Jennifer::Adapter::Base do
         it "imports objects escaping their values in query" do
           Contact.all.count.should eq(0)
           adapter.bulk_insert(Contact.table_name, fields, amount.times.map { values }.to_a)
-          query_log[1].should_not match(argument_regex)
+          query_log[1][:query].to_s.should_not match(argument_regex)
           Contact.all.count.should eq(amount)
         end
       end

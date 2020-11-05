@@ -16,11 +16,10 @@ module Jennifer
 
       # Yields new checkout connection.
       def with_manual_connection(&block)
-        conn = db.checkout
-        begin
-          yield conn
-        ensure
-          conn.release
+        db.retry do
+          db.using_connection do |conn|
+            yield conn
+          end
         end
       end
 
@@ -107,13 +106,9 @@ module Jennifer
         if under_transaction?
           yield @locks[fiber_id].transaction
         else
-          conn = db.checkout
-          begin
-            res = yield conn
-          ensure
-            conn.release
-          end
-          res || false
+          with_manual_connection do |conn|
+            yield conn
+          end || false
         end
       end
     end

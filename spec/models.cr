@@ -112,7 +112,7 @@ class Contact < ApplicationRecord
   has_many :addresses, Address, inverse_of: :contact
   has_many :facebook_profiles, FacebookProfile, inverse_of: :contact
   has_and_belongs_to_many :countries, Country
-  has_and_belongs_to_many :facebook_many_profiles, FacebookProfile, association_foreign: :profile_id
+  has_and_belongs_to_many :facebook_many_profiles, FacebookProfile, association_foreign: :profile_id, association_primary: :uid
   has_one :main_address, Address, {where { _main }}, inverse_of: :contact
   has_one :passport, Passport, inverse_of: :contact
   belongs_to :user, User

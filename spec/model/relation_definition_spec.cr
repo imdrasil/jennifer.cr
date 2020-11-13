@@ -687,7 +687,7 @@ module Jennifer::Model
             c = Factory.create_contact
             q = c.facebook_many_profiles_query
             select_query(q)
-              .should match(/JOIN contacts_profiles ON contacts_profiles\.profile_id = profiles\.id AND contacts_profiles\.contact_id = %s/)
+              .should match(/JOIN contacts_profiles ON contacts_profiles\.profile_id = profiles\.uid AND contacts_profiles\.contact_id = %s/)
             select_query(q)
               .should match(/profiles\.type = %s/)
             q.sql_args.includes?("FacebookProfile").should be_true

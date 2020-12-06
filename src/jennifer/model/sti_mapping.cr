@@ -307,10 +307,7 @@ module Jennifer
             {% if options[:converter] %}
               {{options[:converter]}}.to_db(self.{{attr.id}})
             {% else %}
-              value = self.{{attr.id}}
-              raise Jennifer::BadAttributeTypeCast.new({{attr.stringify}}, value) unless value.is_a?(Jennifer::DBAny)
-
-              value
+              self.{{attr.id}}
             {% end %}
           {% end %}
           else

@@ -248,8 +248,6 @@ module Jennifer
       # ```
       abstract def update_columns(values)
 
-      # TODO: decide what to do with type casting for #update_column and other related methods
-
       # Returns whether any field was changed. If field again got first value - `true` anyway
       # will be returned.
       #

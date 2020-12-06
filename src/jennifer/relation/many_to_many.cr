@@ -29,8 +29,8 @@ module Jennifer
 
       def remove(obj : Q, rel : T)
         this = self
-        primary_value = obj.attribute(primary_field)
-        association_primary_value = rel.primary
+        primary_value = obj.attribute_before_typecast(primary_field)
+        association_primary_value = rel.attribute_before_typecast(T.primary_field_name)
         QueryBuilder::Query.new(join_table!).where do
           (c(this.foreign_field) == primary_value) & (c(this.association_foreign_key) == association_primary_value)
         end.delete
@@ -78,7 +78,7 @@ module Jennifer
 
         unless pk_repo.has_key?(_primary)
           array = pk_repo[_primary] = Array(DBAny).new(collection.size)
-          collection.each { |e| array << e.attribute(_primary) }
+          collection.each { |e| array << e.attribute_before_typecast(_primary) }
         end
 
         join_fk = "__join_fk__"
@@ -103,8 +103,8 @@ module Jennifer
         adapter.insert(
           join_table!,
           {
-            foreign_field           => obj.attribute(primary_field),
-            association_foreign_key => rel.primary,
+            foreign_field           => obj.attribute_before_typecast(primary_field),
+            association_foreign_key => rel.primary
           }
         )
       end

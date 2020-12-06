@@ -1,10 +1,10 @@
 # Query DSL
 
-My favorite part. Jennifer allows you to build lazy evaluated queries with chaining syntax. But some of them could be only at the and of a chain (such as `#first` or `#pluck`).
+My favorite part. Jennifer allows you to build lazy evaluated queries with chaining syntax. But some of them could be only at the and of a chain (such as `#first`, `#find` or `#pluck`).
 
 ## WHERE
 
-`#all` retrieves everything (only at the beginning; creates empty request)
+`.all` creates empty request for model it is invoked on.
 
 ```crystal
 Contact.all

@@ -34,6 +34,26 @@ module Jennifer
         model_class.relation(name.to_s).join_condition(self, type)
       end
 
+      # Returns record by given primary field or `nil` otherwise.
+      #
+      # ```
+      # Contact.all.find(-1) # => nil
+      # ```
+      def find(id)
+        this = self
+        where { this.model_class.primary == id }.first
+      end
+
+      # Returns record by given primary field or raises `Jennifer::RecordNotFound` exception otherwise.
+      #
+      # ```
+      # Contact.all.find!(-1) # Jennifer::RecordNotFound
+      # ```
+      def find!(id)
+        this = self
+        where { this.model_class.primary == id }.first!
+      end
+
       # Yields each batch of records that was found by the specified query.
       #
       # ```

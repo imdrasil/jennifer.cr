@@ -1,30 +1,10 @@
 require "../spec_helper"
 
-module Spec
-  class Note < ApplicationRecord
-    include ::Note::Mapping
-
-    belongs_to :notable, Union(::User | ::Spec::Contact), polymorphic: true
-
-    def self.table_prefix; end
-  end
-
-  class Contact < ApplicationRecord
-    include ::Contact::Mapping
-
-    mapping
-
-    has_one :note, Note, inverse_of: :notable, polymorphic: true, dependent: :nullify
-
-    def self.table_prefix; end
-  end
-end
-
 describe Jennifer::Relation::IPolymorphicBelongsTo do
-  example_class = NoteWithCallback::NotableRelation
+  example_class = PolymorphicNote::NotableRelation
   relation_name = "notable"
-  note_class = NoteWithCallback
-  profile_class = FacebookProfileWithDestroyNotable
+  note_class = PolymorphicNote
+  contact_class = ContactForPolymorphicNote
   example_relation = example_class.new(relation_name, nil, nil, nil)
 
   describe "#foreign_type" do
@@ -64,17 +44,26 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
 
     context "with specified primary field" do
       it do
-        example_class.new(relation_name, nil, "specific_type", nil).primary_field.should eq("specific_type")
+        example_class.new(relation_name, nil, "specific_field", nil).primary_field.should eq("specific_field")
       end
     end
   end
 
   describe "#condition_clause" do
     context "without custom query" do
+      pending "uses attributes before typecast for foreign type"
+
       describe "for specific id" do
         it do
-          condition = example_relation.condition_clause(1, profile_class.to_s)
-          condition.should eq(profile_class.c(:id, relation_name) == 1)
+          condition = example_relation.condition_clause(1, contact_class.to_s)
+          condition.should eq(contact_class.c(:id, relation_name) == 1)
+        end
+      end
+
+      describe "for array of ids" do
+        it do
+          condition = example_relation.condition_clause([1, 2, 3], contact_class.to_s)
+          condition.should eq(contact_class.c(:id, relation_name).in([1, 2, 3]))
         end
       end
     end
@@ -89,15 +78,8 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
 
     context "with valid polymorphic type" do
       it do
-        p = Factory.create_facebook_profile
-        example_relation.query(p.id, profile_class.to_s).count.should eq(1)
-      end
-    end
-
-    context "with custom query" do
-      it do
-        condition = Note::NotableRelation.new(relation_name, nil, nil, nil).query(1, "User").tree
-        condition.should eq((User.c(:id, relation_name) == 1) & (User.c(:name).like("%on")))
+        contact = Factory.create_contact
+        example_relation.query(contact.id, contact_class.to_s).count.should eq(1)
       end
     end
   end
@@ -105,8 +87,8 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
   describe "#build" do
     context "with valid polymorphic type" do
       it do
-        p = example_relation.build({ "login" => "login", "type" => "type" } of String => Jennifer::DBAny, profile_class.to_s)
-        p.is_a?(FacebookProfileWithDestroyNotable).should be_true
+        p = example_relation.build({ "name" => "test" } of String => Jennifer::DBAny, contact_class.to_s)
+        p.is_a?(ContactForPolymorphicNote).should be_true
       end
     end
 
@@ -129,9 +111,9 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
   describe "#create!" do
     context "with valid polymorphic type" do
       it do
-        p = example_relation.create!({ "login" => "login", "type" => "type" } of String => Jennifer::DBAny, profile_class.to_s)
-        p.is_a?(FacebookProfileWithDestroyNotable).should be_true
-        p.persisted?.should be_true
+        c = example_relation.create!({ "name" => "login" } of String => Jennifer::DBAny, contact_class.to_s)
+        c.is_a?(ContactForPolymorphicNote).should be_true
+        c.persisted?.should be_true
       end
 
       describe "alternative class" do
@@ -185,21 +167,33 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
 
   describe "#destroy" do
     context "with valid polymorphic type" do
+      it "destroys record" do
+        c = Factory.create_contact
+        n = note_class.build(text: "test", notable_type: contact_class.to_s, notable_id: c.id)
+
+        count = contact_class.all.count
+        example_relation.destroy(n)
+        contact_class.find(c.id).should be_nil
+        contact_class.all.count.should eq(count - 1)
+      end
+
+      it "uses attributes before typecast for foreign and type fields" do
+        c = Factory.create_contact
+        n = PolymorphicNoteWithConverter.new({ notable_type: contact_class.to_s, notable_id: c.id })
+        n.notable_id.should eq("Int32: #{c.id}")
+        n.notable_type.should eq("String: #{contact_class}")
+
+        count = contact_class.all.count
+        PolymorphicNoteWithConverter::NotableRelation.new(relation_name, nil, nil, nil).destroy(n)
+        contact_class.find(c.id).should be_nil
+        contact_class.all.count.should eq(count - 1)
+      end
+
       context "with blank foreign field" do
         it do
           n = note_class.build(text: "test")
           example_relation.destroy(n).should be_nil
         end
-      end
-
-      it do
-        p = Factory.create_facebook_profile
-        n = note_class.build(text: "test", notable_type: profile_class.to_s, notable_id: p.id)
-
-        count = profile_class.destroy_counter
-        example_relation.destroy(n)
-        profile_class.find(p.id).should be_nil
-        profile_class.destroy_counter.should eq(count + 1)
       end
     end
 
@@ -218,29 +212,30 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
       it do
         n = note_class.find!(Factory.create_note.id)
         opts = {
-          "login" => "login",
-          "type" => "type",
-          "notable_type" => "FacebookProfileWithDestroyNotable"
+          "name" => "login",
+          "notable_type" => "ContactForPolymorphicNote"
         } of String => Jennifer::DBAny
-        example_relation.insert(n, opts).as(FacebookProfileWithDestroyNotable)
-        p = n.notable.as(FacebookProfileWithDestroyNotable)
+        example_relation.insert(n, opts).as(ContactForPolymorphicNote)
+        p = n.notable.as(ContactForPolymorphicNote)
         n.notable_id.should eq(p.id)
-        n.notable_type.should eq(profile_class.to_s)
+        n.notable_type.should eq(contact_class.to_s)
       end
+
+      pending "uses attributes before typecast for foreign fields"
 
       describe "alternative class" do
         it do
-          n = Spec::Note.find!(Factory.create_note.id)
+          n = PolymorphicNote.find!(Factory.create_note.id)
           opts = {
             "name" => "name",
             "age" => 42,
             "gender" => "male",
-            "notable_type" => "Spec::Contact"
+            "notable_type" => "ContactForPolymorphicNote"
           } of String => Jennifer::DBAny
-          Spec::Note.notable_relation.insert(n, opts)
-          p = n.notable.as(Spec::Contact)
+          PolymorphicNote.notable_relation.insert(n, opts)
+          p = n.notable.as(ContactForPolymorphicNote)
           n.notable_id.should eq(p.id)
-          n.notable_type.should eq("Spec::Contact")
+          n.notable_type.should eq("ContactForPolymorphicNote")
         end
       end
     end
@@ -248,30 +243,32 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
     context "with object" do
       it do
         n = note_class.find!(Factory.create_note.id)
-        p = profile_class.create!(login: "login", type: "type")
-        example_relation.insert(n, p)
-        n.notable_id.should eq(p.id)
-        n.notable_type.should eq(profile_class.to_s)
+        c = contact_class.create!(name: "login")
+        example_relation.insert(n, c)
+        n.notable_id.should eq(c.id)
+        n.notable_type.should eq(contact_class.to_s)
       end
 
       it "raises exception if object is already assigned" do
-        p1 = profile_class.find!(Factory.create_facebook_profile.id)
-        p2 = profile_class.find!(Factory.create_facebook_profile.id)
+        c1 = contact_class.find!(Factory.create_contact.id)
+        c2 = contact_class.find!(Factory.create_contact.id)
         n = note_class.build(text: "some text")
-        n = p2.add_notes(n)[0]
+        n = c2.add_notes(n)[0]
         expect_raises(Jennifer::BaseException) do
-          example_relation.insert(n, p1)
+          example_relation.insert(n, c1)
         end
       end
 
+      pending "uses attributes before typecast for foreign fields"
+
       describe "alternative class" do
         it do
-          n = Spec::Note.find!(Factory.create_note.id)
-          p = Spec::Contact.find!(Factory.create_contact.id)
-          Spec::Note.notable_relation.insert(n, p)
+          n = note_class.find!(Factory.create_note.id)
+          c = contact_class.find!(Factory.create_contact.id)
+          note_class.notable_relation.insert(n, c)
 
-          n.notable_id.should eq(p.id)
-          n.notable_type.should eq(p.class.to_s)
+          n.notable_id.should eq(c.id)
+          n.notable_type.should eq(c.class.to_s)
         end
       end
     end
@@ -279,8 +276,8 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
 
   describe "#remove" do
     it do
-      p = profile_class.find!(Factory.create_facebook_profile.id)
-      n = p.add_notes(note_class.build(text: "some text"))[0]
+      c = contact_class.find!(Factory.create_contact.id)
+      n = c.add_notes(note_class.build(text: "some text"))[0]
 
       example_relation.remove(n)
       n.reload
@@ -290,7 +287,7 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
 
     describe "alternative class" do
       it do
-        n = Spec::Note.create!({text: "some_text", notable_id: 1, notable_type: "User"})
+        n = note_class.create!({text: "some_text", notable_id: 1, notable_type: "User"})
 
         example_relation.remove(n)
         n.reload

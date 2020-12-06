@@ -239,16 +239,18 @@ module Jennifer
         enum_fields = [] of Tuple(Int32, Symbol)
         values = super
 
+        # NOTE: any pg enum field must be converted back to string from slice in bulk insert
         klass.columns_tuple.each do |field, properties|
-          if properties.has_key?(:converter) && properties.dig(:converter) == ::Jennifer::Model::EnumConverter
+          if properties.has_key?(:converter) && properties.dig(:converter) == ::Jennifer::Model::PgEnumConverter
             enum_fields << {fields.index(field.to_s).not_nil!, field}
           end
         end
 
         unless enum_fields.empty?
-          values.each_with_index do |row, row_index|
+          values.each do |row|
             enum_fields.each do |tuple|
-              row[tuple[0]] = collection[row_index].attribute(tuple[1])
+              value = row[tuple[0]]
+              row[tuple[0]] = String.new(value) if value.is_a?(Bytes)
             end
           end
         end
@@ -258,7 +260,7 @@ module Jennifer
   end
 end
 
-require "./postgres/converters"
+require "./postgres/model/*"
 require "./postgres/criteria"
 require "./postgres/numeric"
 require "./postgres/migration/table_builder/base"

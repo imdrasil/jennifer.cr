@@ -4,10 +4,6 @@ module Jennifer
     # :nodoc:
     TYPES                       = %w(Primary32 Primary64)
     # :nodoc:
-    NILLABLE_REGEXP             = /(::Nil)|( Nil)/
-    # :nodoc:
-    JSON_REGEXP                 = /JSON::Any/
-    # :nodoc:
     AUTOINCREMENTABLE_STR_TYPES = %w(Int32 Int64)
 
     # Mapping type for `Int32` primary key.

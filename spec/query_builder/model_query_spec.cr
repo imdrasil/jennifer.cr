@@ -17,8 +17,6 @@ pair_only do
   end
 end
 
-# TODO: add checking for log entries when we shouldn't hit db
-
 describe Jennifer::QueryBuilder::ModelQuery do
   adapter = Jennifer::Adapter.default_adapter
 
@@ -137,10 +135,11 @@ describe Jennifer::QueryBuilder::ModelQuery do
 
           Factory.create_passport(contact_id: c2.id, enn: "12345")
 
-          res = Contact.all.left_join(Address) { _contact_id == _contact__id }
-                           .left_join(Passport) { _contact_id == _contact__id }
-                           .order(id: :asc)
-                           .with_relation(:addresses, :passport).to_a
+          res = Contact.all
+            .left_join(Address) { _contact_id == _contact__id }
+            .left_join(Passport) { _contact_id == _contact__id }
+            .order(id: :asc)
+            .with_relation(:addresses, :passport).to_a
 
           res.size.should eq(2)
 
@@ -159,8 +158,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
           Factory.create_address(main: false, contact_id: c1.id)
           Factory.create_address(main: true, contact_id: c1.id)
 
-          q = Contact.all.eager_load(:addresses, :main_address)
-          r = q.to_a
+          r = Contact.all.eager_load(:addresses, :main_address).to_a
           r.size.should eq(2)
           r[0].addresses.size.should eq(3)
           r[0].main_address.nil?.should be_false
@@ -203,11 +201,34 @@ describe Jennifer::QueryBuilder::ModelQuery do
     end
   end
 
+  describe "#find" do
+    it "takes first record by given primary field value" do
+      passport = Factory.create_passport
+      Passport.all.find(passport.enn).not_nil!.enn.should eq(passport.enn)
+    end
+
+    it "returns nil if record isn't found" do
+      Factory.create_passport(enn: "asd")
+      Passport.all.find("as").should be_nil
+    end
+  end
+
+  describe "#find!" do
+    it "takes first record by given primary field value" do
+      passport = Factory.create_passport
+      Passport.all.find!(passport.enn).enn.should eq(passport.enn)
+    end
+
+    it "raises RecordNotFound if record isn't found" do
+      Factory.create_passport(enn: "asd")
+      expect_raises(::Jennifer::RecordNotFound) do
+        Passport.all.find!("as")
+      end
+    end
+  end
+
   describe "#find_by_sql" do
-    query = <<-SQL
-      SELECT contacts.*
-      FROM contacts
-    SQL
+    query = "SELECT contacts.* FROM contacts"
 
     it "builds all requested objects" do
       Factory.create_contact
@@ -218,10 +239,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
 
     it "raises exception if not all required fields are listed in the select clause" do
       Factory.create_contact
-      _query = <<-SQL
-        SELECT id
-        FROM contacts
-      SQL
+      _query = "SELECT id FROM contacts"
       expect_raises(Jennifer::BaseException, /includes only/) do
         Contact.all.find_by_sql(_query)
       end
@@ -403,7 +421,9 @@ describe Jennifer::QueryBuilder::ModelQuery do
           .select { [sql("count(*)").alias("stat_count"), sql("date_trunc('year', created_at)").alias("period")] }
           .group("period")
           .order({"period" => :desc})
-          .results.size.should eq(1)
+          .results
+          .size
+          .should eq(1)
       end
 
       it "allows to use float for filtering decimal fields" do
@@ -417,18 +437,16 @@ describe Jennifer::QueryBuilder::ModelQuery do
 
     describe "CTE" do
       it do
-        results = Jennifer::Query["cte"].with(
-          "cte",
-          Jennifer::Query[""].select("1 as n")
-          .union(
-            Jennifer::Query["cte"]
-            .select("1 + n AS n")
-            .where { _n < 5 },
+        Jennifer::Query["cte"]
+          .with(
+            "cte",
+            Jennifer::Query[""].select("1 as n")
+              .union(Jennifer::Query["cte"].select("1 + n AS n").where { _n < 5 }, true),
             true
-          ),
-          true
-        ).db_results.flat_map(&.values)
-        results.should eq([1, 2, 3, 4, 5])
+          )
+          .db_results
+          .flat_map(&.values)
+          .should eq([1, 2, 3, 4, 5])
       end
     end
   end

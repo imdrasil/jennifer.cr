@@ -12,11 +12,11 @@ module Jennifer
 
       def preload(collection)
         repo = Array(Array(Model::Resource)).new(@bucket.size + 1)
-        (@bucket.size + 1).times { |_| repo << [] of Model::Resource }
+        (@bucket.size + 1).times { repo << [] of Model::Resource }
         collection.each { |c| repo[0] << c }
 
         pk_repo = Array(Hash(DBAny, Array(DBAny))).new(@bucket.size + 1)
-        (@bucket.size + 1).times { |_| pk_repo << {} of DBAny => Array(DBAny) }
+        (@bucket.size + 1).times { pk_repo << {} of DBAny => Array(DBAny) }
 
         @bucket.each_with_index do |pair, index|
           pair[1].preload_relation(repo[pair[0]], repo[index + 1].as(Array(Model::Resource)), pk_repo[index])

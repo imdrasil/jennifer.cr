@@ -15,10 +15,14 @@ module Jennifer
       private abstract def related_model(arg : String)
       private abstract def table_name(type)
 
-      def condition_clause(id, polymorphic_type : String?)
+      def condition_clause(ids : Array(DBAny), polymorphic_type : String?)
         model = related_model(polymorphic_type)
-        _tree = model.c(primary_field, @name) == id
-        _tree
+        model.c(primary_field, @name).in(ids)
+      end
+
+      def condition_clause(id : DBAny, polymorphic_type : String?)
+        model = related_model(polymorphic_type)
+        model.c(primary_field, @name) == id
       end
 
       def query(id, polymorphic_type : Nil)
@@ -38,17 +42,29 @@ module Jennifer
         @primary
       end
 
-      def insert(obj : Model::Base, rel : Hash(String, Jennifer::DBAny))
-        raise ::Jennifer::BaseException.new("Given hash has no #{foreign_type} field.") unless rel.has_key?(foreign_type)
+      def insert(obj : Model::Base, rel : Hash)
+        unless rel.has_key?(foreign_type)
+          raise ::Jennifer::BaseException.new("Given hash has no #{foreign_type} field.")
+        end
+
         type_field = rel[foreign_type].as(String)
         main_obj = create!(rel, type_field)
-        obj.update_columns({ foreign_field => main_obj.attribute(primary_field), foreign_type => type_field })
+        obj.update_columns({
+          foreign_field => main_obj.attribute(primary_field),
+          foreign_type => type_field
+        })
         main_obj
       end
 
       def insert(obj : Model::Base, rel : Model::Base)
-        raise ::Jennifer::BaseException.new("Object already belongs to another object") unless obj.attribute(foreign_field).nil?
-        obj.update_columns({ foreign_field => rel.attribute(primary_field), foreign_type => rel.class.to_s })
+        unless obj.attribute(foreign_field).nil?
+          raise ::Jennifer::BaseException.new("Object already belongs to another object")
+        end
+
+        obj.update_columns({
+          foreign_field => rel.attribute(primary_field),
+          foreign_type => rel.class.to_s
+        })
         rel.save! if rel.new_record?
         rel
       end
@@ -62,7 +78,7 @@ module Jennifer
       end
 
       private def related_model(obj : Model::Base)
-        related_model(obj.attribute(foreign_type).as(String))
+        related_model(obj.attribute_before_typecast(foreign_type).as(String))
       end
 
       private def table_name(type : String)
@@ -116,8 +132,8 @@ module Jennifer
 
           # Destroys related to *obj* object. Is called on `dependent: :destroy`.
           def destroy(obj : {{klass}})
-            foreign_field = obj.attribute(foreign)
-            polymorphic_type = obj.attribute(foreign_type).as(String?)
+            foreign_field = obj.attribute_before_typecast(foreign)
+            polymorphic_type = obj.attribute_before_typecast(foreign_type).as(String?)
             return if foreign_field.nil? || polymorphic_type.nil?
 
             condition = condition_clause(foreign_field, polymorphic_type)
@@ -153,7 +169,7 @@ module Jennifer
         raise AbstractMethod.new("condition_clause", self)
       end
 
-      def condition_clause(id)
+      def condition_clause(id : DBAny)
         raise AbstractMethod.new("condition_clause", self)
       end
 

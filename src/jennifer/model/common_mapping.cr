@@ -64,24 +64,24 @@ module Jennifer::Model
       end
 
       # Accepts symbol hash or named tuple, stringify it and calls constructor with string-based keys hash.
-      def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-        initialize(Ifrit.stringify_hash(values, Jennifer::DBAny))
+      def initialize(values : Hash(Symbol, AttrType) | NamedTuple)
+        initialize(Ifrit.stringify_hash(values, AttrType))
       end
 
       # :nodoc:
-      def self.new(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
+      def self.new(values : Hash(Symbol, AttrType) | NamedTuple)
         instance = allocate
         instance.initialize(values)
         instance.__after_initialize_callback
         instance
       end
 
-      def initialize(values : Hash(String, ::Jennifer::DBAny))
+      def initialize(values : Hash(String, AttrType))
         {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
       end
 
       # :nodoc:
-      def self.new(values : Hash(String, ::Jennifer::DBAny))
+      def self.new(values : Hash(String, AttrType))
         instance = allocate
         instance.initialize(values)
         instance.__after_initialize_callback
@@ -124,10 +124,26 @@ module Jennifer::Model
         case name.to_s
         {% for attr in properties.keys %}
         when "{{attr.id}}"
-          @{{attr.id}}
+          self.{{attr.id}}
         {% end %}
         else
-          raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}") if raise_exception
+          raise ::Jennifer::UnknownAttribute.new(name, self.class) if raise_exception
+        end
+      end
+
+      # :nodoc:
+      def attribute_before_typecast(name : String | Symbol) : ::Jennifer::DBAny
+        case name.to_s
+        {% for attr, options in properties %}
+        when "{{attr.id}}"
+          {% if options[:converter] %}
+            {{options[:converter]}}.to_db(self.{{attr.id}})
+          {% else %}
+            self.{{attr.id}}
+          {% end %}
+        {% end %}
+        else
+          raise ::Jennifer::UnknownAttribute.new(name, self.class)
         end
       end
 

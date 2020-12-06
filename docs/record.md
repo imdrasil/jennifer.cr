@@ -10,11 +10,11 @@ First one gets db result set and converts it to the hash which is wrapped by `Je
 # Jennifer::QueryBuilder::Query is aliased as Jennifer::Query
 record = Jennifer::Query["contacts"].where { _name.like("Jho%") }.to_a[0]
 
-record["name"] 						        # Jennifer::DBAny
-record.attribute("name") 		 	    # Jennifer::DBAny
-record.attribute("name", String) 	# String or raises Jennifer::BaseException
-record.name 					 	          # Jennifer::DBAny
-record.name(String) 				      # Jennifer::DBAny
+record["name"]                    # Jennifer::DBAny
+record.attribute("name")          # Jennifer::DBAny
+record.attribute("name", String)  # String or raises Jennifer::BaseException
+record.name                       # Jennifer::DBAny
+record.name(String)               # Jennifer::DBAny
 ```
 
 `#{{attribute_name}}` methods are generated using macros.

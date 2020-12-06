@@ -9,7 +9,7 @@ postgres_only do
   end
 end
 
-module Mapping11
+private module Mapping11
   include Jennifer::Macros
   include Jennifer::Model::Mapping
 
@@ -18,7 +18,7 @@ module Mapping11
   )
 end
 
-module Mapping12
+private module Mapping12
   include Jennifer::Macros
   include Jennifer::Model::Mapping
 
@@ -27,7 +27,7 @@ module Mapping12
   )
 end
 
-module CompositeMapping
+private module CompositeMapping
   include Mapping11
   include Mapping12
 
@@ -36,7 +36,7 @@ module CompositeMapping
   )
 end
 
-module ModuleWithoutMapping
+private module ModuleWithoutMapping
   include CompositeMapping
 end
 
@@ -47,6 +47,15 @@ class UserWithModuleMapping < Jennifer::Model::Base
 
   mapping(
     email: String?
+  )
+end
+
+class UserWithConverter < Jennifer::Model::Base
+  table_name "users"
+
+  mapping(
+    id: Primary32,
+    name: { type: JSON::Any, converter: Jennifer::Model::JSONConverter }
   )
 end
 
@@ -840,22 +849,49 @@ describe Jennifer::Model::Mapping do
         c.attribute(:name).should eq("Jessy")
       end
 
-      it do
+      it "raises an exception for a missing attribute" do
         c = Factory.build_contact(name: "Jessy")
-        expect_raises(::Jennifer::BaseException) do
+        expect_raises(::Jennifer::UnknownAttribute) do
           c.attribute("missing")
         end
       end
 
-      it "returns fields names only (no aliased columns)" do
-        a = Author.build(name1: "TheO", name2: "TherExample")
+      it "raises an exception if column name is used instead of field name" do
+        a = Author.build(name1: "TheO", name2: "TheExample")
         a.attribute("name1").should eq("TheO")
-        a.attribute(:name2).should eq("TherExample")
-        expect_raises(::Jennifer::BaseException) do
+        a.attribute(:name2).should eq("TheExample")
+        expect_raises(::Jennifer::UnknownAttribute) do
           a.attribute("first_name")
         end
-        expect_raises(::Jennifer::BaseException) do
+        expect_raises(::Jennifer::UnknownAttribute) do
           a.attribute(:last_name)
+        end
+      end
+    end
+
+    describe "#attribute_before_typecast" do
+      it "returns attribute value by given name in db format" do
+        address = Factory.build_address(details: JSON.parse(%({"lat":12})))
+        address.attribute_before_typecast("details").should eq(%({"lat":12}))
+        address.attribute_before_typecast(:details).should eq(%({"lat":12}))
+      end
+
+      it "raises exception for a missing attribute" do
+        address = Factory.build_address(details: JSON.parse(%({"lat": 12})))
+        expect_raises(::Jennifer::UnknownAttribute) do
+          address.attribute_before_typecast("missing")
+        end
+      end
+
+      it "raises an exception if column name is used instead of field name" do
+        a = Author.build(name1: "TheO", name2: "TheExample")
+        a.attribute_before_typecast("name1").should eq("TheO")
+        a.attribute_before_typecast(:name2).should eq("TheExample")
+        expect_raises(::Jennifer::UnknownAttribute) do
+          a.attribute_before_typecast("first_name")
+        end
+        expect_raises(::Jennifer::UnknownAttribute) do
+          a.attribute_before_typecast(:last_name)
         end
       end
     end
@@ -890,6 +926,15 @@ describe Jennifer::Model::Mapping do
         r[:args].should eq(db_array("NotFin"))
         r[:fields].should eq(db_array("first_name"))
       end
+
+      it "uses attributes before typecast" do
+        raw_json = %({"asd":1})
+        json = JSON.parse(raw_json)
+        user = UserWithConverter.new({ name: JSON.parse("{}") })
+        user.name = json
+        user.name.should eq(json)
+        user.arguments_to_save[:args].should eq([raw_json])
+      end
     end
 
     describe "#arguments_to_insert" do
@@ -921,6 +966,14 @@ describe Jennifer::Model::Mapping do
         r = NoteWithManualId.new({ id: 12, text: "test" }).arguments_to_insert
         match_array(r[:args], db_array(12, "test", nil, nil))
         match_array(r[:fields], %w(id text created_at updated_at))
+      end
+
+      it "uses attributes before typecast" do
+        raw_json = %({"asd":1})
+        json = JSON.parse(raw_json)
+        user = UserWithConverter.new({ name: json })
+        user.name.should eq(json)
+        user.arguments_to_insert[:args].should eq([raw_json])
       end
     end
 

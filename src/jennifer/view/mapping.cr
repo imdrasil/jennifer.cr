@@ -12,8 +12,8 @@ module Jennifer
           @{{key.id}} : {{value[:parsed_type].id}}
 
           {% if value[:setter] != false %}
-            def {{key.id}}=(_{{key.id}} : {{value[:parsed_type].id}})
-              @{{key.id}} = _{{key.id}}
+            def {{key.id}}=(value : {{value[:parsed_type].id}})
+              @{{key.id}} = value
             end
           {% end %}
 
@@ -31,7 +31,7 @@ module Jennifer
 
             {% if value[:null] != false %}
               def {{key.id}}!
-                @{{key.id}}.not_nil!
+                {{key.id}}.not_nil!
               end
             {% end %}
           {% end %}
@@ -92,7 +92,6 @@ module Jennifer
                     {% else %}
                       pull.read({{value[:parsed_type].id}})
                     {% end %}
-                  %var{key.id} = %var{key.id}.in(::Jennifer::Config.local_time_zone) if %var{key.id}.is_a?(Time)
                 rescue e : Exception
                   raise ::Jennifer::DataTypeMismatch.build(column, {{@type}}, e)
                 end
@@ -134,7 +133,7 @@ module Jennifer
         end
 
         # Extracts attributes from given hash to the tuple. If hash has no some field - will not raise any error.
-        private def _extract_attributes(values : Hash(String, ::Jennifer::DBAny))
+        private def _extract_attributes(values : Hash(String, AttrType))
           {% for key in COLUMNS_METADATA.keys %}
             %var{key.id} = nil
             %found{key.id} = true
@@ -170,7 +169,6 @@ module Jennifer
                 {% else %}
                   %var{key.id}.as({{value[:parsed_type].id}})
                 {% end %}
-              %casted_var{key.id} = %casted_var{key.id}.in(::Jennifer::Config.local_time_zone) if %casted_var{key.id}.is_a?(Time)
             rescue e : Exception
               raise ::Jennifer::DataTypeCasting.match?(e) ? ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) : e
             end

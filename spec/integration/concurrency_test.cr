@@ -15,6 +15,8 @@ Jennifer::Config.configure do |conf|
   conf.initial_pool_size = POOL_SIZE
   conf.max_idle_pool_size = POOL_SIZE
   conf.checkout_timeout = 1.0
+  conf.retry_attempts = 1
+  conf.retry_delay = 0.5
 
   conf.user = ENV["DB_USER"] if ENV["DB_USER"]?
   conf.password = ENV["DB_PASSWORD"] if ENV["DB_PASSWORD"]?

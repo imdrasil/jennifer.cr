@@ -79,7 +79,6 @@ module Jennifer
                     {% else %}
                       pull.read({{value[:parsed_type].id}})
                     {% end %}
-                  %var{key.id} = %var{key.id}.in(::Jennifer::Config.local_time_zone) if %var{key.id}.is_a?(Time)
                 rescue e : Exception
                   raise ::Jennifer::DataTypeMismatch.build(column, {{@type}}, e)
                 end
@@ -145,9 +144,9 @@ module Jennifer
                 {% else %}
                   %var{key.id}.as({{value[:parsed_type].id}})
                 {% end %}
-              %casted_var{key.id} = %casted_var{key.id}.in(::Jennifer::Config.local_time_zone) if %casted_var{key.id}.is_a?(Time)
             rescue e : Exception
-              raise ::Jennifer::DataTypeCasting.match?(e) ? ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) : e
+              raise e unless ::Jennifer::DataTypeCasting.match?(e)
+              raise ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e)
             end
           {% end %}
 
@@ -256,8 +255,7 @@ module Jennifer
               {% if !value[:virtual] %}
                 when {{value[:column]}}
                   if value.is_a?({{value[:parsed_type].id}})
-                    local = value.as({{value[:parsed_type].id}})
-                    @{{key.id}} = local
+                    @{{key.id}} = value.as({{value[:parsed_type].id}})
                     @{{key.id}}_changed = true
                   else
                     raise ::Jennifer::BaseException.new("Wrong type for #{name} : #{value.class}")
@@ -272,7 +270,7 @@ module Jennifer
         end
 
         # :nodoc:
-        def set_attribute(name : String | Symbol, value : ::Jennifer::DBAny)
+        def set_attribute(name : String | Symbol, value : AttrType)
           case name.to_s
           {% for key, value in properties %}
             {% if value[:setter] != false %}
@@ -294,7 +292,26 @@ module Jennifer
           case name.to_s
           {% for key, value in properties %}
           when "{{key.id}}"
-            @{{key.id}}
+            self.{{key.id}}
+          {% end %}
+          else
+            super
+          end
+        end
+
+        # :nodoc:
+        def attribute_before_typecast(name : String | Symbol) : ::Jennifer::DBAny
+          case name.to_s
+          {% for attr, options in properties %}
+          when "{{attr.id}}"
+            {% if options[:converter] %}
+              {{options[:converter]}}.to_db(self.{{attr.id}})
+            {% else %}
+              value = self.{{attr.id}}
+              raise Jennifer::BadAttributeTypeCast.new({{attr.stringify}}, value) unless value.is_a?(Jennifer::DBAny)
+
+              value
+            {% end %}
           {% end %}
           else
             super
@@ -309,8 +326,7 @@ module Jennifer
           {% for attr, options in properties %}
             {% unless options[:virtual] %}
               if @{{attr.id}}_changed
-                args <<
-                  {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
+                args << attribute_before_typecast("{{attr}}")
                 fields << {{options[:column]}}
               end
             {% end %}
@@ -325,8 +341,7 @@ module Jennifer
           fields = named_tuple[:fields]
           {% for attr, options in properties %}
             {% unless options[:virtual] %}
-              args <<
-                {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
+              args << attribute_before_typecast("{{attr}}")
               fields << {{options[:column]}}
             {% end %}
           {% end %}

@@ -104,7 +104,7 @@ end
 
 You should define all fields that you'd like to grep from the particular table, other words - define model's mapping.
 
-`%mapping(options, strict = true)` macro stands for defining all model attributes. If field has no extra parameter,
+`.mapping(options, strict = true)` macro stands for defining all model attributes. If field has no extra parameter,
 you can just specify name and type (type in case of crystal language): `field_name: :Type`. Named tuple can be used
 instead of type. Next keys are supported:
 
@@ -118,20 +118,10 @@ instead of type. Next keys are supported:
 | `:getter` | if getter should be created (default - `true`) |
 | `:setter` | if setter should be created (default - `true`) |
 | `:virtual` | mark field as virtual - will not be stored and retrieved from db |
-| `:converter` | class be used to serialize/deserialize value |
+| `:converter` | class/module/object that is used to serialize/deserialize field |
 | `:auto` | indicate whether primary field is autoincrementable (by default `true` for `Int32` and `Int64`) |
 
-To define field converter create a class which implements next methods:
-
-- `.from_db(DB::ResultSet, Bool)` - converts field reading it from db result set (second argument describes if field is nillable);
-- `.to_db(SomeType)` - converts field to the db format;
-- `.from_hash(Hash(String, Jennifer::DBAny), String)` - converts field from the given hash (second argument is a field name).
-
-There are 3 predefined converters:
-
-- `Jennifer::Model::JSONConverter` - default converter for `JSON::Any` (it is applied automatically for `JSON::Any` fields);
-- `Jennifer::Model::NumericToFloat64Converter` - converts Postgre `PG::Numeric` to `Float64`;
-- `Jennifer::Model::EnumConverter` - converts Postgre `ENUM` value to `String`.
+Every `.mapping` call generates type alias `AttrType` which is a union of `Jennifer::DBAny` and any used arbitrary type.
 
 To make some field nillable tou can use any of the next options:
 
@@ -193,11 +183,10 @@ class SomeModel < ApplicationRecord
 end
 ```
 
-**Important restrictions:**
+### Important restrictions:
 
-- Models currently must have a `primary` field.
-
-- If your model also uses `JSON.mapping`, `JSON::Serializable`, or other kinds of mapping macros, you must be careful
+- models currently must have a `primary` field.
+- if your model also uses `JSON.mapping`, `JSON::Serializable`, or other kinds of mapping macros, you must be careful
   to use Jennifer's `mapping` macro last in order for all model features to work correctly.
 
 ```crystal
@@ -207,6 +196,60 @@ class User < Jennifer::Model::Base
 
   # Model mapping used last:
   mapping(id: Primary32, name: String)
+end
+```
+
+### Converters
+
+To define a field converter create a class/module which implements next static methods:
+
+- `.from_db(DB::ResultSet, Bool)` - converts field reading it from db result set (second argument describes wether field is nillable);
+- `.to_db(T)` - converts field to the db format;
+- `.from_hash(Hash(String, Jennifer::DBAny | T), String)` - converts field (which name is the 2nd argument) from the given hash (this method is called only if hash has required key).
+
+There are 6 predefined converters:
+
+- `Jennifer::Model::JSONConverter` - default converter for `JSON::Any` (it is applied automatically for `JSON::Any` fields) - takes care of JSON-string-JSON conversion;
+- `Jennifer::Model::TimeZoneConverter` - default converter for `Time` - converts from UTC time to local time zone;
+- `Jennifer::Model::EnumConverter` - converts string values to crystal `enum`;
+- `Jennifer::Model::JSONSerializableConverter(T)` - converts JSON to `T` (which includes `JSON::Serializable);
+- `Jennifer::Model::NumericToFloat64Converter` - converts `PG::Numeric` to `Float64` (Postgres only);
+- `Jennifer::Model::PgEnumConverter` - converts `ENUM` value to `String` (Postgres only).
+
+### Arbitrary type
+
+Model field can be of any type it is required to. But to achieve this you should specify corresponding converter to serialize/deserialize value to/from database format. One of the most popular examples is "embedded document" - JSON field that has known mapping and is mapped to crystal class.
+
+```crystal
+class Location
+  include JSON::Serializable
+
+  property latitude : Float64
+  property longitude : Float64
+end
+
+class Address < Jennifer::Model::Base
+  mapping(
+    # ...
+    details: { type: Location?, converter: Jennifer::Model::JSONSerializableConverter(Location) }
+  )
+end
+```
+
+Now instances of `Location` class can be used in all constructors/setters/update methods. The only exception is query methods - they support only `Jennifer::DBAny` values.
+
+Other popular example is crystal `enum` usage.
+
+```crystal
+enum Category
+  GOOD
+  BAD
+end
+
+class Note < Jennifer::Model::Base
+  mapping(
+    category: { type: Category?, converter: Jennifer::Model::EnumConverter(Category) }
+  )
 end
 ```
 
@@ -249,18 +292,29 @@ Existing mapping types:
 - `Primary64 = { type: Int64, primary: true }`
 - `Password = { type: String?, virtual: true, setter: false }`
 
-### Numeric fields
+### Virtual attributes
 
-Crystal type of a numeric (decimal) field depends on chosen adapter: `Float64` for mysql and `PG::Numeric` for Postgres. Sometimes usage of `PG::Numeric` with Postgres may be annoying. To convert it to another type at the object building stage you can pass `numeric_converter` option with method to be used to convert `PG::Numeric` to the defined field `type`.
+If you pass `virtual: true` option for some field - it will not be stored to db and tried to be retrieved from there. Such behavior is useful if you have model-level attributes but it is not obvious to store them into db. Such approach allows mass assignment and dynamic get/set based on their name.
 
 ```crystal
-class Product < Jennifer::Model::Base
+class User < Jennifer::Model::Base
   mapping(
     id: Primary32,
-    #...
-    price: { type: Float64, numeric_converter: :to_f64 }
+    password_hash: String,
+    password: { type: String?, virtual: true },
+    password_confirmation: { type: String?, virtual: true }
   )
+
+  validate_confirmation :password
+
+  before_create :crypt_password
+
+  def crypt_password
+    self.password_hash = SomeCryptAlgorithm.call(self.password)
+  end
 end
+
+User.create!(password: "qwe", password_confirmation: "qwe")
 ```
 
 ## Table name
@@ -311,31 +365,6 @@ Admin::User.table_name # "users"
 ```
 
 > `.table_name` accepts table name that already includes prefix.
-
-## Virtual attributes
-
-If you pass `virtual: true` option for some field - it will not be stored to db and tried to be retrieved from there. Such behavior is useful if you have model-level attributes but it is not obvious to store them into db. Such approach allows mass assignment and dynamic get/set based on their name.
-
-```crystal
-class User < Jennifer::Model::Base
-  mapping(
-    id: Primary32,
-    password_hash: String,
-    password: { type: String?, virtual: true },
-    password_confirmation: { type: String?, virtual: true }
-  )
-
-  validate_confirmation :password
-
-  before_create :crypt_password
-
-  def crypt_password
-    self.password_hash = SomeCryptAlgorithm.call(self.password)
-  end
-end
-
-User.create!(password: "qwe", password_confirmation: "qwe")
-```
 
 ## Converting form Web options
 

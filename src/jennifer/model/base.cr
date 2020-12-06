@@ -8,7 +8,10 @@ require "./mapping"
 require "./sti_mapping"
 require "./validation"
 require "./callback"
-require "./converters"
+require "./enum_converter"
+require "./json_converter"
+require "./json_serializable_converter"
+require "./time_zone_converter"
 
 module Jennifer
   module Model
@@ -232,10 +235,10 @@ module Jennifer
       # ```
       abstract def set_attribute(name, value)
 
-      # Sets *value* to field with name *name* and stores them directly to the database without
-      # any validation or callback.
+      # Assigns record properties based on key-value pairs of *values* and stores them directly to the database
+      # without running validations and callbacks.
       #
-      # Also *updated_at* is not updated.
+      # *updated_at* property is not updated as well.
       #
       # If at least one attribute get value of wrong type or attribute is missing or is virtual -
       # `BaseException` is raised.
@@ -244,6 +247,8 @@ module Jennifer
       # user.update_columns({ :name => "Jennifer" })
       # ```
       abstract def update_columns(values)
+
+      # TODO: decide what to do with type casting for #update_column and other related methods
 
       # Returns whether any field was changed. If field again got first value - `true` anyway
       # will be returned.
@@ -352,8 +357,9 @@ module Jennifer
       # any validation or callback.
       #
       # Is a shorthand for `#update_columns({ name => value })`.
+      # Doesn't use attribute writer.
       def update_column(name : String | Symbol, value : Jennifer::DBAny)
-        update_columns({name => value})
+        update_columns({ name => value })
       end
 
       # Saves the object.
@@ -362,8 +368,8 @@ module Jennifer
       #
       # `#save!` always triggers validations. If any of them fails `Jennifer::RecordInvalid` gets raised.
       #
-      # There is a series of callbacks associated with `#save!`. If any of the `before_*` callbacks return `false` the action
-      # is cancelled and exception is raised. See `Jennifer::Model::Callback` for further details.
+      # There is a series of callbacks associated with `#save!`. If any of the `before_*` callbacks return `false`
+      # the action is cancelled and exception is raised. See `Jennifer::Model::Callback` for further details.
       #
       # ```
       # user.name = "Will"
@@ -371,6 +377,7 @@ module Jennifer
       # ```
       def save!
         raise Jennifer::RecordInvalid.new(errors.to_a) unless save(false)
+
         true
       end
 
@@ -381,21 +388,17 @@ module Jennifer
       # By default, `#save` triggers validations but they can be skipped passing `true` as the second argument.
       # If any of them fails `#save` returns `false`.
       #
-      # There is a series of callbacks associated with `#save`. If any of the `before_*` callbacks return `false` the action
-      # is cancelled and `false` is returned. See `Jennifer::Model::Callback` for further details.
+      # There is a series of callbacks associated with `#save`. If any of the `before_*` callbacks return `false`
+      # the action is cancelled and `false` is returned. See `Jennifer::Model::Callback` for further details.
       #
       # ```
       # user.name = "Will"
       # user.save # => true
       # ```
       def save(skip_validation : Bool = false) : Bool
-        if self.class.write_adapter.under_transaction?
-          save_record_under_transaction(skip_validation)
-        else
-          self.class.transaction do
-            save_record_under_transaction(skip_validation)
-          end || false
-        end
+        return save_record_under_transaction(skip_validation) if self.class.write_adapter.under_transaction?
+
+        self.class.transaction { save_record_under_transaction(skip_validation) } || false
       end
 
       # Saves all changes to the database without starting a transaction; if any validation fails - returns `false`.
@@ -423,7 +426,7 @@ module Jennifer
       #
       # Any callback is invoked. Doesn't start any transaction.
       def delete
-        return if new_record? || errors.any?
+        return if new_record? || invalid?
 
         this = self
         self.class.all.where { this.class.primary == this.primary }.delete
@@ -497,9 +500,7 @@ module Jennifer
       # Contact.find(-1) # => nil
       # ```
       def self.find(id)
-        _id = id
-        this = self
-        all.where { this.primary == _id }.first
+        all.find(id)
       end
 
       # Returns record by given primary field or raises `Jennifer::RecordNotFound` exception otherwise.
@@ -508,9 +509,7 @@ module Jennifer
       # Contact.find!(-1) # Jennifer::RecordNotFound
       # ```
       def self.find!(id)
-        _id = id
-        this = self
-        all.where { this.primary == _id }.first!
+        all.find!(id)
       end
 
       # Destroys records by given ids.

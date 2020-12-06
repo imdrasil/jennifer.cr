@@ -58,6 +58,7 @@ module Jennifer
         results = [] of T
         return results if do_nothing?
 
+        T.actual_table_field_count
         read_adapter.query(query, args) do |rs|
           begin
             rs.each { results << T.new(rs) }
@@ -73,6 +74,7 @@ module Jennifer
       def to_a
         return [] of T if do_nothing?
 
+        T.actual_table_field_count
         add_aliases if @relation_used
         return to_a_with_relations if @eager_load
 
@@ -90,8 +92,8 @@ module Jennifer
         add_preloaded(result)
       end
 
-      # Perform request and maps resultset to objects and related objects grepping fields from joined tables; preloading also
-      # are performed
+      # Performs request and maps result set to objects and related objects grepping fields from joined tables;
+      # preloading also are performed
       private def to_a_with_relations
         result = read_adapter.select(self) do |rs|
           nested_relation_tree.read(rs, T)

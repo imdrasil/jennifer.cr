@@ -11,14 +11,14 @@ module Jennifer::Model
         {% if value[:setter] != false %}
           def {{key.id}}=(_{{key.id}} : {{value[:parsed_type].id}})
             {% if !value[:virtual] %}
-              @{{key.id}}_changed = true if _{{key.id}} != @{{key.id}}
+              {{key.id}}_will_change! if _{{key.id}} != @{{key.id}}
             {% end %}
             @{{key.id}} = _{{key.id}}
           end
 
-          def {{key.id}}=(_{{key.id}} : ::Jennifer::DBAny)
+          def {{key.id}}=(_{{key.id}} : AttrType)
             {% if !value[:virtual] %}
-              @{{key.id}}_changed = true if _{{key.id}} != @{{key.id}}
+              {{key.id}}_will_change! if _{{key.id}} != @{{key.id}}
             {% end %}
             @{{key.id}} = _{{key.id}}.as({{value[:parsed_type].id}})
           end
@@ -48,6 +48,10 @@ module Jennifer::Model
             @{{key.id}}_changed
           end
 
+          def {{key.id}}_will_change!
+            @{{key.id}}_changed = true
+          end
+
           def self._{{key}}
             c({{value[:column]}})
           end
@@ -55,7 +59,7 @@ module Jennifer::Model
           {% if value[:primary] %}
             # :nodoc:
             def primary
-              @{{key.id}}
+              {{key.id}}
             end
 
             # :nodoc:

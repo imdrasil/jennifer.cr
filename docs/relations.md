@@ -23,7 +23,7 @@ All relation macros provide next methods:
 - `#{{relation_name}}_reload` - reload relation and returns it;
 - `#{{relation_name}}_query` - returns query which is used to get objects of this object relation entities form db.
 - `#remove_{{relation_name}}` - removes given object from relation
-- `#add_{{relation_name}}` - adds given object to relation or builds it from has and adds
+- `#add_{{relation_name}}` - adds given object to relation or builds it from hash and then adds
 
 This allows dynamically adds objects to relations with automatically setting foreign id:
 

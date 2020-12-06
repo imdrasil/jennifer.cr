@@ -27,6 +27,28 @@ class EnnValidator < Jennifer::Validations::Validator
   end
 end
 
+class InspectConverter(T)
+  def self.from_db(pull, nullable)
+    value = nillable ? pull.read(T?) : pull.read(T)
+    "#{T}: #{value}" if value
+  end
+
+  def self.to_db(value : String)
+    if T == Int32
+      value[("#{T}".size + 2)..-1].to_i
+    else
+      value[("#{T}".size + 2)..-1]
+    end
+  end
+
+  def self.to_db(value : Nil); end
+
+  def self.from_hash(hash : Hash, column)
+    value = hash[column]
+    "#{T}: #{value}"
+  end
+end
+
 # ===========
 # models
 # ===========
@@ -82,7 +104,7 @@ class Contact < ApplicationRecord
         name:        String,
         ballance:    PG::Numeric?,
         age:         {type: Int32, default: 10},
-        gender:      {type: String?, default: "male", converter: Jennifer::Model::EnumConverter},
+        gender:      {type: String?, default: "male", converter: Jennifer::Model::PgEnumConverter},
         description: String?,
         created_at:  Time?,
         updated_at:  Time?,
@@ -113,7 +135,7 @@ class Contact < ApplicationRecord
   has_many :facebook_profiles, FacebookProfile, inverse_of: :contact
   has_and_belongs_to_many :countries, Country
   has_and_belongs_to_many :facebook_many_profiles, FacebookProfile, association_foreign: :profile_id
-  has_one :main_address, Address, {where { _main }}, inverse_of: :contact
+  has_one :main_address, Address, { where { _main } }, inverse_of: :contact
   has_one :passport, Passport, inverse_of: :contact
   belongs_to :user, User
 
@@ -411,7 +433,7 @@ class Publication < Jennifer::Model::Base
       name:       { type: String, column: :title },
       version:    Int32,
       publisher:  String,
-      type:       { type: String, converter: Jennifer::Model::EnumConverter }
+      type:       { type: String, converter: Jennifer::Model::PgEnumConverter }
     )
   {% else %}
     mapping(
@@ -551,7 +573,7 @@ class ContactWithDependencies < Jennifer::Model::Base
       name:        String?,
       description: String?,
       age:         {type: Int32, default: 10},
-      gender:      {type: String?, default: "male", converter: Jennifer::Model::EnumConverter},
+      gender:      {type: String?, default: "male", converter: Jennifer::Model::PgEnumConverter},
     }, false)
   {% else %}
     mapping({
@@ -608,18 +630,16 @@ class AbstractContactModel < Jennifer::Model::Base
   }, false)
 end
 
-class ContactWithFloatMapping < Jennifer::Model::Base
-  table_name "contacts"
+{% if env("DB") == "postgres" || env("DB") == nil %}
+  class ContactWithFloatMapping < Jennifer::Model::Base
+    table_name "contacts"
 
-  {% if env("DB") == "postgres" || env("DB") == nil %}
     mapping({
       id: Primary32,
       ballance: { type: Float64?, converter: Jennifer::Model::NumericToFloat64Converter }
     }, false)
-  {% else %}
-    mapping({id: Primary32}, false)
-  {% end %}
-end
+  end
+{% end %}
 
 class CountryWithDefault < Jennifer::Model::Base
   mapping(
@@ -713,4 +733,37 @@ class OrderItem < ApplicationRecord
   table_name "all_types"
 
   mapping(id: Primary32)
+end
+
+class PolymorphicNote < ApplicationRecord
+  include ::Note::Mapping
+
+  table_name "notes"
+
+  belongs_to :notable, Union(::User | ContactForPolymorphicNote), polymorphic: true
+
+  def self.table_prefix; end
+end
+
+class PolymorphicNoteWithConverter < Jennifer::Model::Base
+  table_name "notes"
+
+  mapping(
+    id: Primary32,
+    notable_id: { type: String, converter: InspectConverter(Int32) },
+    notable_type: { type: String, converter: InspectConverter(String) }
+  )
+
+  belongs_to :notable, Union(::User | ContactForPolymorphicNote), polymorphic: true
+end
+
+class ContactForPolymorphicNote < ApplicationRecord
+  include ::Contact::Mapping
+
+  table_name "contacts"
+
+  mapping
+
+  has_many :notes, PolymorphicNote, inverse_of: :notable, polymorphic: true
+  has_one :note_converter, PolymorphicNoteWithConverter, inverse_of: :notable, polymorphic: true
 end

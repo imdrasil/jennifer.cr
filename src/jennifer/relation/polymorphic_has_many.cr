@@ -14,17 +14,17 @@ module Jennifer
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
-      def condition_clause(id)
-        tree = (T.c(foreign_field, @name) == id) & (T.c(foreign_type, @name) == polymorphic_type_value)
-        @join_query ? tree & @join_query.not_nil!.clone : tree
-      end
-
-      def condition_clause(ids : Array)
+      def condition_clause(ids : Array(DBAny))
         tree = (T.c(foreign_field, @name).in(ids)) & (T.c(foreign_type, @name) == polymorphic_type_value)
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
-      def insert(obj : Q, rel : Hash(String, Jennifer::DBAny))
+      def condition_clause(id : DBAny)
+        tree = (T.c(foreign_field, @name) == id) & (T.c(foreign_type, @name) == polymorphic_type_value)
+        @join_query ? tree & @join_query.not_nil!.clone : tree
+      end
+
+      def insert(obj : Q, rel : Hash(String, T::AttrType))
         rel[foreign_field] = obj.attribute(primary_field)
         rel[foreign_type] = polymorphic_type_value
         T.create!(rel)

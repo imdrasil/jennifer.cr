@@ -13,6 +13,12 @@ class TwitterProfileWithDC < SimplifiedProfile
   )
 end
 
+class ProfileWithConverter < SimplifiedProfile
+  mapping(
+    details: { type: JSON::Any, convert: Jennifer::Model::JSONConverter }
+  )
+end
+
 describe Jennifer::Model::STIMapping do
   describe "%sti_mapping" do
     context "columns metadata" do
@@ -413,6 +419,30 @@ describe Jennifer::Model::STIMapping do
     end
   end
 
+  describe "#attribute_before_typecast" do
+    it "should ignore column mappings of virtual fields" do
+      timestamp = Time.utc
+      b = BlogPost.new({
+        name: "AWebVersionOfInTheHillsTheCities",
+        version: 5,
+        publisher: "RandomBlogger",
+        url: "www.random-blog.blog",
+        created_at: timestamp
+      })
+      b.attribute_before_typecast(:created_at).should eq timestamp
+    end
+
+    it "returns own attribute" do
+      f = Factory.build_facebook_profile(uid: "111", login: "my_login")
+      f.attribute_before_typecast("uid").should eq("111")
+    end
+
+    it "returns parent attribute" do
+      f = Factory.build_facebook_profile(uid: "111", login: "my_login")
+      f.attribute_before_typecast("login").should eq("my_login")
+    end
+  end
+
   describe "#arguments_to_save" do
     it "returns named tuple with correct keys" do
       r = Factory.build_twitter_profile.arguments_to_save
@@ -480,6 +510,15 @@ describe Jennifer::Model::STIMapping do
       r[:args].should eq db_array(5)
       r[:fields].should eq db_array("pages")
     end
+
+    it "uses attributes before typecast" do
+      raw_json = %({"asd":1})
+      json = JSON.parse(raw_json)
+      profile = ProfileWithConverter.new({ details: JSON.parse("{}") })
+      profile.details = json
+      profile.details.should eq(json)
+      profile.arguments_to_save[:args].should eq([raw_json])
+    end
   end
 
   describe "#arguments_to_insert" do
@@ -516,6 +555,14 @@ describe Jennifer::Model::STIMapping do
           postgres: -> { db_array("MyNameIsDonnieSmith", 5, "PTA",  Bytes[65, 114, 116, 105, 99, 108, 101], 1) }
         )
       match_array(r[:args], expected)
+    end
+
+    it "uses attributes before typecast" do
+      raw_json = %({"asd":1})
+      json = JSON.parse(raw_json)
+      profile = ProfileWithConverter.new({ details: json })
+      profile.details.should eq(json)
+      profile.arguments_to_insert[:args].should eq(["ProfileWithConverter", raw_json])
     end
   end
 

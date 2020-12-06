@@ -105,7 +105,7 @@ describe Jennifer::Adapter::Base do
 
           ch.receive
 
-          adapter.with_manual_connection do |con|
+          adapter.db.using_connection do |con|
             con.scalar("select count(*) from contacts").should eq(1)
           end
         end

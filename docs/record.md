@@ -10,17 +10,17 @@ First one gets db result set and converts it to the hash which is wrapped by `Je
 # Jennifer::QueryBuilder::Query is aliased as Jennifer::Query
 record = Jennifer::Query["contacts"].where { _name.like("Jho%") }.to_a[0]
 
-record["name"] 						# Jennifer::DBAny
-record.attribute("name") 		 	# Jennifer::DBAny
+record["name"] 						        # Jennifer::DBAny
+record.attribute("name") 		 	    # Jennifer::DBAny
 record.attribute("name", String) 	# String or raises Jennifer::BaseException
-record.name 					 	# Jennifer::DBAny
-record.name(String) 				# Jennifer::DBAny
+record.name 					 	          # Jennifer::DBAny
+record.name(String) 				      # Jennifer::DBAny
 ```
 
-Be careful with `#{{attribute_name}}` methods are generated using macros.
+`#{{attribute_name}}` methods are generated using macros.
 
 In major amount of cases you will use second one which will return `Array(T)`. But also with custom selects or unions `Jennifer::Record` could be retrieved using `#results`:
 
 ```crystal
-Contact.all.select { [_name, _id] }.results # Jennifer::DBAny
+Contact.all.select { [_name, _id] }.results # Array(Jennifer::Record)
 ```

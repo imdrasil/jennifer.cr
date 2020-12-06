@@ -12,13 +12,13 @@ module Jennifer
         @join_query ? tree & @join_query.not_nil!.clone : tree
       end
 
-      def condition_clause(id)
-        _tree = T.c(primary_field) == id
+      def condition_clause(ids : Array(DBAny))
+        _tree = T.c(primary_field, @name).in(ids)
         @join_query ? _tree & @join_query.not_nil!.clone : _tree
       end
 
-      def condition_clause(ids : Array)
-        _tree = T.c(primary_field).in(ids)
+      def condition_clause(id : DBAny)
+        _tree = T.c(primary_field, @name) == id
         @join_query ? _tree & @join_query.not_nil!.clone : _tree
       end
 
@@ -36,12 +36,12 @@ module Jennifer
         end
       end
 
-      def query(primary_value)
-        condition = condition_clause(primary_value)
+      def query(primary_value_or_array)
+        condition = condition_clause(primary_value_or_array)
         T.where { condition }
       end
 
-      def insert(obj : Q, rel : Hash(String, Jennifer::DBAny))
+      def insert(obj : Q, rel : Hash(String, T::AttrType))
         main_obj = T.create!(rel)
         obj.update_column(foreign_field, main_obj.attribute(primary_field))
         main_obj
@@ -49,6 +49,7 @@ module Jennifer
 
       def insert(obj : Q, rel : T)
         raise BaseException.new("Object already belongs to another object") unless obj.attribute(foreign_field).nil?
+
         obj.set_attribute(foreign_field, rel.attribute(primary_field))
         rel.save! if rel.new_record?
         rel
@@ -78,7 +79,7 @@ module Jennifer
 
         unless pk_repo.has_key?(_foreign)
           array = pk_repo[_foreign] = Array(DBAny).new(collection.size)
-          collection.each { |e| array << e.attribute(_foreign) }
+          collection.each { |e| array << e.attribute_before_typecast(_foreign) }
         end
 
         new_collection = query(pk_repo[_foreign]).db_results

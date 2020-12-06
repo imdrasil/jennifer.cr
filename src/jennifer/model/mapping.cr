@@ -164,12 +164,19 @@ module Jennifer
             end
 
             stringified_type = options[:type].stringify
-            options[:converter] = ::Jennifer::Model::JSONConverter if stringified_type =~ Jennifer::Macros::JSON_REGEXP && options[:converter] == nil
+            if options[:converter] == nil
+              union_types = options[:type].resolve.union_types
+              if union_types.includes?(JSON::Any)
+                options[:converter] = ::Jennifer::Model::JSONConverter
+              elsif union_types.includes?(Time)
+                options[:converter] = ::Jennifer::Model::TimeZoneConverter
+              end
+            end
             options[:parsed_type] = stringified_type
 
             options[:column] = (options[:column] || key).id.stringify
 
-            if stringified_type =~ NILLABLE_REGEXP
+            if options[:type].resolve.nilable?
               options[:null] = true
             elsif options[:null] || options[:primary]
               options[:parsed_type] = stringified_type + "?"
@@ -185,6 +192,8 @@ module Jennifer
 
         # :nodoc:
         COLUMNS_METADATA = { {{new_props.map { |field, mapping| "#{field}: #{mapping}" }.join(", ").id}} }
+
+        alias AttrType = ::Jennifer::DBAny | {{new_props.map { |field, mapping| mapping[:parsed_type] }.join(" | ").id}}
       end
 
       # Adds callbacks for `created_at` and `updated_at` fields.
@@ -273,21 +282,18 @@ module Jennifer
 
         def destroy : Bool
           return false if new_record?
-          result =
-            unless self.class.write_adapter.under_transaction?
-              self.class.transaction do
-                destroy_without_transaction
-              end
-            else
-              destroy_without_transaction
-            end
-          if result
-            self.class.write_adapter.subscribe_on_commit(->__after_destroy_commit_callback) if HAS_DESTROY_COMMIT_CALLBACK
-            self.class.write_adapter.subscribe_on_rollback(->__after_destroy_rollback_callback) if HAS_DESTROY_ROLLBACK_CALLBACK
 
-            return true
-          end
-          false
+          result =
+            if self.class.write_adapter.under_transaction?
+              destroy_without_transaction
+            else
+              self.class.transaction { destroy_without_transaction }
+            end
+          return false unless result
+
+          self.class.write_adapter.subscribe_on_commit(->__after_destroy_commit_callback) if HAS_DESTROY_COMMIT_CALLBACK
+          self.class.write_adapter.subscribe_on_rollback(->__after_destroy_rollback_callback) if HAS_DESTROY_ROLLBACK_CALLBACK
+          true
         end
 
         # :nodoc:
@@ -299,15 +305,14 @@ module Jennifer
         end
 
         # :nodoc:
-        def update_columns(values : Hash(String | Symbol, ::Jennifer::DBAny))
+        def update_columns(values : Hash(String | Symbol, AttrType))
           values.each do |name, value|
             case name.to_s
             {% for key, value in properties %}
               {% if !value[:virtual] %}
                 when "{{key.id}}" {% if key.id.stringify != value[:column] %}, {{value[:column]}} {% end %}
                   if value.is_a?({{value[:parsed_type].id}})
-                    local = value.as({{value[:parsed_type].id}})
-                    @{{key.id}} = local
+                    @{{key.id}} = value.as({{value[:parsed_type].id}})
                     @{{key.id}}_changed = true
                   else
                     raise ::Jennifer::BaseException.new("Wrong type for #{self.class}##{name} : #{value.class}")
@@ -315,7 +320,7 @@ module Jennifer
               {% end %}
             {% end %}
             else
-              raise ::Jennifer::BaseException.new("Unknown model attribute - #{self.class}##{name}")
+              raise ::Jennifer::UnknownAttribute.new(name, self.class)
             end
           end
 
@@ -324,10 +329,10 @@ module Jennifer
         end
 
         # :nodoc:
-        def set_attribute(name : String | Symbol, value : Jennifer::DBAny)
+        def set_attribute(name : String | Symbol, value : AttrType)
           case name.to_s
           {% for key, value in properties %}
-            {% if value[:setter] == nil ? true : value[:setter] %}
+            {% if value[:setter] != false %}
               when "{{key.id}}"
                 if value.is_a?({{value[:parsed_type].id}})
                   self.{{key.id}} = value.as({{value[:parsed_type].id}})
@@ -337,7 +342,7 @@ module Jennifer
             {% end %}
           {% end %}
           else
-            raise ::Jennifer::BaseException.new("Unknown model attribute - #{name}")
+            raise ::Jennifer::UnknownAttribute.new(name, self.class)
           end
         end
 
@@ -349,8 +354,7 @@ module Jennifer
             {% options = properties[attr] %}
             {% unless options[:primary] %}
               if @{{attr.id}}_changed
-                args <<
-                  {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
+                args << attribute_before_typecast("{{attr}}")
                 fields << {{options[:column]}}
               end
             {% end %}
@@ -364,8 +368,7 @@ module Jennifer
           fields = [] of String
           {% for attr, options in properties %}
             {% unless options[:virtual] || options[:primary] && options[:auto] %}
-              args <<
-                {% if options[:converter] %} {{options[:converter]}}.to_db(@{{attr.id}}) {% else %} @{{attr.id}} {% end %}
+              args << attribute_before_typecast("{{attr}}")
               fields << {{options[:column]}}
             {% end %}
           {% end %}
@@ -397,7 +400,6 @@ module Jennifer
                     {% else %}
                       pull.read({{value[:parsed_type].id}})
                     {% end %}
-                  %var{key.id} = %var{key.id}.in(::Jennifer::Config.local_time_zone) if %var{key.id}.is_a?(Time)
                 rescue e : Exception
                   raise ::Jennifer::DataTypeMismatch.build(column, {{@type}}, e)
                 end
@@ -437,7 +439,7 @@ module Jennifer
           {% end %}
         end
 
-        private def _extract_attributes(values : Hash(String, ::Jennifer::DBAny))
+        private def _extract_attributes(values : Hash(String, AttrType))
           {% for key, value in properties %}
             %var{key.id} = {{value[:default]}}
             %found{key.id} = true
@@ -473,7 +475,6 @@ module Jennifer
                 {% else %}
                   %var{key.id}.as({{value[:parsed_type].id}})
                 {% end %}
-              %casted_var{key.id} = %casted_var{key.id}.in(::Jennifer::Config.local_time_zone) if %casted_var{key.id}.is_a?(Time)
             rescue e : Exception
               raise ::Jennifer::DataTypeCasting.match?(e) ? ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) : e
             end

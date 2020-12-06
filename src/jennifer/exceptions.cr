@@ -165,4 +165,16 @@ module Jennifer
                  " - please pass any string including '%' via query parameters."
     end
   end
+
+  class BadAttributeTypeCast < BaseException
+    def initialize(attr, klass)
+      @message = "Attribute #{attr} has #{klass} type but should be of Jennifer::DBAny"
+    end
+  end
+
+  class UnknownAttribute < BaseException
+    def initialize(attr, model)
+      @message = "Unknown attribute #{attr} for model #{model}"
+    end
+  end
 end

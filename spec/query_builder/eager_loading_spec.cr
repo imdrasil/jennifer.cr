@@ -114,7 +114,9 @@ describe Jennifer::QueryBuilder::EagerLoading do
         Factory.create_address(contact_id: c1.id, street: "asd st.")
 
         res = Contact.all.eager_load(:addresses).first!
-        res.addresses[0].street.should eq("asd st.")
+        expect_query_silence do
+          res.addresses[0].street.should eq("asd st.")
+        end
       end
 
       it "sets all deep relations" do
@@ -165,17 +167,6 @@ describe Jennifer::QueryBuilder::EagerLoading do
         Factory.create_address(contact_id: contact.id)
         main_address = Factory.create_address(contact_id: contact.id, main: true)
         Contact.all.eager_load(:main_address).first!.main_address!.id.should eq(main_address.id)
-      end
-    end
-
-    context "with defined inverse_of" do
-      it "sets owner during building collection" do
-        c = Factory.create_contact
-        Factory.create_address(contact_id: c.id)
-        res = Contact.all.eager_load(:addresses).to_a
-        expect_query_silence do
-          res[0].addresses[0].contact!.id.should eq(c.id)
-        end
       end
     end
   end

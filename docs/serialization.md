@@ -49,7 +49,7 @@ For JSON serialization there are 2 options (apart from described above).
 
 ### `Model::Base#to_h`
 
-If you need just to dump all non virtual fields to a JSON string - use `Jennifer::Model::Base#to_h` to get `Hash(Symbol, Jennifer::DBAny)` (or `#to_str_h` to get `Hash(String, Jennifer::DBAny)`) and then `#to_json` to get a JSON string. The disadvantages of this approach are obvious - **all** non virtual fields are serialized. This can be partially resolved by manual deleting/adding entries by keys (as before final serialization we get hash).
+If you need just to dump all non virtual fields to a JSON string - use `Jennifer::Model::Base#to_h` to get `Hash(Symbol, T::AttrType)` (or `#to_str_h` to get `Hash(String, T::AttrType)`) and then `#to_json` to get a JSON string. The disadvantages of this approach are obvious - **all** non virtual fields are serialized. This can be partially resolved by manual deleting/adding entries by keys (as before final serialization we get hash).
 
 ```crystal
 user = User.all.first # <User:0x000000000010 id: 1, name: "User 8", age: nil, password_hash: "<hash>">

@@ -107,7 +107,7 @@ module Jennifer::Model
           {% for key in nonvirtual_attrs %}
             :{{key.id}} => {{key.id}},
           {% end %}
-        } of Symbol => ::Jennifer::DBAny
+        } of Symbol => AttrType
       end
 
       # :nodoc:
@@ -116,7 +116,7 @@ module Jennifer::Model
           {% for key in nonvirtual_attrs %}
             {{key.stringify}} => {{key.id}},
           {% end %}
-        } of String => ::Jennifer::DBAny
+        } of String => AttrType
       end
 
       # :nodoc:

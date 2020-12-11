@@ -8,7 +8,7 @@ Add the shard to your `shard.yml`. Also
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.9.0"
+    version: "~> 0.10.0"
 ```
 
 For MySQL and PostgreSQL you need to add related driver shard - [crystal-mysql](https://github.com/crystal-lang/crystal-mysql) or [crystal-pg](https://github.com/will/crystal-pg):
@@ -17,7 +17,7 @@ For MySQL and PostgreSQL you need to add related driver shard - [crystal-mysql](
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "= 0.9.0"
+    version: "= 0.10.0"
   pg:
     github: will/crystal-pg
     version: "= 0.21.0"
@@ -33,7 +33,7 @@ If you want to use SQLite3 - add [Jennifer SQLite3 **adapter**](https://github.c
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "= 0.9.0"
+    version: "= 0.10.0"
   jennifer_sqlite3_adapter:
     github: imdrasil/jennifer_sqlite3_adapter
     version: "~> 0.3.0"

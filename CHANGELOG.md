@@ -1,5 +1,59 @@
 # Changelog
 
+## 0.10.0 (11-12-2020)
+
+**General**
+
+* add crystal 0.35.0 support and drop 0.34.0 support
+
+**QueryBuilder**
+
+* allow arbitrary `Query` instances as nested queries for CTEs
+* fix failed `nil` assertion when eager load relations sequence with missing intermediate relation records
+* add `IModelQuery#find(id)` to retrieve record by primary key
+* add `IModelQuery#find!(id)` to retrieve record by primary key or raise `Jennifer::RecordNotFound` exception
+* `ModelQuery(T)#to_a` and `ModelQuery(T)#find_by_sql` ensure `T` has loaded actual table field count before making a request
+
+**Model**
+
+* change model constructor hash argument type from `Hash(String, Jennifer::DBany)` to `Hash(String, AttrType)` (same for `Symbol` keys)
+* `CommonMapping#attribute` uses attribute getter
+* `CommonMapping#attribute` raises `Jennifer::UnknownAttribute` exception if model has no requested attribute and `raise_exception = true`
+* add `CommonMapping#attribute_before_typecast` which returns given attribute in database format using attribute converter
+* add `Mapping#{{attribute}}_will_change!` to mark `{{attribute}}` as changed one
+* `#primary` uses getter
+* any `Mapping.mapping` invocation creates `AttrType` alias to represent union of `Jennifer::DBAny` and any arbitrary type from fields definition
+* change `Mapping#update_columns` argument type to `Hash(String | Symbol, AttrType)`
+* `Mapping#update_columns` raises `Jennifer::UnknownAttribute` if key-value pairs include unknown attribute
+* `Mapping#set_attribute` to accept `AttrType`
+* `Mapping#set_attribute` raises `Jennifer::UnknownAttribute` exception if model has no requested attribute
+* `Mapping#update_columns` raises `Jennifer::UnknownAttribute` if key-value pairs include unknown field
+* `Mapping#arguments_to_insert` and `Mapping#arguments_to_save` use `#attribute_before_typecast` to collect attributes to store in a database
+* `#add_{{relation}}` accepts `AttrType` as a hash value type
+* rename `EnumConverter` to `PgEnumConverter`
+* add `EnumConverter(T)` to convert string to crystal enum
+* add `JSONSerializableConverter(T)` to convert JSON field to objects of `T` that support `.from_json` and `#to_json` methods
+* add `TimeZoneConverter` to convert time attributes from UTC to `Jennife::Config.local_time_zone`
+
+**Adapter**
+
+* add `DBFormater` as a proposed default logger formatter
+* change logging - emit `Log::Metadata` with  `query`, `args` and `time` keys (as new [crystal-db](https://github.com/crystal-lang/crystal-db/blob/72535518496e38f37173a98742c65fa0a569a272/src/db/statement.cr#L145) does)
+* fix missing reconnect to database on connection lost
+
+**SqlGenerator**
+
+* fix a potential compilation issue that appears in certain edge cases for postgres adapter (#329)
+`Adapter::BaseSQLGenerator` now produces valid SQL when using multiple recursive CTEs (`.with(..., true)`) in a single query
+
+**Migration**
+
+* rename `TableBuilder::DB_OPTIONS` to `TableBuilder::DbOptions`
+
+**Exceptions**
+
+* add `Jennifer::UnknownAttribute` to represent case when unknown attribute is tried to be read/written
+
 ## 0.9.0 (24-05-2020)
 
 **General**

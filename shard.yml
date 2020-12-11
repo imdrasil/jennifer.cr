@@ -1,10 +1,10 @@
 name: jennifer
-version: 0.9.0
+version: 0.10.0
 
 authors:
   - Roman Kalnytskyi <moranibaca@gmail.com>
 
-crystal: 0.35.0
+crystal: 0.35.1
 
 license: MIT
 

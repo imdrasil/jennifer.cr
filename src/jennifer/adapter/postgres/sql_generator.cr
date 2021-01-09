@@ -23,12 +23,12 @@ module Jennifer
       def self.insert(obj : Model::Base, with_primary_field = true)
         opts = obj.arguments_to_insert
         String.build do |s|
-          s << "INSERT INTO " << obj.class.table_name
+          s << "INSERT INTO " << quote_identifier(obj.class.table_name)
           if opts[:fields].empty?
             s << " DEFAULT VALUES"
           else
             s << "("
-            opts[:fields].join(s, ", ")
+            quote_identifiers(opts[:fields]).join(s, ", ")
             s << ") VALUES (" << escape_string(opts[:fields].size) << ") "
           end
 
@@ -44,8 +44,8 @@ module Jennifer
       def self.update(query, options : Hash)
         esc = escape_string(1)
         String.build do |s|
-          s << "UPDATE " << query._table << " SET "
-          options.map { |k, _| "#{k}= #{esc}" }.join(s, ", ")
+          s << "UPDATE " << quote_identifier(query._table) << " SET "
+          options.map { |k, _| "#{quote_identifier(k)}= #{esc}" }.join(s, ", ")
           s << ' '
 
           from_clause(s, query._joins![0].table_name(self)) if query._joins?
@@ -59,8 +59,8 @@ module Jennifer
 
       def self.insert_on_duplicate(table, fields, rows : Int32, unique_fields, on_conflict)
         String.build do |io|
-          io << "INSERT INTO " << table << " ("
-          fields.join(io, ", ")
+          io << "INSERT INTO " << quote_identifier(table) << " ("
+          quote_identifiers(fields).join(io, ", ")
           escaped_row = "(" + escape_string(fields.size) + ")"
           io << ") VALUES "
           rows.times.join(io, ", ") { io << escaped_row }

@@ -75,6 +75,10 @@ module Jennifer
       def quote_array_value(value)
         value.to_s
       end
+
+      def quote_identifier(identifier : String | Symbol)
+        Config.quote_identifiers ? "\"#{identifier}\"" : identifier
+      end
     end
   end
 end

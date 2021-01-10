@@ -38,6 +38,7 @@ module Jennifer
               unencrypted_password,
               cost: self.class.{{password_hash.id}}_cost
             ).to_s
+            unencrypted_password
           end
         end
 

@@ -32,6 +32,11 @@ describe Jennifer::Model::Authentication do
       end
 
       describe "#password=" do
+        it "returns raw password when it is acceptable" do
+          user = Factory.build_user
+          (user.password = "asdasdasdasd").should eq("asdasdasdasd")
+        end
+
         it do
           user = Factory.build_user
           user.password = nil
@@ -59,6 +64,7 @@ describe Jennifer::Model::Authentication do
 
       describe "#authenticate" do
         it { Factory.build_user([:with_password_digest]).authenticate("gibberish").should be_nil }
+
         it do
           user = Factory.build_user([:with_password_digest])
           user.authenticate("password").should eq(user)

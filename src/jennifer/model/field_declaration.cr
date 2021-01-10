@@ -17,11 +17,44 @@ module Jennifer::Model
           end
 
           def {{key.id}}=(_{{key.id}} : AttrType)
-            {% if !value[:virtual] %}
-              {{key.id}}_will_change! if _{{key.id}} != @{{key.id}}
-            {% end %}
-            @{{key.id}} = _{{key.id}}.as({{value[:parsed_type].id}})
+            self.{{key.id}} = _{{key.id}}.as({{value[:parsed_type].id}})
           end
+
+          {% unless value[:parsed_type] =~ /String/ %}
+            def {{key.id}}=(_{{key.id}} : String)
+              return self.{{key.id}} = nil{% if !value[:null] %}.not_nil! {% end %} if _{{key.id}}.empty?
+
+              {%
+                method =
+                  if value[:parsed_type] =~ /Array/
+                    "not_supported"
+                  elsif value[:parsed_type] =~ /Int16/
+                    "to_i16"
+                  elsif value[:parsed_type] =~ /Int64/
+                    "to_i64"
+                  elsif value[:parsed_type] =~ /Int/
+                    "to_i"
+                  elsif value[:parsed_type] =~ /Float32/
+                    "to_f32"
+                  elsif value[:parsed_type] =~ /Float/
+                    "to_f"
+                  elsif value[:parsed_type] =~ /Bool/
+                    "to_bool"
+                  elsif value[:parsed_type] =~ /JSON/
+                    "to_json"
+                  elsif value[:parsed_type] =~ /Time/
+                    "to_time"
+                  else
+                    "not_supported"
+                  end
+              %}
+              {% if method == "not_supported" %}
+                raise ::Jennifer::BaseException.new("Type {{value[:parsed_type].id}} can't be coerced")
+              {% else %}
+                self.{{key.id}} = self.class.coercer.{{method.id}}(_{{key.id}})
+              {% end %}
+            end
+          {% end %}
         {% end %}
 
         {% if value[:getter] != false %}

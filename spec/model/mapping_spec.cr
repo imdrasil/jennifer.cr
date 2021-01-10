@@ -675,6 +675,11 @@ describe Jennifer::Model::Mapping do
         c.name.should eq("b")
       end
 
+      it "returns given value" do
+        c = Factory.build_contact(name: "a")
+        (c.name = "b").should eq("b")
+      end
+
       context "with DBAny" do
         it do
           hash = { :name => "new_name" } of Symbol => Jennifer::DBAny
@@ -700,6 +705,93 @@ describe Jennifer::Model::Mapping do
               c.name = hash[:age]
             end
           end
+        end
+      end
+
+      context "with stringified value" do
+        it "sets nil for empty value" do
+          c = Factory.build_contact(user_id: 1)
+          c.user_id = ""
+          c.user_id.should be_nil
+        end
+
+        it "raises an error for blank string if field isn't nullable" do
+          c = Factory.build_contact(age: 12)
+          expect_raises(NilAssertionError) { c.age = "" }
+        end
+
+        postgres_only do
+          it "doesn't support PG::Numeric" do
+            c = Factory.build_contact
+            expect_raises(Jennifer::BaseException, "Type ::Union(PG::Numeric, ::Nil) can't be coerced") { c.ballance = "32" }
+          end
+
+          it "doesn't support Array" do
+            c = Factory.build_contact(tags: [32])
+            expect_raises(Jennifer::BaseException, "Type ::Union(Array(Int32), ::Nil) can't be coerced") { c.tags = "32" }
+          end
+        end
+
+        it "supports Int16" do
+          record = AllTypeModel.new
+          record.short_f = "12"
+          record.short_f.should eq(12i16)
+        end
+
+        it "supports Int64" do
+          record = AllTypeModel.new
+          record.bigint_f = "12"
+          record.bigint_f.should eq(12i64)
+        end
+
+        it "supports Int32" do
+          record = AllTypeModel.new
+          record.integer_f = "12"
+          record.integer_f.should eq(12)
+        end
+
+        it "supports Float32" do
+          record = AllTypeModel.new
+          record.float_f = "12"
+          record.float_f.should eq(12.0f32)
+        end
+
+        it "supports Float64" do
+          record = AllTypeModel.new
+          record.double_f = "12"
+          record.double_f.should eq(12.0)
+        end
+
+        it "supports Bool" do
+          record = AllTypeModel.new
+          record.bool_f = "true"
+          record.bool_f.should be_true
+          record.bool_f = "1"
+          record.bool_f.should be_true
+          record.bool_f = "t"
+          record.bool_f.should be_true
+          record.bool_f = "f"
+          record.bool_f.should be_false
+          record.bool_f = "any"
+          record.bool_f.should be_false
+        end
+
+        it "supports JSON" do
+          record = AllTypeModel.new
+          record.json_f = %({"a": 1})
+          record.json_f.should eq(JSON.parse({a: 1}.to_json))
+        end
+
+        it "supports Time (short)" do
+          record = AllTypeModel.new
+          record.timestamp_f = "2010-12-10"
+          record.timestamp_f.should eq(Time.local(2010, 12, 10, 0, 0, 0, location: ::Jennifer::Config.local_time_zone))
+        end
+
+        it "supports Time (long)" do
+          record = AllTypeModel.new
+          record.timestamp_f = "2010-12-10 20:10:10"
+          record.timestamp_f.should eq(Time.local(2010, 12, 10, 20, 10, 10, location: ::Jennifer::Config.local_time_zone))
         end
       end
     end
@@ -803,7 +895,7 @@ describe Jennifer::Model::Mapping do
         end
       end
 
-      context "attribute exists" do
+      context "when attribute exists" do
         it "sets attribute if value has proper type" do
           c = Factory.build_contact
           c.set_attribute(:name, "123")
@@ -821,6 +913,12 @@ describe Jennifer::Model::Mapping do
           c = Factory.build_contact
           c.set_attribute(:name, "asd")
           c.name_changed?.should be_true
+        end
+
+        it "supports string coercing" do
+          c = Factory.build_contact
+          c.set_attribute(:user_id, "12")
+          c.user_id.should eq(12)
         end
       end
 

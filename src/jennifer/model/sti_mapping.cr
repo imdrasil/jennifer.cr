@@ -275,8 +275,8 @@ module Jennifer
           {% for key, value in properties %}
             {% if value[:setter] != false %}
               when "{{key.id}}"
-                if value.is_a?({{value[:parsed_type].id}})
-                  self.{{key.id}} = value.as({{value[:parsed_type].id}})
+                if value.is_a?({{value[:parsed_type].id}}) || value.is_a?(String)
+                  self.{{key.id}} = value
                 else
                   raise ::Jennifer::BaseException.new("Wrong type for #{name} : #{value.class}")
                 end

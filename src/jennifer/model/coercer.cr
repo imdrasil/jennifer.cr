@@ -3,8 +3,8 @@ module Jennifer::Model
     DATE_TIME_FORMAT = "%F %T"
     DATE_FORMAT = "%F"
 
-    def self.to_pr32(value : String)
-      to_i(value)
+    def self.to_s(value : String)
+      value
     end
 
     def self.to_pr64(value : String)

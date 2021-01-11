@@ -248,6 +248,28 @@ describe Jennifer::Model::Mapping do
       end
 
       context "from hash" do
+        context "with string values for non-string properties" do
+          it "coerces types" do
+            record = AllTypeModel.new({
+              "bool_f" => "true",
+              "bigint_f" => "12",
+              "integer_f" => "13",
+              "short_f" => "14",
+              "float_f" => "12.0",
+              "double_f" => "15.0",
+              "timestamp_f" => "2010-12-10 20:10:10"
+            })
+
+            record.bool_f.should be_true
+            record.bigint_f.should eq(12i64)
+            record.integer_f.should eq(13)
+            record.short_f.should eq(14i16)
+            record.float_f.should eq(12.0f32)
+            record.double_f.should eq(15.0)
+            record.timestamp_f.should eq(Time.local(2010, 12, 10, 20, 10, 10, location: ::Jennifer::Config.local_time_zone))
+          end
+        end
+
         context "with string keys" do
           it "properly creates object" do
             contact = Contact.new({"name" => "Deepthi", "age" => 18, "gender" => "female"})
@@ -257,7 +279,7 @@ describe Jennifer::Model::Mapping do
           end
 
           it "properly maps column aliases" do
-            a = Author.new({"name1" => "Gener", "name2" => "Ric"})
+            a = Author.new({ "name1" => "Gener", "name2" => "Ric" })
             a.name1.should eq("Gener")
             a.name2.should eq("Ric")
           end

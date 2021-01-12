@@ -25,7 +25,7 @@ module Jennifer
       def self.insert(table, hash)
         String.build do |s|
           s << "INSERT INTO " << table << "("
-          hash.keys.join(s, ", ")
+          quote_identifiers(hash.keys).join(s, ", ")
           s << ") VALUES (" << escape_string(hash.size) << ")"
         end
       end
@@ -33,7 +33,7 @@ module Jennifer
       def self.bulk_insert(table : String, field_names : Array(String), rows : Int32)
         String.build do |s|
           s << "INSERT INTO " << table << "("
-          field_names.join(s, ", ") { |e| s << e }
+          quote_identifiers(field_names).join(s, ", ") { |e| s << e }
           s << ") VALUES "
           escaped_row = "(" + escape_string(field_names.size) + ")"
           rows.times.join(s, ", ") { s << escaped_row }
@@ -43,7 +43,7 @@ module Jennifer
       def self.bulk_insert(table : String, field_names : Array(String), rows : Array)
         String.build do |s|
           s << "INSERT INTO " << table << "("
-          field_names.join(s, ", ") { |e| s << e }
+          quote_identifiers(field_names).join(s, ", ") { |e| s << e }
           s << ") VALUES "
 
           rows.each_with_index do |row, index|
@@ -112,7 +112,7 @@ module Jennifer
         esc = escape_string(1)
         String.build do |s|
           s << "UPDATE " << query.table << " SET "
-          options.map { |k, _| "#{k}= #{esc}" }.join(s, ", ")
+          options.map { |k, _| "#{quote_identifier(k)}= #{esc}" }.join(s, ", ")
           s << ' '
           body_section(s, query)
         end
@@ -168,7 +168,7 @@ module Jennifer
         if !query._raw_select
           table = query._table
           if !exact_fields.empty?
-            exact_fields.join(io, ", ") { |f| io << "#{table}.#{f}" }
+            exact_fields.join(io, ", ") { |f| io << "#{quote_identifier(table)}.#{quote_identifier(f)}" }
           else
             query._select_fields.join(io, ", ") { |f| io << f.definition(self) }
           end
@@ -184,15 +184,16 @@ module Jennifer
 
       # Generates `FROM` query clause.
       def self.from_clause(io : String::Builder, query)
-        if query._from
+        _from = query._from
+        if _from
           io << "FROM ( " <<
-            if query._from.is_a?(String)
-              query._from
+            if _from.is_a?(String)
+              _from
             else
               if query.is_a?(QueryBuilder::ModelQuery)
-                self.select(query._from.as(QueryBuilder::ModelQuery))
+                self.select(_from)
               else
-                self.select(query._from.as(QueryBuilder::Query))
+                self.select(_from.as(QueryBuilder::Query))
               end
             end
           io << " ) "

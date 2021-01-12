@@ -137,7 +137,7 @@ module Jennifer
       end
 
       def as_sql(_generator) : String
-        @ident ||= identifier
+        @ident ||= _generator.quote_identifier(identifier)
       end
 
       def identifier : String

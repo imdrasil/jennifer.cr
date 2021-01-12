@@ -65,6 +65,7 @@ def set_default_configuration
     conf.user = ENV["DB_USER"] if ENV["DB_USER"]?
     conf.password = ENV["DB_PASSWORD"] if ENV["DB_PASSWORD"]?
     conf.verbose_migrations = false
+    conf.quote_identifiers = true
     conf.local_time_zone_name = "Europe/Kiev"
   end
 

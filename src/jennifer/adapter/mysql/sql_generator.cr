@@ -102,7 +102,11 @@ module Jennifer
       end
 
       def self.quote_identifier(identifier : String | Symbol)
-        Config.quote_identifiers ? "`#{identifier}`" : identifier
+        if Config.quote_identifiers
+          identifier.to_s.gsub(/[^\.]+/, "`\\0`")
+        else
+          identifier
+        end
       end
     end
   end

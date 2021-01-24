@@ -334,8 +334,8 @@ module Jennifer
           {% for key, value in properties %}
             {% if value[:setter] != false %}
               when "{{key.id}}"
-                if value.is_a?({{value[:parsed_type].id}})
-                  self.{{key.id}} = value.as({{value[:parsed_type].id}})
+                if value.is_a?({{value[:parsed_type].id}}) || value.is_a?(String)
+                  self.{{key.id}} = value
                 else
                   raise ::Jennifer::BaseException.new("wrong type for #{name} : #{value.class}")
                 end
@@ -442,10 +442,6 @@ module Jennifer
         private def _extract_attributes(values : Hash(String, AttrType))
           {% for key, value in properties %}
             %var{key.id} = {{value[:default]}}
-            %found{key.id} = true
-          {% end %}
-
-          {% for key, value in properties %}
             {% column1 = key.id.stringify %}
             {% column2 = value[:column] %}
             if values.has_key?({{column1}})
@@ -462,19 +458,18 @@ module Jennifer
                 {% else %}
                   values[{{column2}}]
                 {% end %}
-            else
-              %found{key.id} = false
             end
           {% end %}
 
           {% for key, value in properties %}
             begin
               %casted_var{key.id} =
-                {% if value[:default] != nil %}
-                  %found{key.id} ? %var{key.id}.as({{value[:parsed_type].id}}) : {{value[:default]}}
+                {% if value[:parsed_type] =~ /String/ %}
+                  %var{key.id}
                 {% else %}
-                  %var{key.id}.as({{value[:parsed_type].id}})
+                  (%var{key.id}.is_a?(String) ? self.class.coerce_{{key.id}}(%var{key.id}) : %var{key.id})
                 {% end %}
+                .as({{value[:parsed_type].id}})
             rescue e : Exception
               raise ::Jennifer::DataTypeCasting.match?(e) ? ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) : e
             end

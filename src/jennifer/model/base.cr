@@ -8,6 +8,7 @@ require "./mapping"
 require "./sti_mapping"
 require "./validation"
 require "./callback"
+require "./coercer"
 require "./enum_converter"
 require "./json_converter"
 require "./json_serializable_converter"
@@ -45,6 +46,8 @@ module Jennifer
         #
         # The metadata is a result of processing attributes passed to `.mapping` macro.
         abstract def columns_tuple
+
+        abstract def coercer
       end
 
       extend AbstractClassMethods
@@ -226,6 +229,10 @@ module Jennifer
       # Alias for `.new`.
       def self.build(pull : DB::ResultSet)
         new(pull)
+      end
+
+      def self.coercer
+        Coercer
       end
 
       # Sets *name* field with *value*

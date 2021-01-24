@@ -745,12 +745,12 @@ describe Jennifer::Model::Mapping do
         postgres_only do
           it "doesn't support PG::Numeric" do
             c = Factory.build_contact
-            expect_raises(Jennifer::BaseException, "Type ::Union(PG::Numeric, ::Nil) can't be coerced") { c.ballance = "32" }
+            expect_raises(Jennifer::BaseException, "Type (PG::Numeric | Nil) can't be coerced") { c.ballance = "32" }
           end
 
           it "doesn't support Array" do
             c = Factory.build_contact(tags: [32])
-            expect_raises(Jennifer::BaseException, "Type ::Union(Array(Int32), ::Nil) can't be coerced") { c.tags = "32" }
+            expect_raises(Jennifer::BaseException, "Type (Array(Int32) | Nil) can't be coerced") { c.tags = "32" }
           end
         end
 

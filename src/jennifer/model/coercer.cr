@@ -3,49 +3,69 @@ module Jennifer::Model
     DATE_TIME_FORMAT = "%F %T"
     DATE_FORMAT = "%F"
 
-    def self.to_s(value : String)
-      value
+    def self.coerce(value : String, type : (Int8?).class)
+      return nil if value.empty?
+
+      value.to_i8
     end
 
-    def self.to_pr64(value : String)
-      to_i64(value)
-    end
+    def self.coerce(value : String, type : (Int16?).class)
+      return nil if value.empty?
 
-    def self.to_s(value : String)
-      value
-    end
-
-    def self.to_i16(value : String)
       value.to_i16
     end
 
-    def self.to_i64(value : String)
-      value.to_i64
-    end
+    def self.coerce(value : String, type : (Int32?).class)
+      return nil if value.empty?
 
-    def self.to_i(value : String)
       value.to_i
     end
 
-    def self.to_f(value : String)
-      value.to_f
+    def self.coerce(value : String, type : (Int64?).class)
+      return nil if value.empty?
+
+      value.to_i64
     end
 
-    def self.to_f32(value : String)
+    def self.coerce(value : String, type : (String?).class)
+      return nil if value.empty?
+
+      value
+    end
+
+    def self.coerce(value : String, type : (Float32?).class)
+      return nil if value.empty?
+
       value.to_f32
     end
 
-    def self.to_bool(value : String)
+    def self.coerce(value : String, type : (Float64?).class)
+      return nil if value.empty?
+
+      value.to_f
+    end
+
+    def self.coerce(value : String, type : (Bool?).class)
+      return nil if value.empty?
+
       value == "true" || value == "1" || value == "t"
     end
 
-    def self.to_json(value : String)
+    def self.coerce(value : String, type : (JSON::Any?).class)
+      return nil if value.empty?
+
       JSON.parse(value)
     end
 
-    def self.to_time(value : String)
+    def self.coerce(value : String, type : (Time?).class)
+      return nil if value.empty?
+
       format = value =~ / / ? DATE_TIME_FORMAT : DATE_FORMAT
       Time.parse(value, format, Config.local_time_zone)
+    end
+
+    def self.coerce(value : String, type)
+      raise ::Jennifer::BaseException.new("Type #{type} can't be coerced")
     end
   end
 end

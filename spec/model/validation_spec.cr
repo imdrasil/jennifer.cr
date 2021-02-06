@@ -72,9 +72,11 @@ class PresenceContact < ApplicationRecord
 end
 
 class ValidatorWithOptions < Jennifer::Validations::Validator
-  def validate(record, field, message = nil)
+  def validate(record, **opts)
+    field = opts[:field]
+
     if record.attribute(field) == "invalid"
-      record.errors.add(field, message || "blank")
+      record.errors.add(field, opts[:message]? || "blank")
     end
   end
 end

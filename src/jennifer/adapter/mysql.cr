@@ -58,7 +58,7 @@ module Jennifer
         @schema_processor ||= SchemaProcessor.new(self)
       end
 
-      def translate_type(name : Symbol)
+      def translate_type(name)
         TYPE_TRANSLATIONS[name]
       rescue e : KeyError
         raise BaseException.new("Unknown data alias #{name}")
@@ -113,7 +113,7 @@ module Jennifer
         end.exists?
       end
 
-      def foreign_key_exists?(from_table, to_table = nil, column = nil, name : String? = nil)
+      def foreign_key_exists?(from_table, to_table = nil, column = nil, name : String? = nil) : Bool
         name = self.class.foreign_key_name(from_table, to_table, column, name)
         Query["information_schema.KEY_COLUMN_USAGE", self]
           .where { and(_constraint_name == name, _table_schema == config.db) }

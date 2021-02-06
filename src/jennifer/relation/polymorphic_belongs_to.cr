@@ -3,8 +3,7 @@ module Jennifer
     abstract class IPolymorphicBelongsTo < IRelation
       DEFAULT_PRIMARY_FIELD = "id"
 
-      getter foreign : String, primary : String
-      getter name : String, foreign_type : String
+      getter foreign : String, primary : String, name : String, foreign_type : String
 
       def initialize(@name, foreign : String | Symbol?, primary : String | Symbol?, foreign_type : String | Symbol?)
         @foreign_type = foreign_type ? foreign_type.to_s : "#{name}_type"
@@ -13,7 +12,7 @@ module Jennifer
       end
 
       private abstract def related_model(arg : String)
-      private abstract def table_name(type)
+      private abstract def table_name(type : String)
 
       def condition_clause(ids : Array(DBAny), polymorphic_type : String?)
         model = related_model(polymorphic_type)
@@ -163,14 +162,6 @@ module Jennifer
 
       def query(a)
         raise AbstractMethod.new("query", self)
-      end
-
-      def condition_clause
-        raise AbstractMethod.new("condition_clause", self)
-      end
-
-      def condition_clause(id : DBAny)
-        raise AbstractMethod.new("condition_clause", self)
       end
 
       def join_condition(query, type)

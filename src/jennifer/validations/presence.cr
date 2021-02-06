@@ -4,8 +4,8 @@ module Jennifer
     #
     # For more details see `Macros.validates_presence`.
     class Presence < Validator
-      def validate(record, field : Symbol, value, _allow_blank : Bool)
-        record.errors.add(field, :blank) if value.blank?
+      def validate(record, **opts)
+        record.errors.add(opts[:field], :blank) if opts[:value].blank?
       end
     end
   end

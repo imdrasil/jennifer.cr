@@ -310,7 +310,7 @@ This passes the record to a new instance of given validator class to be validate
 
 ```crystal
 class EnnValidator < Jennifer::Validations::Validator
-  def validate(record : Passport)
+  def validate(record, **opts)
     if record.enn!.size < 4 && record.enn![0].downcase == 'a'
       record.errors.add(:enn, "Invalid enn")
     end

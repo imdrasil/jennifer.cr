@@ -10,12 +10,6 @@ module Jennifer
       # NOTE: if any request will be performed before response of the previous one is finished
       # we will get freezed.
 
-      include Transactions
-      include ResultParsers
-      include RequestMethods
-
-      alias ArgsType = Array(DBAny)
-
       enum ConnectionType
         Root
         DB
@@ -28,7 +22,12 @@ module Jennifer
         abstract def protocol : String
       end
 
+      alias ArgsType = Array(DBAny)
+
       extend AbstractClassMethods
+      include Transactions
+      include ResultParsers
+      include RequestMethods
 
       @db : DB::Database?
       getter config : Config
@@ -304,9 +303,7 @@ module Jennifer
       # ```
       abstract def view_exists?(name) : Bool
 
-      abstract def update(obj)
-      abstract def update(q, h)
-      abstract def insert(obj)
+      abstract def insert(obj : Model::Base)
 
       # Returns where table with given *table* name exists.
       #
@@ -344,7 +341,7 @@ module Jennifer
       abstract def default_type_size(name)
       abstract def table_column_count(table)
       abstract def tables_column_count(tables : Array(String))
-      abstract def with_table_lock(table : String, type : String = "default", &block)
+      abstract def with_table_lock(table : String, type : String = "default", &block : DB::Transaction -> Void)
       abstract def explain(q)
 
       def refresh_materialized_view(name)

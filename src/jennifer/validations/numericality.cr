@@ -4,10 +4,20 @@ module Jennifer
     #
     # For more details see `Macros.validates_numericality`.
     class Numericality < Validator
-      def validate(record, field : Symbol, value, allow_blank : Bool, greater_than = nil, # ameba:disable Metrics/CyclomaticComplexity
-                   greater_than_or_equal_to = nil, equal_to = nil, less_than = nil, less_than_or_equal_to = nil,
-                   other_than = nil, odd = nil, even = nil)
-        with_blank_validation do
+      def validate(record, **opts) # ameba:disable Metrics/CyclomaticComplexity
+        field = opts[:field]
+        value = opts[:value]
+        allow_blank = opts[:allow_blank]
+        greater_than = opts[:greater_than]?
+        greater_than_or_equal_to = opts[:greater_than_or_equal_to]?
+        equal_to = opts[:equal_to]?
+        less_than = opts[:less_than]?
+        less_than_or_equal_to = opts[:less_than_or_equal_to]?
+        other_than = opts[:other_than]?
+        odd = opts[:odd]?
+        even = opts[:even]?
+
+        with_blank_validation(record, field, value, allow_blank) do
           value = value.not_nil!
           errors = record.errors
 

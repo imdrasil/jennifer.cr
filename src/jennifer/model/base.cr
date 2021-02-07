@@ -240,7 +240,7 @@ module Jennifer
       # ```
       # contact.set_attribute(:name, "Ivan")
       # ```
-      abstract def set_attribute(name, value)
+      abstract def set_attribute(name : String | Symbol, value : AttrType)
 
       # Assigns record properties based on key-value pairs of *values* and stores them directly to the database
       # without running validations and callbacks.
@@ -253,7 +253,7 @@ module Jennifer
       # ```
       # user.update_columns({ :name => "Jennifer" })
       # ```
-      abstract def update_columns(values)
+      abstract def update_columns(values : Hash(String | Symbol, AttrType))
 
       # Returns whether any field was changed. If field again got first value - `true` anyway
       # will be returned.

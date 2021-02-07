@@ -68,7 +68,13 @@ module Jennifer
 
         # :nodoc:
         def %validate_method
-          ::Jennifer::Validations::Inclusion.instance.validate(self, {{field}}, {{field.id}}, {{allow_blank}}, {{in_value}})
+          ::Jennifer::Validations::Inclusion.instance.validate(
+            self,
+            field: {{field}},
+            value: {{field.id}},
+            allow_blank: {{allow_blank}},
+            collection: {{in_value}}
+          )
         end
       end
 
@@ -89,7 +95,13 @@ module Jennifer
 
         # :nodoc:
         def %validate_method
-          ::Jennifer::Validations::Exclusion.instance.validate(self, {{field}}, {{field.id}}, {{allow_blank}}, {{in_value}})
+          ::Jennifer::Validations::Exclusion.instance.validate(
+            self,
+            field: {{field}},
+            value: {{field.id}},
+            allow_blank: {{allow_blank}},
+            collection: {{in_value}}
+          )
         end
       end
 
@@ -111,7 +123,13 @@ module Jennifer
 
         # :nodoc:
         def %validate_method
-          ::Jennifer::Validations::Format.instance.validate(self, {{field}}, {{field.id}}, {{allow_blank}}, {{value}})
+          ::Jennifer::Validations::Format.instance.validate(
+            self,
+            field: {{field}},
+            value: {{field.id}},
+            allow_blank: {{allow_blank}},
+            format: {{value}}
+          )
         end
       end
 
@@ -139,7 +157,12 @@ module Jennifer
 
         # :nodoc:
         def %validate_method
-          ::Jennifer::Validations::Length.instance.validate(self, {{field}}, {{field.id}}, {{**options}})
+          ::Jennifer::Validations::Length.instance.validate(
+            self,
+            field: {{field}},
+            value: {{field.id}},
+            {{**options}}
+          )
         end
       end
 
@@ -180,11 +203,11 @@ module Jennifer
         def %validate_method
           ::Jennifer::Validations::Uniqueness.instance.validate(
             self,
-            :{{fields_identifier.id}},
+            field: :{{fields_identifier.id}},
             # pass on nil here to signal nil values in record
-            {{normalized_fields}}.all?(&.nil?) ? nil : {{normalized_fields}},
-            {{allow_blank_value}},
-            self.class{{fields_condition.id}}
+            value: {{normalized_fields}}.all?(&.nil?) ? nil : {{normalized_fields}},
+            allow_blank: {{allow_blank_value}},
+            query: self.class{{fields_condition.id}}
           )
         end
       end
@@ -206,7 +229,7 @@ module Jennifer
 
         # :nodoc:
         def %validate_method
-          ::Jennifer::Validations::Presence.instance.validate(self, {{field}}, {{field.id}}, false)
+          ::Jennifer::Validations::Presence.instance.validate(self, field: {{field}}, value: {{field.id}})
         end
       end
 
@@ -225,7 +248,7 @@ module Jennifer
 
         # :nodoc:
         def %validate_method
-          ::Jennifer::Validations::Absence.instance.validate(self, {{field}}, {{field.id}}, true)
+          ::Jennifer::Validations::Absence.instance.validate(self, field: {{field}}, value: {{field.id}})
         end
       end
 
@@ -256,7 +279,12 @@ module Jennifer
 
         # :nodoc:
         def %validate_method
-          ::Jennifer::Validations::Numericality.instance.validate(self, {{field}}, {{field.id}}, {{**options}})
+          ::Jennifer::Validations::Numericality.instance.validate(
+            self,
+            field: {{field}},
+            value: {{field.id}},
+            {{**options}}
+          )
         end
       end
 
@@ -282,7 +310,12 @@ module Jennifer
 
         # :nodoc:
         def %validate_method
-          ::Jennifer::Validations::Acceptance.instance.validate(self, {{field}}, {{field.id}}, false, {{accept}})
+          ::Jennifer::Validations::Acceptance.instance.validate(
+            self,
+            field: {{field}},
+            value: {{field.id}},
+            accept: {{accept}}
+          )
         end
       end
 
@@ -307,8 +340,13 @@ module Jennifer
 
         # :nodoc:
         def %validate_method
-          ::Jennifer::Validations::Confirmation.instance
-            .validate(self, {{field}}, {{field.id}}, false, {{field.id}}_confirmation, {{case_sensitive}})
+          ::Jennifer::Validations::Confirmation.instance.validate(
+            self,
+            field: {{field}},
+            value: {{field.id}},
+            confirmation: {{field.id}}_confirmation,
+            case_sensitive: {{case_sensitive}}
+          )
         end
       end
     end

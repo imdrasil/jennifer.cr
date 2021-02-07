@@ -8,10 +8,10 @@ module Jennifer
         # Generates query for inserting new record to db
         abstract def insert(obj : Model::Base)
         abstract def json_path(path : QueryBuilder::JSONSelector)
-        abstract def insert_on_duplicate(table, fields, values, unique_fields, on_conflict)
+        abstract def insert_on_duplicate(table, fields, rows : Int32, unique_fields, on_conflict)
 
         # Generates SQL for VALUES reference in `INSERT ... ON DUPLICATE` query.
-        abstract def values_expression(field)
+        abstract def values_expression(field : Symbol)
       end
 
       extend ClassMethods

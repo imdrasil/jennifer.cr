@@ -8,7 +8,7 @@ module Jennifer
     # Base abstract class for a database entity.
     abstract class Resource
       module AbstractClassMethods
-        abstract def build(values, new_record : Bool)
+        abstract def build(values : Hash | NamedTuple, new_record : Bool)
         abstract def build
 
         # Returns relation instance by given name.
@@ -297,7 +297,7 @@ module Jennifer
       # contact.attribute(:salary)        # => Jennifer::BaseException is raised
       # contact.attribute(:salary, false) # => nil
       # ```
-      abstract def attribute(name, raise_exception : Bool = true)
+      abstract def attribute(name : String | Symbol, raise_exception : Bool = true)
 
       # Returns value of primary field
       #

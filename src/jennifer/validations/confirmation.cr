@@ -4,11 +4,15 @@ module Jennifer
     #
     # For more details see `Macros.validates_confirmation`.
     class Confirmation < Validator
-      def validate(record, field : Symbol, value, allow_blank : Bool, confirmation, case_sensitive)
+      def validate(record, **opts)
+        field = opts[:field]
+        confirmation = opts[:confirmation]?
+
         return true if confirmation.nil?
 
-        with_blank_validation do
-          return true if value.not_nil!.compare(confirmation.not_nil!, !case_sensitive) == 0
+        value = opts[:value]
+        with_blank_validation(record, field, value, false) do
+          return true if value.not_nil!.compare(confirmation.not_nil!, !opts[:case_sensitive]?.not_nil!) == 0
           record.errors.add(
             field,
             :confirmation,

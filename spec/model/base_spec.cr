@@ -795,9 +795,9 @@ describe Jennifer::Model::Base do
 
     it do
       profile = Factory.build_facebook_profile
-      profile.inspect.should eq("#<FacebookProfile:0x#{profile.object_id.to_s(16)} id: nil, login: \"some_login\", "\
-        "contact_id: nil, type: \"FacebookProfile\", virtual_parent_field: nil, uid: \"1234\", "\
-        "virtual_child_field: nil>")
+      profile.inspect.should eq("#<FacebookProfile:0x#{profile.object_id.to_s(16)} uid: \"1234\", "\
+        "virtual_child_field: nil, id: nil, login: \"some_login\", "\
+        "contact_id: nil, type: \"FacebookProfile\", virtual_parent_field: nil>")
     end
   end
 
@@ -809,6 +809,81 @@ describe Jennifer::Model::Base do
     pair_only do
       it "respects connection" do
         PairAddress.actual_table_field_count.should eq(4)
+      end
+    end
+  end
+
+  describe "#to_json" do
+    it "works with all possible column types" do
+      AllTypeModel.new.to_json.should eq(
+        db_specific(
+          mysql: -> do
+            <<-JSON
+            {"id":null,"bool_f":null,"bigint_f":null,"integer_f":null,"short_f":null,"float_f":null,
+            "double_f":null,"string_f":null,"varchar_f":null,"text_f":null,"timestamp_f":null,
+            "date_time_f":null,"date_f":null,"json_f":null,"decimal_f":null,"oid_f":null,"char_f":null,
+            "uuid_f":null,"timestamptz_f":null,"bytea_f":null,"jsonb_f":null,"xml_f":null,"point_f":null,
+            "lseg_f":null,"path_f":null,"box_f":null}
+            JSON
+          end,
+          postgres: -> do
+            <<-JSON
+            {"id":null,"bool_f":null,"bigint_f":null,"integer_f":null,"short_f":null,"float_f":null,
+            "double_f":null,"string_f":null,"varchar_f":null,"text_f":null,"timestamp_f":null,
+            "date_time_f":null,"date_f":null,"json_f":null,"decimal_f":null,"oid_f":null,"char_f":null,
+            "uuid_f":null,"timestamptz_f":null,"bytea_f":null,"jsonb_f":null,"xml_f":null,"point_f":null,
+            "lseg_f":null,"path_f":null,"box_f":null}
+            JSON
+          end
+        ).gsub('\n', "")
+      )
+    end
+
+    it "includes STI fields" do
+      Factory.build_twitter_profile.to_json.should eq(
+        %({"id":null,"login":"some_login","contact_id":null,"type":"TwitterProfile","email":"some_email@example.com"})
+      )
+    end
+
+    it "includes all fields by default" do
+      record = Factory.build_passport
+      record.to_json.should eq(%({"enn":"dsa","contact_id":null}))
+    end
+
+    it "allows to specify *only* argument solely" do
+      record = Factory.build_passport
+      record.to_json(%w[enn]).should eq(%({"enn":"dsa"}))
+    end
+
+    it "allows to specify *except* argument solely" do
+      record = Factory.build_passport
+      record.to_json(except: %w[enn]).should eq(%({"contact_id":null}))
+    end
+
+    context "with block" do
+      it "allows to extend json using block" do
+        executed = false
+        record = Factory.build_passport
+        record.to_json do |json, obj|
+          executed = true
+          obj.should eq(record)
+          json.field "custom", "value"
+        end.should eq(%({"enn":"dsa","contact_id":null,"custom":"value"}))
+        executed.should be_true
+      end
+
+      it "respects :only option" do
+        record = Factory.build_passport
+        record.to_json(%w[enn]) do |json|
+          json.field "custom", "value"
+        end.should eq(%({"enn":"dsa","custom":"value"}))
+      end
+
+      it "respects :except option" do
+        record = Factory.build_passport
+        record.to_json(except: %w[enn]) do |json|
+          json.field "custom", "value"
+        end.should eq(%({"contact_id":null,"custom":"value"}))
       end
     end
   end

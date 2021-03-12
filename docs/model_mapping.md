@@ -131,29 +131,30 @@ To make some field nillable tou can use any of the next options:
 
 If you don't want to define all the table fields - pass `false` as second argument (this will disable default strict mapping mode).
 
-`%mapping` defines next methods:
+`.mapping` defines next methods:
 
 | method | args | description |
 | --- | --- | --- |
-| `#initialize` | `Hash(String \| Symbol, DB::Any), NamedTuple, MySql::ResultSet` | constructors |
-| `::field_count`| | number of fields |
-| `::field_names`| | all fields names |
+| `.new` | `Hash(String \| Symbol, DB::Any), NamedTuple, MySql::ResultSet` | constructors |
+| `.field_count`| | number of fields |
+| `.field_names`| | all fields names |
+| `._{{field_name}}` | | helper method for building queries |
+| `.coerce_{{field_name}}` | `String` | coerces string to `field_name` type |
+| `.primary` | | returns criterion for primary field (query DSL) |
+| `.primary_field_name` | | name of primary field |
+| `.create` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | creates object, stores it to db and returns it |
+| `.create!` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | creates object, stores it to db and returns it; otherwise raise exception |
+| `.build` | `Hash(String \| Symbol, DB::Any), NamedTuple` | builds object |
+| `.create` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with all callbacks |
+| `.create!` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with callbacks or raise exception |
 | `#{{field_name}}` | | getter |
 | `#{{field_name}}_changed?` | | presents whether field is changed |
 | `#{{field_name}}!` | | getter with `not_nil!` if `null: true` was passed |
 | `#{{field_name}}=`| | setter |
-| `::_{{field_name}}` | | helper method for building queries |
 | `#{{field_name}}_changed?` | | shows if field was changed |
+| `#new_record?` | | returns `true` if record has `nil` primary key (is not stored to db) |
 | `#changed?` | | shows if any field was changed |
 | `#primary` | | value of primary key field |
-| `::primary` | | returns criterion for primary field (query DSL) |
-| `::primary_field_name` | | name of primary field |
-| `#new_record?` | | returns `true` if record has `nil` primary key (is not stored to db) |
-| `::create` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | creates object, stores it to db and returns it |
-| `::create!` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | creates object, stores it to db and returns it; otherwise raise exception |
-| `::build` | `Hash(String \| Symbol, DB::Any), NamedTuple` | builds object |
-| `::create` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with all callbacks |
-| `::create!` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with callbacks or raise exception |
 | `#save` | | saves object to db; returns `true` if success and `false` elsewhere |
 | `#save!` | | saves object to db; returns `true` if success or rise exception otherwise |
 | `#to_h` | | returns hash with all attributes |

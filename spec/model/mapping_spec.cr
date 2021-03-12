@@ -170,6 +170,26 @@ describe Jennifer::Model::Mapping do
       end
     end
 
+    describe ".field_names" do
+      it "doesn't return field names from child models" do
+        Profile.field_names.should match_array(%w[id login contact_id type virtual_parent_field])
+      end
+
+      it "includes virtual fields" do
+        Profile.field_names.should match_array(%w[id login contact_id type virtual_parent_field])
+      end
+    end
+
+    describe ".column_names" do
+      it "doesn't return column names from child models" do
+        Profile.column_names.should match_array(%w[id login contact_id type])
+      end
+
+      it "doesn't include virtual fields" do
+        Profile.column_names.should match_array(%w[id login contact_id type])
+      end
+    end
+
     context "columns metadata" do
       it "sets constant" do
         Contact::COLUMNS_METADATA.is_a?(NamedTuple).should be_true
@@ -195,7 +215,7 @@ describe Jennifer::Model::Mapping do
             record = Profile.new(rs)
             klasses << record.class
           end
-          match_array(klasses, [FacebookProfile, TwitterProfile])
+          klasses.should match_array([FacebookProfile, TwitterProfile])
         end
 
         it "raises exception if invalid type was given" do
@@ -1066,26 +1086,26 @@ describe Jennifer::Model::Mapping do
 
       it "returns tuple with all fields" do
         r = Factory.build_profile.arguments_to_insert
-        match_array(r[:fields], %w(login contact_id type))
+        r[:fields].should match_array(%w(login contact_id type))
       end
 
       it "returns tuple with all values" do
         r = Factory.build_profile.arguments_to_insert
-        match_array(r[:args], db_array("some_login", nil, "Profile"))
+        r[:args].should match_array(db_array("some_login", nil, "Profile"))
       end
 
       it "returns aliased columns" do
         r = Author
           .build(name1: "Prob", name2: "AblyTheLast")
           .arguments_to_insert
-        match_array(r[:args], db_array("Prob", "AblyTheLast"))
-        match_array(r[:fields], %w(first_name last_name))
+        r[:args].should match_array(db_array("Prob", "AblyTheLast"))
+        r[:fields].should match_array(%w(first_name last_name))
       end
 
       it "includes non autoincrementable primary field" do
         r = NoteWithManualId.new({ id: 12, text: "test" }).arguments_to_insert
-        match_array(r[:args], db_array(12, "test", nil, nil))
-        match_array(r[:fields], %w(id text created_at updated_at))
+        r[:args].should match_array(db_array(12, "test", nil, nil))
+        r[:fields].should match_array(%w(id text created_at updated_at))
       end
 
       it "uses attributes before typecast" do

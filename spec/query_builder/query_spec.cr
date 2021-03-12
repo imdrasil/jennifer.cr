@@ -571,4 +571,48 @@ describe Jennifer::QueryBuilder::Query do
       end
     end
   end
+
+  describe "#to_json" do
+    it "includes all fields by default" do
+      Factory.create_passport
+      Passport.all.to_json.should eq(%([{"enn":"dsa","contact_id":null}]))
+    end
+
+    it "allows to specify *only* argument solely" do
+      Factory.create_passport
+      Passport.all.to_json(%w[enn]).should eq(%([{"enn":"dsa"}]))
+    end
+
+    it "allows to specify *except* argument solely" do
+      Factory.create_passport
+      Passport.all.to_json(except: %w[enn]).should eq(%([{"contact_id":null}]))
+    end
+
+    context "with block" do
+      it "allows to extend json using block" do
+        executed = false
+        Factory.create_passport
+        Passport.all.to_json do |json, obj|
+          executed = true
+          obj.class.should eq(Passport)
+          json.field "custom", "value #{obj.enn}"
+        end.should eq(%([{"enn":"dsa","contact_id":null,"custom":"value dsa"}]))
+        executed.should be_true
+      end
+
+      it "respects :only option" do
+        Factory.create_passport
+        Passport.all.to_json(%w[enn]) do |json|
+          json.field "custom", "value"
+        end.should eq(%([{"enn":"dsa","custom":"value"}]))
+      end
+
+      it "respects :except option" do
+        Factory.create_passport
+        Passport.all.to_json(except: %w[enn]) do |json|
+          json.field "custom", "value"
+        end.should eq(%([{"contact_id":null,"custom":"value"}]))
+      end
+    end
+  end
 end

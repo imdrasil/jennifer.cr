@@ -364,15 +364,15 @@ describe Jennifer::Adapter::Base do
 
   describe "#tables_column_count" do
     it "returns amount of tables fields" do
-      match_array(adapter.tables_column_count(["passports", "addresses"]).to_a.map(&.count), [2, 7])
+      adapter.tables_column_count(["passports", "addresses"]).to_a.map(&.count).should match_array([2, 7])
     end
 
     it "returns amount of views fields" do
       postgres_only do
-        match_array(adapter.tables_column_count(["male_contacts", "female_contacts"]).to_a.map(&.count), [9, 10])
+        adapter.tables_column_count(["male_contacts", "female_contacts"]).to_a.map(&.count).should match_array([9, 10])
       end
       mysql_only do
-        match_array(adapter.tables_column_count(["male_contacts"]).to_a.map(&.count), [9])
+        adapter.tables_column_count(["male_contacts"]).to_a.map(&.count).should match_array([9])
       end
     end
 

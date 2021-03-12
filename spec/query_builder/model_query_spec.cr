@@ -175,9 +175,9 @@ describe Jennifer::QueryBuilder::ModelQuery do
         res = Contact.all.includes(:addresses, :facebook_profiles).where { _id.in(contacts[0..1].map(&.id)) }.to_a
 
         res.size.should eq(2)
-        match_array(res[0].addresses.map(&.id), [a1.id])
-        match_array(res[1].addresses.map(&.id), [a2.id])
-        match_array(res[1].facebook_profiles.map(&.id), [f.id])
+        res[0].addresses.map(&.id).should match_array([a1.id])
+        res[1].addresses.map(&.id).should match_array([a2.id])
+        res[1].facebook_profiles.map(&.id).should match_array([f.id])
 
         res[0].facebook_profiles.empty?.should be_true
       end

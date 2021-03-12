@@ -6,6 +6,16 @@ module PG
   struct Numeric
     def_clone
 
+    def to_json
+      JSON.build do |json|
+        to_json(json)
+      end
+    end
+
+    def to_json(json : JSON::Builder)
+      json.string to_s
+    end
+
     def self.build(*args)
       raise "This is a stub for pg driver"
     end
@@ -14,6 +24,8 @@ module PG
   module Geo
     {% for type in %w(Point Line Circle LineSegment Box Path Polygon) %}
       struct {{type.id}}
+        include JSON::Serializable
+
         def_clone
 
         def self.build(*args)

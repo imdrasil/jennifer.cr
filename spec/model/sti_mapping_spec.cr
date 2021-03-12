@@ -160,20 +160,28 @@ describe Jennifer::Model::STIMapping do
     end
   end
 
-  describe "::field_names" do
+  describe ".field_names" do
     it "returns all fields" do
-      names = FacebookProfile.field_names
-      match_array(names, %w(login uid type contact_id id virtual_child_field virtual_parent_field))
+      FacebookProfile.field_names
+        .should match_array(%w(login uid type contact_id id virtual_child_field virtual_parent_field))
     end
 
     it "does not return aliased columns of the superclass" do
-      names = BlogPost.field_names
-      match_array(names, %w(id name version publisher type url created_at))
+      BlogPost.field_names.should match_array(%w(id name version publisher type url created_at))
     end
 
     it "does not return aliased columns of the subclass" do
-      names = Article.field_names
-      match_array(names, %w(id name version publisher type size))
+      Article.field_names.should match_array(%w(id name version publisher type size))
+    end
+  end
+
+  describe ".column_names" do
+    it "returns fields from current and parent models" do
+      FacebookProfile.column_names.should match_array(%w(login uid type contact_id id))
+    end
+
+    it "doesn't include virtual fields" do
+      FacebookProfile.column_names.should match_array(%w(login uid type contact_id id))
     end
   end
 
@@ -530,12 +538,12 @@ describe Jennifer::Model::STIMapping do
 
     it "returns tuple with all fields" do
       r = Factory.build_twitter_profile.arguments_to_insert
-      match_array(r[:fields], %w(login contact_id type email))
+      r[:fields].should match_array(%w(login contact_id type email))
     end
 
     it "returns tuple with all values" do
       r = Factory.build_twitter_profile.arguments_to_insert
-      match_array(r[:args], db_array("some_login", nil, "TwitterProfile", "some_email@example.com"))
+      r[:args].should match_array(db_array("some_login", nil, "TwitterProfile", "some_email@example.com"))
     end
 
     it "maps columns aliases" do
@@ -548,13 +556,13 @@ describe Jennifer::Model::STIMapping do
       r.is_a?(NamedTuple).should be_true
       r.keys.should eq({:args, :fields})
 
-      match_array(r[:fields], %w(title version publisher type pages))
+      r[:fields].should match_array(%w(title version publisher type pages))
       expected =
         db_specific(
           mysql: -> { db_array("MyNameIsDonnieSmith", 5, "PTA",  "Article", 1) },
           postgres: -> { db_array("MyNameIsDonnieSmith", 5, "PTA",  Bytes[65, 114, 116, 105, 99, 108, 101], 1) }
         )
-      match_array(r[:args], expected)
+      r[:args].should match_array(expected)
     end
 
     it "uses attributes before typecast" do

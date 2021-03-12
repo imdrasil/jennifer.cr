@@ -49,15 +49,6 @@ module Jennifer
 
         __field_declaration({{properties}}, false)
 
-        private def inspect_attributes(io) : Nil
-          super
-          {% for var, i in properties.keys %}
-            io << ", {{var.id}}: "
-            @{{var.id}}.inspect(io)
-          {% end %}
-          nil
-        end
-
         private def _extract_attributes(pull : DB::ResultSet)
           requested_columns_count = self.class.actual_table_field_count
           ::Jennifer::BaseException.assert_column_count(requested_columns_count, pull.column_count)
@@ -171,7 +162,6 @@ module Jennifer
         # Creates object from db tuple
         def initialize(%pull : DB::ResultSet)
           @new_record = false
-          # ameba:disable Lint/ShadowingOuterLocalVar
           {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(%pull)
         end
 
@@ -195,7 +185,6 @@ module Jennifer
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))
           values["type"] = "{{@type.id}}" if values["type"]?.nil?
-          # ameba:disable Lint/ShadowingOuterLocalVar
           {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
@@ -388,7 +377,12 @@ module Jennifer
 
         # :nodoc:
         def self.field_names : Array(String)
-          FIELD_NAMES
+          [{{properties.keys.map { |e| "#{e.id.stringify}" }.join(", ").id}}]
+        end
+
+        # :nodoc:
+        def self.column_names : Array(String)
+          [{{all_properties.keys.select { |attr| !all_properties[attr][:virtual] }.map { |e| "#{e.id.stringify}" }.join(", ").id}}]
         end
       end
     end

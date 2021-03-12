@@ -1,11 +1,5 @@
 module Spec
   module Methods
-    def match_array(expect, target)
-      missing = expect - target
-      extra = target - expect
-      fail("Actual array: #{expect}; Expected: #{target}") unless missing.empty? && extra.empty?
-    end
-
     macro match_fields(object, fields)
       {% for field, value in fields %}
         {{object}}.{{field.id}}.should eq({{value}})
@@ -42,6 +36,25 @@ module Spec
         next
       end
       fail "Block wasn't executed"
+    end
+  end
+
+  struct MatchArrayExpectation(T)
+    def initialize(@array : Array(T))
+    end
+
+    def match(given)
+      missing = @array - given
+      extra = given - @array
+      missing.empty? && extra.empty?
+    end
+
+    def failure_message(given)
+      "Actual array: #{given}; Expected: #{@array}"
+    end
+
+    def negative_failure_message(given)
+      "Actual array: #{given}; Not expected: #{@array}"
     end
   end
 
@@ -202,6 +215,10 @@ module Spec
 
     def be_executed_as(command, options)
       MatchCommandExpectation.new(command, options)
+    end
+
+    def match_array(expected)
+      MatchArrayExpectation.new(expected)
     end
   end
 end

@@ -49,6 +49,42 @@ module Jennifer
       end
     end
 
+    # Returns a JSON string representing data set.
+    #
+    # For more details see `Resource#to_json`.
+    def to_json(only : Array(String)? = nil, except : Array(String)? = nil, &block)
+      JSON.build do |json|
+        to_json(json, only, except) { yield json, self }
+      end
+    end
+
+    def to_json(json : JSON::Builder)
+      to_json(json) {}
+    end
+
+    def to_json(json : JSON::Builder, only : Array(String)? = nil, except : Array(String)? = nil, &block)
+      json.object do
+        field_names =
+          if only
+            only
+          elsif except
+            fields - except
+          else
+            fields
+          end
+        field_names.each do |name|
+          json.field(name, attributes[name])
+        end
+        yield json, self
+      end
+    end
+
+    def to_json(only : Array(String)? = nil, except : Array(String)? = nil)
+      JSON.build do |json|
+        to_json(json, only, except) {}
+      end
+    end
+
     macro method_missing(call)
       {% if call.args.size == 0 %}
         def {{call.name.id}}

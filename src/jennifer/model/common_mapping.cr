@@ -22,7 +22,11 @@ module Jennifer::Model
 
       # :nodoc:
       def self.field_names : Array(String)
-        FIELD_NAMES
+        [{{properties.keys.map { |e| "#{e.id.stringify}" }.join(", ").id}}]
+      end
+
+      def self.column_names : Array(String)
+        [{{properties.keys.select { |attr| !properties[attr][:virtual] }.map { |e| "#{e.id.stringify}" }.join(", ").id}}]
       end
 
       # :nodoc:
@@ -153,16 +157,6 @@ module Jennifer::Model
 
       private def init_attributes(values : DB::ResultSet)
         {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
-      end
-
-      private def inspect_attributes(io) : Nil
-        io << ' '
-        {% for var, i in properties.keys %}
-          {% if i > 0 %} io << ", " {% end %}
-          io << "{{var.id}}: "
-          @{{var.id}}.inspect(io)
-        {% end %}
-        nil
       end
     end
   end

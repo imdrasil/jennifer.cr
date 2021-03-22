@@ -247,7 +247,7 @@ describe Jennifer::QueryBuilder::Function do
       Factory.create_contact(name: "Asd", gender: "male", age: 18)
       Factory.create_contact(name: "BBB", gender: "female", age: 18)
       Factory.create_contact(name: "Asd", gender: "male", age: 20)
-      match_array(Query["contacts"].select { [count.alias("count")] }.group(:gender).to_a.map(&.count), [2, 1])
+      Query["contacts"].select { [count.alias("count")] }.group(:gender).to_a.map(&.count).should match_array([2, 1])
     end
   end
 
@@ -257,7 +257,7 @@ describe Jennifer::QueryBuilder::Function do
       Factory.create_contact(name: "BBB", gender: "female", age: 19)
       Factory.create_contact(name: "Asd", gender: "male", age: 20)
       Factory.create_contact(name: "BBB", gender: "female", age: 21)
-      match_array(Query["contacts"].select { [max(_age).alias("max")] }.group(:gender).to_a.map(&.max), [20, 21])
+      Query["contacts"].select { [max(_age).alias("max")] }.group(:gender).to_a.map(&.max).should match_array([20, 21])
     end
   end
 
@@ -267,7 +267,7 @@ describe Jennifer::QueryBuilder::Function do
       Factory.create_contact(name: "BBB", gender: "female", age: 19)
       Factory.create_contact(name: "Asd", gender: "male", age: 20)
       Factory.create_contact(name: "BBB", gender: "female", age: 21)
-      match_array(Query["contacts"].select { [min(_age).alias("min")] }.group(:gender).to_a.map(&.min), [18, 19])
+      Query["contacts"].select { [min(_age).alias("min")] }.group(:gender).to_a.map(&.min).should match_array([18, 19])
     end
   end
 
@@ -277,7 +277,8 @@ describe Jennifer::QueryBuilder::Function do
       Factory.create_contact(name: "BBB", gender: "female", age: 19)
       Factory.create_contact(name: "Asd", gender: "male", age: 20)
       Factory.create_contact(name: "BBB", gender: "female", age: 21)
-      match_array(Query["contacts"].select { [sum(_age).alias("sum")] }.group(:gender).to_a.map(&.sum.as(Number).to_f), [38.0, 40.0])
+      Query["contacts"].select { [sum(_age).alias("sum")] }.group(:gender).to_a.map(&.sum.as(Number).to_f)
+        .should match_array([38.0, 40.0])
     end
   end
 
@@ -287,13 +288,12 @@ describe Jennifer::QueryBuilder::Function do
       Factory.create_contact(name: "BBB", gender: "female", age: 19)
       Factory.create_contact(name: "Asd", gender: "male", age: 20)
       Factory.create_contact(name: "BBB", gender: "female", age: 21)
-      res =
-        {% if env("DB") == "mysql" %}
-          Query["contacts"].select { [avg(_age).alias("avg")] }.group(:gender).to_a.map(&.avg.as(Float64))
-        {% else %}
-          Query["contacts"].select { [avg(_age)] }.group(:gender).to_a.map(&.avg.as(PG::Numeric).to_f)
-        {% end %}
-      match_array([19.0, 20.0], res)
+      {% if env("DB") == "mysql" %}
+        Query["contacts"].select { [avg(_age).alias("avg")] }.group(:gender).to_a.map(&.avg.as(Float64))
+      {% else %}
+        Query["contacts"].select { [avg(_age)] }.group(:gender).to_a.map(&.avg.as(PG::Numeric).to_f)
+      {% end %}
+        .should match_array([19.0, 20.0])
     end
   end
 end

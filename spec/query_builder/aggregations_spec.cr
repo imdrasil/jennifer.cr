@@ -57,7 +57,7 @@ describe Jennifer::QueryBuilder::Aggregations do
       Factory.create_contact(name: "BBB", gender: "female", age: 19)
       Factory.create_contact(name: "Asd", gender: "male", age: 20)
       Factory.create_contact(name: "BBB", gender: "female", age: 21)
-      match_array(described_class.new("contacts").group(:gender).group_max(:age, Int32), [20, 21])
+      described_class.new("contacts").group(:gender).group_max(:age, Int32).should match_array([20, 21])
     end
   end
 
@@ -67,7 +67,7 @@ describe Jennifer::QueryBuilder::Aggregations do
       Factory.create_contact(name: "BBB", gender: "female", age: 19)
       Factory.create_contact(name: "Asd", gender: "male", age: 20)
       Factory.create_contact(name: "BBB", gender: "female", age: 21)
-      match_array(described_class.new("contacts").group(:gender).group_min(:age, Int32), [18, 19])
+      described_class.new("contacts").group(:gender).group_min(:age, Int32).should match_array([18, 19])
     end
   end
 
@@ -78,9 +78,9 @@ describe Jennifer::QueryBuilder::Aggregations do
       Factory.create_contact(name: "Asd", gender: "male", age: 20)
       Factory.create_contact(name: "BBB", gender: "female", age: 21)
       {% if env("DB") == "mysql" %}
-        match_array(described_class.new("contacts").group(:gender).group_sum(:age, Float64), [38.0, 40.0])
+        described_class.new("contacts").group(:gender).group_sum(:age, Float64).should match_array([38.0, 40.0])
       {% else %}
-        match_array(described_class.new("contacts").group(:gender).group_sum(:age, Int64), [38i64, 40i64])
+        described_class.new("contacts").group(:gender).group_sum(:age, Int64).should match_array([38i64, 40i64])
       {% end %}
     end
   end
@@ -92,7 +92,7 @@ describe Jennifer::QueryBuilder::Aggregations do
       Factory.create_contact(name: "Asd", gender: "male", age: 20)
       Factory.create_contact(name: "BBB", gender: "female", age: 21)
       klass = {% if env("DB") == "mysql" %} Float64 {% else %} PG::Numeric {% end %}
-      match_array([19.0, 20.0], described_class.new("contacts").group(:gender).group_avg(:age, klass).map(&.to_f))
+      [19.0, 20.0].should match_array(described_class.new("contacts").group(:gender).group_avg(:age, klass).map(&.to_f))
     end
   end
 
@@ -101,7 +101,7 @@ describe Jennifer::QueryBuilder::Aggregations do
       Factory.create_contact(name: "Asd", gender: "male", age: 18)
       Factory.create_contact(name: "BBB", gender: "female", age: 18)
       Factory.create_contact(name: "Asd", gender: "male", age: 20)
-      match_array([2, 1], described_class.new("contacts").group(:age).group_count(:age))
+      [2, 1].should match_array(described_class.new("contacts").group(:age).group_count(:age))
     end
   end
 end

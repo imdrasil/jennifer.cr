@@ -12,6 +12,7 @@ require "./jennifer/macros"
 
 require "./jennifer/exceptions"
 require "./jennifer/adapter"
+require "./jennifer/json"
 require "./jennifer/adapter/record"
 require "./jennifer/adapter/db_formatter"
 require "./jennifer/config"

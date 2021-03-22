@@ -175,4 +175,78 @@ describe Jennifer::View::Base do
       end
     end
   end
+
+  describe "#to_json" do
+    it "includes all fields by default" do
+      Factory.create_contact(name: "Johny", age: 19)
+      record = MaleContact.all.first!
+      record.to_json.should eq({
+        id: record.id,
+        name: record.name,
+        gender: record.gender,
+        age: record.age,
+        created_at: record.created_at
+      }.to_json)
+    end
+
+    it "allows to specify *only* argument solely" do
+      Factory.create_contact(name: "Johny", age: 19)
+      record = MaleContact.all.first!
+      record.to_json(%w[id]).should eq(%({"id":#{record.id}}))
+    end
+
+    it "allows to specify *except* argument solely" do
+      Factory.create_contact(name: "Johny", age: 19)
+      record = MaleContact.all.first!
+      record.to_json(except: %w[id]).should eq({
+        name: record.name,
+        gender: record.gender,
+        age: record.age,
+        created_at: record.created_at
+      }.to_json)
+    end
+
+    context "with block" do
+      it "allows to extend json using block" do
+        Factory.create_contact(name: "Johny", age: 19)
+        executed = false
+        record = MaleContact.all.first!
+        record.to_json do |json, obj|
+          executed = true
+          obj.should eq(record)
+          json.field "custom", "value"
+        end.should eq({
+          id: record.id,
+          name: record.name,
+          gender: record.gender,
+          age: record.age,
+          created_at: record.created_at,
+          custom: "value"
+        }.to_json)
+        executed.should be_true
+      end
+
+      it "respects :only option" do
+        Factory.create_contact(name: "Johny", age: 19)
+        record = MaleContact.all.first!
+        record.to_json(%w[id]) do |json|
+          json.field "custom", "value"
+        end.should eq({id: record.id, custom: "value"}.to_json)
+      end
+
+      it "respects :except option" do
+        Factory.create_contact(name: "Johny", age: 19)
+        record = MaleContact.all.first!
+        record.to_json(except: %w[id]) do |json|
+          json.field "custom", "value"
+        end.should eq({
+          name: record.name,
+          gender: record.gender,
+          age: record.age,
+          created_at: record.created_at,
+          custom: "value"
+        }.to_json)
+      end
+    end
+  end
 end

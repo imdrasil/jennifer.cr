@@ -594,6 +594,38 @@ module Jennifer
           (!@ctes.nil? && _ctes!.any?(&.filterable?))
       end
 
+      # Returns a JSON string representing collection of retrieved entities.
+      #
+      # For more details see `Resource#to_json`
+      #
+      # ```
+      # Jennifer::Query["user"].to_json
+      # # => [{"id": 1, "name": "John Smith"}]
+      # ```
+      def to_json(only : Array(String)? = nil, except : Array(String)? = nil, &block)
+        JSON.build do |json|
+          to_json(json, only, except) { |_, entry| yield json, entry }
+        end
+      end
+
+      def to_json(json : JSON::Builder)
+        to_json(json) {}
+      end
+
+      def to_json(json : JSON::Builder, only : Array(String)? = nil, except : Array(String)? = nil, &block)
+        json.array do
+          each do |entry|
+            entry.to_json(json, only, except) { yield json, entry }
+          end
+        end
+      end
+
+      def to_json(only : Array(String)? = nil, except : Array(String)? = nil)
+        JSON.build do |json|
+          to_json(json, only, except) {}
+        end
+      end
+
       #
       # private methods
       #

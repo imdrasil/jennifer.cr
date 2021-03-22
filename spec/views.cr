@@ -43,7 +43,7 @@ end
 # ==================
 
 class FakeFemaleContact < Jennifer::View::Base
-  view_name "female_contacs"
+  view_name "female_contacts"
 
   {% if env("DB") == "postgres" || env("DB") == nil %}
     mapping({

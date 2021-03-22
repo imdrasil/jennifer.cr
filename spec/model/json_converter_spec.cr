@@ -38,7 +38,7 @@ describe Jennifer::Model::JSONConverter do
   describe ".from_hash" do
     it "accepts string value" do
       data = {latitude: 32.0, longitude: 24.5}
-      Jennifer::Model::JSONConverter.from_hash({ "value" => data.to_json }, "value")
+      Jennifer::Model::JSONConverter.from_hash({ "value" => data.to_json }, "value", { name: "value" })
         .should eq(JSON.parse(data.to_json))
     end
   end

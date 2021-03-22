@@ -66,7 +66,7 @@ module Jennifer
                 begin
                   %var{key.id} =
                     {% if value[:converter] %}
-                      {{ value[:converter] }}.from_db(pull, {{value[:null]}})
+                      {{ value[:converter] }}.from_db(pull, self.class.columns_tuple[:{{key.id}}])
                     {% else %}
                       pull.read({{value[:parsed_type].id}})
                     {% end %}
@@ -111,14 +111,14 @@ module Jennifer
             if values.has_key?({{column1}})
               %var{key.id} =
                 {% if value[:converter] %}
-                  {{value[:converter]}}.from_hash(values, {{column1}})
+                  {{value[:converter]}}.from_hash(values, {{column1}}, self.class.columns_tuple[:{{key.id}}])
                 {% else %}
                   values[{{column1}}]
                 {% end %}
             elsif values.has_key?({{column2}})
               %var{key.id} =
                 {% if value[:converter] %}
-                  {{value[:converter]}}.from_hash(values, {{column2}})
+                  {{value[:converter]}}.from_hash(values, {{column2}}, self.class.columns_tuple[:{{key.id}}])
                 {% else %}
                   values[{{column2}}]
                 {% end %}
@@ -294,7 +294,7 @@ module Jennifer
           {% for attr, options in properties %}
           when "{{attr.id}}"
             {% if options[:converter] %}
-              {{options[:converter]}}.to_db(self.{{attr.id}})
+              {{options[:converter]}}.to_db(self.{{attr.id}}, self.class.columns_tuple[:{{attr.id}}])
             {% else %}
               self.{{attr.id}}
             {% end %}

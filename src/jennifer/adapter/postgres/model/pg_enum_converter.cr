@@ -15,8 +15,8 @@ module Jennifer::Model
   # end
   # ```
   class PgEnumConverter
-    def self.from_db(pull, nillable)
-      if nillable
+    def self.from_db(pull, options)
+      if options[:null]
         value = pull.read(Bytes?)
         value && String.new(value)
       else
@@ -24,14 +24,14 @@ module Jennifer::Model
       end
     end
 
-    def self.to_db(value : String)
+    def self.to_db(value : String, options)
       value.to_slice
     end
 
-    def self.to_db(value : Nil) : Nil
+    def self.to_db(value : Nil, options) : Nil
     end
 
-    def self.from_hash(hash : Hash, column)
+    def self.from_hash(hash : Hash, column, options)
       value = hash[column]
       case value
       when Bytes

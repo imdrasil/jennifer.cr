@@ -3,18 +3,18 @@ module Jennifer::Model
   #
   # Converts json string to `JSON::Any` and back.
   class JSONConverter
-    def self.from_db(pull, nillable)
-      nillable ? pull.read(JSON::Any?) : pull.read(JSON::Any)
+    def self.from_db(pull, options)
+      pull.read(options[:null] ? JSON::Any? : JSON::Any)
     end
 
-    def self.to_db(value : JSON::Any) : String
+    def self.to_db(value : JSON::Any, options) : String
       value.to_json
     end
 
-    def self.to_db(value : Nil) : Nil
+    def self.to_db(value : Nil, options) : Nil
     end
 
-    def self.from_hash(hash : Hash, column)
+    def self.from_hash(hash : Hash, column, options)
       value = hash[column]
       case value
       when String

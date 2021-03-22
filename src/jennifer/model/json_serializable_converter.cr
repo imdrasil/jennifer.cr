@@ -17,21 +17,21 @@ module Jennifer::Model
   # end
   # ```
   class JSONSerializableConverter(T)
-    def self.from_db(pull, nillable)
-      value = nillable ? pull.read(JSON::Any?) : pull.read(JSON::Any)
+    def self.from_db(pull, options)
+      value = pull.read(options[:null] ? JSON::Any? : JSON::Any)
       return unless value
 
       T.from_json(value.to_json)
     end
 
-    def self.to_db(value : T) : String
+    def self.to_db(value : T, options) : String
       value.to_json
     end
 
-    def self.to_db(value : Nil) : Nil
+    def self.to_db(value : Nil, options) : Nil
     end
 
-    def self.from_hash(hash : Hash, column)
+    def self.from_hash(hash : Hash, column, options)
       value = hash[column]
       case value
       when String

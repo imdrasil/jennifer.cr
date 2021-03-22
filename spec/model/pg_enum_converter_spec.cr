@@ -27,7 +27,7 @@ postgres_only do
 
     describe ".from_hash" do
       it "accepts bytes value" do
-        Jennifer::Model::PgEnumConverter.from_hash({ "value" => "female".to_slice }, "value").should eq("female")
+        Jennifer::Model::PgEnumConverter.from_hash({ "value" => "female".to_slice }, "value", {name: "value"}).should eq("female")
       end
     end
   end

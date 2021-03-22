@@ -80,6 +80,10 @@ class ContactFactory < Factory::Jennifer::Base
     argument_type (Array(Int32) | Int32 | PG::Numeric | String?)
   end
 
+  mysql_only do
+    argument_type (Array(Int32) | Int32 | Float64 | String?)
+  end
+
   attr :name, "Deepthi"
   attr :age, 28
   attr :description, nil

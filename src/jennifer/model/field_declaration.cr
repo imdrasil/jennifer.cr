@@ -39,11 +39,9 @@ module Jennifer::Model
             @{{key.id}}
           end
 
-          {% if value[:null] != false %}
-            def {{key.id}}!
-              @{{key.id}}.not_nil!
-            end
-          {% end %}
+          def {{key.id}}!
+            @{{key.id}}.not_nil!
+          end
 
           {% resolved_type = value[:type].resolve %}
           {% if resolved_type == Bool || (resolved_type.union? && resolved_type.union_types[0] == Bool) %}

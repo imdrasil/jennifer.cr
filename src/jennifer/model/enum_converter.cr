@@ -15,21 +15,21 @@ module Jennifer::Model
   # end
   # ```
   class EnumConverter(T)
-    def self.from_db(pull, nillable)
-      value = nillable ? pull.read(String?) : pull.read(String)
+    def self.from_db(pull, options)
+      value = pull.read(options[:null] ? String? : String)
       return if value.nil?
 
       T.parse(value)
     end
 
-    def self.to_db(value : T) : String
+    def self.to_db(value : T, options) : String
       value.to_s
     end
 
-    def self.to_db(value : Nil): Nil
+    def self.to_db(value : Nil, options): Nil
     end
 
-    def self.from_hash(hash : Hash, column)
+    def self.from_hash(hash : Hash, column, options)
       value = hash[column]
       case value
       when String

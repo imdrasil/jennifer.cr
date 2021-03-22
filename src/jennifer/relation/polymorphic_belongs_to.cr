@@ -49,7 +49,7 @@ module Jennifer
         type_field = rel[foreign_type].as(String)
         main_obj = create!(rel, type_field)
         obj.update_columns({
-          foreign_field => main_obj.attribute(primary_field),
+          foreign_field => main_obj.attribute_before_typecast(primary_field),
           foreign_type => type_field
         })
         main_obj

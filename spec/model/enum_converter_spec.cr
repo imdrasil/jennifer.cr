@@ -46,7 +46,7 @@ describe Jennifer::Model::EnumConverter do
 
   describe ".from_hash" do
     it "accepts string value" do
-      Jennifer::Model::EnumConverter(Category).from_hash({ "value" => "GOOD" }, "value").should eq(Category::GOOD)
+      Jennifer::Model::EnumConverter(Category).from_hash({ "value" => "GOOD" }, "value", {name: "value"}).should eq(Category::GOOD)
     end
   end
 end

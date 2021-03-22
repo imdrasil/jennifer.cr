@@ -204,15 +204,16 @@ end
 
 To define a field converter create a class/module which implements next static methods:
 
-- `.from_db(DB::ResultSet, Bool)` - converts field reading it from db result set (second argument describes wether field is nillable);
-- `.to_db(T)` - converts field to the db format;
-- `.from_hash(Hash(String, Jennifer::DBAny | T), String)` - converts field (which name is the 2nd argument) from the given hash (this method is called only if hash has required key).
+- `.from_db(DB::ResultSet, NamedTuple)` - converts field reading it from db result set;
+- `.to_db(T, NamedTuple)` - converts field to the db format;
+- `.from_hash(Hash(String, Jennifer::DBAny | T), String, NamedTuple)` - converts field (which name is the 2nd argument) from the given hash (this method is called only if hash has required key).
 
-There are 6 predefined converters:
+There are 7 predefined converters:
 
 - `Jennifer::Model::JSONConverter` - default converter for `JSON::Any` (it is applied automatically for `JSON::Any` fields) - takes care of JSON-string-JSON conversion;
 - `Jennifer::Model::TimeZoneConverter` - default converter for `Time` - converts from UTC time to local time zone;
 - `Jennifer::Model::EnumConverter` - converts string values to crystal `enum`;
+-`Jennifer::Model::BigDecimalConverter` - converts numeric database type to `BigDecimal` value which allows to perform operations with specific scale;
 - `Jennifer::Model::JSONSerializableConverter(T)` - converts JSON to `T` (which includes `JSON::Serializable);
 - `Jennifer::Model::NumericToFloat64Converter` - converts `PG::Numeric` to `Float64` (Postgres only);
 - `Jennifer::Model::PgEnumConverter` - converts `ENUM` value to `String` (Postgres only).

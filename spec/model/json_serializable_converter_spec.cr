@@ -60,13 +60,13 @@ describe Jennifer::Model::JSONSerializableConverter do
   describe ".from_hash" do
     it "accepts string value" do
       data = {latitude: 32.0, longitude: 24.5}
-      Jennifer::Model::JSONSerializableConverter(Location).from_hash({ "value" => data.to_json }, "value")
+      Jennifer::Model::JSONSerializableConverter(Location).from_hash({ "value" => data.to_json }, "value", {name: "value"})
         .should eq(Location.new(32.0, 24.5))
     end
 
     it "accepts JSON::Any value" do
       data = {latitude: 32.0, longitude: 24.5}
-      Jennifer::Model::JSONSerializableConverter(Location).from_hash({ "value" => JSON.parse(data.to_json) }, "value")
+      Jennifer::Model::JSONSerializableConverter(Location).from_hash({ "value" => JSON.parse(data.to_json) }, "value", {name: "value"})
         .should eq(Location.new(32.0, 24.5))
     end
   end

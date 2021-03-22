@@ -16,7 +16,7 @@ describe Jennifer::Model::TimeZoneConverter do
   describe ".from_hash" do
     it "accepts time which is already in current time zone" do
       time = Time.local(location: Jennifer::Config.local_time_zone)
-      value = Jennifer::Model::TimeZoneConverter.from_hash({ "value" => time }, "value")
+      value = Jennifer::Model::TimeZoneConverter.from_hash({ "value" => time }, "value", { name: "value" })
       value.should eq(time)
       value.zone.should eq(Jennifer::Config.local_time_zone.lookup(Time.utc))
     end

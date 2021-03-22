@@ -64,6 +64,13 @@ module Jennifer::Model
       Time.parse(value, format, Config.local_time_zone)
     end
 
+    def self.coerce(value : String, type : (BigDecimal?).class)
+      return if value.empty?
+
+      BigDecimal.new(value)
+    end
+
+    # TODO: add PG::Numeric support
     def self.coerce(value : String, type)
       raise ::Jennifer::BaseException.new("Type #{type} can't be coerced")
     end

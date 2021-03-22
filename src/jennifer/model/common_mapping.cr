@@ -141,7 +141,7 @@ module Jennifer::Model
         {% for attr, options in properties %}
         when "{{attr.id}}"
           {% if options[:converter] %}
-            {{options[:converter]}}.to_db(self.{{attr.id}})
+            {{options[:converter]}}.to_db(self.{{attr.id}}, self.class.columns_tuple[:{{attr.id}}])
           {% else %}
             self.{{attr.id}}
           {% end %}

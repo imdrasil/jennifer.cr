@@ -173,7 +173,7 @@ module Jennifer
               end
             end
             options[:parsed_type] = stringified_type
-
+            options[:null] = false if options[:null] == nil
             options[:column] = (options[:column] || key).id.stringify
 
             if options[:type].resolve.nilable?
@@ -396,7 +396,7 @@ module Jennifer
                 begin
                   %var{key.id} =
                     {% if value[:converter] %}
-                      {{ value[:converter] }}.from_db(pull, {{value[:null]}})
+                      {{ value[:converter] }}.from_db(pull, self.class.columns_tuple[:{{key.id}}])
                     {% else %}
                       pull.read({{value[:parsed_type].id}})
                     {% end %}
@@ -447,14 +447,14 @@ module Jennifer
             if values.has_key?({{column1}})
               %var{key.id} =
                 {% if value[:converter] %}
-                  {{value[:converter]}}.from_hash(values, {{column1}})
+                  {{value[:converter]}}.from_hash(values, {{column1}}, self.class.columns_tuple[:{{key.id}}])
                 {% else %}
                   values[{{column1}}]
                 {% end %}
             elsif values.has_key?({{column2}})
               %var{key.id} =
                 {% if value[:converter] %}
-                  {{value[:converter]}}.from_hash(values, {{column2}})
+                  {{value[:converter]}}.from_hash(values, {{column2}}, self.class.columns_tuple[:{{key.id}}])
                 {% else %}
                   values[{{column2}}]
                 {% end %}

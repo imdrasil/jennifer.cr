@@ -32,7 +32,7 @@ postgres_only do
     describe ".from_hash" do
       it "accepts PG::Numeric" do
         value = PG::Numeric.new(1i16, 0i16, 0i16, 0i16, [3i16])
-        Jennifer::Model::NumericToFloat64Converter.from_hash({ "value" => value }, "value").should eq(3.0)
+        Jennifer::Model::NumericToFloat64Converter.from_hash({ "value" => value }, "value", {name: "value"}).should eq(3.0)
       end
     end
   end

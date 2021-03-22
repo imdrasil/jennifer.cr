@@ -29,11 +29,9 @@ module Jennifer
               end
             {% end %}
 
-            {% if value[:null] != false %}
-              def {{key.id}}!
-                {{key.id}}.not_nil!
-              end
-            {% end %}
+            def {{key.id}}!
+              {{key.id}}.not_nil!
+            end
           {% end %}
 
           def self._{{key}}
@@ -88,7 +86,7 @@ module Jennifer
                 begin
                   %var{key.id} =
                     {% if value[:converter] %}
-                      {{ value[:converter] }}.from_db(pull, {{value[:null]}})
+                      {{ value[:converter] }}.from_db(pull, self.class.columns_tuple[:{{key.id}}])
                     {% else %}
                       pull.read({{value[:parsed_type].id}})
                     {% end %}
@@ -145,14 +143,14 @@ module Jennifer
             if values.has_key?({{column1}})
               %var{key.id} =
                 {% if value[:converter] %}
-                  {{value[:converter]}}.from_hash(values, {{column1}})
+                  {{value[:converter]}}.from_hash(values, {{column1}}, self.class.columns_tuple[:{{key.id}}])
                 {% else %}
                   values[{{column1}}]
                 {% end %}
             elsif values.has_key?({{column2}})
               %var{key.id} =
                 {% if value[:converter] %}
-                  {{value[:converter]}}.from_hash(values, {{column2}})
+                  {{value[:converter]}}.from_hash(values, {{column2}}, self.class.columns_tuple[:{{key.id}}])
                 {% else %}
                   values[{{column2}}]
                 {% end %}

@@ -28,12 +28,12 @@ class EnnValidator < Jennifer::Validations::Validator
 end
 
 class InspectConverter(T)
-  def self.from_db(pull, nullable)
-    value = nillable ? pull.read(T?) : pull.read(T)
+  def self.from_db(pull, options)
+    value = options[:null] ? pull.read(T?) : pull.read(T)
     "#{T}: #{value}" if value
   end
 
-  def self.to_db(value : String)
+  def self.to_db(value : String, options)
     if T == Int32
       value[("#{T}".size + 2)..-1].to_i
     else
@@ -41,9 +41,9 @@ class InspectConverter(T)
     end
   end
 
-  def self.to_db(value : Nil); end
+  def self.to_db(value : Nil, options); end
 
-  def self.from_hash(hash : Hash, column)
+  def self.from_hash(hash : Hash, column, options)
     value = hash[column]
     "#{T}: #{value}"
   end

@@ -7,6 +7,28 @@ postgres_only do
       tags: Array(Int32)
     })
   end
+
+  class PgContactWithBigDecimal < ApplicationRecord
+    table_name "contacts"
+
+    mapping({
+      id: Primary32,
+      name: String,
+      ballance: { type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2 }
+    }, false)
+  end
+end
+
+mysql_only do
+  class PgContactWithBigDecimal < ApplicationRecord
+    table_name "contacts"
+
+    mapping({
+      id: Primary32,
+      name: String,
+      ballance: { type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(Float64), scale: 2 }
+    }, false)
+  end
 end
 
 private module Mapping11
@@ -94,22 +116,22 @@ describe Jennifer::Model::Mapping do
     describe "with symbol argument" do
       it do
         Factory.build_contact.attribute_metadata(:id)
-          .should eq({type: Int32, primary: true, parsed_type: "Int32?", column: "id", auto: true})
+          .should eq({type: Int32, primary: true, parsed_type: "Int32?", column: "id", auto: true, null: false})
         Factory.build_contact.attribute_metadata(:name)
-          .should eq({type: String, parsed_type: "String", column: "name"})
+          .should eq({type: String, parsed_type: "String", column: "name", null: false})
         Factory.build_address.attribute_metadata(:street)
-          .should eq({type: String, parsed_type: "String", column: "street"})
+          .should eq({type: String, parsed_type: "String", column: "street", null: false})
       end
     end
 
     describe "with string argument" do
       it do
         Factory.build_contact.attribute_metadata("id")
-          .should eq({type: Int32, primary: true, parsed_type: "Int32?", column: "id", auto: true})
+          .should eq({type: Int32, primary: true, parsed_type: "Int32?", column: "id", auto: true, null: false})
         Factory.build_contact.attribute_metadata("name")
-          .should eq({type: String, parsed_type: "String", column: "name"})
+          .should eq({type: String, parsed_type: "String", column: "name", null: false})
         Factory.build_address.attribute_metadata("street")
-          .should eq({type: String, parsed_type: "String", column: "street"})
+          .should eq({type: String, parsed_type: "String", column: "street", null: false})
       end
     end
   end
@@ -138,6 +160,22 @@ describe Jennifer::Model::Mapping do
             contact_with_float = ContactWithFloatMapping.find!(c.id)
             contact_with_float.ballance.should eq(1.0f64)
             contact_with_float.ballance.is_a?(Float64).should be_true
+          end
+
+          it "correctly transform data to bigdecimal" do
+            Factory.create_contact(ballance: PG::Numeric.new(2i16, 0i16, 0i16, 2i16, [1234i16, 6800i16])).id
+            record = PgContactWithBigDecimal.all.last!
+            record.ballance.should eq(BigDecimal.new(123468, 2))
+          end
+        end
+      end
+
+      mysql_only do
+        describe "numeric" do
+          it "correctly transform data to bigdecimal" do
+            Factory.create_contact(ballance: 1234.68f64)
+            record = PgContactWithBigDecimal.all.last!
+            record.ballance.should eq(BigDecimal.new(123468, 2))
           end
         end
       end
@@ -384,8 +422,8 @@ describe Jennifer::Model::Mapping do
 
         describe "user-defined mapping types" do
           it "is accessible if defined in parent class" do
-            User::COLUMNS_METADATA[:password_digest].should eq({type: String, column: "password_digest", default: "", parsed_type: "String"})
-            User::COLUMNS_METADATA[:email].should eq({type: String, column: "email", default: "", parsed_type: "String"})
+            User::COLUMNS_METADATA[:password_digest].should eq({type: String, column: "password_digest", default: "", parsed_type: "String", null: false})
+            User::COLUMNS_METADATA[:email].should eq({type: String, column: "email", default: "", parsed_type: "String", null: false})
           end
 
           pending "allows to add extra options" do

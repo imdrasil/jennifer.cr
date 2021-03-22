@@ -142,11 +142,30 @@ module Jennifer
         end
       end
 
-      private def column_type(options)
+      private def column_type(options : Hash)
         if options[:serial]? || options[:auto_increment]?
           options[:type] == :bigint ? "bigserial" : "serial"
+        elsif options.has_key?(:sql_type)
+          options[:sql_type]
         else
-          options[:sql_type]? || adapter.translate_type(options[:type].as(Symbol))
+          type = options[:type]
+          if type == :numeric || type == :decimal
+            scale_opts = [] of Int32
+            if options.has_key?(:precision)
+              scale_opts << options[:precision].as(Int32)
+              scale_opts << options[:scale].as(Int32) if options.has_key?(:scale)
+            end
+            String.build do |io|
+              type.to_s(io)
+              next if scale_opts.empty?
+
+              io << '('
+              scale_opts.join(io, ',')
+              io << ')'
+            end
+          else
+            adapter.translate_type(type.as(Symbol))
+          end
         end
       end
     end

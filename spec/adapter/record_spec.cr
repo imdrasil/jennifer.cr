@@ -71,18 +71,36 @@ describe Jennifer::Record do
   describe "#to_json" do
     it "includes all fields by default" do
       record = get_record
-      record.to_json.should eq({
-        id: record.id,
-        name: record.name,
-        age: record.age,
-        tags: nil,
-        ballance: nil,
-        gender: record.gender,
-        created_at: record.created_at,
-        updated_at: record.updated_at,
-        description: nil,
-        user_id: nil
-      }.to_json)
+      target_hash = db_specific(
+        mysql: -> do
+          {
+            :id => record.id,
+            :name => record.name,
+            :age => record.age,
+            :ballance => nil,
+            :gender => record.gender,
+            :created_at => record.created_at,
+            :updated_at => record.updated_at,
+            :description => nil,
+            :user_id => nil
+          }
+        end,
+        postgres: -> do
+          {
+            :id => record.id,
+            :name => record.name,
+            :age => record.age,
+            :tags => nil,
+            :ballance => nil,
+            :gender => record.gender,
+            :created_at => record.created_at,
+            :updated_at => record.updated_at,
+            :description => nil,
+            :user_id => nil
+          }
+        end
+      )
+      record.to_json.should eq(target_hash.to_json)
     end
 
     it "allows to specify *only* argument solely" do
@@ -92,40 +110,76 @@ describe Jennifer::Record do
 
     it "allows to specify *except* argument solely" do
       record = get_record
-      record.to_json(except: %w[id]).should eq({
-        name: record.name,
-        age: record.age,
-        tags: nil,
-        ballance: nil,
-        gender: record.gender,
-        created_at: record.created_at,
-        updated_at: record.updated_at,
-        description: nil,
-        user_id: nil
-      }.to_json)
+      target_hash = db_specific(
+        mysql: -> do
+          {
+            :name => record.name,
+            :age => record.age,
+            :ballance => nil,
+            :gender => record.gender,
+            :created_at => record.created_at,
+            :updated_at => record.updated_at,
+            :description => nil,
+            :user_id => nil
+          }
+        end,
+        postgres: -> do
+          {
+            :name => record.name,
+            :age => record.age,
+            :tags => nil,
+            :ballance => nil,
+            :gender => record.gender,
+            :created_at => record.created_at,
+            :updated_at => record.updated_at,
+            :description => nil,
+            :user_id => nil
+          }
+        end
+      )
+      record.to_json(except: %w[id]).should eq(target_hash.to_json)
     end
 
     context "with block" do
       it "allows to extend json using block" do
         executed = false
         record = get_record
+        target_hash = db_specific(
+          mysql: -> do
+            {
+              :id => record.id,
+              :name => record.name,
+              :age => record.age,
+              :ballance => nil,
+              :gender => record.gender,
+              :created_at => record.created_at,
+              :updated_at => record.updated_at,
+              :description => nil,
+              :user_id => nil,
+              :custom => "value"
+            }
+          end,
+          postgres: -> do
+            {
+              :id => record.id,
+              :name => record.name,
+              :age => record.age,
+              :tags => nil,
+              :ballance => nil,
+              :gender => record.gender,
+              :created_at => record.created_at,
+              :updated_at => record.updated_at,
+              :description => nil,
+              :user_id => nil,
+              :custom => "value"
+            }
+          end
+        )
         record.to_json do |json, obj|
           executed = true
           obj.should eq(record)
           json.field "custom", "value"
-        end.should eq({
-          id: record.id,
-          name: record.name,
-          age: record.age,
-          tags: nil,
-          ballance: nil,
-          gender: record.gender,
-          created_at: record.created_at,
-          updated_at: record.updated_at,
-          description: nil,
-          user_id: nil,
-          custom: "value"
-        }.to_json)
+        end.should eq(target_hash.to_json)
         executed.should be_true
       end
 
@@ -138,20 +192,39 @@ describe Jennifer::Record do
 
       it "respects :except option" do
         record = get_record
+        target_hash = db_specific(
+          mysql: -> do
+            {
+              :name => record.name,
+              :age => record.age,
+              :ballance => nil,
+              :gender => record.gender,
+              :created_at => record.created_at,
+              :updated_at => record.updated_at,
+              :description => nil,
+              :user_id => nil,
+              :custom => "value"
+            }
+          end,
+          postgres: -> do
+            {
+              :name => record.name,
+              :age => record.age,
+              :tags => nil,
+              :ballance => nil,
+              :gender => record.gender,
+              :created_at => record.created_at,
+              :updated_at => record.updated_at,
+              :description => nil,
+              :user_id => nil,
+              :custom => "value"
+            }
+          end
+        )
+
         record.to_json(except: %w[id]) do |json|
           json.field "custom", "value"
-        end.should eq({
-          name: record.name,
-          age: record.age,
-          tags: nil,
-          ballance: nil,
-          gender: record.gender,
-          created_at: record.created_at,
-          updated_at: record.updated_at,
-          description: nil,
-          user_id: nil,
-          custom: "value"
-        }.to_json)
+        end.should eq(target_hash.to_json)
       end
     end
   end

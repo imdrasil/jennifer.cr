@@ -821,9 +821,7 @@ describe Jennifer::Model::Base do
             <<-JSON
             {"id":null,"bool_f":null,"bigint_f":null,"integer_f":null,"short_f":null,"float_f":null,
             "double_f":null,"string_f":null,"varchar_f":null,"text_f":null,"timestamp_f":null,
-            "date_time_f":null,"date_f":null,"json_f":null,"decimal_f":null,"oid_f":null,"char_f":null,
-            "uuid_f":null,"timestamptz_f":null,"bytea_f":null,"jsonb_f":null,"xml_f":null,"point_f":null,
-            "lseg_f":null,"path_f":null,"box_f":null}
+            "date_time_f":null,"date_f":null,"json_f":null,"tinyint_f":null,"decimal_f":null,"blob_f":null}
             JSON
           end,
           postgres: -> do

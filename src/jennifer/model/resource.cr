@@ -302,6 +302,15 @@ module Jennifer
       # Is a shortcut for `.all.where` call.
       #
       # ```
+      # User.where(name: "John")
+      # ```
+      def self.where(**opts)
+        all.where(**opts)
+      end
+
+      # Is a shortcut for `.all.where` call.
+      #
+      # ```
       # User.where { _name == "John" }
       # ```
       def self.where(&block)

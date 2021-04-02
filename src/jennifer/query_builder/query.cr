@@ -301,6 +301,18 @@ module Jennifer
         self
       end
 
+      # Mutates query applying all modification returned from the param.
+      #
+      # ```
+      # User.where { _email == "example@test.com" }
+      # ```
+      def where(**opts)
+        opts.each do |k, v|
+          where { c(k.to_s) == v }
+        end
+        self
+      end
+
       # Mutates query applying all modification returned from the block.
       #
       # Yields the expression builder and block is also executed with expression builder context.
@@ -402,7 +414,7 @@ module Jennifer
       # Jennifer::Query["contacts"].union(Jennifer::Query["users"], true)
       # ```
       def union(query, all : Bool = false)
-        _unions! << { query: query, all: all }
+        _unions! << {query: query, all: all}
         self
       end
 

@@ -70,7 +70,20 @@ describe Jennifer::QueryBuilder::Executables do
   end
 
   describe "#pluck" do
-    context "given list of attributes" do
+    it "converts time zones to configured" do
+      AllTypeModel.create!(timestamp_f: Time.local(2020, 10, 10, 20, 10, 12, location: local_time_zone))
+      res = Query["all_types"].pluck(:timestamp_f)
+      res[0].should eq(Time.local(2020, 10, 10, 20, 10, 12, location: local_time_zone))
+    end
+
+    it "doesn't convert time zones to application zone if time_zone_aware_attributes is off" do
+      AllTypeModel.create!(timestamp_f: Time.local(2020, 10, 10, 20, 10, 12, location: local_time_zone))
+      Jennifer::Config.time_zone_aware_attributes = false
+      res = Query["all_types"].pluck(:timestamp_f)
+      res[0].should eq(Time.local(2020, 10, 10, 17, 10, 12, location: local_time_zone))
+    end
+
+    context "with list of attributes" do
       it "returns array of arrays" do
         Factory.create_contact(name: "a", age: 13)
         Factory.create_contact(name: "b", age: 14)
@@ -81,7 +94,7 @@ describe Jennifer::QueryBuilder::Executables do
       end
     end
 
-    context "given one argument" do
+    context "with one argument" do
       it "correctly extracts json" do
         Factory.create_address(details: JSON.parse({:city => "Duplin"}.to_json))
         Query["addresses"].pluck(:details)[0].should be_a(JSON::Any)
@@ -94,7 +107,7 @@ describe Jennifer::QueryBuilder::Executables do
       end
     end
 
-    context "given array of attributes" do
+    context "with array of attributes" do
       it "returns array of arrays" do
         Factory.create_contact(name: "a", age: 13)
         Factory.create_contact(name: "b", age: 14)

@@ -32,7 +32,14 @@ module Jennifer
       abstract def read_column(rs, column)
 
       def read_column(rs, column)
-        rs.read.as(DBAny)
+        value = rs.read.as(DBAny)
+        return value unless value.is_a?(Time)
+
+        if Config.time_zone_aware_attributes
+          value.in(Config.local_time_zone)
+        else
+          value.to_local_in(Config.local_time_zone)
+        end
       end
     end
   end

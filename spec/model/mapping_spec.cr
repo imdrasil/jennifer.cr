@@ -862,13 +862,7 @@ describe Jennifer::Model::Mapping do
           record.json_f.should eq(JSON.parse({a: 1}.to_json))
         end
 
-        it "supports Time (short)" do
-          record = AllTypeModel.new
-          record.timestamp_f = "2010-12-10"
-          record.timestamp_f.should eq(Time.local(2010, 12, 10, 0, 0, 0, location: ::Jennifer::Config.local_time_zone))
-        end
-
-        it "supports Time (long)" do
+        it "supports Time" do
           record = AllTypeModel.new
           record.timestamp_f = "2010-12-10 20:10:10"
           record.timestamp_f.should eq(Time.local(2010, 12, 10, 20, 10, 10, location: ::Jennifer::Config.local_time_zone))

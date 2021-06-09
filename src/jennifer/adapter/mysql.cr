@@ -189,7 +189,7 @@ module Jennifer
         if column.column_type == MySql::Type::Tiny && column.column_length == 1u32
           (rs.read.as(DBAny) == 1i8).as(Bool)
         else
-          rs.read.as(DBAny)
+          super
         end
       end
 

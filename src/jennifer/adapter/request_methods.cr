@@ -3,12 +3,12 @@ module Jennifer
     module RequestMethods
       def insert(table, opts : Hash)
         values = opts.values
-        exec *parse_query(sql_generator.insert(table, opts), values)
+        exec(*parse_query(sql_generator.insert(table, opts), values))
       end
 
       def insert(obj : Model::Base)
         opts = obj.arguments_to_insert
-        exec *parse_query(sql_generator.insert(obj), opts[:args])
+        exec(*parse_query(sql_generator.insert(obj), opts[:args]))
       end
 
       def update(obj : Model::Base)

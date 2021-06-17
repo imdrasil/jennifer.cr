@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+  schedule:
+    - cron: "0 7 * * 1"
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - DB: mysql
+            other: INTEGRATION=1
+            linter: true
+          - DB: postgres
+            other: INTEGRATION=1
+          - DB: postgres
+            mt: true
+          - DB: postgres
+            pair: true
+            other: PAIR_DB_USER=dbuser PAIR_DB_PASSWORD=dbpassword
+          - DB: mysql
+            pair: true
+            other: PAIR_DB_USER=dbuser PAIR_DB_PASSWORD=dbpassword
+
+    runs-on: ubuntu-latest
+
+    env:
+      DB: ${{ matrix.DB }}
+      PAIR: ${{ matrix.pair }}
+      DB_USER: dbuser
+      DB_PASSWORD: dbpassword
+
+    steps:
+      - name: Export rest variables
+        run: export ${{ matrix.other }}
+
+      - name: Install Crystal
+        uses: oprypin/install-crystal@v1
+
+      - name: Donwload sources
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: shards install --ignore-crystal-version
+
+      - name: Run linter
+        if: ${{ matrix.linter }}
+        run: ./bin/ameba
+
+      # - name: Check formatting
+      #   if: ${{ matrix.linter }}
+      #   run: crystal tool format --check -e"./scripts"
+
+      - name: Shutdown Ubuntu MySQL (SUDO)
+        run: sudo service mysql stop
+
+      - name: 'Install MySQL'
+        if: ${{ matrix.DB == 'mysql' || matrix.pair }}
+        uses: mirromutth/mysql-action@v1.1
+        with:
+          mysql version: '8.0'
+          mysql user: ${{ env.DB_USER }}
+          mysql password: ${{ env.DB_PASSWORD }}
+
+      - name: Install PostgreSQL
+        if: ${{ matrix.DB == 'postgres' || matrix.pair }}
+        uses: harmon758/postgresql-action@v1
+        with:
+          postgresql version: '11'
+          postgresql user: ${{ env.DB_USER }}
+          postgresql password: ${{ env.DB_PASSWORD }}
+
+      - name: Create configuration file
+        run: bash ./scripts/setup.sh .ci/database.yml
+
+      - name: Run migrations
+        run: make sam db:setup
+
+      - name: Run specs
+        run: bash .ci/test.sh

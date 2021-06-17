@@ -230,9 +230,9 @@ module Jennifer
       instance.structure_path
     end
 
-    # Resets configurations to default ones.
+    # Recreate new configuration object with default values..
     def self.reset_config
-      @@instance.tap(&.initialize)
+      @@instance = new
     end
 
     delegate_property(:logger, :max_bind_vars_count)

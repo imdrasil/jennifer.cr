@@ -572,8 +572,9 @@ describe Jennifer::Model::Mapping do
 
         describe "UUID" do
           it "correctly saves and loads" do
-            AllTypeModel.create!(uuid_f: "7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
-            AllTypeModel.all.last!.uuid_f!.should eq("7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
+            value = UUID.new("7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
+            AllTypeModel.create!(uuid_f: value)
+            AllTypeModel.all.last!.uuid_f!.should eq(value)
           end
         end
 
@@ -690,7 +691,8 @@ describe Jennifer::Model::Mapping do
       context "mismatching data type" do
         it "raises DataTypeMismatch exception" do
           ContactWithNillableName.create({name: nil})
-          expect_raises(::Jennifer::DataTypeMismatch, "Column ContactWithCustomField.name is expected to be a String but got Nil.") do
+          expected_type = db_specific(mysql: -> { "String" }, postgres: -> { "(Slice(UInt8) | String)" })
+          expect_raises(::Jennifer::DataTypeMismatch, "Column ContactWithCustomField.name is expected to be a #{expected_type} but got Nil.") do
             ContactWithCustomField.all.last!
           end
         end

@@ -137,7 +137,7 @@ module Jennifer
 
       private def add_aliases
         table_names = [table]
-        table_names.concat(_joins!.map { |e| e.table unless e.has_alias? }.compact) if _joins?
+        table_names.concat(_joins!.compact_map { |e| e.table unless e.has_alias? }) if _joins?
         duplicates = extract_duplicates(table_names)
         return if duplicates.empty?
 
@@ -150,7 +150,7 @@ module Jennifer
               i += 1
             end
           end
-          _joins!.each { |j| j.alias_tables(@table_aliases) }
+          _joins!.each(&.alias_tables(@table_aliases))
         end
         @tree.not_nil!.alias_tables(@table_aliases) if @tree
       end

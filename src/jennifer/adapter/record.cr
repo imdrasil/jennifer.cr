@@ -49,6 +49,17 @@ module Jennifer
       end
     end
 
+    # Returns a string containing a human-readable representation of object.
+    def inspect(io) : Nil
+      io << "Jennifer::Record("
+      @attributes.each_with_index do |(name, value), index|
+        io << ", " if index > 0
+        io << name << ": "
+        value.inspect(io)
+      end
+      io << ')'
+    end
+
     # Returns a JSON string representing data set.
     #
     # For more details see `Resource#to_json`.

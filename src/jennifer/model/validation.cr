@@ -29,7 +29,7 @@ module Jennifer
       #
       # Doesn't trigger validation.
       def invalid?
-        errors.any?
+        !errors.empty?
       end
 
       # :nodoc:

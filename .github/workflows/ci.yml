@@ -14,15 +14,26 @@ jobs:
           - DB: mysql
             other: INTEGRATION=1
             linter: true
+            db_user: root
+            db_password:
           - DB: postgres
             other: INTEGRATION=1
+            linter: true
+            db_user: dbuser
+            db_password: dbpassword
           - DB: postgres
             mt: true
+            db_user: dbuser
+            db_password: dbpassword
           - DB: postgres
             pair: true
-            other: PAIR_DB_USER=dbuser PAIR_DB_PASSWORD=dbpassword
+            db_user: dbuser
+            db_password: dbpassword
+            other: PAIR_DB_USER=root PAIR_DB_PASSWORD=
           - DB: mysql
             pair: true
+            db_user: root
+            db_password:
             other: PAIR_DB_USER=dbuser PAIR_DB_PASSWORD=dbpassword
 
     runs-on: ubuntu-latest
@@ -30,8 +41,8 @@ jobs:
     env:
       DB: ${{ matrix.DB }}
       PAIR: ${{ matrix.pair }}
-      DB_USER: dbuser
-      DB_PASSWORD: dbpassword
+      DB_USER: ${{ matrix.db_user }}
+      DB_PASSWORD: ${{ matrix.db_password }}
 
     steps:
       - name: Export rest variables
@@ -54,30 +65,35 @@ jobs:
       #   if: ${{ matrix.linter }}
       #   run: crystal tool format --check -e"./scripts"
 
-      - name: Shutdown Ubuntu MySQL (SUDO)
-        run: sudo service mysql stop
-
       - name: 'Install MySQL'
         if: ${{ matrix.DB == 'mysql' || matrix.pair }}
-        uses: mirromutth/mysql-action@v1.1
-        with:
-          mysql version: '8.0'
-          mysql user: ${{ env.DB_USER }}
-          mysql password: ${{ env.DB_PASSWORD }}
+        run: bash .github/setup_mysql.sh
 
       - name: Install PostgreSQL
         if: ${{ matrix.DB == 'postgres' || matrix.pair }}
         uses: harmon758/postgresql-action@v1
         with:
-          postgresql version: '11'
+          postgresql version: '9.5'
           postgresql user: ${{ env.DB_USER }}
           postgresql password: ${{ env.DB_PASSWORD }}
 
       - name: Create configuration file
-        run: bash ./scripts/setup.sh .ci/database.yml
+        run: bash ./scripts/setup.sh .github/database.yml
 
       - name: Run migrations
         run: make sam db:setup
 
       - name: Run specs
-        run: bash .ci/test.sh
+        run: |
+          if [ "MT" == '1' ]
+          then
+            crystal spec -Dpreview_mt
+          else
+            crystal spec
+          fi
+
+      - name: Run integration specs
+        if: ${{ matrix.integration }}
+        run: |
+          crystal spec spec/integration/sam_test.cr &&
+            crystal spec spec/integration/concurrency_test.cr -Dpreview_mt

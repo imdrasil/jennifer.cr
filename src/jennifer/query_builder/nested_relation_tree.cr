@@ -28,7 +28,7 @@ module Jennifer
         h_result = {} of DBAny => T
 
         # All relations model classes
-        models = bucket.map { |pair| pair[1].model_class }
+        models = bucket.map(&.[1].model_class)
         # Found relation primary keys for i-th relation primary key
         existence = bucket.map { {} of DBAny => Set(DBAny) }
         # All found relation records for i-th relation

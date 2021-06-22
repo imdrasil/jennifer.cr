@@ -70,6 +70,12 @@ module Jennifer::Model
       BigDecimal.new(value)
     end
 
+    def self.coerce(value : String, type : (UUID?).class)
+      return if value.empty?
+
+      UUID.new(value)
+    end
+
     # TODO: add PG::Numeric support
     def self.coerce(value : String, type)
       raise ::Jennifer::BaseException.new("Type #{type} can't be coerced")

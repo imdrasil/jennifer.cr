@@ -180,7 +180,8 @@ describe Jennifer::View::Mapping do
       context "mismatching data type" do
         it "raises DataTypeMismatch exception" do
           Factory.create_contact(description: nil)
-          error_message = "Column MaleContactWithDescription.description is expected to be a String but got Nil."
+          expected_type = db_specific(mysql: -> { "String" }, postgres: -> { "(Slice(UInt8) | String)" })
+          error_message = "Column MaleContactWithDescription.description is expected to be a #{expected_type} but got Nil."
           expect_raises(::Jennifer::DataTypeMismatch, error_message) do
             MaleContactWithDescription.all.last!
           end

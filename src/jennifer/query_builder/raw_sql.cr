@@ -37,7 +37,7 @@ module Jennifer
       end
 
       def filterable?
-        @params.any?
+        !@params.empty?
       end
     end
   end

@@ -28,7 +28,7 @@ module Jennifer
         end
 
         def inline_vars?
-          @inline_vars.any?
+          !@inline_vars.empty?
         end
       end
     end

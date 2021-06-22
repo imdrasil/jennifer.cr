@@ -121,13 +121,14 @@ describe Jennifer::Adapter::ResultParsers do
 
         describe "UUID" do
           it "correctly saves and loads" do
-            AllTypeModel.create!(uuid_f: "7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
+            uuid = UUID.new("7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
+            AllTypeModel.create!(uuid_f: uuid)
             executed = false
             AllTypeModel.all.each_result_set do |rs|
               executed = true
               value = adapter.result_to_hash(rs)["uuid_f"]
-              value.is_a?(String).should be_true
-              value.should eq("7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
+              value.is_a?(UUID).should be_true
+              value.should eq(uuid)
             end
             executed.should be_true
           end

@@ -350,7 +350,7 @@ module Jennifer
         request = clone.reorder(primary_key.order(direction)).limit(batch_size)
         records = start ? request.clone.where { primary_key >= start }.to_a : request.to_a
 
-        while records.any?
+        while !records.empty?
           records_size = records.size
           primary_key_offset = records.last.attribute(primary_key.field)
           yield records
@@ -371,7 +371,7 @@ module Jennifer
         request = clone.reorder.limit(batch_size)
 
         records = request.offset(start * batch_size).to_a
-        while records.any?
+        while !records.empty?
           records_size = records.size
           yield records
           break if records_size < batch_size

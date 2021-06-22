@@ -149,12 +149,12 @@ describe Jennifer::Model::Errors do
     it do
       errors = described_class.new(facebook_profile)
       errors.add(:uid)
-      errors.any?.should be_true
+      errors.empty?.should be_false
     end
 
     it do
       errors = described_class.new(facebook_profile)
-      errors.any?.should be_false
+      errors.empty?.should be_true
     end
   end
 

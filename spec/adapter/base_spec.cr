@@ -1,14 +1,21 @@
 require "../spec_helper"
 
-describe Jennifer::Adapter::Base do
-  adapter = Jennifer::Adapter.default_adapter
+private def config
+  Jennifer::Config.instance
+end
 
+private def adapter
+  Jennifer::Adapter.default_adapter_class.not_nil!.new(Jennifer::Config.instance)
+end
+
+default_adapter = Jennifer::Adapter.default_adapter
+
+describe Jennifer::Adapter::Base do
   describe Jennifer::BadQuery do
     describe "query" do
       it "raises BadRequest if there was problem during method execution" do
         expect_raises(Jennifer::BadQuery, /Original query was/) do
-          adapter.query("SELECT COUNT(id) as count FROM contacts where asd > $1", [1]) do
-          end
+          default_adapter.query("SELECT COUNT(id) as count FROM contacts where asd > $1", [1]) {}
         end
       end
     end
@@ -27,13 +34,13 @@ describe Jennifer::Adapter::Base do
       it "updates fields if they were changed" do
         c = Factory.create_contact
         c.name = "new name"
-        r = adapter.update(c)
+        r = default_adapter.update(c)
         r.rows_affected.should eq(1)
       end
 
       it "just returns exec result if nothing was changed" do
         c = Factory.create_contact
-        r = adapter.update(c)
+        r = default_adapter.update(c)
         r.rows_affected.should eq(0)
       end
     end
@@ -41,24 +48,24 @@ describe Jennifer::Adapter::Base do
 
   describe "#exec" do
     it "execs query" do
-      adapter.exec("insert into countries(name) values('new')")
+      default_adapter.exec("insert into countries(name) values('new')")
     end
 
     it "raises exception if query is broken" do
       expect_raises(Jennifer::BadQuery, /Original query was/) do
-        adapter.exec("insert into countries(name) set values(?)", ["new"])
+        default_adapter.exec("insert into countries(name) set values(?)", ["new"])
       end
     end
   end
 
   describe "#query" do
     it "perform query" do
-      adapter.query("select * from countries") { |rs| read_to_end(rs) }
+      default_adapter.query("select * from countries") { |rs| read_to_end(rs) }
     end
 
     it "raises exception if query is broken" do
       expect_raises(Jennifer::BadQuery, /Original query was/) do
-        adapter.query("select * from table countries") { |rs| read_to_end(rs) }
+        default_adapter.query("select * from table countries") { |rs| read_to_end(rs) }
       end
     end
   end
@@ -67,7 +74,7 @@ describe Jennifer::Adapter::Base do
     it "rollbacks if exception was raised" do
       void_transaction do
         expect_raises(DivisionByZeroError) do
-          adapter.transaction do
+          default_adapter.transaction do
             Factory.create_contact
             1 // 0
           end
@@ -78,7 +85,7 @@ describe Jennifer::Adapter::Base do
 
     it "commit transaction otherwise" do
       void_transaction do
-        adapter.transaction do
+        default_adapter.transaction do
           Factory.create_contact
         end
         Contact.all.count.should eq(1)
@@ -90,11 +97,11 @@ describe Jennifer::Adapter::Base do
       void_transaction do
         begin
           ch = Channel(Nil).new
-          adapter.transaction do
+          default_adapter.transaction do
             Factory.create_contact
 
             spawn do
-              adapter.transaction do
+              default_adapter.transaction do
                 Factory.create_contact
               end
               ch.send(nil)
@@ -105,7 +112,7 @@ describe Jennifer::Adapter::Base do
 
           ch.receive
 
-          adapter.db.using_connection do |con|
+          default_adapter.db.using_connection do |con|
             con.scalar("select count(*) from contacts").should eq(1)
           end
         end
@@ -116,7 +123,7 @@ describe Jennifer::Adapter::Base do
   describe "#delete" do
     it "removes record from db" do
       Factory.create_contact
-      adapter.delete(Factory.build_query(table: "contacts"))
+      default_adapter.delete(Factory.build_query(table: "contacts"))
       Contact.all.count.should eq(0)
     end
   end
@@ -124,7 +131,7 @@ describe Jennifer::Adapter::Base do
   describe "#truncate" do
     it "clean up db" do
       Factory.create_address
-      adapter.truncate(Address.table_name)
+      default_adapter.truncate(Address.table_name)
       Address.all.count.should eq(0)
     end
   end
@@ -132,61 +139,61 @@ describe Jennifer::Adapter::Base do
   describe "#exists?" do
     it "returns true if record exists" do
       Factory.create_contact
-      adapter.exists?(Factory.build_query(table: "contacts")).should be_true
+      default_adapter.exists?(Factory.build_query(table: "contacts")).should be_true
     end
 
     it "returns false if record doesn't exist" do
-      adapter.exists?(Factory.build_query(table: "contacts")).should be_false
+      default_adapter.exists?(Factory.build_query(table: "contacts")).should be_false
     end
   end
 
   describe "#count" do
     it "returns count of objects" do
       Factory.create_contact
-      adapter.count(Factory.build_query(table: "contacts")).should eq(1)
+      default_adapter.count(Factory.build_query(table: "contacts")).should eq(1)
     end
   end
 
   describe "#table_exists?" do
     it "returns true if table exists" do
-      adapter.table_exists?("contacts").should be_true
+      default_adapter.table_exists?("contacts").should be_true
     end
 
     it "returns false if table not exists" do
-      adapter.table_exists?("unknown_table").should be_false
+      default_adapter.table_exists?("unknown_table").should be_false
     end
   end
 
   describe "#column_exists?" do
     it "returns true if table has given column" do
-      adapter.column_exists?("contacts", "id").should be_true
+      default_adapter.column_exists?("contacts", "id").should be_true
     end
 
     it "returns false if table has no such column" do
-      adapter.column_exists?("contacts", "some_field").should be_false
+      default_adapter.column_exists?("contacts", "some_field").should be_false
     end
 
     it "returns false if such table is not exists" do
-      adapter.column_exists?("unknown", "id").should be_false
+      default_adapter.column_exists?("unknown", "id").should be_false
     end
   end
 
   describe "#foreign_key_exists?" do
     context "with to_table" do
-      it { adapter.foreign_key_exists?(:addresses, :contacts).should be_true }
+      it { default_adapter.foreign_key_exists?(:addresses, :contacts).should be_true }
     end
 
     context "with foreign key name" do
-      it { adapter.foreign_key_exists?(:addresses, name: "fk_cr_67e9674de3").should be_true }
+      it { default_adapter.foreign_key_exists?(:addresses, name: "fk_cr_67e9674de3").should be_true }
     end
 
     context "with column name" do
-      it { adapter.foreign_key_exists?(:addresses, column: :contact_id).should be_true }
+      it { default_adapter.foreign_key_exists?(:addresses, column: :contact_id).should be_true }
     end
 
     context "with invalid name" do
       it do
-        adapter.foreign_key_exists?("fk_cr_contacts_addresses").should be_false
+        default_adapter.foreign_key_exists?("fk_cr_contacts_addresses").should be_false
       end
     end
   end
@@ -194,14 +201,14 @@ describe Jennifer::Adapter::Base do
   describe "#bulk_insert" do
     it "do nothing if empty array was given" do
       expect_query_silence do
-        adapter.bulk_insert([] of Contact)
+        default_adapter.bulk_insert([] of Contact)
       end
     end
 
     # it "starts transaction" do
     #   void_transaction do
     #     c = Factory.build_contact
-    #     adapter.bulk_insert([c])
+    #     default_adapter.bulk_insert([c])
     #     query_log.any? { |entry| entry[:query].to_s =~ /BEGIN/ }.should be_true
     #   end
     # end
@@ -210,7 +217,7 @@ describe Jennifer::Adapter::Base do
     #   it "uses table lock" do
     #     void_transaction do
     #       c = Factory.build_contact
-    #       adapter.bulk_insert([c])
+    #       default_adapter.bulk_insert([c])
     #       query_log.any? { |entry| entry[:query].to_s =~ /LOCK TABLE/ }.should be_true
     #     end
     #   end
@@ -219,14 +226,14 @@ describe Jennifer::Adapter::Base do
     it "avoid model validation" do
       c = Factory.build_contact(age: 12)
       c.should_not be_valid
-      adapter.bulk_insert([c])
+      default_adapter.bulk_insert([c])
       c = Contact.all.first!
       c.should_not be_valid
     end
 
     it "properly sets object attributes" do
       c = Factory.build_contact(name: "Syd", age: 150)
-      adapter.bulk_insert([c])
+      default_adapter.bulk_insert([c])
       Contact.all.count.should eq(1)
       c = Contact.all.first!
       c.age.should eq(150)
@@ -241,7 +248,7 @@ describe Jennifer::Adapter::Base do
 
       it "imports objects by prepared statement" do
         Contact.all.count.should eq(0)
-        adapter.bulk_insert(Contact.table_name, fields, (amount - 1).times.map { values }.to_a)
+        default_adapter.bulk_insert(Contact.table_name, fields, (amount - 1).times.map { values }.to_a)
         query_log[1][:query].to_s.should match(argument_regex)
         Contact.all.count.should eq(amount - 1)
       end
@@ -249,7 +256,7 @@ describe Jennifer::Adapter::Base do
       context "when count of fields exceeds supported limit" do
         it "imports objects escaping their values in query" do
           Contact.all.count.should eq(0)
-          adapter.bulk_insert(Contact.table_name, fields, amount.times.map { values }.to_a)
+          default_adapter.bulk_insert(Contact.table_name, fields, amount.times.map { values }.to_a)
           query_log[1][:query].to_s.should_not match(argument_regex)
           Contact.all.count.should eq(amount)
         end
@@ -259,13 +266,11 @@ describe Jennifer::Adapter::Base do
 
   describe "::join_table_name" do
     it "returns join table name in alphabetic order" do
-      adapter.class.join_table_name("b", "a").should eq("a_b")
+      default_adapter.class.join_table_name("b", "a").should eq("a_b")
     end
   end
 
   describe "#connection_string" do
-    config = Jennifer::Config.instance
-
     context "for db connection" do
       it "generates proper connection string" do
         config.password = "password"
@@ -339,13 +344,13 @@ describe Jennifer::Adapter::Base do
   describe "#query_array" do
     it "returns array of given type" do
       Factory.create_contact
-      res = adapter.query_array("SELECT name FROM contacts", String)
+      res = default_adapter.query_array("SELECT name FROM contacts", String)
       typeof(res).should eq(Array(Array(String)))
     end
 
     it "retrieves given amount of fields" do
       Factory.create_contact
-      res = adapter.query_array("SELECT name, description FROM contacts", String?, 2)
+      res = default_adapter.query_array("SELECT name, description FROM contacts", String?, 2)
       res[0].should eq(["Deepthi", nil])
     end
   end
@@ -353,41 +358,44 @@ describe Jennifer::Adapter::Base do
   describe "#table_column_count" do
     context "given table name" do
       it "returns amount of table fields" do
-        adapter.table_column_count("addresses").should eq(7)
+        default_adapter.table_column_count("addresses").should eq(7)
       end
     end
 
     it "returns -1 if name is not a table or MV" do
-      adapter.table_column_count("asdasd").should eq(-1)
+      default_adapter.table_column_count("asdasd").should eq(-1)
     end
   end
 
   describe "#tables_column_count" do
     it "returns amount of tables fields" do
-      adapter.tables_column_count(["passports", "addresses"]).to_a.map(&.count).should match_array([2, 7])
+      default_adapter.tables_column_count(["passports", "addresses"]).to_a.map(&.count).should match_array([2, 7])
     end
 
-    it "returns amount of views fields" do
-      postgres_only do
-        adapter.tables_column_count(["male_contacts", "female_contacts"]).to_a.map(&.count).should match_array([9, 10])
+    postgres_only do
+      it "returns amount of views fields" do
+        default_adapter.tables_column_count(["male_contacts", "female_contacts"]).to_a.map(&.count).should match_array([9, 10])
       end
-      mysql_only do
-        adapter.tables_column_count(["male_contacts"]).to_a.map(&.count).should match_array([9])
+    end
+
+    mysql_only do
+      it "returns amount of views fields" do
+        default_adapter.tables_column_count(["male_contacts"]).to_a.map(&.count).should match_array([9])
       end
     end
 
     it "returns nothing for unknown tables" do
-      adapter.tables_column_count(["missing_table"]).to_a.should be_empty
+      default_adapter.tables_column_count(["missing_table"]).to_a.should be_empty
     end
   end
 
   describe "#view_exists?" do
     it "returns true if given view exists" do
-      adapter.view_exists?("male_contacts").should be_true
+      default_adapter.view_exists?("male_contacts").should be_true
     end
 
     it "returns false if given view doesn't exist" do
-      adapter.view_exists?("contacts").should be_false
+      default_adapter.view_exists?("contacts").should be_false
     end
   end
 end

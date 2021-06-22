@@ -90,7 +90,7 @@ def clean_db
       .as(Jennifer::Postgres::Adapter)
       .refresh_materialized_view(FemaleContact.table_name)
   end
-  (Jennifer::Model::Base.models - [Jennifer::Migration::Version]).select { |t| t.has_table? }.each(&.all.delete)
+  (Jennifer::Model::Base.models - [Jennifer::Migration::Version]).select(&.has_table?).each(&.all.delete)
 end
 
 # Ends current transaction, yields to the block, clear and starts next one

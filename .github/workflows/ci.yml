@@ -54,16 +54,16 @@ jobs:
       - name: Donwload sources
         uses: actions/checkout@v2
 
+      - name: Check formatting
+        if: ${{ matrix.linter }}
+        run: crystal tool format --check -e"./scripts"
+
       - name: Install dependencies
         run: shards install --ignore-crystal-version
 
       - name: Run linter
         if: ${{ matrix.linter }}
         run: ./bin/ameba
-
-      # - name: Check formatting
-      #   if: ${{ matrix.linter }}
-      #   run: crystal tool format --check -e"./scripts"
 
       - name: 'Install MySQL'
         if: ${{ matrix.DB == 'mysql' || matrix.pair }}

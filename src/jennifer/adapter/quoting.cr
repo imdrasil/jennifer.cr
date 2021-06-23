@@ -1,8 +1,8 @@
 module Jennifer
   module Adapter
     module Quoting
-      ARGUMENT_ESCAPE_STRING = "%s"
-      STRING_QUOTING_PATTERNS = { '\\' => "\\\\", '\'' => "''", '"' => "\\\"" }
+      ARGUMENT_ESCAPE_STRING  = "%s"
+      STRING_QUOTING_PATTERNS = {'\\' => "\\\\", '\'' => "''", '"' => "\\\""}
 
       # Quotes the column value to help prevent -[SQL injection attacks][https://en.wikipedia.org/wiki/SQL_injection].
       abstract def quote(value : String)

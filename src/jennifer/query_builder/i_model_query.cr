@@ -101,7 +101,7 @@ module Jennifer
       # As a result all callbacks and validations are invoked.
       #
       # ```
-      # Contact.all.where { _name == "Ohn" }.patch({ name: "John" })
+      # Contact.all.where { _name == "Ohn" }.patch({name: "John"})
       # ```
       def patch(options : Hash | NamedTuple)
         find_each(&.update(options))
@@ -118,7 +118,7 @@ module Jennifer
       # it will stop all following operations.
       #
       # ```
-      # Contact.all.where { _name == "Ohn" }.patch!({ name: "John" })
+      # Contact.all.where { _name == "Ohn" }.patch!({name: "John"})
       # ```
       def patch!(options : Hash | NamedTuple)
         find_each(&.update!(options))

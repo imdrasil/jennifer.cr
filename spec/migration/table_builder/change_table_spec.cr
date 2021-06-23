@@ -17,22 +17,22 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
     it do
       table = change_table_expr
       table.change_column(:name, :integer)
-      table.changed_columns["name"].should eq({ :new_name => :name, :type => :integer })
+      table.changed_columns["name"].should eq({:new_name => :name, :type => :integer})
     end
 
     context "with specified type" do
       it do
         table = change_table_expr
-        table.change_column(:name, :integer, { :new_name => :new_name, :null => false })
-        table.changed_columns["name"].should eq({ :new_name => :new_name, :type => :integer, :null => false })
+        table.change_column(:name, :integer, {:new_name => :new_name, :null => false})
+        table.changed_columns["name"].should eq({:new_name => :new_name, :type => :integer, :null => false})
       end
     end
 
     context "with specified sql type in options" do
       it do
         table = change_table_expr
-        table.change_column(:name, options: { :new_name => :new_name, :null => false, :sql_type => "SOME_TYPE" })
-        table.changed_columns["name"].should eq({ :new_name => :new_name, :type => nil, :null => false, :sql_type => "SOME_TYPE" })
+        table.change_column(:name, options: {:new_name => :new_name, :null => false, :sql_type => "SOME_TYPE"})
+        table.changed_columns["name"].should eq({:new_name => :new_name, :type => nil, :null => false, :sql_type => "SOME_TYPE"})
       end
     end
 
@@ -40,7 +40,7 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
       it do
         table = change_table_expr
         expect_raises(ArgumentError) do
-          table.change_column(:name, options: { :new_name => :new_name, :null => false, :type => :integer })
+          table.change_column(:name, options: {:new_name => :new_name, :null => false, :type => :integer})
         end
       end
     end
@@ -50,22 +50,22 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
     it do
       table = change_table_expr
       table.add_column(:name, :integer)
-      table.@new_columns["name"].should eq({ :type => :integer })
+      table.@new_columns["name"].should eq({:type => :integer})
     end
 
     context "with specified type" do
       it do
         table = change_table_expr
-        table.add_column(:name, :integer, { :null => false })
-        table.@new_columns["name"].should eq({ :type => :integer, :null => false })
+        table.add_column(:name, :integer, {:null => false})
+        table.@new_columns["name"].should eq({:type => :integer, :null => false})
       end
     end
 
     context "with specified sql type in options" do
       it do
         table = change_table_expr
-        table.add_column(:name, options: { :null => false, :sql_type => "SOME_TYPE" })
-        table.@new_columns["name"].should eq({ :type => nil, :null => false, :sql_type => "SOME_TYPE" })
+        table.add_column(:name, options: {:null => false, :sql_type => "SOME_TYPE"})
+        table.@new_columns["name"].should eq({:type => nil, :null => false, :sql_type => "SOME_TYPE"})
       end
     end
 
@@ -73,7 +73,7 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
       it do
         table = change_table_expr
         expect_raises(ArgumentError) do
-          table.add_column(:name, options: { :null => false, :type => :integer })
+          table.add_column(:name, options: {:null => false, :type => :integer})
         end
       end
     end
@@ -91,7 +91,7 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
     it "creates column based on given field" do
       table = change_table_expr
       table.add_reference(:user)
-      table.@new_columns["user_id"].should eq({ :type => :integer, :null => true })
+      table.@new_columns["user_id"].should eq({:type => :integer, :null => true})
 
       command = table.@commands[0].as(Jennifer::Migration::TableBuilder::CreateForeignKey)
       command.from_table.should eq(DEFAULT_TABLE)
@@ -104,9 +104,9 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
     describe "polymorphic" do
       it "adds foreign and polymorphic columns" do
         table = change_table_expr
-        table.add_reference(:user, options: { :polymorphic => true })
-        table.@new_columns["user_id"].should eq({ :polymorphic => true, :type => :integer, :null => true })
-        table.@new_columns["user_type"].should eq({ :type => :string, :null => true })
+        table.add_reference(:user, options: {:polymorphic => true})
+        table.@new_columns["user_id"].should eq({:polymorphic => true, :type => :integer, :null => true})
+        table.@new_columns["user_type"].should eq({:type => :string, :null => true})
         table.@commands.should be_empty
       end
     end
@@ -127,7 +127,7 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
     describe "polymorphic" do
       it do
         table = change_table_expr
-        table.drop_reference(:user, options: { :polymorphic => true })
+        table.drop_reference(:user, options: {:polymorphic => true})
         table.drop_columns.should eq(["user_id", "user_type"])
         table.@commands.should be_empty
       end
@@ -138,8 +138,8 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
     it "creates updated_at and created_at columns" do
       table = change_table_expr
       table.add_timestamps
-      table.@new_columns["created_at"].should eq({ :type => :timestamp, :null => false })
-      table.@new_columns["updated_at"].should eq({ :type => :timestamp, :null => false })
+      table.@new_columns["created_at"].should eq({:type => :timestamp, :null => false})
+      table.@new_columns["updated_at"].should eq({:type => :timestamp, :null => false})
     end
   end
 
@@ -171,12 +171,12 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
     context "with multiple fields" do
       it do
         table = change_table_expr
-        table.add_index([:uuid, :name], :uniq, orders: { :uuid => :asc, :name => :desc })
+        table.add_index([:uuid, :name], :uniq, orders: {:uuid => :asc, :name => :desc})
         command = table.@commands[0].as(Jennifer::Migration::TableBuilder::CreateIndex)
         command.fields.should eq([:uuid, :name])
         command.type.should eq(:uniq)
         command.lengths.empty?.should be_true
-        command.orders.should eq({ :uuid => :asc, :name => :desc })
+        command.orders.should eq({:uuid => :asc, :name => :desc})
       end
     end
   end

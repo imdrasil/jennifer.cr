@@ -10,10 +10,10 @@ class NoteWithEnumText < Jennifer::Model::Base
   with_timestamps
 
   mapping({
-    id: Primary32,
-    text: { type: Category?, converter: Jennifer::Model::EnumConverter(Category) },
+    id:         Primary32,
+    text:       {type: Category?, converter: Jennifer::Model::EnumConverter(Category)},
     created_at: Time?,
-    updated_at: Time?
+    updated_at: Time?,
   }, false)
 end
 
@@ -40,13 +40,13 @@ describe Jennifer::Model::EnumConverter do
   end
 
   it "is accepted by hash constructor" do
-    record = NoteWithEnumText.new({ "text" => Category::GOOD })
+    record = NoteWithEnumText.new({"text" => Category::GOOD})
     record.text.should eq(Category::GOOD)
   end
 
   describe ".from_hash" do
     it "accepts string value" do
-      Jennifer::Model::EnumConverter(Category).from_hash({ "value" => "GOOD" }, "value", {name: "value"}).should eq(Category::GOOD)
+      Jennifer::Model::EnumConverter(Category).from_hash({"value" => "GOOD"}, "value", {name: "value"}).should eq(Category::GOOD)
     end
   end
 end

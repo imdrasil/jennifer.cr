@@ -2,7 +2,7 @@ class <%= class_name %> < Jennifer::Migration::Base
   def up
     create_table :<%= table_name %> do |t|
       <%- fields.common_fields.each do |field| -%>
-      t.<%= field.type %> :<%= field.name %><% unless field.nilable %>, { :null => false }<% end %>
+      t.<%= field.type %> :<%= field.name %><% unless field.nilable %>, {:null => false}<% end %>
       <%- end -%>
 
       <%- if fields.references.any? -%>

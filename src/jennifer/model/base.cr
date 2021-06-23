@@ -132,8 +132,8 @@ module Jennifer
       # The resulting object is return whether it was saved to the database or not.
       #
       # ```
-      # Contact.create({ :name => "Jennifer" })
-      # Contact.create({ name: "Jennifer" })
+      # Contact.create({:name => "Jennifer"})
+      # Contact.create({name: "Jennifer"})
       # ```
       def self.create(values : Hash | NamedTuple)
         o = new(values)
@@ -172,8 +172,8 @@ module Jennifer
       # Raises an `RecordInvalid` error if validation fail, unlike `.create`.
       #
       # ```
-      # Contact.create!({ :name => "Jennifer" })
-      # Contact.create!({ name: "Jennifer" })
+      # Contact.create!({:name => "Jennifer"})
+      # Contact.create!({name: "Jennifer"})
       # ```
       def self.create!(values : Hash | NamedTuple)
         o = new(values)
@@ -252,7 +252,7 @@ module Jennifer
       # `BaseException` is raised.
       #
       # ```
-      # user.update_columns({ :name => "Jennifer" })
+      # user.update_columns({:name => "Jennifer"})
       # ```
       abstract def update_columns(values : Hash(String | Symbol, AttrType))
 
@@ -299,8 +299,8 @@ module Jennifer
       # Returns whether object is successfully saved.
       #
       # ```
-      # contact.update({ :name => "Jennifer" })
-      # contact.update({ name: "Jennifer" })
+      # contact.update({:name => "Jennifer"})
+      # contact.update({name: "Jennifer"})
       # ```
       def update(values : Hash | NamedTuple) : Bool
         set_attributes(values)
@@ -324,8 +324,8 @@ module Jennifer
       # Raises an `RecordInvalid` error if validation fail, unlike `#update`.
       #
       # ```
-      # contact.update!({ :name => "Jennifer" })
-      # contact.update!({ name: "Jennifer" })
+      # contact.update!({:name => "Jennifer"})
+      # contact.update!({name: "Jennifer"})
       # ```
       def update!(values : Hash | NamedTuple) : Bool
         set_attributes(values)
@@ -346,8 +346,8 @@ module Jennifer
       # Sets attributes based on `values` where keys are attribute names.
       #
       # ```
-      # post.set_attributes({ :title => "New Title", :created_at => Time.local })
-      # post.set_attributes({ title: "New Title", created_at: Time.local })
+      # post.set_attributes({:title => "New Title", :created_at => Time.local})
+      # post.set_attributes({title: "New Title", created_at: Time.local})
       # post.set_attributes(title: "New Title", created_at: Time.local)
       # ```
       def set_attributes(values : Hash | NamedTuple)
@@ -365,7 +365,7 @@ module Jennifer
       # Is a shorthand for `#update_columns({ name => value })`.
       # Doesn't use attribute writer.
       def update_column(name : String | Symbol, value : Jennifer::DBAny)
-        update_columns({ name => value })
+        update_columns({name => value})
       end
 
       # Saves the object.
@@ -565,8 +565,8 @@ module Jennifer
       #
       # ```
       # User.import([
-      #   User.new({ name: "John" }),
-      #   User.new({ name: "Fahad" })
+      #   User.new({name: "John"}),
+      #   User.new({name: "Fahad"}),
       # ])
       # ```
       def self.import(collection : Array(self))

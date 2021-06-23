@@ -50,7 +50,7 @@ module Jennifer
         main_obj = create!(rel, type_field)
         obj.update_columns({
           foreign_field => main_obj.attribute_before_typecast(primary_field),
-          foreign_type => type_field
+          foreign_type  => type_field,
         })
         main_obj
       end
@@ -62,14 +62,14 @@ module Jennifer
 
         obj.update_columns({
           foreign_field => rel.attribute(primary_field),
-          foreign_type => rel.class.to_s
+          foreign_type  => rel.class.to_s,
         })
         rel.save! if rel.new_record?
         rel
       end
 
       def remove(obj : Model::Base)
-        obj.update_columns({ foreign_field => nil, foreign_type => nil })
+        obj.update_columns({foreign_field => nil, foreign_type => nil})
       end
 
       def build(opts : Hash, polymorphic_type)

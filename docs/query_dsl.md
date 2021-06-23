@@ -234,21 +234,6 @@ Contact
   .having { sql("count") > 1 }.pluck(:name)
 ```
 
-## FROM
-
-Also you can provide subquery to specify FROM clause (but be careful with source fields during result retrieving and mapping to objects)
-
-```crystal
-Contact.all.from("select * from contacts where id > 2")
-Contacts.all.from(Contact.where { _id > 2 })
-```
-
-Also it is possible to avoid `FROM` clause setting table name to empty line:
-
-```crystal
-Jennifer::Query[""].select("1 as column").db_results # [{ "column" => 1 }]
-```
-
 ## JOIN
 
 To join another table you can use `join` method passing model class or table name (`String`) and join type (default is `:inner`).

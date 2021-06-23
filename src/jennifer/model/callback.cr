@@ -5,9 +5,7 @@ module Jennifer
     #
     # ```
     # class User < Jennifer::Model::Base
-    #   mapping(
-    #     # ...
-    #   )
+    #   # mapping()
     #
     #   before_save :notify
     #   after_create :send_email, if: admin?
@@ -323,7 +321,7 @@ module Jennifer
               {% constant_name = "HAS_#{action.upcase.id}_#{type.upcase.id}_CALLBACK" %}
               {% if !CALLBACKS[action][type].empty? %}
                 # :nodoc:
-                {{ "#{constant_name.id} = true".id}}
+                {{ "#{constant_name.id} = true".id }}
 
                 protected def __after_{{action.id}}_{{type.id}}_callback
                   return false unless super
@@ -334,7 +332,7 @@ module Jennifer
                 end
               {% else %}
                 # :nodoc:
-                {{ "#{constant_name.id} = false".id}}
+                {{ "#{constant_name.id} = false".id }}
               {% end %}
             {% end %}
           {% end %}

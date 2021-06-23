@@ -2,7 +2,7 @@ require "./spec_helper"
 
 module H
   def self.create_foreign_key(table = DEFAULT_TABLE, to_table = "to_tables", column = nil, primary = nil,
-                         name = nil, on_update = :restrict, on_delete = :restrict)
+                              name = nil, on_update = :restrict, on_delete = :restrict)
     Jennifer::Migration::TableBuilder::CreateForeignKey.new(
       Jennifer::Adapter.default_adapter,
       table,

@@ -15,7 +15,7 @@ describe Jennifer::Adapter::Base do
     describe "query" do
       it "raises BadRequest if there was problem during method execution" do
         expect_raises(Jennifer::BadQuery, /Original query was/) do
-          default_adapter.query("SELECT COUNT(id) as count FROM contacts where asd > $1", [1]) {}
+          default_adapter.query("SELECT COUNT(id) as count FROM contacts where asd > $1", [1]) { }
         end
       end
     end
@@ -241,7 +241,7 @@ describe Jennifer::Adapter::Base do
     end
 
     context "with array of hashes" do
-      argument_regex = db_specific(mysql: -> { /\(\?/ }, postgres: -> { /\(\$\d/ })
+      argument_regex = db_specific(mysql: ->{ /\(\?/ }, postgres: ->{ /\(\$\d/ })
       amount = 4681
       fields = %w(name ballance age description created_at updated_at user_id)
       values = ["Deepthi", nil, 28, nil, nil, nil, nil] of Jennifer::DBAny
@@ -284,7 +284,7 @@ describe Jennifer::Adapter::Base do
       end
 
       it "escapes user, password and query" do
-        config.password = "\/ @&?"
+        config.password = "/ @&?"
         config.user = "weird@name"
         config.host = "host"
         config.db = "database"

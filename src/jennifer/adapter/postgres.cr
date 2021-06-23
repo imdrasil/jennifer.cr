@@ -28,11 +28,11 @@ module Jennifer
         :numeric => "numeric", # PG::Numeric
         :decimal => "decimal", # PG::Numeric - alias for numeric
 
-        :string     => "varchar",
-        :char       => "char", # String
-        :text       => "text",
-        :varchar    => "varchar",
-        :blchar     => "blchar", # String
+        :string  => "varchar",
+        :char    => "char", # String
+        :text    => "text",
+        :varchar => "varchar",
+        :blchar  => "blchar", # String
 
         :uuid => "uuid", # String
 
@@ -57,7 +57,7 @@ module Jennifer
       }
 
       DEFAULT_SIZES = {
-        :string     => 254
+        :string => 254,
       }
 
       TABLE_LOCK_TYPES = {

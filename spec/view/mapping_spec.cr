@@ -4,22 +4,22 @@ class ViewWithArray < Jennifer::View::Base
   view_name "contacts"
 
   mapping({
-    id: Primary32,
-    tags: Array(Int32)
+    id:   Primary32,
+    tags: Array(Int32),
   }, false)
 end
 
 class ViewWithBool < Jennifer::View::Base
   mapping({
-    id: Primary32,
-    bool: Bool
+    id:   Primary32,
+    bool: Bool,
   }, false)
 end
 
 class ViewWithNilableBool < Jennifer::View::Base
   mapping({
-    id: Primary32,
-    bool: Bool?
+    id:   Primary32,
+    bool: Bool?,
   }, false)
 end
 
@@ -36,10 +36,10 @@ describe Jennifer::View::Mapping do
 
     it "correctly assigns mapped column names" do
       b = Book.create(
-        name:       "RememberSammieJenkins",
-        version:    600,
-        publisher:  "NolanBros",
-        pages:      394
+        name: "RememberSammieJenkins",
+        version: 600,
+        publisher: "NolanBros",
+        pages: 394
       )
 
       p = PrintPublication.all.first!
@@ -105,10 +105,10 @@ describe Jennifer::View::Mapping do
       context "from result set with mapped columns" do
         it "properly creates the object" do
           Article.create(
-            name:       "ItsNoFunTillSomeoneDies",
-            version:    11235,
-            publisher:  "HarryManback",
-            size:       10000
+            name: "ItsNoFunTillSomeoneDies",
+            version: 11235,
+            publisher: "HarryManback",
+            size: 10000
           )
 
           count = 0
@@ -137,14 +137,14 @@ describe Jennifer::View::Mapping do
             "v"         => 4,
             "publisher" => "SeparatesTheBodyFromTheMind",
             "pages"     => 924,
-            "type"      => "Book"
+            "type"      => "Book",
           })
           PrintPublication.build({
-            :title      => "OverthinkingOveranalying",
-            :v          => 4,
-            :publisher  => "SeparatesTheBodyFromTheMind",
-            :pages      => 924,
-            :type       => "Book"
+            :title     => "OverthinkingOveranalying",
+            :v         => 4,
+            :publisher => "SeparatesTheBodyFromTheMind",
+            :pages     => 924,
+            :type      => "Book",
           })
         end
       end
@@ -156,11 +156,11 @@ describe Jennifer::View::Mapping do
 
         it "properly maps aliased columns" do
           PrintPublication.build({
-            title:      "AndTheWind",
-            v:          2,
-            publisher:  "ShallScreamMyName",
-            pages:      9,
-            type:       "Article"
+            title:     "AndTheWind",
+            v:         2,
+            publisher: "ShallScreamMyName",
+            pages:     9,
+            type:      "Article",
           })
         end
       end
@@ -180,7 +180,7 @@ describe Jennifer::View::Mapping do
       context "mismatching data type" do
         it "raises DataTypeMismatch exception" do
           Factory.create_contact(description: nil)
-          expected_type = db_specific(mysql: -> { "String" }, postgres: -> { "(Slice(UInt8) | String)" })
+          expected_type = db_specific(mysql: ->{ "String" }, postgres: ->{ "(Slice(UInt8) | String)" })
           error_message = "Column MaleContactWithDescription.description is expected to be a #{expected_type} but got Nil."
           expect_raises(::Jennifer::DataTypeMismatch, error_message) do
             MaleContactWithDescription.all.last!
@@ -240,16 +240,16 @@ describe Jennifer::View::Mapping do
       end
 
       describe Bool do
-        it { ViewWithBool.new({ "bool" => false }).bool.should eq(false) }
-        it { ViewWithBool.new({ "bool" => false }).bool?.should eq(false) }
-        it { ViewWithNilableBool.new({ "bool" => false }).bool.should eq(false) }
-        it { ViewWithNilableBool.new({ "bool" => false }).bool?.should eq(false) }
+        it { ViewWithBool.new({"bool" => false}).bool.should eq(false) }
+        it { ViewWithBool.new({"bool" => false}).bool?.should eq(false) }
+        it { ViewWithNilableBool.new({"bool" => false}).bool.should eq(false) }
+        it { ViewWithNilableBool.new({"bool" => false}).bool?.should eq(false) }
       end
 
       postgres_only do
         describe Array do
           it do
-            ViewWithArray.new({ "tags" => [1, 2] }).tags.should eq([1, 2])
+            ViewWithArray.new({"tags" => [1, 2]}).tags.should eq([1, 2])
           end
         end
       end
@@ -264,11 +264,11 @@ describe Jennifer::View::Mapping do
 
         it "provides getters for aliased columns" do
           pb = PrintPublication.build(
-            title:      "PrintPublicationsAreTheFutureOfTheInternet",
-            v:          71,
-            publisher:  "AVerySeriousProvider",
-            pages:      13,
-            type:       "Article"
+            title: "PrintPublicationsAreTheFutureOfTheInternet",
+            v: 71,
+            publisher: "AVerySeriousProvider",
+            pages: 13,
+            type: "Article"
           )
 
           pb.title.should eq "PrintPublicationsAreTheFutureOfTheInternet"
@@ -285,11 +285,11 @@ describe Jennifer::View::Mapping do
 
         it "provides setters for aliased columns" do
           pb = PrintPublication.build(
-            title:      "PrintPublicationsAreTheFutureOfTheInternet",
-            v:          71,
-            publisher:  "AVerySeriousProvider",
-            pages:      13,
-            type:       "Article"
+            title: "PrintPublicationsAreTheFutureOfTheInternet",
+            v: 71,
+            publisher: "AVerySeriousProvider",
+            pages: 13,
+            type: "Article"
           )
 
           pb.title = "ProbablyALittleOverexaggerated"
@@ -335,11 +335,11 @@ describe Jennifer::View::Mapping do
 
       it "returns attribute values of mapped fields" do
         pb = PrintPublication.build(
-          title:      "PrintPublicationsAreTheFutureOfTheInternet",
-          v:          71,
-          publisher:  "AVerySeriousProvider",
-          pages:      13,
-          type:       "Article"
+          title: "PrintPublicationsAreTheFutureOfTheInternet",
+          v: 71,
+          publisher: "AVerySeriousProvider",
+          pages: 13,
+          type: "Article"
         )
         pb.attribute("v").should eq 71
         pb.attribute(:v).should eq 71
@@ -354,10 +354,10 @@ describe Jennifer::View::Mapping do
 
       it "creates a hash with symbol keys and mapped columns" do
         Article.create(
-          name:       "PrintPublicationsAreTheFutureOfTheInternet",
-          version:    71,
-          publisher:  "AVerySeriousProvider",
-          pages:      13,
+          name: "PrintPublicationsAreTheFutureOfTheInternet",
+          version: 71,
+          publisher: "AVerySeriousProvider",
+          pages: 13,
         )
         PrintPublication.all.first!.to_h[:v].should eq 71
       end
@@ -371,10 +371,10 @@ describe Jennifer::View::Mapping do
 
       it "creates a hash with string keys and mapped columns" do
         Article.create(
-          name:       "PrintPublicationsAreTheFutureOfTheInternet",
-          version:    71,
-          publisher:  "AVerySeriousProvider",
-          pages:      13,
+          name: "PrintPublicationsAreTheFutureOfTheInternet",
+          version: 71,
+          publisher: "AVerySeriousProvider",
+          pages: 13,
         )
         PrintPublication.all.first!.to_str_h["v"].should eq 71
       end
@@ -394,10 +394,10 @@ describe Jennifer::View::Mapping do
         # and PrintPublication does not know about this mapping
         pb = PrintPublication.build(
           Article.build(
-            name:       "PrintPublicationsAreTheFutureOfTheInternet",
-            version:    71,
-            publisher:  "AVerySeriousProvider",
-            pages:      13,
+            name: "PrintPublicationsAreTheFutureOfTheInternet",
+            version: 71,
+            publisher: "AVerySeriousProvider",
+            pages: 13,
           ).to_h
         )
         pb.attribute("v").should eq 71

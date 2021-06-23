@@ -63,13 +63,13 @@ module Jennifer
     # :nodoc:
     CONNECTION_URI_PARAMS = {
       :max_pool_size, :initial_pool_size, :max_idle_pool_size,
-      :retry_attempts, :checkout_timeout, :retry_delay
+      :retry_attempts, :checkout_timeout, :retry_delay,
     }
     # :nodoc:
     STRING_FIELDS = {
       :user, :password, :db, :host, :adapter, :migration_files_path, :schema,
       :structure_folder, :local_time_zone_name, :command_shell, :docker_container, :docker_source_location,
-      :model_files_path
+      :model_files_path,
     }
     # :nodoc:
     INT_FIELDS = {:port, :max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
@@ -80,7 +80,7 @@ module Jennifer
       :command_shell_sudo,
       :skip_dumping_schema_sql,
       :verbose_migrations,
-      :allow_outdated_pending_migration
+      :allow_outdated_pending_migration,
     }
     # :nodoc:
     ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS = %w(reverse_direction callback none)
@@ -354,8 +354,8 @@ module Jennifer
       return if max_idle_pool_size == max_pool_size && max_pool_size == initial_pool_size
 
       logger.warn do
-        "It is highly recommended to set max_idle_pool_size = max_pool_size = initial_pool_size to prevent "\
-        "blowing up count of DB connections. For any details take a look at "\
+        "It is highly recommended to set max_idle_pool_size = max_pool_size = initial_pool_size to prevent " \
+        "blowing up count of DB connections. For any details take a look at " \
         "https://github.com/crystal-lang/crystal-db/issues/77"
       end
     end

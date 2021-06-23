@@ -41,12 +41,12 @@ module Jennifer
           conn.transaction do |tx|
             lock_connection(tx)
             begin
-              log_query("START") {}
+              log_query("START") { }
               res = yield(tx)
-              log_query("COMMIT") {}
+              log_query("COMMIT") { }
             rescue e
               @locks[fiber_id].rollback
-              log_query("ROLLBACK") {}
+              log_query("ROLLBACK") { }
               raise e
             ensure
               lock_connection(previous_transaction)

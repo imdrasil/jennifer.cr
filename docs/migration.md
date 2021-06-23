@@ -140,7 +140,7 @@ Here is a quick example:
 ```crystal
 def up
   change_table(:contacts) do |t|
-    t.change_column(:age, :short, { :default => 0 })
+    t.change_column(:age, :short, {:default => 0})
     t.add_column(:description, :text)
     t.add_index(:description, type: :uniq, order: :asc)
   end
@@ -152,7 +152,7 @@ end
 
 def down
   change_table(:contacts) do |t|
-    t.change_column(:age, :integer, { :default => 0 })
+    t.change_column(:age, :integer, {:default => 0})
     t.drop_column(:description)
   end
 
@@ -188,17 +188,15 @@ Postgres provides much more flexible and complex behavior. Using it you need to 
 create_enum(:gender_enum, ["male", "female"])
 
 create_table(:contacts) do |t|
-  t.string :name, { :size => 30 }
+  t.string :name, {:size => 30}
   t.integer :age
   t.field :gender, :gender_enum
   t.timestamps
 end
 
-change_enum(:gender_enum, { :add_values => ["unknown"] })
-
-change_enum(:gender_enum, { :rename_values => ["unknown", "other"] })
-
-change_enum(:gender_enum, { :remove_values => ["other"] })
+change_enum(:gender_enum, {:add_values => ["unknown"]})
+change_enum(:gender_enum, {:rename_values => ["unknown", "other"]})
+change_enum(:gender_enum, {:remove_values => ["other"]})
 ```
 
 For more details check source code and PostgreSQL docs.
@@ -222,10 +220,10 @@ module Micrate
 
   private def self.migrations_by_version
     Dir.entries(migrations_dir)
-       .select { |name| File.file?(File.join(migrations_dir, name)) }
-       .select { |name| /^\d+_.+\.sql$/ =~ name }
-       .map { |name| Migration.from_file(name) }
-       .index_by { |migration| migration.version }
+      .select { |name| File.file?(File.join(migrations_dir, name)) }
+      .select { |name| /^\d+_.+\.sql$/ =~ name }
+      .map { |name| Migration.from_file(name) }
+      .index_by { |migration| migration.version }
   end
 end
 

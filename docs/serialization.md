@@ -21,8 +21,8 @@ class UserTwin
   include JSON::Serializable
 
   map_fields(User, {
-    name: { key: :full_name },
-    password_hash: { ignore: true }
+    name: {key: :full_name},
+    password_hash: {ignore: true}
   })
 
   setter full_name

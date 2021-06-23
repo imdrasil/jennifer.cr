@@ -13,15 +13,15 @@ describe Jennifer::QueryBuilder::LogicOperator do
   end
 
   describe "#as_sql" do
-    it { ((c1 == 2 ) & (c2 == c1)).as_sql.should eq("tests.f1 = %s AND tests.f2 = tests.f1") }
+    it { ((c1 == 2) & (c2 == c1)).as_sql.should eq("tests.f1 = %s AND tests.f2 = tests.f1") }
   end
 
   describe "#sql_args" do
-    it { ((c1 == 2 ) & (c2 == c1)).sql_args.should eq([2]) }
+    it { ((c1 == 2) & (c2 == c1)).sql_args.should eq([2]) }
   end
 
   describe "#filterable?" do
-    it { ((c1 == 2 ) & (c2 == c1)).filterable?.should be_true }
+    it { ((c1 == 2) & (c2 == c1)).filterable?.should be_true }
     it { (c2 == c1).filterable?.should be_false }
   end
 

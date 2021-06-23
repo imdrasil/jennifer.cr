@@ -4,7 +4,7 @@ module Jennifer
     module Migration
       module TableBuilder
         class CreateMaterializedView < Base
-           @query : QueryBuilder::Query | String
+          @query : QueryBuilder::Query | String
 
           def initialize(adapter, name, @query)
             super(adapter, name)

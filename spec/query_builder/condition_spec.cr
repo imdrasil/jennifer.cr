@@ -85,8 +85,8 @@ describe Jennifer::QueryBuilder::Condition do
         sql = (Factory.build_criteria =~ "asd").as_sql
 
         db_specific(
-          mysql: -> { sql.should match(/REGEXP/) },
-          postgres: -> { sql.should match(/~/) }
+          mysql: ->{ sql.should match(/REGEXP/) },
+          postgres: ->{ sql.should match(/~/) }
         )
       end
     end

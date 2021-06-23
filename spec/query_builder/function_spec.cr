@@ -202,8 +202,8 @@ describe Jennifer::QueryBuilder::Function do
       Factory.create_contact
       res = Query["contacts"].select { [ceil(sql("-2.1", false)).alias("v")] }.first!
       db_specific(
-        mysql: -> { res.v(Int64).should eq(-2) },
-        postgres: -> { res.v(PG::Numeric).should eq(-2) }
+        mysql: ->{ res.v(Int64).should eq(-2) },
+        postgres: ->{ res.v(PG::Numeric).should eq(-2) }
       )
     end
   end
@@ -219,8 +219,8 @@ describe Jennifer::QueryBuilder::Function do
       Factory.create_contact
       res = Query["contacts"].select { [floor(sql("-2.1", false)).alias("v")] }.first!
       db_specific(
-        mysql: -> { res.v(Int64).should eq(-3) },
-        postgres: -> { res.v(PG::Numeric).should eq(-3) }
+        mysql: ->{ res.v(Int64).should eq(-3) },
+        postgres: ->{ res.v(PG::Numeric).should eq(-3) }
       )
     end
   end
@@ -236,8 +236,8 @@ describe Jennifer::QueryBuilder::Function do
       Factory.create_contact
       res = Query["contacts"].select { [round(sql("-2.1", false)).alias("v")] }.first!
       db_specific(
-        mysql: -> { res.v(Float64).should eq(-2) },
-        postgres: -> { res.v(PG::Numeric).should eq(-2) }
+        mysql: ->{ res.v(Float64).should eq(-2) },
+        postgres: ->{ res.v(PG::Numeric).should eq(-2) }
       )
     end
   end

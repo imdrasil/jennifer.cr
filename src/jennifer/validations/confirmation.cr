@@ -16,7 +16,7 @@ module Jennifer
           record.errors.add(
             field,
             :confirmation,
-            options: { :attribute => record.class.human_attribute_name(field) }
+            options: {:attribute => record.class.human_attribute_name(field)}
           )
         end
       end

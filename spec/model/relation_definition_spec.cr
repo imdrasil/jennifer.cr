@@ -144,7 +144,7 @@ module Jennifer::Model
         TwitterProfile.all.count.should eq(1)
       end
 
-       it "passes if no associated object exists" do
+      it "passes if no associated object exists" do
         c = Factory.create_contact
         c.destroy
       end
@@ -482,7 +482,7 @@ module Jennifer::Model
           context "with given hash" do
             it "builds new object" do
               note = Factory.create_note
-              note.add_notable({ "name" => "Jack", "age" => 16, "notable_type" => "Contact"})
+              note.add_notable({"name" => "Jack", "age" => 16, "notable_type" => "Contact"})
               note.notable.should be_a(Contact)
               note.notable_contact.name.should eq("Jack")
               note.notable_id.should_not be_nil

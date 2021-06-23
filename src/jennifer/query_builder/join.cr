@@ -88,17 +88,17 @@ module Jennifer
     class LateralJoin < Join
       def type_definition
         case @type
-          when :left
-            "LEFT JOIN "
-          when :right
-            "RIGHT JOIN "
-          when :inner
-            "JOIN "
-          when :full, :full_outer
-            "FULL OUTER JOIN "
-          else
-            raise ArgumentError.new("Bad join type: #{@type}.")
-          end + "LATERAL "
+        when :left
+          "LEFT JOIN "
+        when :right
+          "RIGHT JOIN "
+        when :inner
+          "JOIN "
+        when :full, :full_outer
+          "FULL OUTER JOIN "
+        else
+          raise ArgumentError.new("Bad join type: #{@type}.")
+        end + "LATERAL "
       end
     end
   end

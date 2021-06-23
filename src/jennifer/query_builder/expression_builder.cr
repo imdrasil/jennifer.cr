@@ -144,7 +144,7 @@ module Jennifer
       #
       # ```
       # Jennifer::Query["orders"].upsert(%w(name uid price), [["Order 1", 123, 3]], %w(uid)) do
-      #   { :price => values(:price) + _price }
+      #   {:price => values(:price) + _price}
       # end
       # ```
       def values(field : Symbol)

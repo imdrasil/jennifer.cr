@@ -27,8 +27,11 @@ As was said Jennifer provide lazy query evaluation so it will be performed only 
 `#pluck` returns array of values if only one field was given and array of arrays otherwise. By default it uses scope of current table (e.g. in previous example select clause included `contacts.id`). To allow grepping custom fields or any statement you need to specify custom select clause:
 
 ```crystal
-Contact.all.select("COUNT(id) as count, contacts.name").group("name")
-       .having { sql("COUNT(id)") > 1 }.pluck(:count)
+Contact.all
+  .select("COUNT(id) as count, contacts.name")
+  .group("name")
+  .having { sql("COUNT(id)") > 1 }
+  .pluck(:count)
 ```
 
 ## Relation Eager Loading

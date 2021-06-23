@@ -205,7 +205,7 @@ describe Jennifer::Model::Errors do
     context "with options" do
       it do
         errors = described_class.new(facebook_profile)
-        errors.add(:uid, :equal_to, options: { :value => 3})
+        errors.add(:uid, :equal_to, options: {:value => 3})
         errors[:uid][0].should eq("must be equal to 3")
       end
     end
@@ -269,7 +269,7 @@ describe Jennifer::Model::Errors do
     end
 
     context "with options" do
-      it { errors.generate_message(:uid, :equal_to, nil, {:value => "asd"}).should eq("must be equal to asd")}
+      it { errors.generate_message(:uid, :equal_to, nil, {:value => "asd"}).should eq("must be equal to asd") }
     end
   end
 

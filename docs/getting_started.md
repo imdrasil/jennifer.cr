@@ -152,8 +152,8 @@ This generates 2 files:
   class CreateUsers < Jennifer::Migration::Base
     def up
       create_table :users do |t|
-        t.string :title, { :null => false }
-        t.integer :age, { :null => false }
+        t.string :title, {:null => false}
+        t.integer :age, {:null => false}
 
         t.timestamps
       end
@@ -194,6 +194,6 @@ To be able to use our new model we need to populate schema changes to the databa
 Now we are able to use our model:
 
 ```crystal
-user = User.create({ name: "New User", age: 100 })
+user = User.create({name: "New User", age: 100})
 puts user.inspect
 ```

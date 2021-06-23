@@ -6,25 +6,25 @@ module Jennifer
       DATA_TYPES = {
         "bool" => "Bool",
 
-        "bigint" => "Int64",
+        "bigint"  => "Int64",
         "integer" => "Int32",
-        "short" => "Int16",
+        "short"   => "Int16",
         "tinyint" => "Int8",
 
-        "float" => "Float32",
+        "float"  => "Float32",
         "double" => "Double64",
 
         "decimal" => "Float64", # PG::Numeric
 
         "string" => "String",
-        "text" => "String",
+        "text"   => "String",
 
         "timestamp" => "Time",
         "date_time" => "Time",
 
         "json" => "JSON::Any",
 
-        REFERENCE_TYPE => "Int32"
+        REFERENCE_TYPE => "Int32",
       }
 
       getter name : String, type : String, nilable : Bool

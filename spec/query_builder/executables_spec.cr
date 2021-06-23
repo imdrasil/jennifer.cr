@@ -27,7 +27,7 @@ describe Jennifer::QueryBuilder::Executables do
     end
 
     it "raises error if there is no such records" do
-      arg = db_specific(mysql: -> { "?" }, postgres: -> { "$1" })
+      arg = db_specific(mysql: ->{ "?" }, postgres: ->{ "$1" })
       message = "There is no record by given query:\nSELECT contacts.* FROM contacts WHERE contacts.id > #{arg}  | [2]"
       expect_raises(Jennifer::RecordNotFound, message) do
         Contact.all.where { _id > 2 }.first!
@@ -139,7 +139,7 @@ describe Jennifer::QueryBuilder::Executables do
 
     context "with hash" do
       it do
-        values = { :name => "John", :age => 60 }
+        values = {:name => "John", :age => 60}
         Query["contacts"].insert(values)
         Query["contacts"].pluck(:name, :age).should eq([values.values])
       end
@@ -147,7 +147,7 @@ describe Jennifer::QueryBuilder::Executables do
 
     context "with named tuple" do
       it do
-        values = { name: "John", age: 60 }
+        values = {name: "John", age: 60}
         Query["contacts"].insert(values)
         Query["contacts"].pluck(:name, :age).should eq([values.values.to_a])
       end
@@ -155,7 +155,7 @@ describe Jennifer::QueryBuilder::Executables do
 
     describe "do_nothing" do
       it do
-        values = { name: "John", age: 60 }
+        values = {name: "John", age: 60}
         Query["contacts"].none.insert(values)
         Query["contacts"].pluck(:name, :age).should be_empty
       end
@@ -167,7 +167,7 @@ describe Jennifer::QueryBuilder::Executables do
       it do
         Factory.create_contact(name: "Ivan", age: 15, description: "desc")
         values = [["John", 60, "desc"]]
-        Query["contacts"].upsert(%w(name age description), values, %w(description)) { { :age => 1, :name => "a" } }
+        Query["contacts"].upsert(%w(name age description), values, %w(description)) { {:age => 1, :name => "a"} }
         Query["contacts"].pluck(:name, :age, :description).should eq([["a", 1, "desc"]])
       end
 
@@ -175,7 +175,7 @@ describe Jennifer::QueryBuilder::Executables do
         it do
           Factory.create_contact(name: "Ivan", age: 15, description: "desc")
           values = [["John", 60, "desc"]]
-          Query["contacts"].upsert(%w(name age description), values, %w(description)) { { :age => values(:age) + 1, :name => "a" } }
+          Query["contacts"].upsert(%w(name age description), values, %w(description)) { {:age => values(:age) + 1, :name => "a"} }
           Query["contacts"].pluck(:name, :age, :description).should eq([["a", 61, "desc"]])
         end
       end
@@ -209,8 +209,8 @@ describe Jennifer::QueryBuilder::Executables do
 
         Contact.where { _age < 15 }.update do
           {
-            :age => _age - 1,
-            :name => "b"
+            :age  => _age - 1,
+            :name => "b",
           }
         end
 
@@ -262,7 +262,7 @@ describe Jennifer::QueryBuilder::Executables do
   describe "#db_results" do
     describe "without FROM clause" do
       it do
-        Query[""].select("1 as col").db_results[0].should eq({ "col" => 1 })
+        Query[""].select("1 as col").db_results[0].should eq({"col" => 1})
       end
     end
 
@@ -473,7 +473,7 @@ describe Jennifer::QueryBuilder::Executables do
     it "accepts arguments" do
       Factory.create_contact(age: 21)
       Factory.create_contact(age: 20)
-      placeholder = db_specific(postgres: -> { "$1" }, mysql: -> { "?" })
+      placeholder = db_specific(postgres: ->{ "$1" }, mysql: ->{ "?" })
       res = Query["contacts"].find_records_by_sql(
         "SELECT * FROM contacts WHERE age > #{placeholder}",
         [20]

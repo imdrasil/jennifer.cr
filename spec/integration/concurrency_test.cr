@@ -1,7 +1,7 @@
 require "./shared_helpers"
 require "./spec_helper"
 
-POOL_SIZE = 2
+POOL_SIZE     = 2
 TIME_TO_SLEEP = 3
 
 if Spec.adapter != "mysql"

@@ -15,7 +15,7 @@ module Jennifer
 
           record.errors.add(field, :taken) if _query.exists?
         end
-      end # validate
-    end # Uniqueness
-  end # Validations
-end # Jennifer
+      end
+    end
+  end
+end

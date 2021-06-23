@@ -85,8 +85,8 @@ module Jennifer
         # It calls `after_initialize` callbacks.
         #
         # ```
-        # User.new({ :name => "John Smith" })
-        # User.new({ name: "John Smith" })
+        # User.new({:name => "John Smith"})
+        # User.new({name: "John Smith"})
         # ```
         abstract def new(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
 
@@ -95,7 +95,7 @@ module Jennifer
         # It calls `after_initialize` callbacks.
         #
         # ```
-        # User.new({ "name" => "John Smith" })
+        # User.new({"name" => "John Smith"})
         # ```
         abstract def new(values : Hash(String, ::Jennifer::DBAny))
 
@@ -175,7 +175,7 @@ module Jennifer
       # ```
       def to_json(only : Array(String)? = nil, except : Array(String)? = nil)
         JSON.build do |json|
-          to_json(json, only, except) {}
+          to_json(json, only, except) { }
         end
       end
 
@@ -186,7 +186,7 @@ module Jennifer
       end
 
       def to_json(json : JSON::Builder)
-        to_json(json) {}
+        to_json(json) { }
       end
 
       def to_json(json : JSON::Builder, only : Array(String)? = nil, except : Array(String)? = nil, &block)
@@ -242,7 +242,7 @@ module Jennifer
       # Returns resource's table name.
       #
       # ```
-      # User.table_name # "users"
+      # User.table_name        # "users"
       # Admin::User.table_name # "admin_users"
       #
       # class Admin::Post < Jennifer::Model::Base

@@ -35,14 +35,14 @@ describe Jennifer::Adapter::SchemaProcessor do
   describe "#add_column" do
     it do
       match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column int/) do
-        processor.add_column("table_name", "column", { :type => :integer } of Symbol => DBOption)
+        processor.add_column("table_name", "column", {:type => :integer} of Symbol => DBOption)
       end
     end
 
     describe "serial" do
       it do
         match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column serial/) do
-          processor.add_column("table_name", "column", { :type => :integer, :serial => true } of Symbol => DBOption)
+          processor.add_column("table_name", "column", {:type => :integer, :serial => true} of Symbol => DBOption)
         end
       end
     end
@@ -50,7 +50,7 @@ describe Jennifer::Adapter::SchemaProcessor do
     describe "primary key" do
       it do
         match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column int PRIMARY KEY/) do
-          processor.add_column("table_name", "column", { :type => :integer, :primary => true } of Symbol => DBOption)
+          processor.add_column("table_name", "column", {:type => :integer, :primary => true} of Symbol => DBOption)
         end
       end
     end
@@ -67,7 +67,7 @@ describe Jennifer::Adapter::SchemaProcessor do
     context "with default" do
       it do
         match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column int DEFAULT 10/) do
-          processor.add_column("table_name", "column", { :type => :integer, :default => 10 } of Symbol => DBOption)
+          processor.add_column("table_name", "column", {:type => :integer, :default => 10} of Symbol => DBOption)
         end
       end
     end
@@ -76,7 +76,7 @@ describe Jennifer::Adapter::SchemaProcessor do
       context "with" do
         it do
           match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column int NOT NULL/) do
-            processor.add_column("table_name", "column", { :type => :integer, :null => false } of Symbol => DBOption)
+            processor.add_column("table_name", "column", {:type => :integer, :null => false} of Symbol => DBOption)
           end
         end
       end
@@ -84,7 +84,7 @@ describe Jennifer::Adapter::SchemaProcessor do
       context "without" do
         it do
           match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column int NULL/) do
-            processor.add_column("table_name", "column", { :type => :integer, :null => true } of Symbol => DBOption)
+            processor.add_column("table_name", "column", {:type => :integer, :null => true} of Symbol => DBOption)
           end
         end
       end
@@ -97,7 +97,7 @@ describe Jennifer::Adapter::SchemaProcessor do
     context "with custom size" do
       it do
         match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column int\(2\)/) do
-          processor.add_column("table_name", "column", { :type => :integer, :size => 2 } of Symbol => DBOption)
+          processor.add_column("table_name", "column", {:type => :integer, :size => 2} of Symbol => DBOption)
         end
       end
     end
@@ -105,7 +105,7 @@ describe Jennifer::Adapter::SchemaProcessor do
     context "with custom SQL type" do
       it do
         match_query_from_exception(/ALTER TABLE table_name ADD COLUMN column smallint/) do
-          processor.add_column("table_name", "column", { :type => :integer, :sql_type => :smallint } of Symbol => DBOption)
+          processor.add_column("table_name", "column", {:type => :integer, :sql_type => :smallint} of Symbol => DBOption)
         end
       end
     end
@@ -149,7 +149,7 @@ describe Jennifer::Adapter::SchemaProcessor do
   describe "#add_foreign_key" do
     it do
       match_query_from_exception(/ALTER TABLE from_table ADD CONSTRAINT name FOREIGN KEY \(column\) REFERENCES to_table\(primary_key\) ON UPDATE RESTRICT ON DELETE NO ACTION/) do
-        processor.add_foreign_key("from_table", "to_table", "column", "primary_key",  "name", :restrict, :no_action)
+        processor.add_foreign_key("from_table", "to_table", "column", "primary_key", "name", :restrict, :no_action)
       end
     end
   end

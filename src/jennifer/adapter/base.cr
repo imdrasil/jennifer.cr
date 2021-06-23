@@ -273,8 +273,8 @@ module Jennifer
         return if table_exists?(Migration::Version.table_name)
 
         tb = Migration::TableBuilder::CreateTable.new(self, Migration::Version.table_name)
-        tb.integer(:id, { :primary => true, :auto_increment => true })
-        tb.string(:version, { :size => 17, :null => false })
+        tb.integer(:id, {:primary => true, :auto_increment => true})
+        tb.string(:version, {:size => 17, :null => false})
         tb.process
       end
 

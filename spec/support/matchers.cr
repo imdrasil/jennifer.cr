@@ -106,12 +106,12 @@ module Spec
     end
 
     def failure_message(object)
-      "Expected: #{object.inspect} to have error message: "\
+      "Expected: #{object.inspect} to have error message: " \
       "'#{@error_message}', but got: '#{object.errors[@attr].inspect}'"
     end
 
     def negative_failure_message(object)
-      "Expected: #{object.inspect} not to have error message: "\
+      "Expected: #{object.inspect} not to have error message: " \
       "'#{@error_message}', but got: '#{object.errors[@attr].inspect}'"
     end
   end

@@ -39,7 +39,7 @@ module Jennifer
 
       def remove(obj : Q, rel : T)
         if rel.attribute(foreign_field) == obj.attribute(primary_field) && rel.attribute(foreign_type) == polymorphic_type_value
-          rel.update_columns({ foreign_field => nil, foreign_type => nil })
+          rel.update_columns({foreign_field => nil, foreign_type => nil})
         end
         rel
       end

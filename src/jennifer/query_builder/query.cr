@@ -402,7 +402,7 @@ module Jennifer
       # Jennifer::Query["contacts"].union(Jennifer::Query["users"], true)
       # ```
       def union(query, all : Bool = false)
-        _unions! << { query: query, all: all }
+        _unions! << {query: query, all: all}
         self
       end
 
@@ -609,7 +609,7 @@ module Jennifer
       end
 
       def to_json(json : JSON::Builder)
-        to_json(json) {}
+        to_json(json) { }
       end
 
       def to_json(json : JSON::Builder, only : Array(String)? = nil, except : Array(String)? = nil, &block)
@@ -622,7 +622,7 @@ module Jennifer
 
       def to_json(only : Array(String)? = nil, except : Array(String)? = nil)
         JSON.build do |json|
-          to_json(json, only, except) {}
+          to_json(json, only, except) { }
         end
       end
 

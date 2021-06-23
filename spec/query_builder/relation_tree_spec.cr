@@ -1,7 +1,7 @@
 require "../spec_helper"
 
 describe Jennifer::QueryBuilder::RelationTree do
-  builder = -> { Jennifer::QueryBuilder::MultiQueryRelationTree.new(Contact) }
+  builder = ->{ Jennifer::QueryBuilder::MultiQueryRelationTree.new(Contact) }
 
   describe "#add_relation" do
     it do

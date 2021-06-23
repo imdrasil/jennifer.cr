@@ -9,7 +9,7 @@ describe Jennifer::Migration::Base do
   end
 
   describe ".migrations" do
-    it { described_class.migrations.should eq({ "20170119011451314" => CreateContacts, "20180909200027509" => CreateNotes }) }
+    it { described_class.migrations.should eq({"20170119011451314" => CreateContacts, "20180909200027509" => CreateNotes}) }
   end
 
   describe ".version" do
@@ -84,7 +84,7 @@ describe Jennifer::Migration::Base do
 
     describe "#drop_table" do
       it do
-        migration.create_table(:test_table) {}
+        migration.create_table(:test_table) { }
         migration.drop_table(:test_table)
 
         adapter.table_exists?(:test_table).should be_false
@@ -147,7 +147,7 @@ describe Jennifer::Migration::Base do
         void_transaction do
           begin
             migration.create_enum(:gender, %w(unspecified female male))
-            migration.change_enum(:gender, { :add_values => ["other"] })
+            migration.change_enum(:gender, {:add_values => ["other"]})
 
             adapter.enum_values(:gender).should eq(%w(unspecified female male other))
           ensure
@@ -185,7 +185,7 @@ describe Jennifer::Migration::Base do
         migration.create_table(:test_table) do |t|
           t.integer :to_table_id
         end
-        migration.create_table(:to_table) {}
+        migration.create_table(:to_table) { }
         migration.add_foreign_key(:test_table, :to_table)
 
         adapter.foreign_key_exists?(:test_table, :to_table).should be_true
@@ -197,7 +197,7 @@ describe Jennifer::Migration::Base do
         migration.create_table(:test_table) do |t|
           t.integer :to_table_id
         end
-        migration.create_table(:to_table) {}
+        migration.create_table(:to_table) { }
         migration.add_foreign_key(:test_table, :to_table)
         migration.drop_foreign_key(:test_table, :to_table)
 

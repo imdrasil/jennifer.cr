@@ -19,7 +19,7 @@ module Jennifer
       # use `#invalid?`.
       #
       # ```
-      # User.new({ age: -2 }).valid?
+      # User.new({age: -2}).valid?
       # ```
       def valid?
         validate!

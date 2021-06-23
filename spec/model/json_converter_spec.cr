@@ -19,18 +19,18 @@ describe Jennifer::Model::JSONConverter do
 
   it "saves new record" do
     record = Address.create({
-      main: false,
-      street: "street",
-      details: JSON::Any.new({ "latitude" => JSON::Any.new(32.0) })
+      main:    false,
+      street:  "street",
+      details: JSON::Any.new({"latitude" => JSON::Any.new(32.0)}),
     })
     record.reload.details!["latitude"].should eq(32.0)
   end
 
   it "is accepted by hash constructor" do
     record = Address.new({
-      "main" => false,
-      "street" => "street",
-      "details" => JSON::Any.new({ "latitude" => JSON::Any.new(32.0) })
+      "main"    => false,
+      "street"  => "street",
+      "details" => JSON::Any.new({"latitude" => JSON::Any.new(32.0)}),
     })
     record.details!["latitude"].should eq(32.0)
   end
@@ -38,7 +38,7 @@ describe Jennifer::Model::JSONConverter do
   describe ".from_hash" do
     it "accepts string value" do
       data = {latitude: 32.0, longitude: 24.5}
-      Jennifer::Model::JSONConverter.from_hash({ "value" => data.to_json }, "value", { name: "value" })
+      Jennifer::Model::JSONConverter.from_hash({"value" => data.to_json}, "value", {name: "value"})
         .should eq(JSON.parse(data.to_json))
     end
   end

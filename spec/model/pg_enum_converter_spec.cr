@@ -21,13 +21,13 @@ postgres_only do
     end
 
     it "is accepted by hash constructor" do
-      record = Contact.new({ "gender" => "female", "name" => "Sam" })
+      record = Contact.new({"gender" => "female", "name" => "Sam"})
       record.gender.should eq("female")
     end
 
     describe ".from_hash" do
       it "accepts bytes value" do
-        Jennifer::Model::PgEnumConverter.from_hash({ "value" => "female".to_slice }, "value", {name: "value"}).should eq("female")
+        Jennifer::Model::PgEnumConverter.from_hash({"value" => "female".to_slice}, "value", {name: "value"}).should eq("female")
       end
     end
   end

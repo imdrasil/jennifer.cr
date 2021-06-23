@@ -13,8 +13,8 @@ module Jennifer
       ON_EVENT_ACTION_TRANSLATIONS = {
         FkEventActions::NoAction => "NO ACTION",
         FkEventActions::Restrict => "RESTRICT",
-        FkEventActions::Cascade => "CASCADE",
-        FkEventActions::SetNull => "SET NULL"
+        FkEventActions::Cascade  => "CASCADE",
+        FkEventActions::SetNull  => "SET NULL",
       }
 
       # :nodoc:

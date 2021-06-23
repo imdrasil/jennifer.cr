@@ -4,7 +4,7 @@ module Jennifer
   module Adapter
     abstract class ICommandShell
       OPTIONS_PLACEHOLDER = %("${@}")
-      SUDO = "sudo"
+      SUDO                = "sudo"
 
       abstract def execute(command) : NamedTuple
 

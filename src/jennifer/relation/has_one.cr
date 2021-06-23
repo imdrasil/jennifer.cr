@@ -14,7 +14,7 @@ module Jennifer
       def remove(obj : Q)
         this = self
         _pf = obj.attribute_before_typecast(primary_field)
-        T.all.where { T.c(this.foreign_field) == _pf }.update({ foreign_field => nil })
+        T.all.where { T.c(this.foreign_field) == _pf }.update({foreign_field => nil})
       end
     end
   end

@@ -14,7 +14,7 @@ module Jennifer
     #   def up
     #     create_table(::contacts) do |t|
     #       t.string :name
-    #       t.string :number, { :null => false }
+    #       t.string :number, {:null => false}
     #     end
     #   end
     #
@@ -205,11 +205,11 @@ module Jennifer
       #
       # ```
       # create_table(:contacts) do |t|
-      #   t.field :name, :string, { :size => 30 }
+      #   t.field :name, :string, {:size => 30}
       # end
       # # or with shorthand
       # create_table(:contacts) do |t|
-      #   t.string :name, { :size => 30 }
+      #   t.string :name, {:size => 30}
       # end
       # ```
       #
@@ -218,8 +218,8 @@ module Jennifer
       #
       # ```
       # create_table(:passport, false) do |t|
-      #   t.string :puid, { :size => 10, :primary => true }
-      #   t.string :name, { :size => 30 }
+      #   t.string :puid, {:size => 10, :primary => true}
+      #   t.string :name, {:size => 30}
       # end
       # ```
       #
@@ -255,7 +255,7 @@ module Jennifer
       #
       # ```
       # change_table(:users) do |t|
-      #   t.change_column :age, :integer, { :default => 0 }
+      #   t.change_column :age, :integer, {:default => 0}
       #   t.add_column :description, :text
       #   t.drop_column :details
       # end
@@ -358,13 +358,13 @@ module Jennifer
       #
       # ```
       # # To add new values
-      # change_enum(:gender_enum, { :add_values => ["unknown"] })
+      # change_enum(:gender_enum, {:add_values => ["unknown"]})
       #
       # # To rename value
-      # change_enum(:gender_enum, { :rename_values => ["unknown", "other"] })
+      # change_enum(:gender_enum, {:rename_values => ["unknown", "other"]})
       #
       # # To remove values
-      # change_enum(:gender_enum, { :remove_values => ["other"] })
+      # change_enum(:gender_enum, {:remove_values => ["other"]})
       # ```
       #
       # Also see `TableBuilder::CreateTable#enum`.
@@ -422,7 +422,7 @@ module Jennifer
       # Creating an index with a sort order:
       #
       # ```
-      # add_index(:accounts, %i(branch_id party_id surname), orders: { :branch_id => :desc, :party_id => :asc })
+      # add_index(:accounts, %i(branch_id party_id surname), orders: {:branch_id => :desc, :party_id => :asc})
       # # => CREATE INDEX by_branch_desc_party ON accounts(branch_id DESC, party_id ASC, surname)
       # ```
       #

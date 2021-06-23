@@ -1,7 +1,7 @@
 module Jennifer::Model
   module Coercer
     DATE_TIME_FORMAT = "%F %T"
-    DATE_FORMAT = "%F"
+    DATE_FORMAT      = "%F"
 
     def self.coerce(value : String, type : (Int8?).class)
       return nil if value.empty?

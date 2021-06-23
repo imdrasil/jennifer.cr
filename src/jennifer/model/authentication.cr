@@ -5,9 +5,9 @@ module Jennifer
     module Authentication
       # Password virtual attribute type definition.
       Password = {
-        type: String?,
+        type:    String?,
         virtual: true,
-        setter: false
+        setter:  false,
       }
 
       {% Macros::TYPES << "Password" %}

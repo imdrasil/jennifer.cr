@@ -59,7 +59,7 @@ jobs:
         run: crystal tool format --check -e"./scripts"
 
       - name: Install dependencies
-        run: shards install --ignore-crystal-version
+        run: shards install
 
       - name: Run linter
         if: ${{ matrix.linter }}

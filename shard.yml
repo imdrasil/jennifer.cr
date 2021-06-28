@@ -17,10 +17,10 @@ development_dependencies:
     version: "= 0.23.2"
   factory:
     github: imdrasil/factory
-    version: "~> 0.1.4"
+    version: "~> 0.1.5"
   sam:
     github: imdrasil/sam.cr
-    version: "~> 0.3.0"
+    version: "~> 0.4.1"
   ameba:
     github: crystal-ameba/ameba
     version: "= 0.14.3"
@@ -34,7 +34,8 @@ dependencies:
     version: "~> 1.0.0"
   ifrit:
     github: imdrasil/ifrit
-    version: "= 0.1.2"
+    version: "= 0.1.3"
   i18n:
     github: TechMagister/i18n.cr
-    version: "= 0.3.1"
+    # version: "= 0.3.1"
+    commit: b323291b772c97bc1661888eb9e82dadb722acaa

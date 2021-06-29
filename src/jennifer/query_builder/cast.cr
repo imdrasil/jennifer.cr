@@ -14,7 +14,6 @@ module Jennifer::QueryBuilder
       expression.sql_args(*args, **options)
     end
 
-
     def as_sql(generator)
       generator.cast_expression(expression, type)
     end

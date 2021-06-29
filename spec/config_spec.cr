@@ -33,7 +33,7 @@ describe Jennifer::Config do
 
     it "expects adapter and database at very least" do
       expect_raises(Jennifer::InvalidConfig, /No database configured/) do
-        described_class.configure { |c| c.db = "" }
+        described_class.configure(&.db=(""))
       end
 
       expect_raises(Jennifer::InvalidConfig, /No adapter configured/) do

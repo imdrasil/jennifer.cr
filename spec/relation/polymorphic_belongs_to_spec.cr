@@ -87,7 +87,7 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
   describe "#build" do
     context "with valid polymorphic type" do
       it do
-        p = example_relation.build({ "name" => "test" } of String => Jennifer::DBAny, contact_class.to_s)
+        p = example_relation.build({"name" => "test"} of String => Jennifer::DBAny, contact_class.to_s)
         p.is_a?(ContactForPolymorphicNote).should be_true
       end
     end
@@ -111,7 +111,7 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
   describe "#create!" do
     context "with valid polymorphic type" do
       it do
-        c = example_relation.create!({ "name" => "login" } of String => Jennifer::DBAny, contact_class.to_s)
+        c = example_relation.create!({"name" => "login"} of String => Jennifer::DBAny, contact_class.to_s)
         c.is_a?(ContactForPolymorphicNote).should be_true
         c.persisted?.should be_true
       end
@@ -179,7 +179,7 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
 
       it "uses attributes before typecast for foreign and type fields" do
         c = Factory.create_contact
-        n = PolymorphicNoteWithConverter.new({ notable_type: contact_class.to_s, notable_id: c.id })
+        n = PolymorphicNoteWithConverter.new({notable_type: contact_class.to_s, notable_id: c.id})
         n.notable_id.should eq("Int32: #{c.id}")
         n.notable_type.should eq("String: #{contact_class}")
 
@@ -212,8 +212,8 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
       it do
         n = note_class.find!(Factory.create_note.id)
         opts = {
-          "name" => "login",
-          "notable_type" => "ContactForPolymorphicNote"
+          "name"         => "login",
+          "notable_type" => "ContactForPolymorphicNote",
         } of String => Jennifer::DBAny
         example_relation.insert(n, opts).as(ContactForPolymorphicNote)
         p = n.notable.as(ContactForPolymorphicNote)
@@ -227,10 +227,10 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
         it do
           n = PolymorphicNote.find!(Factory.create_note.id)
           opts = {
-            "name" => "name",
-            "age" => 42,
-            "gender" => "male",
-            "notable_type" => "ContactForPolymorphicNote"
+            "name"         => "name",
+            "age"          => 42,
+            "gender"       => "male",
+            "notable_type" => "ContactForPolymorphicNote",
           } of String => Jennifer::DBAny
           PolymorphicNote.notable_relation.insert(n, opts)
           p = n.notable.as(ContactForPolymorphicNote)

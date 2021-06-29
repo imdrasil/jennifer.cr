@@ -45,7 +45,7 @@ module Jennifer
         def enum(name : String | Symbol, values : Array(String),
                  options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
           options = Ifrit.sym_hash_cast(options, AAllowedTypes)
-            .merge!({ :values => Ifrit.typed_array_cast(values, EAllowedTypes) })
+            .merge!({:values => Ifrit.typed_array_cast(values, EAllowedTypes)})
           @fields[name.to_s] = build_column_options(:enum, options)
           self
         end
@@ -66,7 +66,7 @@ module Jennifer
         # Migration above will create PostreSQL enum and a table with column of that type.
         def field(name : String | Symbol, type : Symbol | String,
                   options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
-          @fields[name.to_s] = ({ :sql_type => type } of Symbol => AAllowedTypes).merge(options)
+          @fields[name.to_s] = ({:sql_type => type} of Symbol => AAllowedTypes).merge(options)
           self
         end
 
@@ -88,7 +88,7 @@ module Jennifer
         # ```
         # reference :user
         # reference :order, :bigint
-        # reference :taggable, { :polymorphic => true }
+        # reference :taggable, {:polymorphic => true}
         # ```
         def reference(name, type : Symbol = :integer, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
           column = Inflector.foreign_key(name)
@@ -99,7 +99,7 @@ module Jennifer
             build_column_options(field_internal_type, options.merge({:null => is_null}))
 
           if options[:polymorphic]?
-            string("#{name}_type", { :null => is_null })
+            string("#{name}_type", {:null => is_null})
           else
             foreign_key(
               (options[:to_table]? || Inflector.pluralize(name)).as(String | Symbol),
@@ -117,8 +117,8 @@ module Jennifer
         #
         # Argument *null* sets `:null` option for both fields.
         def timestamps(null : Bool = false)
-          timestamp(:created_at, { :null => null })
-          timestamp(:updated_at, { :null => null })
+          timestamp(:created_at, {:null => null})
+          timestamp(:updated_at, {:null => null})
         end
 
         # Adds index.
@@ -138,7 +138,7 @@ module Jennifer
                   order : Symbol? = nil)
           orders = order ? {field => order.not_nil!} : {} of Symbol => Symbol
           lengths = length ? {field => length.not_nil!} : {} of Symbol => Int32
-          index([field],type, name, lengths, orders)
+          index([field], type, name, lengths, orders)
         end
 
         # Creates a foreign key constraint to `to_table` table.

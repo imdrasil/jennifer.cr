@@ -32,8 +32,8 @@ module Jennifer
     #   mapping(
     #     id: Primary32, # same as { type: Int32, primary: true }
     #     name: String,
-    #     gender: { type: String? },
-    #     age: { type: Int32, default: 10 },
+    #     gender: {type: String?},
+    #     age: {type: Int32, default: 10},
     #     description: String?,
     #     created_at: Time?,
     #     updated_at: Time | Nil
@@ -49,8 +49,8 @@ module Jennifer
     # ```
     # class ApplicationRecord < Jennifer::Model::Base
     #   EmptyString = {
-    #     type: String,
-    #     default: ""
+    #     type:    String,
+    #     default: "",
     #   }
     #
     #   {% TYPES << "EmptyString" %}
@@ -203,9 +203,9 @@ module Jennifer
       #   with_timestamps
       #
       #   mapping(
-      #     id: { type: Int32, primary: true },
-      #     created_at: { type: Time, null: true },
-      #     updated_at: { type: Time, null: true }
+      #     id: {type: Int32, primary: true},
+      #     created_at: {type: Time, null: true},
+      #     updated_at: {type: Time, null: true}
       #   )
       # end
       # ```

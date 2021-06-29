@@ -3,8 +3,8 @@ require "../spec_helper"
 postgres_only do
   class ContactWithArray < ApplicationRecord
     mapping({
-      id: Primary32,
-      tags: Array(Int32)
+      id:   Primary32,
+      tags: Array(Int32),
     })
   end
 
@@ -12,9 +12,9 @@ postgres_only do
     table_name "contacts"
 
     mapping({
-      id: Primary32,
-      name: String,
-      ballance: { type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2 }
+      id:       Primary32,
+      name:     String,
+      ballance: {type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2},
     }, false)
   end
 end
@@ -24,9 +24,9 @@ mysql_only do
     table_name "contacts"
 
     mapping({
-      id: Primary32,
-      name: String,
-      ballance: { type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(Float64), scale: 2 }
+      id:       Primary32,
+      name:     String,
+      ballance: {type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(Float64), scale: 2},
     }, false)
   end
 end
@@ -77,7 +77,7 @@ class UserWithConverter < Jennifer::Model::Base
 
   mapping(
     id: Primary32,
-    name: { type: JSON::Any, converter: Jennifer::Model::JSONConverter }
+    name: {type: JSON::Any, converter: Jennifer::Model::JSONConverter}
   )
 end
 
@@ -309,13 +309,13 @@ describe Jennifer::Model::Mapping do
         context "with string values for non-string properties" do
           it "coerces types" do
             record = AllTypeModel.new({
-              "bool_f" => "true",
-              "bigint_f" => "12",
-              "integer_f" => "13",
-              "short_f" => "14",
-              "float_f" => "12.0",
-              "double_f" => "15.0",
-              "timestamp_f" => "2010-12-10 20:10:10"
+              "bool_f"      => "true",
+              "bigint_f"    => "12",
+              "integer_f"   => "13",
+              "short_f"     => "14",
+              "float_f"     => "12.0",
+              "double_f"    => "15.0",
+              "timestamp_f" => "2010-12-10 20:10:10",
             })
 
             record.bool_f.should be_true
@@ -337,7 +337,7 @@ describe Jennifer::Model::Mapping do
           end
 
           it "properly maps column aliases" do
-            a = Author.new({ "name1" => "Gener", "name2" => "Ric" })
+            a = Author.new({"name1" => "Gener", "name2" => "Ric"})
             a.name1.should eq("Gener")
             a.name2.should eq("Ric")
           end
@@ -368,7 +368,7 @@ describe Jennifer::Model::Mapping do
         end
 
         it "properly maps column aliases" do
-          a = Author.new({ name1: "Unk", name2: "Nown" })
+          a = Author.new({name1: "Unk", name2: "Nown"})
           a.name1.should eq("Unk")
           a.name2.should eq("Nown")
         end
@@ -399,8 +399,8 @@ describe Jennifer::Model::Mapping do
     describe "::field_count" do
       it "returns correct number of model fields" do
         proper_count = db_specific(
-          mysql: -> { 9 },
-          postgres: -> { 10 }
+          mysql: ->{ 9 },
+          postgres: ->{ 10 }
         )
         Contact.field_count.should eq(proper_count)
       end
@@ -572,8 +572,9 @@ describe Jennifer::Model::Mapping do
 
         describe "UUID" do
           it "correctly saves and loads" do
-            AllTypeModel.create!(uuid_f: "7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
-            AllTypeModel.all.last!.uuid_f!.should eq("7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
+            value = UUID.new("7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
+            AllTypeModel.create!(uuid_f: value)
+            AllTypeModel.all.last!.uuid_f!.should eq(value)
           end
         end
 
@@ -690,7 +691,8 @@ describe Jennifer::Model::Mapping do
       context "mismatching data type" do
         it "raises DataTypeMismatch exception" do
           ContactWithNillableName.create({name: nil})
-          expect_raises(::Jennifer::DataTypeMismatch, "Column ContactWithCustomField.name is expected to be a String but got Nil.") do
+          expected_type = db_specific(mysql: ->{ "String" }, postgres: ->{ "(Slice(UInt8) | String)" })
+          expect_raises(::Jennifer::DataTypeMismatch, "Column ContactWithCustomField.name is expected to be a #{expected_type} but got Nil.") do
             ContactWithCustomField.all.last!
           end
         end
@@ -762,7 +764,7 @@ describe Jennifer::Model::Mapping do
 
       context "with DBAny" do
         it do
-          hash = { :name => "new_name" } of Symbol => Jennifer::DBAny
+          hash = {:name => "new_name"} of Symbol => Jennifer::DBAny
           c = Factory.build_contact(name: "a")
           c.name = hash[:name]
           c.name.should eq("new_name")
@@ -771,7 +773,7 @@ describe Jennifer::Model::Mapping do
 
       context "with subset of DBAny" do
         it do
-          hash = { :name => "new_name", :age => 12 }
+          hash = {:name => "new_name", :age => 12}
           c = Factory.build_contact(name: "a")
           c.name = hash[:name]
           c.name.should eq("new_name")
@@ -779,7 +781,7 @@ describe Jennifer::Model::Mapping do
 
         context "with wrong type" do
           it do
-            hash = { :name => "new_name", :age => 12 }
+            hash = {:name => "new_name", :age => 12}
             c = Factory.build_contact(name: "a")
             expect_raises(TypeCastError) do
               c.name = hash[:age]
@@ -1102,7 +1104,7 @@ describe Jennifer::Model::Mapping do
       it "uses attributes before typecast" do
         raw_json = %({"asd":1})
         json = JSON.parse(raw_json)
-        user = UserWithConverter.new({ name: JSON.parse("{}") })
+        user = UserWithConverter.new({name: JSON.parse("{}")})
         user.name = json
         user.name.should eq(json)
         user.arguments_to_save[:args].should eq([raw_json])
@@ -1135,7 +1137,7 @@ describe Jennifer::Model::Mapping do
       end
 
       it "includes non autoincrementable primary field" do
-        r = NoteWithManualId.new({ id: 12, text: "test" }).arguments_to_insert
+        r = NoteWithManualId.new({id: 12, text: "test"}).arguments_to_insert
         r[:args].should match_array(db_array(12, "test", nil, nil))
         r[:fields].should match_array(%w(id text created_at updated_at))
       end
@@ -1143,7 +1145,7 @@ describe Jennifer::Model::Mapping do
       it "uses attributes before typecast" do
         raw_json = %({"asd":1})
         json = JSON.parse(raw_json)
-        user = UserWithConverter.new({ name: json })
+        user = UserWithConverter.new({name: json})
         user.name.should eq(json)
         user.arguments_to_insert[:args].should eq([raw_json])
       end

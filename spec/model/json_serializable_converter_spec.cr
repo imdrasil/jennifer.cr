@@ -19,10 +19,10 @@ class AddressWithSerializable < Jennifer::Model::Base
   with_timestamps
 
   mapping({
-    id: Primary32,
-    details: { type: Location?, converter: Jennifer::Model::JSONSerializableConverter(Location) },
+    id:         Primary32,
+    details:    {type: Location?, converter: Jennifer::Model::JSONSerializableConverter(Location)},
     created_at: Time?,
-    updated_at: Time?
+    updated_at: Time?,
   }, false)
 end
 
@@ -53,20 +53,20 @@ describe Jennifer::Model::JSONSerializableConverter do
 
   it "is accepted by hash constructor" do
     location = Location.new(22.0, 30.0)
-    record = AddressWithSerializable.new({ "details" => location })
+    record = AddressWithSerializable.new({"details" => location})
     record.details!.latitude.should eq(22.0)
   end
 
   describe ".from_hash" do
     it "accepts string value" do
       data = {latitude: 32.0, longitude: 24.5}
-      Jennifer::Model::JSONSerializableConverter(Location).from_hash({ "value" => data.to_json }, "value", {name: "value"})
+      Jennifer::Model::JSONSerializableConverter(Location).from_hash({"value" => data.to_json}, "value", {name: "value"})
         .should eq(Location.new(32.0, 24.5))
     end
 
     it "accepts JSON::Any value" do
       data = {latitude: 32.0, longitude: 24.5}
-      Jennifer::Model::JSONSerializableConverter(Location).from_hash({ "value" => JSON.parse(data.to_json) }, "value", {name: "value"})
+      Jennifer::Model::JSONSerializableConverter(Location).from_hash({"value" => JSON.parse(data.to_json)}, "value", {name: "value"})
         .should eq(Location.new(32.0, 24.5))
     end
   end

@@ -12,8 +12,8 @@ module Jennifer::Model
   # class Order < Jennifer::Model::Base
   #   mapping(
   #     id: Primary32,
-  #     total: { type: BigDecimal?, converter: Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2 }
   #     # for MySQL use Float64
+  #     total: {type: BigDecimal?, converter: Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2}
   #   )
   # end
   # ```

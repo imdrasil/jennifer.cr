@@ -24,21 +24,21 @@ module Jennifer
 
         :decimal => "decimal", # Float64
 
-        :string     => "varchar",
-        :varchar    => "varchar",
-        :text       => "text",
+        :string  => "varchar",
+        :varchar => "varchar",
+        :text    => "text",
 
         :timestamp => "datetime", # "timestamp",
         :date_time => "datetime",
-        :date => "date",
+        :date      => "date",
 
         :blob => "blob",
         :json => "json",
       }
 
       DEFAULT_SIZES = {
-        :string => 254,
-        :varchar => 254
+        :string  => 254,
+        :varchar => 254,
       }
 
       # NOTE: ATM is not used
@@ -177,7 +177,7 @@ module Jennifer
               WHERE SCHEMA_NAME = ?
             )
           SQL
-          config.db
+            config.db
         end == 1
       end
 

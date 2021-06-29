@@ -10,7 +10,7 @@ module Jennifer::Model
   # class Post < Jennifer::Model::Base
   #   mapping(
   #     # ...
-  #     category: { type: Category, converter: Jennifer::Model::EnumConverter(Category) }
+  #     category: {type: Category, converter: Jennifer::Model::EnumConverter(Category)}
   #   )
   # end
   # ```
@@ -26,7 +26,7 @@ module Jennifer::Model
       value.to_s
     end
 
-    def self.to_db(value : Nil, options): Nil
+    def self.to_db(value : Nil, options) : Nil
     end
 
     def self.from_hash(hash : Hash, column, options)

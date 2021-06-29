@@ -67,7 +67,7 @@ Also relative modification allowed as well:
 # UPDATE contacts SET age = contacts.age + 2 WHERE contacts.id = 12
 Contact.where { _id == 12 }.increment(age: 2)
 # or
-Contact.where { _id == 12 }.update { { :age => _age + 12 } }
+Contact.where { _id == 12 }.update { {:age => _age + 12} }
 ```
 
 #### Destroy
@@ -85,9 +85,8 @@ To stop deleting from a callback just add some error:
 
 ```crystal
 class MyModel < Jennifer::Model::Base
-  mapping(
-  # ...
-  )
+  # mapping
+
   before_destroy :check
 
   def check

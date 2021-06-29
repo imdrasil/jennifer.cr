@@ -623,8 +623,8 @@ describe Jennifer::Model::Base do
   end
 
   describe "::import" do
-    argument_regex = db_specific(mysql: -> { /\(\?/ }, postgres: -> { /\(\$\d/ })
-    amount = db_specific(mysql: -> { 4096 }, postgres: -> { 3641 })
+    argument_regex = db_specific(mysql: ->{ /\(\?/ }, postgres: ->{ /\(\$\d/ })
+    amount = db_specific(mysql: ->{ 4096 }, postgres: ->{ 3641 })
 
     context "with autoincrementable primary key" do
       context "when count of fields doesn't exceed limit" do
@@ -789,15 +789,15 @@ describe Jennifer::Model::Base do
   describe "#inspect" do
     it do
       address = Factory.build_address
-      address.inspect.should eq("#<Address:0x#{address.object_id.to_s(16)} id: nil, main: false, street: \"#{address.street}\","\
-        " contact_id: nil, details: nil, created_at: nil, updated_at: nil>")
+      address.inspect.should eq("#<Address:0x#{address.object_id.to_s(16)} id: nil, main: false, street: \"#{address.street}\"," \
+                                " contact_id: nil, details: nil, created_at: nil, updated_at: nil>")
     end
 
     it do
       profile = Factory.build_facebook_profile
-      profile.inspect.should eq("#<FacebookProfile:0x#{profile.object_id.to_s(16)} uid: \"1234\", "\
-        "virtual_child_field: nil, id: nil, login: \"some_login\", "\
-        "contact_id: nil, type: \"FacebookProfile\", virtual_parent_field: nil>")
+      profile.inspect.should eq("#<FacebookProfile:0x#{profile.object_id.to_s(16)} uid: \"1234\", " \
+                                "virtual_child_field: nil, id: nil, login: \"some_login\", " \
+                                "contact_id: nil, type: \"FacebookProfile\", virtual_parent_field: nil>")
     end
   end
 
@@ -817,14 +817,14 @@ describe Jennifer::Model::Base do
     it "works with all possible column types" do
       AllTypeModel.new.to_json.should eq(
         db_specific(
-          mysql: -> do
+          mysql: ->do
             <<-JSON
             {"id":null,"bool_f":null,"bigint_f":null,"integer_f":null,"short_f":null,"float_f":null,
             "double_f":null,"string_f":null,"varchar_f":null,"text_f":null,"timestamp_f":null,
             "date_time_f":null,"date_f":null,"json_f":null,"tinyint_f":null,"decimal_f":null,"blob_f":null}
             JSON
           end,
-          postgres: -> do
+          postgres: ->do
             <<-JSON
             {"id":null,"bool_f":null,"bigint_f":null,"integer_f":null,"short_f":null,"float_f":null,
             "double_f":null,"string_f":null,"varchar_f":null,"text_f":null,"timestamp_f":null,

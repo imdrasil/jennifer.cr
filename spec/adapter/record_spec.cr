@@ -72,31 +72,31 @@ describe Jennifer::Record do
     it "includes all fields by default" do
       record = get_record
       target_hash = db_specific(
-        mysql: -> do
+        mysql: ->do
           {
-            :id => record.id,
-            :name => record.name,
-            :age => record.age,
-            :ballance => nil,
-            :gender => record.gender,
-            :created_at => record.created_at,
-            :updated_at => record.updated_at,
+            :id          => record.id,
+            :name        => record.name,
+            :age         => record.age,
+            :ballance    => nil,
+            :gender      => record.gender,
+            :created_at  => record.created_at,
+            :updated_at  => record.updated_at,
             :description => nil,
-            :user_id => nil
+            :user_id     => nil,
           }
         end,
-        postgres: -> do
+        postgres: ->do
           {
-            :id => record.id,
-            :name => record.name,
-            :age => record.age,
-            :tags => nil,
-            :ballance => nil,
-            :gender => record.gender,
-            :created_at => record.created_at,
-            :updated_at => record.updated_at,
+            :id          => record.id,
+            :name        => record.name,
+            :age         => record.age,
+            :tags        => nil,
+            :ballance    => nil,
+            :gender      => record.gender,
+            :created_at  => record.created_at,
+            :updated_at  => record.updated_at,
             :description => nil,
-            :user_id => nil
+            :user_id     => nil,
           }
         end
       )
@@ -111,29 +111,29 @@ describe Jennifer::Record do
     it "allows to specify *except* argument solely" do
       record = get_record
       target_hash = db_specific(
-        mysql: -> do
+        mysql: ->do
           {
-            :name => record.name,
-            :age => record.age,
-            :ballance => nil,
-            :gender => record.gender,
-            :created_at => record.created_at,
-            :updated_at => record.updated_at,
+            :name        => record.name,
+            :age         => record.age,
+            :ballance    => nil,
+            :gender      => record.gender,
+            :created_at  => record.created_at,
+            :updated_at  => record.updated_at,
             :description => nil,
-            :user_id => nil
+            :user_id     => nil,
           }
         end,
-        postgres: -> do
+        postgres: ->do
           {
-            :name => record.name,
-            :age => record.age,
-            :tags => nil,
-            :ballance => nil,
-            :gender => record.gender,
-            :created_at => record.created_at,
-            :updated_at => record.updated_at,
+            :name        => record.name,
+            :age         => record.age,
+            :tags        => nil,
+            :ballance    => nil,
+            :gender      => record.gender,
+            :created_at  => record.created_at,
+            :updated_at  => record.updated_at,
             :description => nil,
-            :user_id => nil
+            :user_id     => nil,
           }
         end
       )
@@ -145,33 +145,33 @@ describe Jennifer::Record do
         executed = false
         record = get_record
         target_hash = db_specific(
-          mysql: -> do
+          mysql: ->do
             {
-              :id => record.id,
-              :name => record.name,
-              :age => record.age,
-              :ballance => nil,
-              :gender => record.gender,
-              :created_at => record.created_at,
-              :updated_at => record.updated_at,
+              :id          => record.id,
+              :name        => record.name,
+              :age         => record.age,
+              :ballance    => nil,
+              :gender      => record.gender,
+              :created_at  => record.created_at,
+              :updated_at  => record.updated_at,
               :description => nil,
-              :user_id => nil,
-              :custom => "value"
+              :user_id     => nil,
+              :custom      => "value",
             }
           end,
-          postgres: -> do
+          postgres: ->do
             {
-              :id => record.id,
-              :name => record.name,
-              :age => record.age,
-              :tags => nil,
-              :ballance => nil,
-              :gender => record.gender,
-              :created_at => record.created_at,
-              :updated_at => record.updated_at,
+              :id          => record.id,
+              :name        => record.name,
+              :age         => record.age,
+              :tags        => nil,
+              :ballance    => nil,
+              :gender      => record.gender,
+              :created_at  => record.created_at,
+              :updated_at  => record.updated_at,
               :description => nil,
-              :user_id => nil,
-              :custom => "value"
+              :user_id     => nil,
+              :custom      => "value",
             }
           end
         )
@@ -193,31 +193,31 @@ describe Jennifer::Record do
       it "respects :except option" do
         record = get_record
         target_hash = db_specific(
-          mysql: -> do
+          mysql: ->do
             {
-              :name => record.name,
-              :age => record.age,
-              :ballance => nil,
-              :gender => record.gender,
-              :created_at => record.created_at,
-              :updated_at => record.updated_at,
+              :name        => record.name,
+              :age         => record.age,
+              :ballance    => nil,
+              :gender      => record.gender,
+              :created_at  => record.created_at,
+              :updated_at  => record.updated_at,
               :description => nil,
-              :user_id => nil,
-              :custom => "value"
+              :user_id     => nil,
+              :custom      => "value",
             }
           end,
-          postgres: -> do
+          postgres: ->do
             {
-              :name => record.name,
-              :age => record.age,
-              :tags => nil,
-              :ballance => nil,
-              :gender => record.gender,
-              :created_at => record.created_at,
-              :updated_at => record.updated_at,
+              :name        => record.name,
+              :age         => record.age,
+              :tags        => nil,
+              :ballance    => nil,
+              :gender      => record.gender,
+              :created_at  => record.created_at,
+              :updated_at  => record.updated_at,
               :description => nil,
-              :user_id => nil,
-              :custom => "value"
+              :user_id     => nil,
+              :custom      => "value",
             }
           end
         )

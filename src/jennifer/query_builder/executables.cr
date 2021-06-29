@@ -136,7 +136,7 @@ module Jennifer
       # Ignores any model callbacks.
       #
       # ```
-      # Jennifer::Query["contacts"].insert({ name: "John", age: 60 })
+      # Jennifer::Query["contacts"].insert({name: "John", age: 60})
       # ```
       def insert(options : Hash(String | Symbol, DBAny) | NamedTuple)
         return if do_nothing? || options.empty?
@@ -154,7 +154,7 @@ module Jennifer
       # is `[] of String`.
       #
       # ```
-      # Jennifer::Query["orders"].insert({ :name => "Order 1", :uid => 123 })
+      # Jennifer::Query["orders"].insert({:name => "Order 1", :uid => 123})
       # # the first record will be skipped
       # Jennifer::Query["orders"].upsert(%w(name uid), [["Order 1", 123], ["Order 2", 321]], %w(uid))
       # ```
@@ -171,10 +171,10 @@ module Jennifer
       # is `[] of String`.
       #
       # ```
-      # Jennifer::Query["orders"].insert({ :name => "Order 1", :uid => 123, :value => 2 })
+      # Jennifer::Query["orders"].insert({:name => "Order 1", :uid => 123, :value => 2})
       # # the first record will be skipped
       # Jennifer::Query["orders"].upsert(%w(name uid value), [["Order 1", 123, 3], ["Order 2", 321, 4]], %w(uid)) do
-      #   { :value => values(:value) + _value }
+      #   {:value => values(:value) + _value}
       # end
       # ```
       def upsert(fields : Array(String), values : Array(Array(DBAny)), unique_fields : Array, &block)
@@ -189,7 +189,7 @@ module Jennifer
       # Expects block to return `Hash(Symbol, DBAny | Jennifer::QueryBuilder::Statement)`.
       #
       # ```
-      # Contact.all.where { and(_name == "Jon", age > 100) }.update { { :name => "John", :age => _age - 15 } }
+      # Contact.all.where { and(_name == "Jon", age > 100) }.update { {:name => "John", :age => _age - 15} }
       # ```
       def update
         definition = (with @expression yield)
@@ -201,7 +201,7 @@ module Jennifer
       # Updates records with given *options*.
       #
       # ```
-      # Contact.all.where { and(_name == "Jon", age > 100) }.update({ :name => "John", :age => 40 })
+      # Contact.all.where { and(_name == "Jon", age > 100) }.update({:name => "John", :age => 40})
       # ```
       def update(options : Hash)
         return DB::ExecResult.new(0i64, 0i64) if do_nothing?
@@ -221,7 +221,7 @@ module Jennifer
       # Increments specified fields by given value.
       #
       # ```
-      # Contact.all.increment({ :likes => 1 })
+      # Contact.all.increment({:likes => 1})
       # ```
       #
       # No validation or callback is invoked.
@@ -350,7 +350,7 @@ module Jennifer
         request = clone.reorder(primary_key.order(direction)).limit(batch_size)
         records = start ? request.clone.where { primary_key >= start }.to_a : request.to_a
 
-        while records.any?
+        while !records.empty?
           records_size = records.size
           primary_key_offset = records.last.attribute(primary_key.field)
           yield records
@@ -365,13 +365,13 @@ module Jennifer
           Config.logger.warn { "#find_in_batches is invoked with already ordered query - it will be reordered" }
         end
         Config.logger.warn do
-          "#find_in_batches methods was invoked without passing primary_key key field name which may results in "\
+          "#find_in_batches methods was invoked without passing primary_key key field name which may results in " \
           "incorrect records extraction; 'start' argument was realized as page number."
         end
         request = clone.reorder.limit(batch_size)
 
         records = request.offset(start * batch_size).to_a
-        while records.any?
+        while !records.empty?
           records_size = records.size
           yield records
           break if records_size < batch_size

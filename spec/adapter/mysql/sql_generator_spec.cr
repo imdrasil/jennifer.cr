@@ -80,7 +80,7 @@ mysql_only do
         it "is raises exception on '\\'" do
           executed = false
           expect_raises(ArgumentError) do
-            value = JSON::Any.from_json({ %(this has a \\) => 1}.to_json)
+            value = JSON::Any.from_json({ %(this has a \\) => 1 }.to_json)
             described_class.quote(value)
           end
         end
@@ -88,13 +88,13 @@ mysql_only do
         it "is raises exception on '\"'" do
           executed = false
           expect_raises(ArgumentError) do
-            value = JSON::Any.from_json({ %(this) => { "b" => [%(what your "name")]}}.to_json)
+            value = JSON::Any.from_json({ %(this) => {"b" => [%(what your "name")]} }.to_json)
             described_class.quote(value)
           end
         end
 
-        quote_example(JSON::Any.from_json({ "asd" => { "asd" => [1, 2, 3], "b" => ["asd"]}}.to_json), "json")
-        quote_example(JSON::Any.from_json({ %(this) => { "b" => [%(what's your name)]}}.to_json), "json")
+        quote_example(JSON::Any.from_json({"asd" => {"asd" => [1, 2, 3], "b" => ["asd"]}}.to_json), "json")
+        quote_example(JSON::Any.from_json({ %(this) => {"b" => [%(what's your name)]} }.to_json), "json")
       end
 
       it "correctly escapes blob" do

@@ -3,10 +3,10 @@ module Jennifer::Model
   #
   # Converts time to `Jennifer::Config.local_time_zone`.
   class TimeZoneConverter
-    DATE_FORMAT = "%F"
-    TIME_FORMAT = "%H:%M"
+    DATE_FORMAT      = "%F"
+    TIME_FORMAT      = "%H:%M"
     DATE_TIME_FORMAT = "#{DATE_FORMAT} %T"
-    TIME_REGEXP = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/
+    TIME_REGEXP      = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/
 
     def self.from_db(pull, options)
       value = pull.read(options[:null] ? Time? : Time)

@@ -98,7 +98,7 @@ module Jennifer
       end
 
       def self.quote(value : String)
-        "\'" + value.gsub(Jennifer::Adapter::Quoting::STRING_QUOTING_PATTERNS) + "'"
+        "'" + value.gsub(Jennifer::Adapter::Quoting::STRING_QUOTING_PATTERNS) + "'"
       end
     end
   end

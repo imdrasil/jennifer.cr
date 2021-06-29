@@ -1,6 +1,6 @@
 describe Jennifer::QueryBuilder::MultiQueryRelationTree do
   query = Contact.all
-  builder = -> { Jennifer::QueryBuilder::MultiQueryRelationTree.new(Contact) }
+  builder = ->{ Jennifer::QueryBuilder::MultiQueryRelationTree.new(Contact) }
 
   describe "#add_relation" do
     context "with defined query, relation, klass and index" do
@@ -33,19 +33,19 @@ describe Jennifer::QueryBuilder::MultiQueryRelationTree do
     end
 
     context "with has_many nested relation" do
-      pending "currently tested by ModelQuery#includes" {}
+      pending "currently tested by ModelQuery#includes"
     end
 
     context "with has_and_belongs_to_many nested relation" do
-      pending "currently tested by ModelQuery#includes" {}
+      pending "currently tested by ModelQuery#includes"
     end
 
     context "with belongs_to nested relation" do
-      pending "currently tested by ModelQuery#includes" {}
+      pending "currently tested by ModelQuery#includes"
     end
 
     context "with has_one nested relation" do
-      pending "currently tested by ModelQuery#includes" {}
+      pending "currently tested by ModelQuery#includes"
     end
   end
 end

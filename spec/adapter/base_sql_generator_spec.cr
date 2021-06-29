@@ -78,12 +78,12 @@ describe Jennifer::Adapter::BaseSQLGenerator do
 
   describe ".body_section" do
     s = Contact.where { _age == 1 }
-               .join(Contact) { _age == Contact._age }
-               .order(age: :desc)
-               .limit(1)
-               .having { _age > 1 }
-               .group(:age)
-               .lock
+      .join(Contact) { _age == Contact._age }
+      .order(age: :desc)
+      .limit(1)
+      .having { _age > 1 }
+      .group(:age)
+      .lock
     # TODO: rewrite to match text instead of methods calls
     body_section = sb { |io| described_class.body_section(io, s) }
     join_clause = sb { |io| described_class.join_clause(io, s) }
@@ -322,15 +322,15 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     context "with multiple expressions" do
       it do
         query = Jennifer::Query["contacts"].with("test", Contact.all).with("test 2", Contact.all)
-        expected_sql = "WITH test AS (SELECT contacts.* FROM contacts ) , "\
-          "test 2 AS (SELECT contacts.* FROM contacts ) "
+        expected_sql = "WITH test AS (SELECT contacts.* FROM contacts ) , " \
+                       "test 2 AS (SELECT contacts.* FROM contacts ) "
         sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
       end
 
       it "hoists the RECURSIVE keyword to the query beginning" do
         query = Jennifer::Query["contacts"].with("test", Contact.all).with("test 2", Contact.all, true)
-        expected_sql = "WITH RECURSIVE test AS (SELECT contacts.* FROM contacts ) , "\
-          "test 2 AS (SELECT contacts.* FROM contacts ) "
+        expected_sql = "WITH RECURSIVE test AS (SELECT contacts.* FROM contacts ) , " \
+                       "test 2 AS (SELECT contacts.* FROM contacts ) "
         sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
       end
     end

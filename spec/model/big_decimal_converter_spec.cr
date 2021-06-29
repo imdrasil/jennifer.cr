@@ -42,13 +42,13 @@ describe Jennifer::Model::BigDecimalConverter do
     postgres_only do
       it "converts numeric" do
         balance = PG::Numeric.new(2i16, 0i16, 0i16, 2i16, [1234i16, 6800i16])
-        described_class.from_hash({ "ballance" => balance }, "ballance", {name: "ballance", scale: 2})
+        described_class.from_hash({"ballance" => balance}, "ballance", {name: "ballance", scale: 2})
           .should eq(BigDecimal.new(123468, 2))
       end
     end
 
     it "accepts nil value" do
-      described_class.from_hash({ "ballance" => nil }, "ballance", {name: "ballance", scale: 2}).should be_nil
+      described_class.from_hash({"ballance" => nil}, "ballance", {name: "ballance", scale: 2}).should be_nil
     end
   end
 end

@@ -241,7 +241,7 @@ end
 
 class Note < Jennifer::Model::Base
   mapping(
-    category: { type: Category?, converter: Jennifer::Model::EnumConverter(Category) }
+    category: {type: Category?, converter: Jennifer::Model::EnumConverter(Category)}
   )
 end
 ```
@@ -309,7 +309,7 @@ class Post < Jennifer::Model::Base
   mapping(
     id: Primary32,
     # or even with full definition
-    pk: { type: Primary32, primary: false, virtual: true }
+    pk: {type: Primary32, primary: false, virtual: true}
   )
 end
 ```
@@ -321,8 +321,8 @@ To defined your own type define it such a way it may be lexically accessible fro
 ```crystal
 class ApplicationRecord < Jennifer::Model::Base
   EmptyString = {
-    type: String,
-    default: ""
+    type:    String,
+    default: "",
   }
 
   {% TYPES << "EmptyString" %}
@@ -348,8 +348,8 @@ class User < Jennifer::Model::Base
   mapping(
     id: Primary32,
     password_hash: String,
-    password: { type: String?, virtual: true },
-    password_confirmation: { type: String?, virtual: true }
+    password: {type: String?, virtual: true},
+    password_confirmation: {type: String?, virtual: true}
   )
 
   validate_confirmation :password

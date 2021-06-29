@@ -1,5 +1,5 @@
 describe Jennifer::QueryBuilder::NestedRelationTree do
-  builder = -> { Jennifer::QueryBuilder::NestedRelationTree.new(Contact) }
+  builder = ->{ Jennifer::QueryBuilder::NestedRelationTree.new(Contact) }
 
   describe "#add_relation" do
     context "with defined query, relation, klass and index" do
@@ -15,7 +15,7 @@ describe Jennifer::QueryBuilder::NestedRelationTree do
 
   describe "#select_fields" do
     context "with table alias" do
-      pending "add" {}
+      pending "add"
     end
 
     it do
@@ -28,6 +28,6 @@ describe Jennifer::QueryBuilder::NestedRelationTree do
   end
 
   describe "#read" do
-    pending "currently tested by ModelQuery#eager_load" {}
+    pending "currently tested by ModelQuery#eager_load"
   end
 end

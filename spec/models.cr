@@ -63,8 +63,8 @@ abstract class ApplicationRecord < Jennifer::Model::Base
   end
 
   EmptyString = {
-    type: String,
-    default: ""
+    type:    String,
+    default: "",
   }
 
   {% TYPES << "EmptyString" %}
@@ -77,9 +77,9 @@ class User < ApplicationRecord
     id: Primary32,
     name: String?,
     password_digest: EmptyString,
-    email: { type: EmptyString },
+    email: {type: EmptyString},
     password: Password,
-    password_confirmation: { type: String?, virtual: true }
+    password_confirmation: {type: String?, virtual: true}
   )
 
   with_authentication
@@ -100,28 +100,28 @@ class Contact < ApplicationRecord
 
     {% if env("DB") == "postgres" || env("DB") == nil %}
       mapping(
-        id:          Primary32,
-        name:        String,
-        ballance:    PG::Numeric?,
-        age:         {type: Int32, default: 10},
-        gender:      {type: String?, default: "male", converter: Jennifer::Model::PgEnumConverter},
+        id: Primary32,
+        name: String,
+        ballance: PG::Numeric?,
+        age: {type: Int32, default: 10},
+        gender: {type: String?, default: "male", converter: Jennifer::Model::PgEnumConverter},
         description: String?,
-        created_at:  Time?,
-        updated_at:  Time?,
-        user_id:     Int32?,
-        tags:        { type: Array(Int32)? }
+        created_at: Time?,
+        updated_at: Time?,
+        user_id: Int32?,
+        tags: {type: Array(Int32)?}
       )
     {% else %}
       mapping(
-        id:          Primary32,
-        name:        String,
-        ballance:    Float64?,
-        age:         {type: Int32, default: 10},
-        gender:      {type: String?, default: "male"},
+        id: Primary32,
+        name: String,
+        ballance: Float64?,
+        age: {type: Int32, default: 10},
+        gender: {type: String?, default: "male"},
         description: String?,
-        created_at:  Time?,
-        updated_at:  Time?,
-        user_id:     Int32?
+        created_at: Time?,
+        updated_at: Time?,
+        user_id: Int32?
       )
     {% end %}
   end
@@ -135,7 +135,7 @@ class Contact < ApplicationRecord
   has_many :facebook_profiles, FacebookProfile, inverse_of: :contact
   has_and_belongs_to_many :countries, Country
   has_and_belongs_to_many :facebook_many_profiles, FacebookProfile, association_foreign: :profile_id
-  has_one :main_address, Address, { where { _main } }, inverse_of: :contact
+  has_one :main_address, Address, {where { _main }}, inverse_of: :contact
   has_one :passport, Passport, inverse_of: :contact
   belongs_to :user, User
 
@@ -340,7 +340,7 @@ class Note < ApplicationRecord
 
   include Mapping
 
-  belongs_to :notable, Union(User | Contact), { where { _name.like("%on") } }, polymorphic: true
+  belongs_to :notable, Union(User | Contact), {where { _name.like("%on") }}, polymorphic: true
 end
 
 class OneFieldModel < Jennifer::Model::Base
@@ -358,7 +358,7 @@ class AllTypeModel < ApplicationRecord
         decimal_f: PG::Numeric?,
         oid_f: UInt32?,
         char_f: String?,
-        uuid_f: String?,
+        uuid_f: UUID?,
         timestamptz_f: Time?,
         bytea_f: Bytes?,
         jsonb_f: JSON::Any?,
@@ -420,48 +420,48 @@ end
 
 class Author < Jennifer::Model::Base
   mapping({
-    id:         Primary32,
-    name1:      { type: String, column: :first_name },
-    name2:      { type: String, column: :last_name }
+    id:    Primary32,
+    name1: {type: String, column: :first_name},
+    name2: {type: String, column: :last_name},
   })
 end
 
 class Publication < Jennifer::Model::Base
   {% if env("DB") == "postgres" || env("DB") == nil %}
     mapping(
-      id:         Primary32,
-      name:       { type: String, column: :title },
-      version:    Int32,
-      publisher:  String,
-      type:       { type: String, converter: Jennifer::Model::PgEnumConverter }
+      id: Primary32,
+      name: {type: String, column: :title},
+      version: Int32,
+      publisher: String,
+      type: {type: String, converter: Jennifer::Model::PgEnumConverter}
     )
   {% else %}
     mapping(
-      id:         Primary32,
-      name:       { type: String, column: :title },
-      version:    Int32,
-      publisher:  String,
-      type:       String
+      id: Primary32,
+      name: {type: String, column: :title},
+      version: Int32,
+      publisher: String,
+      type: String
     )
   {% end %}
 end
 
 class Book < Publication
   mapping({
-    pages:      Int32?
+    pages: Int32?,
   })
 end
 
 class Article < Publication
   mapping({
-    size:       { type: Int32?, column: :pages }
+    size: {type: Int32?, column: :pages},
   })
 end
 
 class BlogPost < Publication
   mapping({
     url:        String?,
-    created_at:    {type: Time?, virtual: true, column: :created}
+    created_at: {type: Time?, virtual: true, column: :created},
   })
 end
 
@@ -635,8 +635,8 @@ end
     table_name "contacts"
 
     mapping({
-      id: Primary32,
-      ballance: { type: Float64?, converter: Jennifer::Model::NumericToFloat64Converter }
+      id:       Primary32,
+      ballance: {type: Float64?, converter: Jennifer::Model::NumericToFloat64Converter},
     }, false)
   end
 {% end %}
@@ -644,7 +644,7 @@ end
 class CountryWithDefault < Jennifer::Model::Base
   mapping(
     id: Primary32,
-    virtual: { type: Bool, default: true, virtual: true },
+    virtual: {type: Bool, default: true, virtual: true},
     name: String?
   )
 end
@@ -681,6 +681,7 @@ class FacebookProfileWithDestroyNotable < Jennifer::Model::Base
     }, false)
     end
   end
+
   include Mapping
 
   table_name "profiles"
@@ -712,8 +713,8 @@ class AddressWithNilableBool < Jennifer::Model::Base
   with_timestamps
 
   mapping({
-    id: {type: Int32, primary: true},
-    main: Bool?
+    id:   {type: Int32, primary: true},
+    main: Bool?,
   }, false)
 end
 
@@ -722,8 +723,8 @@ class NoteWithManualId < Jennifer::Model::Base
   with_timestamps
 
   mapping(
-    id: { type: Primary32, auto: false },
-    text: { type: String? },
+    id: {type: Primary32, auto: false},
+    text: {type: String?},
     created_at: Time?,
     updated_at: Time?
   )
@@ -750,8 +751,8 @@ class PolymorphicNoteWithConverter < Jennifer::Model::Base
 
   mapping(
     id: Primary32,
-    notable_id: { type: String, converter: InspectConverter(Int32) },
-    notable_type: { type: String, converter: InspectConverter(String) }
+    notable_id: {type: String, converter: InspectConverter(Int32)},
+    notable_type: {type: String, converter: InspectConverter(String)}
   )
 
   belongs_to :notable, Union(::User | ContactForPolymorphicNote), polymorphic: true

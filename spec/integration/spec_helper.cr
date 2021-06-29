@@ -2,7 +2,7 @@ require "spec"
 require "../support/matchers"
 
 POSTGRES_DB = "postgres"
-MYSQL_DB = "mysql"
+MYSQL_DB    = "mysql"
 
 def execute(command, options)
   io = IO::Memory.new
@@ -30,7 +30,7 @@ end
 
 class DatabaseSeeder
   def self.default_interface
-    db_specific(mysql: -> { :docker }, postgres: -> { :bash })
+    db_specific(mysql: ->{ :docker }, postgres: ->{ :bash })
   end
 
   def self.drop(type = default_interface)

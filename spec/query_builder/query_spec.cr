@@ -477,7 +477,7 @@ describe Jennifer::QueryBuilder::Query do
         it "updates nothing" do
           expect_query_silence do
             block_is_executed = false
-            Query["contacts"].none.update { block_is_executed = true; { :age => _age + 10 } }
+            Query["contacts"].none.update { block_is_executed = true; {:age => _age + 10} }
             block_is_executed.should be_true
           end
         end
@@ -486,7 +486,7 @@ describe Jennifer::QueryBuilder::Query do
       context "when arguments is passed as hash" do
         it "updates nothing" do
           expect_query_silence do
-            Query["contacts"].none.update({ :age => 40 })
+            Query["contacts"].none.update({:age => 40})
           end
         end
       end

@@ -12,7 +12,7 @@ module Micrate
        .select { |name| File.file?(File.join(migrations_dir, name)) }
        .select { |name| /^\d+_.+\.sql$/ =~ name }
        .map { |name| Migration.from_file(name) }
-       .index_by { |migration| migration.version }
+       .index_by(&.version)
   end
 end
 

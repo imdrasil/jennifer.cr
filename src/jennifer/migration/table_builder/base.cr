@@ -42,7 +42,7 @@ module Jennifer
             raise ArgumentError.new("Both type and sql_type can't be blank")
           end
 
-          Ifrit.sym_hash_cast(options, AAllowedTypes).merge({ :type => type } of Symbol => AAllowedTypes)
+          Ifrit.sym_hash_cast(options, AAllowedTypes).merge({:type => type} of Symbol => AAllowedTypes)
         end
       end
     end

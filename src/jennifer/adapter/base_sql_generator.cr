@@ -308,8 +308,10 @@ module Jennifer
       end
 
       def self.parse_query(query : String, args : Array(DBAny))
-        args.each_with_index do |arg, i|
-          args[i] = arg.as(Time).to_utc if arg.is_a?(Time)
+        if Config.time_zone_aware_attributes
+          args.each_with_index do |arg, i|
+            args[i] = arg.to_utc if arg.is_a?(Time) && !arg.utc?
+          end
         end
         {query % Array.new(args.size, "?"), args}
       end

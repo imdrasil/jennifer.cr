@@ -81,6 +81,7 @@ Take into account - some configs can't be initialized using URI or yaml file but
 | `migration_failure_handler_method` | ✔ | ❌ |
 | `allow_outdated_pending_migration` | ✔ | ❌ |
 | `max_bind_vars_count` | ✔ | ❌ |
+| `time_zone_aware_attributes` | ✔ | ❌ |
 
 ## Supported configuration options
 
@@ -112,6 +113,7 @@ Take into account - some configs can't be initialized using URI or yaml file but
 * `model_files_path` - path to the models locations; is used by model and migration generators; default: `"./src/models"`
 * `structure_folder` - path to the database structure file location; if set to empty string - parent folder of `migration_files_path` is used; default: `""`
 * `max_bind_vars_count` - maximum allowed count of bind variables; if nothing specified - used adapter's default value; default: `nil`
+* `time_zone_aware_attributes` - whether Jennifer should convert time objects to UTC and back to application time zone when store/load them from a database; default: `true`
 
 ## Logging
 

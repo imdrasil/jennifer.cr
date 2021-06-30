@@ -23,5 +23,9 @@ module Jennifer::Model
         value
       end
     end
+
+    def self.coerce(value : String, _options) : JSON::Any?
+      JSON.parse(value) unless value.empty?
+    end
   end
 end

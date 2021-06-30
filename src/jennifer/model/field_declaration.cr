@@ -10,8 +10,11 @@ module Jennifer::Model
 
         # :nodoc:
         def self.coerce_{{key.id}}(_{{key.id}} : String)
-          coercer
-            .coerce(_{{key.id}}, {{value[:parsed_type].id}})
+          {% if value[:converter] && value[:converter].resolve.class.has_method?(:coerce) %}
+            {{value[:converter]}}.coerce(_{{key.id}}, columns_tuple[:{{key.id}}])
+          {% else %}
+            coercer.coerce(_{{key.id}}, {{value[:parsed_type].id}})
+          {% end %}
             {% if !value[:null] %}.not_nil!{% end %}
         end
 

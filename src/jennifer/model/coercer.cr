@@ -51,19 +51,6 @@ module Jennifer::Model
       value == "true" || value == "1" || value == "t"
     end
 
-    def self.coerce(value : String, type : (JSON::Any?).class)
-      return nil if value.empty?
-
-      JSON.parse(value)
-    end
-
-    def self.coerce(value : String, type : (Time?).class)
-      return nil if value.empty?
-
-      format = value =~ / / ? DATE_TIME_FORMAT : DATE_FORMAT
-      Time.parse(value, format, Config.local_time_zone)
-    end
-
     def self.coerce(value : String, type : (BigDecimal?).class)
       return if value.empty?
 

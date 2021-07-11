@@ -10,6 +10,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        linter: [false]
+        mt: [false]
+        pair: [false]
+        crystal_version: [1.0.0]
         include:
           - DB: mysql
             other: INTEGRATION=1
@@ -35,6 +39,10 @@ jobs:
             db_user: root
             db_password:
             other: PAIR_DB_USER=dbuser PAIR_DB_PASSWORD=dbpassword
+          - DB: postgres
+            db_user: dbuser
+            db_password: dbpassword
+            crystal_version: nightly
 
     runs-on: ubuntu-latest
 
@@ -50,6 +58,8 @@ jobs:
 
       - name: Install Crystal
         uses: oprypin/install-crystal@v1
+        with:
+          crystal: ${{matrix.crystal_version}}
 
       - name: Donwload sources
         uses: actions/checkout@v2

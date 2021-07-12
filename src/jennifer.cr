@@ -1,3 +1,4 @@
+require "ecr"
 require "json"
 require "yaml"
 require "log"

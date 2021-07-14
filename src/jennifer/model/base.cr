@@ -577,11 +577,16 @@ module Jennifer
         write_adapter.bulk_insert(collection)
       end
 
+      def __update_lock_version
+        self.lock_version += 1 if self.responds_to?(:lock_version)
+      end
+
       macro inherited
         ::Jennifer::Model::Validation.inherited_hook
         ::Jennifer::Model::Callback.inherited_hook
         ::Jennifer::Model::RelationDefinition.inherited_hook
 
+        before_save :__update_lock_version
         after_save :__refresh_changes
 
         # :nodoc:

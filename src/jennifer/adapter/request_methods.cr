@@ -16,6 +16,7 @@ module Jennifer
         return DB::ExecResult.new(0i64, -1i64) if opts[:args].empty?
 
         opts[:args] << obj.primary
+        opts[:args] << obj.lock_version - 1 if obj.responds_to?(:lock_version)
         exec(*parse_query(sql_generator.update(obj), opts[:args]))
       end
 

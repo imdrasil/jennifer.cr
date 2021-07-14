@@ -1196,6 +1196,7 @@ describe Jennifer::Model::Mapping do
       c.created_at.should be_nil
       c.__update_created_at
       c.created_at!.should_not be_nil
+      c.created_at_changed?.should be_true
       ((c.created_at! - Time.local).total_seconds < 1).should be_true
     end
   end
@@ -1206,6 +1207,7 @@ describe Jennifer::Model::Mapping do
       c.updated_at.should be_nil
       c.__update_updated_at
       c.updated_at!.should_not be_nil
+      c.updated_at_changed?.should be_true
       ((c.updated_at! - Time.local).total_seconds < 1).should be_true
     end
   end

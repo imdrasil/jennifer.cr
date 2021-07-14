@@ -215,7 +215,7 @@ module Jennifer
 
           # :nodoc:
           def __update_created_at
-            @created_at = Time.local(Jennifer::Config.local_time_zone)
+            self.created_at = Time.local(Jennifer::Config.local_time_zone)
           end
         {% end %}
 
@@ -224,7 +224,7 @@ module Jennifer
 
           # :nodoc:
           def __update_updated_at
-            @updated_at = Time.local(Jennifer::Config.local_time_zone)
+            self.updated_at = Time.local(Jennifer::Config.local_time_zone)
           end
         {% end %}
       end

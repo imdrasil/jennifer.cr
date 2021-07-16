@@ -1,7 +1,8 @@
 name: CI
 
 on:
-  push:
+  pull_request:
+    branches: "*"
   schedule:
     - cron: "0 7 * * 1"
 

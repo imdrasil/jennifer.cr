@@ -44,7 +44,7 @@ module Jennifer::Model
       scale = options[:scale]
       value = hash[column]
       case value
-      when T
+      when T, Float, Int
         BigDecimal.new((value.to_f64 * 10 ** scale).to_i, scale)
       else
         value

@@ -335,9 +335,15 @@ describe Jennifer::Model::Base do
         Contact.all.count.should eq(1)
       end
 
-      it "returns false if record wasn't saved" do
-        Factory.create_address.save.should be_false
+      it "returns true if record wasn't changed" do
+        Factory.create_address.save.should be_true
         Address.all.count.should eq(1)
+      end
+
+      it "returns false if record wasn't saved" do
+        record = Factory.create_address
+        record.street = "invalid"
+        record.save.should be_false
       end
 
       it "calls after_save_callback" do

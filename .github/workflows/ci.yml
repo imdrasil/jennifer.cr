@@ -1,7 +1,8 @@
 name: CI
 
 on:
-  push:
+  pull_request:
+    branches: "*"
   schedule:
     - cron: "0 7 * * 1"
 
@@ -11,30 +12,39 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - DB: mysql
+          - crystal_version: 1.1.0
+            DB: mysql
             other: INTEGRATION=1
             linter: true
             db_user: root
             db_password:
-          - DB: postgres
+          - crystal_version: 1.1.0
+            DB: postgres
             other: INTEGRATION=1
             linter: true
             db_user: dbuser
             db_password: dbpassword
-          - DB: postgres
+          - crystal_version: 1.1.0
+            DB: postgres
             mt: true
             db_user: dbuser
             db_password: dbpassword
-          - DB: postgres
+          - crystal_version: 1.1.0
+            DB: postgres
             pair: true
             db_user: dbuser
             db_password: dbpassword
             other: PAIR_DB_USER=root PAIR_DB_PASSWORD=
-          - DB: mysql
+          - crystal_version: 1.1.0
+            DB: mysql
             pair: true
             db_user: root
             db_password:
             other: PAIR_DB_USER=dbuser PAIR_DB_PASSWORD=dbpassword
+          - DB: postgres
+            db_user: dbuser
+            db_password: dbpassword
+            crystal_version: nightly
 
     runs-on: ubuntu-latest
 
@@ -50,6 +60,8 @@ jobs:
 
       - name: Install Crystal
         uses: oprypin/install-crystal@v1
+        with:
+          crystal: ${{matrix.crystal_version}}
 
       - name: Donwload sources
         uses: actions/checkout@v2

@@ -46,9 +46,15 @@ module Jennifer::Model
       case value
       when T, Float, Int
         BigDecimal.new((value.to_f64 * 10 ** scale).to_i, scale)
+      when String
+        coerce(value, options)
       else
         value
       end
+    end
+
+    def self.coerce(value : String, _options) : BigDecimal?
+      BigDecimal.new(value) unless value.empty?
     end
   end
 end

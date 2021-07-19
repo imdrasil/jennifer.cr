@@ -332,10 +332,12 @@ describe Jennifer::Model::Base do
         c.id.nil?.should be_false
         c.name = "new name"
         c.save.should be_true
+        Contact.all.count.should eq(1)
       end
 
       it "returns false if record wasn't saved" do
-        Factory.create_address.save.should be_true
+        Factory.create_address.save.should be_false
+        Address.all.count.should eq(1)
       end
 
       it "calls after_save_callback" do

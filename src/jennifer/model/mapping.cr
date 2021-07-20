@@ -196,39 +196,6 @@ module Jennifer
         alias AttrType = ::Jennifer::DBAny | {{new_props.map { |field, mapping| mapping[:parsed_type] }.join(" | ").id}}
       end
 
-      # Adds callbacks for `created_at` and `updated_at` fields.
-      #
-      # ```
-      # class MyModel < Jennifer::Model::Base
-      #   with_timestamps
-      #
-      #   mapping(
-      #     id: {type: Int32, primary: true},
-      #     created_at: {type: Time, null: true},
-      #     updated_at: {type: Time, null: true}
-      #   )
-      # end
-      # ```
-      macro with_timestamps(created_at = true, updated_at = true)
-        {% if created_at %}
-          before_save :__update_updated_at
-
-          # :nodoc:
-          def __update_created_at
-            self.created_at = Time.local(Jennifer::Config.local_time_zone)
-          end
-        {% end %}
-
-        {% if updated_at %}
-          before_create :__update_created_at
-
-          # :nodoc:
-          def __update_updated_at
-            self.updated_at = Time.local(Jennifer::Config.local_time_zone)
-          end
-        {% end %}
-      end
-
       # :nodoc:
       macro module_mapping
         __field_declaration({{COLUMNS_METADATA}}, false)

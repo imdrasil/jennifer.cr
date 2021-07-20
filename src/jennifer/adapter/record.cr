@@ -34,7 +34,7 @@ module Jennifer
       raise BaseException.new("Column '#{name}' is missing")
     end
 
-    # ditto
+    # :ditto:
     def attribute(name : Symbol)
       attribute(name.to_s)
     end

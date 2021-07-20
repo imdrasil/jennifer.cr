@@ -220,12 +220,12 @@ module Jennifer
         new(values)
       end
 
-      # ditto
+      # :ditto:
       def self.build(values : Hash(String, ::Jennifer::DBAny))
         new(values)
       end
 
-      # ditto
+      # :ditto:
       def self.build(**values)
         new(values)
       end
@@ -309,6 +309,11 @@ module Jennifer
         tree = with ac.expression_builder yield ac.expression_builder
         ac.set_tree(tree)
         ac
+      end
+
+      # :ditto:
+      def self.where(conditions : Hash(Symbol, _))
+        all.where(conditions)
       end
 
       # Starts database transaction.

@@ -229,7 +229,7 @@ module Jennifer
         where_clause(io, query.tree.not_nil!) if query.tree
       end
 
-      # ditto
+      # :ditto:
       def self.where_clause(io : String::Builder, tree)
         return unless tree
 

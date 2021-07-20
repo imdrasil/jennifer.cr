@@ -29,13 +29,9 @@ module Jennifer::Model
       {% end %}
 
       def track_timestamps_on_create
-        {% if updated_at %}
-        self.updated_at =
-        {% end %}
-        {% if created_at %}
-          self.created_at =
-        {% end %}
-            Time.local(Jennifer::Config.local_time_zone)
+        {% if updated_at %}self.updated_at ={% end %}
+        {% if created_at %}self.created_at ={% end %}
+          Time.local(Jennifer::Config.local_time_zone)
       end
     end
   end

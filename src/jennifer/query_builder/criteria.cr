@@ -67,10 +67,22 @@ module Jennifer
       end
 
       def ==(value : Symbol)
-        self.==(value.to_s)
+        equal(value.to_s)
       end
 
       def ==(value : Rightable)
+        equal(value)
+      end
+
+      def !=(value : Symbol)
+        not_equal(value.to_s)
+      end
+
+      def !=(value : Rightable)
+        not_equal(value)
+      end
+
+      def equal(value : Rightable)
         # NOTE: here crystal improperly resolves override methods with Nil argument
         if !value.nil?
           Condition.new(self, :==, value)
@@ -79,15 +91,7 @@ module Jennifer
         end
       end
 
-      def !=(value : Symbol)
-        self.!=(value.to_s)
-      end
-
-      def !=(value : Nil)
-        not(value)
-      end
-
-      def !=(value : Rightable)
+      def not_equal(value)
         # NOTE: here crystal improperly resolves override methods with Nil argument
         if !value.nil?
           Condition.new(self, :!=, value)

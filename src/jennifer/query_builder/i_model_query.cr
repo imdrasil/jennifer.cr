@@ -107,7 +107,7 @@ module Jennifer
         find_each(&.update(options))
       end
 
-      # ditto
+      # :ditto:
       def patch(**opts)
         patch(opts)
       end
@@ -124,7 +124,7 @@ module Jennifer
         find_each(&.update!(options))
       end
 
-      # ditto
+      # :ditto:
       def patch!(**opts)
         patch!(opts)
       end

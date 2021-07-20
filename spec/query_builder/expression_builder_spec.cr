@@ -125,64 +125,136 @@ describe ::Jennifer::QueryBuilder::ExpressionBuilder do
   end
 
   describe "#and" do
-    context "with 2 criteria" do
-      it do
-        c1 = Factory.build_criteria
-        c2 = Factory.build_criteria
-        e = Factory.build_expression
-        e.and(c1, c2).as_sql.should eq(e.g(c1 & c2).as_sql)
-      end
+    it "accepts 2 conditions" do
+      c1 = Factory.build_criteria
+      c2 = Factory.build_criteria
+      e = Factory.build_expression
+      e.and(c1, c2).as_sql.should eq(e.g(c1 & c2).as_sql)
     end
 
-    context "with 3 criteria" do
-      it do
-        c1 = Factory.build_criteria(field: "f1")
-        c2 = Factory.build_criteria(field: "f2")
-        c3 = Factory.build_criteria(field: "f3")
+    it "accepts 3 conditions" do
+      c1 = Factory.build_criteria(field: "f1")
+      c2 = Factory.build_criteria(field: "f2")
+      c3 = Factory.build_criteria(field: "f3")
+      e = Factory.build_expression
+      e.and(c1, c2, c3).as_sql.should eq(e.g(c1 & c2 & c3).as_sql)
+    end
+
+    it "accepts array of 1 condition" do
+      c1 = Factory.build_criteria(field: "f1").equal(1)
+      e = Factory.build_expression
+      e.and([c1]).as_sql.should eq(c1.as_sql)
+    end
+
+    it "accepts array of 2 conditions" do
+      c1 = Factory.build_criteria(field: "f1").equal(1)
+      c2 = Factory.build_criteria(field: "f2").equal(2)
+      e = Factory.build_expression
+      e.and([c1, c2]).as_sql.should eq(e.g(c1 & c2).as_sql)
+    end
+
+    it "accepts array of 3 and more conditions" do
+      c1 = Factory.build_criteria(field: "f1").equal(1)
+      c2 = Factory.build_criteria(field: "f2").equal(2)
+      c3 = Factory.build_criteria(field: "f3").equal(3)
+      e = Factory.build_expression
+      e.and([c1, c2, c3]).as_sql.should eq(e.g(c1 & c2 & c3).as_sql)
+    end
+
+    it "raises and error if an empty array is given" do
+      expect_raises(ArgumentError, "#and can't accept 0 conditions") do
         e = Factory.build_expression
-        e.and(c1, c2, c3).as_sql.should eq(e.g(c1 & c2 & c3).as_sql)
+        e.and([] of Jennifer::QueryBuilder::Condition).as_sql
       end
     end
   end
 
   describe "#or" do
-    context "with 2 criteria" do
-      it do
-        c1 = Factory.build_criteria
-        c2 = Factory.build_criteria
-        e = Factory.build_expression
-        e.or(c1, c2).as_sql.should eq(e.g(c1 | c2).as_sql)
-      end
+    it "accepts 2 conditions" do
+      c1 = Factory.build_criteria
+      c2 = Factory.build_criteria
+      e = Factory.build_expression
+      e.or(c1, c2).as_sql.should eq(e.g(c1 | c2).as_sql)
     end
 
-    context "with 3 criteria" do
-      it do
-        c1 = Factory.build_criteria(field: "f1")
-        c2 = Factory.build_criteria(field: "f2")
-        c3 = Factory.build_criteria(field: "f3")
+    it "accepts 3 conditions" do
+      c1 = Factory.build_criteria(field: "f1")
+      c2 = Factory.build_criteria(field: "f2")
+      c3 = Factory.build_criteria(field: "f3")
+      e = Factory.build_expression
+      e.or(c1, c2, c3).as_sql.should eq(e.g(c1 | c2 | c3).as_sql)
+    end
+
+    it "accepts array of 1 condition" do
+      c1 = Factory.build_criteria(field: "f1").equal(1)
+      e = Factory.build_expression
+      e.or([c1]).as_sql.should eq(c1.as_sql)
+    end
+
+    it "accepts array of 2 conditions" do
+      c1 = Factory.build_criteria(field: "f1").equal(1)
+      c2 = Factory.build_criteria(field: "f2").equal(2)
+      e = Factory.build_expression
+      e.or([c1, c2]).as_sql.should eq(e.g(c1 | c2).as_sql)
+    end
+
+    it "accepts array of 3 and more conditions" do
+      c1 = Factory.build_criteria(field: "f1").equal(1)
+      c2 = Factory.build_criteria(field: "f2").equal(2)
+      c3 = Factory.build_criteria(field: "f3").equal(3)
+      e = Factory.build_expression
+      e.or([c1, c2, c3]).as_sql.should eq(e.g(c1 | c2 | c3).as_sql)
+    end
+
+    it "raises and error if an empty array is given" do
+      expect_raises(ArgumentError, "#or can't accept 0 conditions") do
         e = Factory.build_expression
-        e.or(c1, c2, c3).as_sql.should eq(e.g(c1 | c2 | c3).as_sql)
+        e.or([] of Jennifer::QueryBuilder::Condition).as_sql
       end
     end
   end
 
   describe "#xor" do
-    context "with 2 criteria" do
-      it do
-        c1 = Factory.build_criteria
-        c2 = Factory.build_criteria
-        e = Factory.build_expression
-        e.xor(c1, c2).as_sql.should eq(e.g(c1.xor(c2)).as_sql)
-      end
+    it "accepts 2 conditions" do
+      c1 = Factory.build_criteria
+      c2 = Factory.build_criteria
+      e = Factory.build_expression
+      e.xor(c1, c2).as_sql.should eq(e.g(c1.xor(c2)).as_sql)
     end
 
-    context "with 3 criteria" do
-      it do
-        c1 = Factory.build_criteria(field: "f1")
-        c2 = Factory.build_criteria(field: "f2")
-        c3 = Factory.build_criteria(field: "f3")
+    it "accepts 3 conditions" do
+      c1 = Factory.build_criteria(field: "f1")
+      c2 = Factory.build_criteria(field: "f2")
+      c3 = Factory.build_criteria(field: "f3")
+      e = Factory.build_expression
+      e.xor(c1, c2, c3).as_sql.should eq(e.g(c1.xor(c2.xor(c3))).as_sql)
+    end
+
+    it "accepts array of 1 condition" do
+      c1 = Factory.build_criteria(field: "f1").equal(1)
+      e = Factory.build_expression
+      e.xor([c1]).as_sql.should eq(c1.as_sql)
+    end
+
+    it "accepts array of 2 conditions" do
+      c1 = Factory.build_criteria(field: "f1").equal(1)
+      c2 = Factory.build_criteria(field: "f2").equal(2)
+      e = Factory.build_expression
+      e.xor([c1, c2]).as_sql.should eq(e.g(c1.xor(c2)).as_sql)
+    end
+
+    it "accepts array of 3 and more conditions" do
+      c1 = Factory.build_criteria(field: "f1").equal(1)
+      c2 = Factory.build_criteria(field: "f2").equal(2)
+      c3 = Factory.build_criteria(field: "f3").equal(3)
+      e = Factory.build_expression
+      e.xor([c1, c2, c3]).as_sql.should eq(e.g(c1.xor(c2.xor(c3))).as_sql)
+    end
+
+    it "raises and error if an empty array is given" do
+      expect_raises(ArgumentError, "#xor can't accept 0 conditions") do
         e = Factory.build_expression
-        e.xor(c1, c2, c3).as_sql.should eq(e.g(c1.xor(c2.xor(c3))).as_sql)
+        e.xor([] of Jennifer::QueryBuilder::Condition).as_sql
       end
     end
   end

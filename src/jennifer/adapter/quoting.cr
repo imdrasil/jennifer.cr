@@ -9,48 +9,48 @@ module Jennifer
 
       abstract def quote_json_string(value : String)
 
-      # ditto
+      # :ditto:
       def quote(value : Nil)
         "NULL"
       end
 
-      # ditto
+      # :ditto:
       def quote(value : Bool)
         value ? "TRUE" : "FALSE"
       end
 
-      # ditto
+      # :ditto:
       def quote(value : Int | Float | UInt32)
         value.to_s
       end
 
-      # ditto
+      # :ditto:
       def quote(value : Char)
         quote(value.to_s)
       end
 
-      # ditto
+      # :ditto:
       def quote(value : Time)
         "'#{value.to_utc.to_s("%F %T")}'"
       end
 
-      # ditto
+      # :ditto:
       def quote(value : Time::Span)
         # NOTE: isn't user by pg driver ATM
         "'#{value}'"
       end
 
-      # ditto
+      # :ditto:
       def quote(value : Slice(UInt8))
         "x'#{value.hexstring}'"
       end
 
-      # ditto
+      # :ditto:
       def quote(value : JSON::Any)
         "'" + ::Jennifer::Adapter::JSONEncoder.encode(value, self) + "'"
       end
 
-      # ditto
+      # :ditto:
       def quote(value)
         raise ArgumentError.new("Value #{value} can't be quoted")
       end

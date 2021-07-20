@@ -189,7 +189,7 @@ module Jennifer
       instance
     end
 
-    # ditto
+    # :ditto:
     def self.config : self
       instance
     end
@@ -271,7 +271,7 @@ module Jennifer
       read(path, env.to_s)
     end
 
-    # ditto
+    # :ditto:
     def read(path : String, env : String)
       read(path) { |document| document[env] }
     end

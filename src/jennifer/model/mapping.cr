@@ -516,7 +516,7 @@ module Jennifer
         draw_mapping({{strict}})
       end
 
-      # ditto
+      # :ditto:
       macro mapping(**properties)
         {% if properties.size > 0 %}
           mapping({{properties}})

@@ -356,7 +356,7 @@ module Jennifer
         values.each { |k, v| set_attribute(k, v) }
       end
 
-      # ditto
+      # :ditto:
       def set_attributes(**values)
         set_attributes(values)
       end
@@ -534,7 +534,7 @@ module Jennifer
         destroy(ids.to_a)
       end
 
-      # ditto
+      # :ditto:
       def self.destroy(ids : Array)
         _ids = ids
         all.where do
@@ -551,7 +551,7 @@ module Jennifer
         delete(ids.to_a)
       end
 
-      # ditto
+      # :ditto:
       def self.delete(ids : Array)
         _ids = ids
         all.where do

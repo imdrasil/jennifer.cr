@@ -37,7 +37,16 @@ test:
   <<: *defaults
 ```
 
-This also can be written using DSL:
+You cam also use `.ecr` extension to leverage environmet variables in your configuration file. To do this use:
+
+```crystal
+config_file = YAML.parse(ECR.render("config/database.yml.ecr"))
+Jennifer::Config.configure do |conf|
+  conf.from_yaml(config_file[ENV["APP_ENV"]])
+end
+```
+
+All configurations also can be set using DSL:
 
 ```crystal
 Jennifer::Config.configure do |conf|

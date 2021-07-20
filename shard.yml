@@ -1,5 +1,5 @@
 name: jennifer
-version: 0.10.0
+version: 0.11.0
 
 authors:
   - Roman Kalnytskyi <moranibaca@gmail.com>
@@ -26,7 +26,7 @@ development_dependencies:
     version: "= 0.14.3"
   micrate:
     github: "amberframework/micrate"
-    version: "= 0.10.0"
+    version: "= 0.11.0"
 dependencies:
   inflector:
     github: phoffer/inflector.cr

@@ -37,4 +37,5 @@ dependencies:
   i18n:
     github: TechMagister/i18n.cr
     # version: "= 0.3.1"
-    commit: b323291b772c97bc1661888eb9e82dadb722acaa
+    # commit: b323291b772c97bc1661888eb9e82dadb722acaa
+    branch: master

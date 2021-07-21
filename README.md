@@ -10,13 +10,13 @@ Add this to your application's `shard.yml`:
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.10.0"
+    version: "~> 0.11.0"
 ```
 
 ### Requirements
 
 - you need to choose one of the existing drivers for your DB: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgres](https://github.com/will/crystal-pg); sqlite3 adapter automatically installs required driver for it;
-- crystal `>= 0.36.0`.
+- crystal `>= 1.0.0`.
 
 ## Usage
 

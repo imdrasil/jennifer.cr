@@ -464,7 +464,7 @@ module Jennifer
         res = self.class.write_adapter.update(self)
         __after_update_callback
         status = res.rows_affected == 1
-        self.increment_lock_version! if status && self.responds_to?(:increment_lock_version!)
+        self.reset_lock_version! if !status && self.responds_to?(:reset_lock_version!)
         status
       end
 

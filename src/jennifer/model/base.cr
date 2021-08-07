@@ -463,9 +463,7 @@ module Jennifer
         track_timestamps_on_update
         res = self.class.write_adapter.update(self)
         __after_update_callback
-        status = res.rows_affected == 1
-        self.reset_lock_version! if !status && self.responds_to?(:reset_lock_version!)
-        status
+        res.rows_affected == 1
       end
 
       private def store_record : Bool

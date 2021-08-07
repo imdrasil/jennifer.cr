@@ -17,6 +17,7 @@ class CreateContacts < Jennifer::Migration::Base
       create_table(:contacts) do |t|
         t.string :name, {:size => 30}
         t.integer :age
+        t.integer :optimistic_lock, {:default => 0}
         t.decimal :ballance, {:precision => 6, :scale => 2}
         t.enum :gender, ["male", "female"], {:default => "male"}
         t.timestamps true

@@ -24,12 +24,9 @@ module Jennifer
 
         opts[:args] << obj.primary
         opts[:args] << obj.lock_version - 1 if obj.responds_to?(:lock_version)
-        res = exec(*parse_query(sql_generator.update(obj), opts[:args]))
-        is_updated = res.rows_affected == 1
-        if !is_updated && obj.responds_to?(:lock_version)
-          raise StaleObjectError.new(obj)
+        exec(*parse_query(sql_generator.update(obj), opts[:args])).tap do |res|
+          raise StaleObjectError.new(obj) if res.rows_affected != 1 && obj.responds_to?(:lock_version)
         end
-        res
       rescue e : Exception
         obj.reset_lock_version! if obj.responds_to?(:reset_lock_version!)
         raise e

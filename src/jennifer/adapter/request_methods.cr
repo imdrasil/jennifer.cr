@@ -12,8 +12,8 @@ module Jennifer
       end
 
       def update(obj : Model::Base)
-        min_arg_size = if obj.responds_to?(:increment_lock_version!)
-                         obj.increment_lock_version!
+        min_arg_size = if obj.responds_to?(:increase_lock_version!)
+                         obj.increase_lock_version!
                          1
                        else
                          0

@@ -15,7 +15,7 @@ module Jennifer::Model
         end
       {% end %}
 
-      def increment_lock_version!
+      def increase_lock_version!
         self.{{locking_column}} = {{locking_column}} + 1
       end
 

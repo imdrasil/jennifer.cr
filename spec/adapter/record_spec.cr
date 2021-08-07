@@ -74,29 +74,31 @@ describe Jennifer::Record do
       target_hash = db_specific(
         mysql: ->do
           {
-            :id          => record.id,
-            :name        => record.name,
-            :age         => record.age,
-            :ballance    => nil,
-            :gender      => record.gender,
-            :created_at  => record.created_at,
-            :updated_at  => record.updated_at,
-            :description => nil,
-            :user_id     => nil,
+            :id              => record.id,
+            :name            => record.name,
+            :age             => record.age,
+            :optimistic_lock => 0,
+            :ballance        => nil,
+            :gender          => record.gender,
+            :created_at      => record.created_at,
+            :updated_at      => record.updated_at,
+            :description     => nil,
+            :user_id         => nil,
           }
         end,
         postgres: ->do
           {
-            :id          => record.id,
-            :name        => record.name,
-            :age         => record.age,
-            :tags        => nil,
-            :ballance    => nil,
-            :gender      => record.gender,
-            :created_at  => record.created_at,
-            :updated_at  => record.updated_at,
-            :description => nil,
-            :user_id     => nil,
+            :id              => record.id,
+            :name            => record.name,
+            :age             => record.age,
+            :optimistic_lock => 0,
+            :tags            => nil,
+            :ballance        => nil,
+            :gender          => record.gender,
+            :created_at      => record.created_at,
+            :updated_at      => record.updated_at,
+            :description     => nil,
+            :user_id         => nil,
           }
         end
       )
@@ -113,27 +115,29 @@ describe Jennifer::Record do
       target_hash = db_specific(
         mysql: ->do
           {
-            :name        => record.name,
-            :age         => record.age,
-            :ballance    => nil,
-            :gender      => record.gender,
-            :created_at  => record.created_at,
-            :updated_at  => record.updated_at,
-            :description => nil,
-            :user_id     => nil,
+            :name            => record.name,
+            :age             => record.age,
+            :optimistic_lock => 0,
+            :ballance        => nil,
+            :gender          => record.gender,
+            :created_at      => record.created_at,
+            :updated_at      => record.updated_at,
+            :description     => nil,
+            :user_id         => nil,
           }
         end,
         postgres: ->do
           {
-            :name        => record.name,
-            :age         => record.age,
-            :tags        => nil,
-            :ballance    => nil,
-            :gender      => record.gender,
-            :created_at  => record.created_at,
-            :updated_at  => record.updated_at,
-            :description => nil,
-            :user_id     => nil,
+            :name            => record.name,
+            :age             => record.age,
+            :optimistic_lock => 0,
+            :tags            => nil,
+            :ballance        => nil,
+            :gender          => record.gender,
+            :created_at      => record.created_at,
+            :updated_at      => record.updated_at,
+            :description     => nil,
+            :user_id         => nil,
           }
         end
       )
@@ -147,31 +151,33 @@ describe Jennifer::Record do
         target_hash = db_specific(
           mysql: ->do
             {
-              :id          => record.id,
-              :name        => record.name,
-              :age         => record.age,
-              :ballance    => nil,
-              :gender      => record.gender,
-              :created_at  => record.created_at,
-              :updated_at  => record.updated_at,
-              :description => nil,
-              :user_id     => nil,
-              :custom      => "value",
+              :id              => record.id,
+              :name            => record.name,
+              :age             => record.age,
+              :optimistic_lock => 0,
+              :ballance        => nil,
+              :gender          => record.gender,
+              :created_at      => record.created_at,
+              :updated_at      => record.updated_at,
+              :description     => nil,
+              :user_id         => nil,
+              :custom          => "value",
             }
           end,
           postgres: ->do
             {
-              :id          => record.id,
-              :name        => record.name,
-              :age         => record.age,
-              :tags        => nil,
-              :ballance    => nil,
-              :gender      => record.gender,
-              :created_at  => record.created_at,
-              :updated_at  => record.updated_at,
-              :description => nil,
-              :user_id     => nil,
-              :custom      => "value",
+              :id              => record.id,
+              :name            => record.name,
+              :age             => record.age,
+              :optimistic_lock => 0,
+              :tags            => nil,
+              :ballance        => nil,
+              :gender          => record.gender,
+              :created_at      => record.created_at,
+              :updated_at      => record.updated_at,
+              :description     => nil,
+              :user_id         => nil,
+              :custom          => "value",
             }
           end
         )
@@ -195,29 +201,31 @@ describe Jennifer::Record do
         target_hash = db_specific(
           mysql: ->do
             {
-              :name        => record.name,
-              :age         => record.age,
-              :ballance    => nil,
-              :gender      => record.gender,
-              :created_at  => record.created_at,
-              :updated_at  => record.updated_at,
-              :description => nil,
-              :user_id     => nil,
-              :custom      => "value",
+              :name            => record.name,
+              :age             => record.age,
+              :optimistic_lock => 0,
+              :ballance        => nil,
+              :gender          => record.gender,
+              :created_at      => record.created_at,
+              :updated_at      => record.updated_at,
+              :description     => nil,
+              :user_id         => nil,
+              :custom          => "value",
             }
           end,
           postgres: ->do
             {
-              :name        => record.name,
-              :age         => record.age,
-              :tags        => nil,
-              :ballance    => nil,
-              :gender      => record.gender,
-              :created_at  => record.created_at,
-              :updated_at  => record.updated_at,
-              :description => nil,
-              :user_id     => nil,
-              :custom      => "value",
+              :name            => record.name,
+              :age             => record.age,
+              :optimistic_lock => 0,
+              :tags            => nil,
+              :ballance        => nil,
+              :gender          => record.gender,
+              :created_at      => record.created_at,
+              :updated_at      => record.updated_at,
+              :description     => nil,
+              :user_id         => nil,
+              :custom          => "value",
             }
           end
         )

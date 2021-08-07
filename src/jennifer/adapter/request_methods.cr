@@ -12,12 +12,22 @@ module Jennifer
       end
 
       def update(obj : Model::Base)
+        min_arg_size = if obj.responds_to?(:increment_lock_version!)
+                         obj.increment_lock_version!
+                         1
+                       else
+                         0
+                       end
+
         opts = obj.arguments_to_save
-        return DB::ExecResult.new(0i64, -1i64) if opts[:args].empty?
+        return DB::ExecResult.new(0i64, -1i64) if opts[:args].size <= min_arg_size
 
         opts[:args] << obj.primary
         opts[:args] << obj.lock_version - 1 if obj.responds_to?(:lock_version)
         exec(*parse_query(sql_generator.update(obj), opts[:args]))
+      rescue e : Exception
+        obj.reset_lock_version! if obj.responds_to?(:reset_lock_version!)
+        raise e
       end
 
       def update(query, options : Hash)

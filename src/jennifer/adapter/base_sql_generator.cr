@@ -105,7 +105,7 @@ module Jennifer
           s << "UPDATE " << obj.class.table_name << " SET "
           obj.arguments_to_save[:fields].map { |f| "#{f}= #{esc}" }.join(s, ", ")
           s << " WHERE " << obj.class.primary_field_name << " = " << esc
-          s << " AND lock_version = #{esc}" if obj.responds_to?(:lock_version)
+          s << " AND #{obj.locking_column} = #{esc}" if obj.responds_to?(:locking_column)
         end
       end
 

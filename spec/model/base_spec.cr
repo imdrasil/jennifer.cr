@@ -632,7 +632,7 @@ describe Jennifer::Model::Base do
 
   describe "::import" do
     argument_regex = db_specific(mysql: ->{ /\(\?/ }, postgres: ->{ /\(\$\d/ })
-    amount = db_specific(mysql: ->{ 4096 }, postgres: ->{ 3641 })
+    amount = db_specific(mysql: ->{ 3641 }, postgres: ->{ 3277 })
 
     context "with autoincrementable primary key" do
       context "when count of fields doesn't exceed limit" do

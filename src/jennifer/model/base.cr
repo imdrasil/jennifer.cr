@@ -15,6 +15,7 @@ require "./json_converter"
 require "./json_serializable_converter"
 require "./time_zone_converter"
 require "./timestamp"
+require "./optimistic_locking.cr"
 
 module Jennifer
   module Model
@@ -56,6 +57,7 @@ module Jennifer
       include Presentable
       include Mapping
       include Timestamp
+      include OptimisticLocking
       include STIMapping
       include Validation
       include Callback
@@ -461,7 +463,9 @@ module Jennifer
         track_timestamps_on_update
         res = self.class.write_adapter.update(self)
         __after_update_callback
-        res.rows_affected == 1
+        status = res.rows_affected == 1
+        self.increment_lock_version! if status && self.responds_to?(:increment_lock_version!)
+        status
       end
 
       private def store_record : Bool
@@ -577,16 +581,11 @@ module Jennifer
         write_adapter.bulk_insert(collection)
       end
 
-      def __update_lock_version
-        self.lock_version += 1 if self.responds_to?(:lock_version)
-      end
-
       macro inherited
         ::Jennifer::Model::Validation.inherited_hook
         ::Jennifer::Model::Callback.inherited_hook
         ::Jennifer::Model::RelationDefinition.inherited_hook
 
-        before_save :__update_lock_version
         after_save :__refresh_changes
 
         # :nodoc:

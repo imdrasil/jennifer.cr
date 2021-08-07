@@ -86,6 +86,7 @@ class ContactFactory < Factory::Jennifer::Base
 
   attr :name, "Deepthi"
   attr :age, 28
+  attr :optimistic_lock, 0
   attr :description, nil
   attr :gender, "male"
 end

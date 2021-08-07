@@ -374,7 +374,7 @@ describe Jennifer::Adapter::Base do
 
     postgres_only do
       it "returns amount of views fields" do
-        default_adapter.tables_column_count(["male_contacts", "female_contacts"]).to_a.map(&.count).should match_array([9, 10])
+        default_adapter.tables_column_count(["male_contacts", "female_contacts"]).to_a.map(&.count).should match_array([10, 11])
       end
     end
 

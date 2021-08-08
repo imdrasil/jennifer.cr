@@ -69,4 +69,15 @@ describe Jennifer::Model::OptimisticLocking do
       c3.lock_version.should eq 2
     end
   end
+
+  describe "#destroy" do
+    it "raises stale object error" do
+      c1 = Factory.create_contact
+      c2 = Contact.find(c1.id).not_nil!
+      c1.update_columns({:age => 55})
+      expect_raises(Jennifer::StaleObjectError, /Optimistic locking failed due to stale object for model/) do
+        c2.destroy
+      end
+    end
+  end
 end

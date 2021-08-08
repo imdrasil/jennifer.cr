@@ -439,7 +439,15 @@ module Jennifer
         return if new_record? || invalid?
 
         this = self
-        self.class.all.where { this.class.primary == this.primary }.delete
+        if this.responds_to?(:lock_version)
+          res = self.class.all.where {
+            (this.class.primary == this.primary) & (this.class._lock_version == this.lock_version)
+          }.delete
+          raise StaleObjectError.new(this) if !res.nil? && res.rows_affected != 1
+          res
+        else
+          self.class.all.where { this.class.primary == this.primary }.delete
+        end
       end
 
       # Lock current object in the database.

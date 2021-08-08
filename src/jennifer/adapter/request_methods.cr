@@ -12,20 +12,14 @@ module Jennifer
       end
 
       def update(obj : Model::Base)
-        min_arg_size = if obj.responds_to?(:increase_lock_version!)
-                         obj.increase_lock_version!
-                         1
-                       else
-                         0
-                       end
+        return DB::ExecResult.new(0i64, -1i64) unless obj.changed?
 
+        obj.increase_lock_version! if obj.responds_to?(:increase_lock_version!)
         opts = obj.arguments_to_save
-        return DB::ExecResult.new(0i64, -1i64) if opts[:args].size <= min_arg_size
-
         opts[:args] << obj.primary
         opts[:args] << obj.lock_version - 1 if obj.responds_to?(:lock_version)
         exec(*parse_query(sql_generator.update(obj), opts[:args])).tap do |res|
-          raise StaleObjectError.new(obj) if res.rows_affected != 1 && obj.responds_to?(:lock_version)
+          raise StaleObjectError.new(obj) if obj.responds_to?(:lock_version) && res.rows_affected != 1
         end
       rescue e : Exception
         obj.reset_lock_version! if obj.responds_to?(:reset_lock_version!)

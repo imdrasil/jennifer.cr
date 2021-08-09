@@ -36,6 +36,5 @@ dependencies:
     github: imdrasil/ifrit
     version: "= 0.1.3"
   i18n:
-    github: TechMagister/i18n.cr
-    # version: "= 0.3.1"
-    commit: b323291b772c97bc1661888eb9e82dadb722acaa
+    github: crimson-knight/i18n.cr
+    version: "~> 0.4.1"

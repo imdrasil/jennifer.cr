@@ -52,6 +52,7 @@ module Jennifer::Model
       def reset_lock_version!
         @{{locking_column}} -= 1
         @{{locking_column}}_changed = false
+        @{{locking_column}}
       end
     end
   end

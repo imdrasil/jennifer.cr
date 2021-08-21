@@ -273,6 +273,14 @@ describe Jennifer::Model::Errors do
     end
   end
 
+  describe "#inspect" do
+    it do
+      errors = described_class.new(facebook_profile)
+      errors.add(:uid)
+      errors.inspect.should match(/#<Jennifer::Model::Errors:0x[\w\d]{12} @messages={:uid => \["is invalid"\]}>/)
+    end
+  end
+
   describe ".new" do
     it do
       described_class.new(Factory.build_contact)

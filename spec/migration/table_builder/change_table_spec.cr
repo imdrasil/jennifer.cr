@@ -1,7 +1,7 @@
 require "./spec_helper"
 
-def change_table_expr
-  Jennifer::Migration::TableBuilder::ChangeTable.new(Jennifer::Adapter.default_adapter, DEFAULT_TABLE)
+def change_table_expr(table = DEFAULT_TABLE)
+  Jennifer::Migration::TableBuilder::ChangeTable.new(Jennifer::Adapter.default_adapter, table)
 end
 
 describe Jennifer::Migration::TableBuilder::ChangeTable do
@@ -11,6 +11,15 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
       table.rename_table("renamed_table")
       table.new_table_name.should eq("renamed_table")
     end
+
+    postgres_only do
+      it do
+        table = change_table_expr(:cities)
+        table.rename_table(:towns)
+        table.process
+        Jennifer::Adapter.default_adapter.table_exists?(:towns).should be_true
+      end
+    end
   end
 
   describe "#change_column" do
@@ -18,6 +27,14 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
       table = change_table_expr
       table.change_column(:name, :integer)
       table.changed_columns["name"].should eq({:new_name => :name, :type => :integer})
+    end
+
+    postgres_only do
+      it do
+        table = change_table_expr(:cities)
+        table.change_column(:name, :text)
+        table.process
+      end
     end
 
     context "with specified type" do
@@ -32,7 +49,8 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
       it do
         table = change_table_expr
         table.change_column(:name, options: {:new_name => :new_name, :null => false, :sql_type => "SOME_TYPE"})
-        table.changed_columns["name"].should eq({:new_name => :new_name, :type => nil, :null => false, :sql_type => "SOME_TYPE"})
+        table.changed_columns["name"]
+          .should eq({:new_name => :new_name, :type => nil, :null => false, :sql_type => "SOME_TYPE"})
       end
     end
 
@@ -51,6 +69,15 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
       table = change_table_expr
       table.add_column(:name, :integer)
       table.@new_columns["name"].should eq({:type => :integer})
+    end
+
+    postgres_only do
+      it do
+        table = change_table_expr(:cities)
+        table.add_column(:text, :string)
+        table.process
+        Jennifer::Adapter.default_adapter.column_exists?(:cities, :text).should be_true
+      end
     end
 
     context "with specified type" do
@@ -85,6 +112,15 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
       table.drop_column("uuid")
       table.drop_columns.should eq(["uuid"])
     end
+
+    postgres_only do
+      it do
+        table = change_table_expr(:cities)
+        table.drop_column(:name)
+        table.process
+        Jennifer::Adapter.default_adapter.column_exists?(:cities, :name).should be_false
+      end
+    end
   end
 
   describe "#add_reference" do
@@ -101,6 +137,16 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
       command.name.starts_with?("fk_cr_").should be_true
     end
 
+    postgres_only do
+      it do
+        table = change_table_expr(:cities)
+        table.add_reference(:user)
+        table.process
+        Jennifer::Adapter.default_adapter.column_exists?(:cities, :user_id).should be_true
+        Jennifer::Adapter.default_adapter.foreign_key_exists?(:cities, :user).should be_true
+      end
+    end
+
     describe "polymorphic" do
       it "adds foreign and polymorphic columns" do
         table = change_table_expr
@@ -113,22 +159,33 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
   end
 
   describe "#drop_reference" do
-    it do
+    it "generates correct command" do
       table = change_table_expr
       table.drop_reference(:user)
-      table.drop_columns.should eq(["user_id"])
+      table.drop_columns.should be_empty
 
-      command = table.@commands[0].as(Jennifer::Migration::TableBuilder::DropForeignKey)
+      command = table.@commands[0].as(Jennifer::Migration::TableBuilder::DropReference)
+      command = command.@commands[0].as(Jennifer::Migration::TableBuilder::DropForeignKey)
+
       command.from_table.should eq(DEFAULT_TABLE)
       command.to_table.should eq("users")
       command.name.starts_with?("fk_cr_").should be_true
     end
 
-    describe "polymorphic" do
+    postgres_only do
       it do
+        table = change_table_expr(:passports)
+        table.drop_reference(:contact)
+        table.process
+        table.adapter.foreign_key_exists?(:passports, :contact).should be_false
+      end
+    end
+
+    describe "polymorphic" do
+      it "generates correct command" do
         table = change_table_expr
         table.drop_reference(:user, options: {:polymorphic => true})
-        table.drop_columns.should eq(["user_id", "user_type"])
+        table.drop_columns.should eq(["user_type", "user_id"])
         table.@commands.should be_empty
       end
     end
@@ -141,9 +198,28 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
       table.@new_columns["created_at"].should eq({:type => :timestamp, :null => false})
       table.@new_columns["updated_at"].should eq({:type => :timestamp, :null => false})
     end
+
+    postgres_only do
+      it do
+        table = change_table_expr(:cities)
+        table.add_timestamps
+        table.process
+        Jennifer::Adapter.default_adapter.column_exists?(:cities, :created_at).should be_true
+        Jennifer::Adapter.default_adapter.column_exists?(:cities, :updated_at).should be_true
+      end
+    end
   end
 
   describe "#add_index" do
+    postgres_only do
+      it do
+        table = change_table_expr(:cities)
+        table.add_index(:name)
+        table.process
+        Jennifer::Adapter.default_adapter.index_exists?(:cities, [:name]).should be_true
+      end
+    end
+
     context "with named arguments" do
       it do
         table = change_table_expr
@@ -188,6 +264,15 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
       command = table.@commands[0].as(Jennifer::Migration::TableBuilder::DropIndex)
       command.@fields.should eq([:uuid])
     end
+
+    postgres_only do
+      it do
+        table = change_table_expr(:contacts)
+        table.drop_index(:description)
+        table.process
+        Jennifer::Adapter.default_adapter.index_exists?(:contacts, [:description]).should be_false
+      end
+    end
   end
 
   describe "#add_foreign_key" do
@@ -201,6 +286,15 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
       command.primary_key.should eq("primary")
       command.name.should eq("some_name")
     end
+
+    postgres_only do
+      it do
+        table = change_table_expr(:contacts)
+        table.add_foreign_key(:cities, column: :age)
+        table.process
+        Jennifer::Adapter.default_adapter.foreign_key_exists?(:contacts, column: :age).should be_true
+      end
+    end
   end
 
   describe "#drop_foreign_key" do
@@ -211,6 +305,15 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
       command.from_table.should eq(DEFAULT_TABLE)
       command.to_table.should eq("to_table")
       command.name.should eq("some_name")
+    end
+
+    postgres_only do
+      it do
+        table = change_table_expr(:passports)
+        table.drop_foreign_key(:contact)
+        table.process
+        Jennifer::Adapter.default_adapter.foreign_key_exists?(:passports, :contact).should be_false
+      end
     end
   end
 

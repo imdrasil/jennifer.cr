@@ -177,6 +177,12 @@ describe Jennifer::QueryBuilder::Query do
       q1.tree.to_s.should eq("contacts.name = %s AND (age > %s)")
     end
 
+    it "generates correct request for given hash arguments" do
+      q1 = Query["contacts"].where({:name => "John", :age => 12})
+      q1.tree.to_s.should eq("(contacts.name = %s AND contacts.age = %s)")
+      q1.tree.not_nil!.sql_args.should eq(db_array("John", 12))
+    end
+
     postgres_only do
       it "gracefully handle argument type mismatch" do
         void_transaction do

@@ -1182,31 +1182,4 @@ describe Jennifer::Model::Mapping do
       it { NoteWithManualId.primary_auto_incrementable?.should be_false }
     end
   end
-
-  describe "%with_timestamps" do
-    it "adds callbacks" do
-      Contact::CALLBACKS[:create][:before].should contain("__update_created_at")
-      Contact::CALLBACKS[:save][:before].should contain("__update_updated_at")
-    end
-  end
-
-  describe "#__update_created_at" do
-    it "updates created_at field" do
-      c = Factory.build_contact
-      c.created_at.should be_nil
-      c.__update_created_at
-      c.created_at!.should_not be_nil
-      ((c.created_at! - Time.local).total_seconds < 1).should be_true
-    end
-  end
-
-  describe "#__update_updated_at" do
-    it "updates updated_at field" do
-      c = Factory.build_contact
-      c.updated_at.should be_nil
-      c.__update_updated_at
-      c.updated_at!.should_not be_nil
-      ((c.updated_at! - Time.local).total_seconds < 1).should be_true
-    end
-  end
 end

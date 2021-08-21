@@ -255,7 +255,7 @@ module Jennifer
         end
       end
 
-      # ditto
+      # :ditto:
       def decrement(**fields)
         decrement(fields.to_h)
       end

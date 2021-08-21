@@ -44,6 +44,11 @@ describe Jennifer::Model::TimeZoneConverter do
       value.should eq(time.to_local_in(Jennifer::Config.local_time_zone))
       value.zone.should eq(Jennifer::Config.local_time_zone.lookup(Time.utc))
     end
+
+    it "accepts string value" do
+      described_class.from_hash({"value" => "2010-12-10"}, "value", {name: "value"})
+        .should eq(Time.local(2010, 12, 10, 0, 0, 0, location: ::Jennifer::Config.local_time_zone))
+    end
   end
 
   describe ".coerce" do

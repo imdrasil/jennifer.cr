@@ -54,7 +54,7 @@ module Jennifer
         new(pull)
       end
 
-      # ditto
+      # :ditto:
       def self.build(values : Hash | NamedTuple, new_record : Bool)
         build(values)
       end

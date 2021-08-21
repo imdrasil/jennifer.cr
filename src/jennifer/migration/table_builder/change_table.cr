@@ -136,13 +136,14 @@ module Jennifer
         # `#add_reference`.
         def drop_reference(name, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
           column = Inflector.foreign_key(name)
-
-          drop_column(column)
           if options[:polymorphic]?
             drop_column("#{name}_type")
+            drop_column(column)
           else
-            drop_foreign_key(
-              (options[:to_table]? || Inflector.pluralize(name)).as(String | Symbol),
+            @commands << DropReference.new(
+              @adapter,
+              @name,
+              (options[:to_table]? || Inflector.pluralize(name)).to_s,
               options[:column]?.as(String | Symbol?)
             )
           end

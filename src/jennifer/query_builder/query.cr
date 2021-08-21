@@ -314,6 +314,20 @@ module Jennifer
         self
       end
 
+      # Mutates query by given conditions.
+      #
+      # All key-value pairs are treated as a sequence of equal conditions
+      #
+      # ```
+      # Jennifer::Query["contacts"].where({:name => "test", :age => 23})
+      # # SELECT contacts.* FROM contacts WHERE (contacts.name = 'test' AND contacts.age = 23)
+      # ```
+      def where(conditions : Hash(Symbol, _))
+        array = conditions.map { |field, value| @expression.c(field.to_s).equal(value) }
+        set_tree(@expression.and(array))
+        self
+      end
+
       # Specifies raw SELECT clause value.
       #
       # ```
@@ -569,17 +583,17 @@ module Jennifer
         self
       end
 
-      # ditto
+      # :ditto:
       def set_tree(other : Query)
         set_tree(other.tree)
       end
 
-      # ditto
+      # :ditto:
       def set_tree(other : SQLNode)
         set_tree(other.to_condition)
       end
 
-      # ditto
+      # :ditto:
       def set_tree(other : Nil)
         raise ArgumentError.new("Condition tree can't be blank.")
       end

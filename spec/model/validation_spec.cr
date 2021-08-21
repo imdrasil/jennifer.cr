@@ -2,6 +2,7 @@ require "../spec_helper"
 
 macro validation_class_generator(klass, name, **options)
   class {{klass}} < AbstractContactModel
+    {{yield}}
     validates_numericality {{name}}, {{**options}}
   end
 end
@@ -15,6 +16,19 @@ validation_class_generator(OTContact, :age, other_than: 20)
 validation_class_generator(OddContact, :age, odd: true)
 validation_class_generator(EvenContact, :age, even: true)
 validation_class_generator(SeveralValidationsContact, :age, greater_than: 20, less_than_or_equal_to: 30)
+
+postgres_only do
+  class NumericGTContact < Jennifer::Model::Base
+    table_name "contacts"
+
+    mapping({
+      id:       Primary32,
+      ballance: {type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2},
+    }, false)
+
+    validates_numericality :ballance, greater_than: 20
+  end
+end
 
 class GTNContact < Jennifer::Model::Base
   table_name "contacts"
@@ -389,6 +403,13 @@ describe Jennifer::Model::Validation do
       it "pass validation if an attribute satisfies condition" do
         c = GTContact.build(age: 21)
         c.should be_valid
+      end
+
+      postgres_only do
+        it "works with BigDecimal" do
+          c = NumericGTContact.new({ballance: 19.0})
+          c.should validate(:ballance).with("must be greater than 20")
+        end
       end
     end
 

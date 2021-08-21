@@ -14,6 +14,7 @@ require "./enum_converter"
 require "./json_converter"
 require "./json_serializable_converter"
 require "./time_zone_converter"
+require "./timestamp"
 
 module Jennifer
   module Model
@@ -54,6 +55,7 @@ module Jennifer
       extend AbstractClassMethods
       include Presentable
       include Mapping
+      include Timestamp
       include STIMapping
       include Validation
       include Callback
@@ -354,7 +356,7 @@ module Jennifer
         values.each { |k, v| set_attribute(k, v) }
       end
 
-      # ditto
+      # :ditto:
       def set_attributes(**values)
         set_attributes(values)
       end
@@ -456,6 +458,7 @@ module Jennifer
         return false unless __before_update_callback
         return true unless changed?
 
+        track_timestamps_on_update
         res = self.class.write_adapter.update(self)
         __after_update_callback
         res.rows_affected == 1
@@ -464,6 +467,7 @@ module Jennifer
       private def store_record : Bool
         return false unless __before_create_callback
 
+        track_timestamps_on_create
         res = self.class.write_adapter.insert(self)
         init_primary_field(res.last_insert_id.as(Int)) if primary.nil? && res.last_insert_id > -1
         raise ::Jennifer::BaseException.new("Record hasn't been stored to the db") if res.rows_affected == 0
@@ -530,7 +534,7 @@ module Jennifer
         destroy(ids.to_a)
       end
 
-      # ditto
+      # :ditto:
       def self.destroy(ids : Array)
         _ids = ids
         all.where do
@@ -547,7 +551,7 @@ module Jennifer
         delete(ids.to_a)
       end
 
-      # ditto
+      # :ditto:
       def self.delete(ids : Array)
         _ids = ids
         all.where do

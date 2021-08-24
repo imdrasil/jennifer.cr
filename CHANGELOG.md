@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.11.1 (24-08-2021)
+
+**General**
+
+* switch to the `crimson-knight/i18n.cr` `~> 0.4.1`
+
+**Migration**
+
+* fix `TableBuilder::ChangeTable#drop_reference` dropping column before reference
+* add `TableBuilder::DropReference`
+
 ## 0.11.0 (20-07-2021)
 
 **General**

@@ -86,7 +86,6 @@ class ContactFactory < Factory::Jennifer::Base
 
   attr :name, "Deepthi"
   attr :age, 28
-  attr :optimistic_lock, 0
   attr :description, nil
   attr :gender, "male"
 end
@@ -110,6 +109,7 @@ end
 class CityFactory < Factory::Jennifer::Base
   attr :name, "Guda"
   attr :country_id, ->{ Factory.create_country.id }, Int32
+  attr :optimistic_lock, 0
 end
 
 class ProfileFactory < Factory::Jennifer::Base

@@ -15,7 +15,7 @@ require "./json_converter"
 require "./json_serializable_converter"
 require "./time_zone_converter"
 require "./timestamp"
-require "./optimistic_locking.cr"
+require "./optimistic_locking"
 
 module Jennifer
   module Model
@@ -469,7 +469,7 @@ module Jennifer
         return true unless changed?
 
         track_timestamps_on_update
-        res = self.class.write_adapter.update(self)
+        res = self.class.write_adapter.update(self, true)
         __after_update_callback
         res.rows_affected == 1
       end

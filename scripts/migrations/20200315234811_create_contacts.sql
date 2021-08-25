@@ -5,7 +5,6 @@ CREATE TABLE public.test_contacts (
     id integer NOT NULL,
     name character varying(30),
     age integer DEFAULT 0,
-    optimistic_lock integer DEFAULT 0,
     tags integer[],
     ballance numeric,
     created_at timestamp without time zone,

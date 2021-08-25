@@ -99,13 +99,13 @@ module Jennifer
         end
       end
 
-      def self.update(obj : Model::Base)
+      def self.update(obj : Model::Base, touch_lock : Bool)
         esc = escape_string(1)
         String.build do |s|
           s << "UPDATE " << obj.class.table_name << " SET "
           obj.arguments_to_save[:fields].map { |f| "#{f}= #{esc}" }.join(s, ", ")
           s << " WHERE " << obj.class.primary_field_name << " = " << esc
-          s << " AND #{obj.locking_column} = #{esc}" if obj.responds_to?(:locking_column)
+          s << " AND #{obj.locking_column} = #{esc}" if touch_lock && obj.responds_to?(:locking_column)
         end
       end
 

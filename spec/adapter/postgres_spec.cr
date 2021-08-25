@@ -59,7 +59,7 @@ postgres_only do
     describe "#table_column_count" do
       context "given a materialized view name" do
         it "returns count of materialized view fields" do
-          adapter.table_column_count("female_contacts").should eq(10)
+          adapter.table_column_count("female_contacts").should eq(9)
         end
       end
     end

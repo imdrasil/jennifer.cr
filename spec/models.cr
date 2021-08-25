@@ -104,7 +104,6 @@ class Contact < ApplicationRecord
         name: String,
         ballance: PG::Numeric?,
         age: {type: Int32, default: 10},
-        optimistic_lock: {type: Int32, default: 0},
         gender: {type: String?, default: "male", converter: Jennifer::Model::PgEnumConverter},
         description: String?,
         created_at: Time?,
@@ -118,7 +117,6 @@ class Contact < ApplicationRecord
         name: String,
         ballance: Float64?,
         age: {type: Int32, default: 10},
-        optimistic_lock: {type: Int32, default: 0},
         gender: {type: String?, default: "male"},
         description: String?,
         created_at: Time?,
@@ -131,7 +129,6 @@ class Contact < ApplicationRecord
   include Mapping
 
   with_timestamps
-  with_optimistic_lock(optimistic_lock)
   mapping
 
   has_many :addresses, Address, inverse_of: :contact
@@ -316,9 +313,12 @@ class Country < Jennifer::Model::Base
 end
 
 class City < ApplicationRecord
+  with_optimistic_lock :optimistic_lock
+
   mapping(
     id: Primary32,
     name: String,
+    optimistic_lock: {type: Int32, default: 0},
     country_id: Int32
   )
 

@@ -18,7 +18,7 @@ module Jennifer::Model
     # Or use a custom column name for the locking column:
     # ```
     # class MyModel < Jennifer::Model::Base
-    #   with_optimistic_lock(custom_lock)
+    #   with_optimistic_lock :custom_lock
     #
     #   mapping(
     #     id: {type: Int32, primary: true},
@@ -27,6 +27,8 @@ module Jennifer::Model
     # end
     # ```
     macro with_optimistic_lock(locking_column = lock_version)
+      {% locking_column = locking_column.id %}
+
       def self.locking_column
         {{locking_column.stringify}}
       end
@@ -35,7 +37,7 @@ module Jennifer::Model
         self.class.locking_column
       end
 
-      {% if locking_column != "lock_version" %}
+      {% if locking_column != "lock_version".id %}
         def lock_version
           {{locking_column}}
         end

@@ -425,7 +425,19 @@ module Jennifer
       def destroy_without_transaction
         return false if new_record? || !__before_destroy_callback
 
-        if delete
+        deletion_status =
+          if responds_to?(:lock_version)
+            this = self
+            res = self.class.all
+              .where { (this.class.primary == this.primary) & (this.class._lock_version == this.lock_version) }
+              .delete
+            raise StaleObjectError.new(self) if !res.nil? && res.rows_affected != 1
+            res
+          else
+            delete
+          end
+
+        if deletion_status
           @destroyed = true
           __after_destroy_callback
         end
@@ -439,15 +451,7 @@ module Jennifer
         return if new_record? || invalid?
 
         this = self
-        if this.responds_to?(:lock_version)
-          res = self.class.all.where {
-            (this.class.primary == this.primary) & (this.class._lock_version == this.lock_version)
-          }.delete
-          raise StaleObjectError.new(this) if !res.nil? && res.rows_affected != 1
-          res
-        else
-          self.class.all.where { this.class.primary == this.primary }.delete
-        end
+        self.class.all.where { this.class.primary == this.primary }.delete
       end
 
       # Lock current object in the database.

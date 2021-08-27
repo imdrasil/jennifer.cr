@@ -57,9 +57,7 @@ describe Jennifer::Model::OptimisticLocking do
       c1 = Factory.create_city(name: "Old")
       c2 = City.find!(c1.id)
       c1.update({:name => "New"})
-      expect_raises(Jennifer::StaleObjectError, /Optimistic locking failed due to stale object for model/) do
-        c2.delete
-      end
+      c2.delete
     end
   end
 end

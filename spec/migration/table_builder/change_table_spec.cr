@@ -272,6 +272,15 @@ describe Jennifer::Migration::TableBuilder::ChangeTable do
         table.process
         Jennifer::Adapter.default_adapter.index_exists?(:contacts, [:description]).should be_false
       end
+
+      it "drops indexes before columns" do
+        table = change_table_expr(:addresses)
+        table.drop_index(:street)
+        table.drop_column(:street)
+        table.process
+        Jennifer::Adapter.default_adapter.index_exists?(:addresses, [:street]).should be_false
+        Jennifer::Adapter.default_adapter.column_exists?(:addresses, :street).should be_false
+      end
     end
   end
 

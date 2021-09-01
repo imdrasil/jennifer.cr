@@ -219,14 +219,25 @@ module Jennifer
         end
 
         def process
+          high_priority_commands.each(&.process)
           @drop_columns.each { |c| schema_processor.drop_column(@name, c) }
           @new_columns.each { |n, opts| schema_processor.add_column(@name, n, opts) }
           @changed_columns.each do |n, opts|
             schema_processor.change_column(@name, n, opts[:new_name].as(String | Symbol), opts)
           end
+          low_priority_commands.each(&.process)
 
-          process_commands
           schema_processor.rename_table(@name, @new_table_name) unless @new_table_name.empty?
+        end
+
+        private def high_priority_commands
+          @commands.select do |command|
+            command.is_a?(DropForeignKey) || command.is_a?(DropIndex) || command.is_a?(DropReference)
+          end
+        end
+
+        private def low_priority_commands
+          @commands - high_priority_commands
         end
       end
     end

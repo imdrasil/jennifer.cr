@@ -315,18 +315,8 @@ module Jennifer
 
         # :nodoc:
         def arguments_to_save
-          args = [] of ::Jennifer::DBAny
-          fields = [] of String
-          {% for attr in nonvirtual_attrs %}
-            {% options = properties[attr] %}
-            {% unless options[:primary] %}
-              if @{{attr.id}}_changed
-                args << attribute_before_typecast("{{attr}}")
-                fields << {{options[:column]}}
-              end
-            {% end %}
-          {% end %}
-          {args: args, fields: fields}
+          hash = changes
+          {args: hash.values, fields: hash.keys}
         end
 
         # :nodoc:
@@ -340,6 +330,18 @@ module Jennifer
             {% end %}
           {% end %}
           {args: args, fields: fields}
+        end
+
+        # :nodoc:
+        def changes : Hash(String, ::Jennifer::DBAny)
+          hash = Hash(String, ::Jennifer::DBAny).new
+          {% for attr in nonvirtual_attrs %}
+            {% options = properties[attr] %}
+            {% unless options[:primary] %}
+              hash[{{options[:column]}}] = attribute_before_typecast("{{attr}}") if @{{attr.id}}_changed
+            {% end %}
+          {% end %}
+          hash
         end
 
         # Extracts arguments due to mapping from *pull* and returns tuple for fields assignment.

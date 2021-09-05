@@ -29,14 +29,6 @@ module Jennifer::Model
     macro with_optimistic_lock(locking_column = lock_version)
       {% locking_column = locking_column.id %}
 
-      def self.locking_column
-        {{locking_column.stringify}}
-      end
-
-      def locking_column
-        self.class.locking_column
-      end
-
       {% if locking_column != "lock_version".id %}
         def lock_version
           {{locking_column}}
@@ -47,14 +39,51 @@ module Jennifer::Model
         end
       {% end %}
 
-      def increase_lock_version!
+      # :nodoc:
+      def destroy_without_transaction
+        return false if new_record? || !__before_destroy_callback
+
+        this = self
+        res = self.class.all
+          .where { (this.class.primary == this.primary) & (this.class._lock_version == this.lock_version) }
+          .delete
+        raise ::Jennifer::StaleObjectError.new(self) if !res.nil? && res.rows_affected != 1
+
+        if res
+          @destroyed = true
+          __after_destroy_callback
+        end
+        @destroyed
+      end
+
+      private def increase_lock_version
         self.{{locking_column}} = {{locking_column}} + 1
       end
 
-      def reset_lock_version!
-        @{{locking_column}} -= 1
+      private def reset_lock_version
         @{{locking_column}}_changed = false
-        @{{locking_column}}
+        @{{locking_column}} -= 1
+      end
+
+      private def update_record : Bool
+        return false unless __before_update_callback
+        return true unless changed?
+
+        previous_lock_value = lock_version
+        track_timestamps_on_update
+        increase_lock_version
+
+        this = self
+        res = self.class.all
+          .where { (this.class.primary == this.primary) & (this.class._lock_version == previous_lock_value) }
+          .update(changes)
+        __after_update_callback
+        raise ::Jennifer::StaleObjectError.new(self) if !res.nil? && res.rows_affected != 1
+
+        true
+      rescue e : Exception
+        reset_lock_version
+        raise e
       end
     end
   end

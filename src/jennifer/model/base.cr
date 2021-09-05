@@ -291,11 +291,18 @@ module Jennifer
       # NOTE: internal method
       abstract def arguments_to_insert
 
+      # Hash of changed columns and their new values.
+      abstract def changes : Hash(String, Jennifer::DBAny)
+
+      abstract def destroy_without_transaction
+
       private abstract def save_record_under_transaction(skip_validation)
       private abstract def init_attributes(values : Hash)
       private abstract def init_attributes(values : DB::ResultSet)
       private abstract def __refresh_changes
       private abstract def __refresh_relation_retrieves
+      private abstract def store_record : Bool
+      private abstract def update_record : Bool
 
       # Sets attributes based on given *values* using `#set_attribute`
       # and saves it to the database, if validation pass.
@@ -425,19 +432,7 @@ module Jennifer
       def destroy_without_transaction
         return false if new_record? || !__before_destroy_callback
 
-        deletion_status =
-          if responds_to?(:lock_version)
-            this = self
-            res = self.class.all
-              .where { (this.class.primary == this.primary) & (this.class._lock_version == this.lock_version) }
-              .delete
-            raise StaleObjectError.new(self) if !res.nil? && res.rows_affected != 1
-            res
-          else
-            delete
-          end
-
-        if deletion_status
+        if delete
           @destroyed = true
           __after_destroy_callback
         end
@@ -473,7 +468,7 @@ module Jennifer
         return true unless changed?
 
         track_timestamps_on_update
-        res = self.class.write_adapter.update(self, true)
+        res = self.class.write_adapter.update(self)
         __after_update_callback
         res.rows_affected == 1
       end

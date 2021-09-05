@@ -11,19 +11,12 @@ module Jennifer
         exec(*parse_query(sql_generator.insert(obj), opts[:args]))
       end
 
-      def update(obj : Model::Base, touch_lock : Bool = false)
+      def update(obj : Model::Base)
         return DB::ExecResult.new(0i64, -1i64) unless obj.changed?
 
-        obj.increase_lock_version! if touch_lock && obj.responds_to?(:increase_lock_version!)
         opts = obj.arguments_to_save
         opts[:args] << obj.primary
-        opts[:args] << obj.lock_version - 1 if touch_lock && obj.responds_to?(:lock_version)
-        exec(*parse_query(sql_generator.update(obj, touch_lock), opts[:args])).tap do |res|
-          raise StaleObjectError.new(obj) if touch_lock && obj.responds_to?(:lock_version) && res.rows_affected != 1
-        end
-      rescue e : Exception
-        obj.reset_lock_version! if touch_lock && obj.responds_to?(:reset_lock_version!)
-        raise e
+        exec(*parse_query(sql_generator.update(obj), opts[:args]))
       end
 
       def update(query, options : Hash)

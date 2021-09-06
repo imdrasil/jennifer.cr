@@ -16,24 +16,24 @@ describe Jennifer::Migration::TableBuilder::CreateTable do
   describe "#integer" do
     it "creates enum field" do
       table = create_table_expr
-      table.integer(:column, { :null => false })
-      table.fields["column"].should eq({ :type => :integer, :null => false })
+      table.integer(:column, {:null => false})
+      table.fields["column"].should eq({:type => :integer, :null => false})
     end
   end
 
   describe "#enum" do
     it "creates enum field" do
       table = create_table_expr
-      table.enum(:column, ["one", "two"], { :null => false })
-      table.fields["column"].should eq({ :type => :enum, :values => ["one", "two"], :null => false })
+      table.enum(:column, ["one", "two"], {:null => false})
+      table.fields["column"].should eq({:type => :enum, :values => ["one", "two"], :null => false})
     end
   end
 
   describe "#field" do
     it "creates field with given type" do
       table = create_table_expr
-      table.field(:column, :data_type, { :null => false })
-      table.fields["column"].should eq({ :sql_type => :data_type, :null => false })
+      table.field(:column, :data_type, {:null => false})
+      table.fields["column"].should eq({:sql_type => :data_type, :null => false})
     end
   end
 
@@ -41,7 +41,7 @@ describe Jennifer::Migration::TableBuilder::CreateTable do
     it "creates column based on given field" do
       table = create_table_expr
       table.reference(:user)
-      table.fields["user_id"].should eq({ :type => :integer, :null => true })
+      table.fields["user_id"].should eq({:type => :integer, :null => true})
 
       command = table.@commands[0].as(Jennifer::Migration::TableBuilder::CreateForeignKey)
       command.from_table.should eq(DEFAULT_TABLE)
@@ -54,9 +54,9 @@ describe Jennifer::Migration::TableBuilder::CreateTable do
     describe "polymorphic" do
       it "adds foreign and polymorphic columns" do
         table = create_table_expr
-        table.reference(:user, options: { :polymorphic => true })
-        table.fields["user_id"].should eq({ :polymorphic => true, :type => :integer, :null => true })
-        table.fields["user_type"].should eq({ :type => :string, :null => true })
+        table.reference(:user, options: {:polymorphic => true})
+        table.fields["user_id"].should eq({:polymorphic => true, :type => :integer, :null => true})
+        table.fields["user_type"].should eq({:type => :string, :null => true})
         table.@commands.should be_empty
       end
     end
@@ -66,8 +66,8 @@ describe Jennifer::Migration::TableBuilder::CreateTable do
     it "adds created_at and updated_at fields" do
       table = create_table_expr
       table.timestamps
-      table.fields["created_at"].should eq({ :type => :timestamp, :null => false })
-      table.fields["updated_at"].should eq({ :type => :timestamp, :null => false })
+      table.fields["created_at"].should eq({:type => :timestamp, :null => false})
+      table.fields["updated_at"].should eq({:type => :timestamp, :null => false})
     end
   end
 
@@ -113,12 +113,12 @@ describe Jennifer::Migration::TableBuilder::CreateTable do
     context "with multiple fields" do
       it do
         table = create_table_expr
-        table.index([:uuid, :name], :uniq, orders: { :uuid => :asc, :name => :desc })
+        table.index([:uuid, :name], :uniq, orders: {:uuid => :asc, :name => :desc})
         command = table.@commands[0].as(Jennifer::Migration::TableBuilder::CreateIndex)
         command.fields.should eq([:uuid, :name])
         command.type.should eq(:uniq)
         command.lengths.empty?.should be_true
-        command.orders.should eq({ :uuid => :asc, :name => :desc })
+        command.orders.should eq({:uuid => :asc, :name => :desc})
         command.index_name.should eq("test_table_uuid_name_idx")
       end
     end

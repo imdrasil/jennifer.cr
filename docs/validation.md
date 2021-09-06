@@ -310,7 +310,7 @@ This passes the record to a new instance of given validator class to be validate
 
 ```crystal
 class EnnValidator < Jennifer::Validations::Validator
-  def validate(record : Passport)
+  def validate(record, **opts)
     if record.enn!.size < 4 && record.enn![0].downcase == 'a'
       record.errors.add(:enn, "Invalid enn")
     end
@@ -370,7 +370,7 @@ class Player < Jennifer::Model::Base
   mapping(
     # ...
     health: Float64,
-    live_creature: { type: Bool, default: true, virtual: true }
+    live_creature: {type: Bool, default: true, virtual: true}
   )
 
   validates_numericality :health, greater_than: 0, if: :live_creature
@@ -384,7 +384,7 @@ class Player < Jennifer::Model::Base
   mapping(
     # ...
     health: Float64,
-    undead: { type: Bool, default: false, virtual: true }
+    undead: {type: Bool, default: false, virtual: true}
   )
 
   validates_numericality :health, greater_than: 0, if: !undead

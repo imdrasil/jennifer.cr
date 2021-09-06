@@ -13,7 +13,7 @@ describe Jennifer::Adapter::Bash do
         shell = described_class.new(config)
         c = Jennifer::Adapter::ICommandShell::Command.new(
           executable: "ls",
-          inline_vars: { "var1" => "val1", "var2" => "val2" }
+          inline_vars: {"var1" => "val1", "var2" => "val2"}
         )
         shell.execute(c).should be_executed_as("var1=val1 var2=val2 ls \"${@}\"", %w())
       end

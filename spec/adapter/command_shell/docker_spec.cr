@@ -15,7 +15,7 @@ describe Jennifer::Adapter::Docker do
         shell = prepare_docker_config
         c = Jennifer::Adapter::ICommandShell::Command.new(
           executable: "ls",
-          inline_vars: { "var1" => "val1", "var2" => "val2" }
+          inline_vars: {"var1" => "val1", "var2" => "val2"}
         )
         shell.execute(c).should be_executed_as("docker exec -i -e var1=val1 -e var2=val2 some_container ls \"${@}\"", %w())
       end
@@ -63,7 +63,7 @@ describe Jennifer::Adapter::Docker do
           c = Jennifer::Adapter::ICommandShell::Command.new(
             executable: "ls",
             options: ["asd"],
-            inline_vars: { "var1" => "val1"}
+            inline_vars: {"var1" => "val1"}
           )
           shell.execute(c).should be_executed_as("docker exec -i -e var1=val1 some_container ls \"${@}\"", ["asd"])
         end

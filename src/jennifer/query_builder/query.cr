@@ -314,6 +314,20 @@ module Jennifer
         self
       end
 
+      # Mutates query by given conditions.
+      #
+      # All key-value pairs are treated as a sequence of equal conditions
+      #
+      # ```
+      # Jennifer::Query["contacts"].where({:name => "test", :age => 23})
+      # # SELECT contacts.* FROM contacts WHERE (contacts.name = 'test' AND contacts.age = 23)
+      # ```
+      def where(conditions : Hash(Symbol, _))
+        array = conditions.map { |field, value| @expression.c(field.to_s).equal(value) }
+        set_tree(@expression.and(array))
+        self
+      end
+
       # Specifies raw SELECT clause value.
       #
       # ```
@@ -402,7 +416,7 @@ module Jennifer
       # Jennifer::Query["contacts"].union(Jennifer::Query["users"], true)
       # ```
       def union(query, all : Bool = false)
-        _unions! << { query: query, all: all }
+        _unions! << {query: query, all: all}
         self
       end
 
@@ -569,17 +583,17 @@ module Jennifer
         self
       end
 
-      # ditto
+      # :ditto:
       def set_tree(other : Query)
         set_tree(other.tree)
       end
 
-      # ditto
+      # :ditto:
       def set_tree(other : SQLNode)
         set_tree(other.to_condition)
       end
 
-      # ditto
+      # :ditto:
       def set_tree(other : Nil)
         raise ArgumentError.new("Condition tree can't be blank.")
       end
@@ -592,6 +606,38 @@ module Jennifer
           (!@having.nil? && @having.not_nil!.filterable?) ||
           (!@unions.nil? && _unions!.any?(&.[:query].filterable?)) ||
           (!@ctes.nil? && _ctes!.any?(&.filterable?))
+      end
+
+      # Returns a JSON string representing collection of retrieved entities.
+      #
+      # For more details see `Resource#to_json`
+      #
+      # ```
+      # Jennifer::Query["user"].to_json
+      # # => [{"id": 1, "name": "John Smith"}]
+      # ```
+      def to_json(only : Array(String)? = nil, except : Array(String)? = nil, &block)
+        JSON.build do |json|
+          to_json(json, only, except) { |_, entry| yield json, entry }
+        end
+      end
+
+      def to_json(json : JSON::Builder)
+        to_json(json) { }
+      end
+
+      def to_json(json : JSON::Builder, only : Array(String)? = nil, except : Array(String)? = nil, &block)
+        json.array do
+          each do |entry|
+            entry.to_json(json, only, except) { yield json, entry }
+          end
+        end
+      end
+
+      def to_json(only : Array(String)? = nil, except : Array(String)? = nil)
+        JSON.build do |json|
+          to_json(json, only, except) { }
+        end
       end
 
       #

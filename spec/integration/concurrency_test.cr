@@ -1,7 +1,7 @@
 require "./shared_helpers"
 require "./spec_helper"
 
-POOL_SIZE = 2
+POOL_SIZE     = 2
 TIME_TO_SLEEP = 3
 
 if Spec.adapter != "mysql"
@@ -23,7 +23,7 @@ Jennifer::Config.configure do |conf|
 end
 
 Spec.before_each do
-  (Jennifer::Model::Base.models - [Jennifer::Migration::Version]).each { |model| model.all.delete }
+  (Jennifer::Model::Base.models - [Jennifer::Migration::Version]).each(&.all.delete)
 end
 
 describe "Concurrent execution" do

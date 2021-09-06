@@ -9,7 +9,7 @@ module Jennifer
       # ```
       # class Shirt < Jennifer::Model::Base
       #   # ...
-      #   scope :red, { where { _color == "red" } }
+      #   scope :red { where { _color == "red" } }
       # end
       # ```
       macro scope(name, &block)
@@ -47,7 +47,7 @@ module Jennifer
       # ```
       # class Shirt < Jennifer::Model::Base
       #   # ...
-      #   scope :red, { where { _color == "red" } }
+      #   scope :red, {where { _color == "red" }}
       # end
       # ```
       macro scope(name, klass)

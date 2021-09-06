@@ -4,28 +4,38 @@ module Jennifer
     #
     # For more details see `Macros.validates_numericality`.
     class Numericality < Validator
-      def validate(record, field : Symbol, value, allow_blank : Bool, greater_than = nil, # ameba:disable Metrics/CyclomaticComplexity
-                   greater_than_or_equal_to = nil, equal_to = nil, less_than = nil, less_than_or_equal_to = nil,
-                   other_than = nil, odd = nil, even = nil)
-        with_blank_validation do
+      def validate(record, **opts) # ameba:disable Metrics/CyclomaticComplexity
+        field = opts[:field]
+        value = opts[:value]
+        allow_blank = opts[:allow_blank]
+        greater_than = opts[:greater_than]?
+        greater_than_or_equal_to = opts[:greater_than_or_equal_to]?
+        equal_to = opts[:equal_to]?
+        less_than = opts[:less_than]?
+        less_than_or_equal_to = opts[:less_than_or_equal_to]?
+        other_than = opts[:other_than]?
+        odd = opts[:odd]?
+        even = opts[:even]?
+
+        with_blank_validation(record, field, value, allow_blank) do
           value = value.not_nil!
           errors = record.errors
 
-          errors.add(field, :greater_than, { :value => greater_than }) if greater_than.try(&.>= value)
+          errors.add(field, :greater_than, {:value => greater_than}) if greater_than.try(&.>= value)
 
           if greater_than_or_equal_to.try(&.> value)
-            errors.add(field, :greater_than_or_equal_to, { :value => greater_than_or_equal_to })
+            errors.add(field, :greater_than_or_equal_to, {:value => greater_than_or_equal_to})
           end
 
-          errors.add(field, :equal_to, { :value => equal_to }) if equal_to.try(&.!= value)
+          errors.add(field, :equal_to, {:value => equal_to}) if equal_to.try(&.!= value)
 
-          errors.add(field, :less_than, { :value => less_than }) if less_than.try(&.<= value)
+          errors.add(field, :less_than, {:value => less_than}) if less_than.try(&.<= value)
 
           if less_than_or_equal_to.try(&.< value)
-            errors.add(field, :less_than_or_equal_to, { :value => less_than_or_equal_to })
+            errors.add(field, :less_than_or_equal_to, {:value => less_than_or_equal_to})
           end
 
-          errors.add(field, :other_than, { :value => other_than }) if other_than.try(&.== value)
+          errors.add(field, :other_than, {:value => other_than}) if other_than.try(&.== value)
 
           errors.add(field, :odd) if odd && even?(value)
 

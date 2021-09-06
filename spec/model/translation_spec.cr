@@ -138,6 +138,6 @@ describe Jennifer::Model::Translation do
 
   describe "#class_name" do
     it { Factory.build_contact.class_name.should eq("contact") }
-    it { Jennifer::Migration::Version.new({ version: "1" }).class_name.should eq("jennifer_migration_version") }
+    it { Jennifer::Migration::Version.new({version: "1"}).class_name.should eq("jennifer_migration_version") }
   end
 end

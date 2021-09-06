@@ -8,10 +8,13 @@ require "./mapping"
 require "./sti_mapping"
 require "./validation"
 require "./callback"
+require "./coercer"
+require "./big_decimal_converter"
 require "./enum_converter"
 require "./json_converter"
 require "./json_serializable_converter"
 require "./time_zone_converter"
+require "./timestamp"
 
 module Jennifer
   module Model
@@ -45,11 +48,14 @@ module Jennifer
         #
         # The metadata is a result of processing attributes passed to `.mapping` macro.
         abstract def columns_tuple
+
+        abstract def coercer
       end
 
       extend AbstractClassMethods
       include Presentable
       include Mapping
+      include Timestamp
       include STIMapping
       include Validation
       include Callback
@@ -128,8 +134,8 @@ module Jennifer
       # The resulting object is return whether it was saved to the database or not.
       #
       # ```
-      # Contact.create({ :name => "Jennifer" })
-      # Contact.create({ name: "Jennifer" })
+      # Contact.create({:name => "Jennifer"})
+      # Contact.create({name: "Jennifer"})
       # ```
       def self.create(values : Hash | NamedTuple)
         o = new(values)
@@ -168,8 +174,8 @@ module Jennifer
       # Raises an `RecordInvalid` error if validation fail, unlike `.create`.
       #
       # ```
-      # Contact.create!({ :name => "Jennifer" })
-      # Contact.create!({ name: "Jennifer" })
+      # Contact.create!({:name => "Jennifer"})
+      # Contact.create!({name: "Jennifer"})
       # ```
       def self.create!(values : Hash | NamedTuple)
         o = new(values)
@@ -228,12 +234,16 @@ module Jennifer
         new(pull)
       end
 
+      def self.coercer
+        Coercer
+      end
+
       # Sets *name* field with *value*
       #
       # ```
       # contact.set_attribute(:name, "Ivan")
       # ```
-      abstract def set_attribute(name, value)
+      abstract def set_attribute(name : String | Symbol, value : AttrType)
 
       # Assigns record properties based on key-value pairs of *values* and stores them directly to the database
       # without running validations and callbacks.
@@ -244,9 +254,9 @@ module Jennifer
       # `BaseException` is raised.
       #
       # ```
-      # user.update_columns({ :name => "Jennifer" })
+      # user.update_columns({:name => "Jennifer"})
       # ```
-      abstract def update_columns(values)
+      abstract def update_columns(values : Hash(String | Symbol, AttrType))
 
       # Returns whether any field was changed. If field again got first value - `true` anyway
       # will be returned.
@@ -291,8 +301,8 @@ module Jennifer
       # Returns whether object is successfully saved.
       #
       # ```
-      # contact.update({ :name => "Jennifer" })
-      # contact.update({ name: "Jennifer" })
+      # contact.update({:name => "Jennifer"})
+      # contact.update({name: "Jennifer"})
       # ```
       def update(values : Hash | NamedTuple) : Bool
         set_attributes(values)
@@ -316,8 +326,8 @@ module Jennifer
       # Raises an `RecordInvalid` error if validation fail, unlike `#update`.
       #
       # ```
-      # contact.update!({ :name => "Jennifer" })
-      # contact.update!({ name: "Jennifer" })
+      # contact.update!({:name => "Jennifer"})
+      # contact.update!({name: "Jennifer"})
       # ```
       def update!(values : Hash | NamedTuple) : Bool
         set_attributes(values)
@@ -338,15 +348,15 @@ module Jennifer
       # Sets attributes based on `values` where keys are attribute names.
       #
       # ```
-      # post.set_attributes({ :title => "New Title", :created_at => Time.local })
-      # post.set_attributes({ title: "New Title", created_at: Time.local })
+      # post.set_attributes({:title => "New Title", :created_at => Time.local})
+      # post.set_attributes({title: "New Title", created_at: Time.local})
       # post.set_attributes(title: "New Title", created_at: Time.local)
       # ```
       def set_attributes(values : Hash | NamedTuple)
         values.each { |k, v| set_attribute(k, v) }
       end
 
-      # ditto
+      # :ditto:
       def set_attributes(**values)
         set_attributes(values)
       end
@@ -357,7 +367,7 @@ module Jennifer
       # Is a shorthand for `#update_columns({ name => value })`.
       # Doesn't use attribute writer.
       def update_column(name : String | Symbol, value : Jennifer::DBAny)
-        update_columns({ name => value })
+        update_columns({name => value})
       end
 
       # Saves the object.
@@ -448,6 +458,7 @@ module Jennifer
         return false unless __before_update_callback
         return true unless changed?
 
+        track_timestamps_on_update
         res = self.class.write_adapter.update(self)
         __after_update_callback
         res.rows_affected == 1
@@ -456,6 +467,7 @@ module Jennifer
       private def store_record : Bool
         return false unless __before_create_callback
 
+        track_timestamps_on_create
         res = self.class.write_adapter.insert(self)
         init_primary_field(res.last_insert_id.as(Int)) if primary.nil? && res.last_insert_id > -1
         raise ::Jennifer::BaseException.new("Record hasn't been stored to the db") if res.rows_affected == 0
@@ -522,7 +534,7 @@ module Jennifer
         destroy(ids.to_a)
       end
 
-      # ditto
+      # :ditto:
       def self.destroy(ids : Array)
         _ids = ids
         all.where do
@@ -539,7 +551,7 @@ module Jennifer
         delete(ids.to_a)
       end
 
-      # ditto
+      # :ditto:
       def self.delete(ids : Array)
         _ids = ids
         all.where do
@@ -557,8 +569,8 @@ module Jennifer
       #
       # ```
       # User.import([
-      #   User.new({ name: "John" }),
-      #   User.new({ name: "Fahad" })
+      #   User.new({name: "John"}),
+      #   User.new({name: "Fahad"}),
       # ])
       # ```
       def self.import(collection : Array(self))

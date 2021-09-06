@@ -27,7 +27,7 @@ module Jennifer
       extend ClassMethods
 
       # Validates given *record* based on *args* and *opts*.
-      abstract def validate(record, *args, **opts)
+      abstract def validate(record, **opts)
 
       def blank_validation(record, field, value, allow_blank)
         if allow_blank
@@ -39,8 +39,8 @@ module Jennifer
         true
       end
 
-      macro with_blank_validation
-        case blank_validation(record, field, value, allow_blank)
+      macro with_blank_validation(record, field, value, allow_blank)
+        case blank_validation({{record}}, {{field}}, {{value}}, {{allow_blank}})
         when false
           false
         when nil

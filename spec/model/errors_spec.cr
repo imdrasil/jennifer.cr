@@ -149,12 +149,12 @@ describe Jennifer::Model::Errors do
     it do
       errors = described_class.new(facebook_profile)
       errors.add(:uid)
-      errors.any?.should be_true
+      errors.empty?.should be_false
     end
 
     it do
       errors = described_class.new(facebook_profile)
-      errors.any?.should be_false
+      errors.empty?.should be_true
     end
   end
 
@@ -205,7 +205,7 @@ describe Jennifer::Model::Errors do
     context "with options" do
       it do
         errors = described_class.new(facebook_profile)
-        errors.add(:uid, :equal_to, options: { :value => 3})
+        errors.add(:uid, :equal_to, options: {:value => 3})
         errors[:uid][0].should eq("must be equal to 3")
       end
     end
@@ -269,7 +269,15 @@ describe Jennifer::Model::Errors do
     end
 
     context "with options" do
-      it { errors.generate_message(:uid, :equal_to, nil, {:value => "asd"}).should eq("must be equal to asd")}
+      it { errors.generate_message(:uid, :equal_to, nil, {:value => "asd"}).should eq("must be equal to asd") }
+    end
+  end
+
+  describe "#inspect" do
+    it do
+      errors = described_class.new(facebook_profile)
+      errors.add(:uid)
+      errors.inspect.should match(/#<Jennifer::Model::Errors:0x[\w\d]{12} @messages={:uid => \["is invalid"\]}>/)
     end
   end
 

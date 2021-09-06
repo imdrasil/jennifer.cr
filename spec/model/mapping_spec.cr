@@ -3,9 +3,31 @@ require "../spec_helper"
 postgres_only do
   class ContactWithArray < ApplicationRecord
     mapping({
-      id: Primary32,
-      tags: Array(Int32)
+      id:   Primary32,
+      tags: Array(Int32),
     })
+  end
+
+  class PgContactWithBigDecimal < ApplicationRecord
+    table_name "contacts"
+
+    mapping({
+      id:       Primary32,
+      name:     String,
+      ballance: {type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2},
+    }, false)
+  end
+end
+
+mysql_only do
+  class PgContactWithBigDecimal < ApplicationRecord
+    table_name "contacts"
+
+    mapping({
+      id:       Primary32,
+      name:     String,
+      ballance: {type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(Float64), scale: 2},
+    }, false)
   end
 end
 
@@ -55,7 +77,7 @@ class UserWithConverter < Jennifer::Model::Base
 
   mapping(
     id: Primary32,
-    name: { type: JSON::Any, converter: Jennifer::Model::JSONConverter }
+    name: {type: JSON::Any, converter: Jennifer::Model::JSONConverter}
   )
 end
 
@@ -94,22 +116,22 @@ describe Jennifer::Model::Mapping do
     describe "with symbol argument" do
       it do
         Factory.build_contact.attribute_metadata(:id)
-          .should eq({type: Int32, primary: true, parsed_type: "Int32?", column: "id", auto: true})
+          .should eq({type: Int32, primary: true, parsed_type: "Int32?", column: "id", auto: true, null: false})
         Factory.build_contact.attribute_metadata(:name)
-          .should eq({type: String, parsed_type: "String", column: "name"})
+          .should eq({type: String, parsed_type: "String", column: "name", null: false})
         Factory.build_address.attribute_metadata(:street)
-          .should eq({type: String, parsed_type: "String", column: "street"})
+          .should eq({type: String, parsed_type: "String", column: "street", null: false})
       end
     end
 
     describe "with string argument" do
       it do
         Factory.build_contact.attribute_metadata("id")
-          .should eq({type: Int32, primary: true, parsed_type: "Int32?", column: "id", auto: true})
+          .should eq({type: Int32, primary: true, parsed_type: "Int32?", column: "id", auto: true, null: false})
         Factory.build_contact.attribute_metadata("name")
-          .should eq({type: String, parsed_type: "String", column: "name"})
+          .should eq({type: String, parsed_type: "String", column: "name", null: false})
         Factory.build_address.attribute_metadata("street")
-          .should eq({type: String, parsed_type: "String", column: "street"})
+          .should eq({type: String, parsed_type: "String", column: "street", null: false})
       end
     end
   end
@@ -138,6 +160,22 @@ describe Jennifer::Model::Mapping do
             contact_with_float = ContactWithFloatMapping.find!(c.id)
             contact_with_float.ballance.should eq(1.0f64)
             contact_with_float.ballance.is_a?(Float64).should be_true
+          end
+
+          it "correctly transform data to bigdecimal" do
+            Factory.create_contact(ballance: PG::Numeric.new(2i16, 0i16, 0i16, 2i16, [1234i16, 6800i16])).id
+            record = PgContactWithBigDecimal.all.last!
+            record.ballance.should eq(BigDecimal.new(123468, 2))
+          end
+        end
+      end
+
+      mysql_only do
+        describe "numeric" do
+          it "correctly transform data to bigdecimal" do
+            Factory.create_contact(ballance: 1234.68f64)
+            record = PgContactWithBigDecimal.all.last!
+            record.ballance.should eq(BigDecimal.new(123468, 2))
           end
         end
       end
@@ -170,6 +208,26 @@ describe Jennifer::Model::Mapping do
       end
     end
 
+    describe ".field_names" do
+      it "doesn't return field names from child models" do
+        Profile.field_names.should match_array(%w[id login contact_id type virtual_parent_field])
+      end
+
+      it "includes virtual fields" do
+        Profile.field_names.should match_array(%w[id login contact_id type virtual_parent_field])
+      end
+    end
+
+    describe ".column_names" do
+      it "doesn't return column names from child models" do
+        Profile.column_names.should match_array(%w[id login contact_id type])
+      end
+
+      it "doesn't include virtual fields" do
+        Profile.column_names.should match_array(%w[id login contact_id type])
+      end
+    end
+
     context "columns metadata" do
       it "sets constant" do
         Contact::COLUMNS_METADATA.is_a?(NamedTuple).should be_true
@@ -195,7 +253,7 @@ describe Jennifer::Model::Mapping do
             record = Profile.new(rs)
             klasses << record.class
           end
-          match_array(klasses, [FacebookProfile, TwitterProfile])
+          klasses.should match_array([FacebookProfile, TwitterProfile])
         end
 
         it "raises exception if invalid type was given" do
@@ -248,6 +306,28 @@ describe Jennifer::Model::Mapping do
       end
 
       context "from hash" do
+        context "with string values for non-string properties" do
+          it "coerces types" do
+            record = AllTypeModel.new({
+              "bool_f"      => "true",
+              "bigint_f"    => "12",
+              "integer_f"   => "13",
+              "short_f"     => "14",
+              "float_f"     => "12.0",
+              "double_f"    => "15.0",
+              "timestamp_f" => "2010-12-10 20:10:10",
+            })
+
+            record.bool_f.should be_true
+            record.bigint_f.should eq(12i64)
+            record.integer_f.should eq(13)
+            record.short_f.should eq(14i16)
+            record.float_f.should eq(12.0f32)
+            record.double_f.should eq(15.0)
+            record.timestamp_f.should eq(Time.local(2010, 12, 10, 20, 10, 10, location: ::Jennifer::Config.local_time_zone))
+          end
+        end
+
         context "with string keys" do
           it "properly creates object" do
             contact = Contact.new({"name" => "Deepthi", "age" => 18, "gender" => "female"})
@@ -288,7 +368,7 @@ describe Jennifer::Model::Mapping do
         end
 
         it "properly maps column aliases" do
-          a = Author.new({ name1: "Unk", name2: "Nown" })
+          a = Author.new({name1: "Unk", name2: "Nown"})
           a.name1.should eq("Unk")
           a.name2.should eq("Nown")
         end
@@ -319,8 +399,8 @@ describe Jennifer::Model::Mapping do
     describe "::field_count" do
       it "returns correct number of model fields" do
         proper_count = db_specific(
-          mysql: -> { 9 },
-          postgres: -> { 10 }
+          mysql: ->{ 9 },
+          postgres: ->{ 10 }
         )
         Contact.field_count.should eq(proper_count)
       end
@@ -342,8 +422,8 @@ describe Jennifer::Model::Mapping do
 
         describe "user-defined mapping types" do
           it "is accessible if defined in parent class" do
-            User::COLUMNS_METADATA[:password_digest].should eq({type: String, column: "password_digest", default: "", parsed_type: "String"})
-            User::COLUMNS_METADATA[:email].should eq({type: String, column: "email", default: "", parsed_type: "String"})
+            User::COLUMNS_METADATA[:password_digest].should eq({type: String, column: "password_digest", default: "", parsed_type: "String", null: false})
+            User::COLUMNS_METADATA[:email].should eq({type: String, column: "email", default: "", parsed_type: "String", null: false})
           end
 
           pending "allows to add extra options" do
@@ -492,8 +572,9 @@ describe Jennifer::Model::Mapping do
 
         describe "UUID" do
           it "correctly saves and loads" do
-            AllTypeModel.create!(uuid_f: "7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
-            AllTypeModel.all.last!.uuid_f!.should eq("7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
+            value = UUID.new("7d61d548-124c-4b38-bc05-cfbb88cfd1d1")
+            AllTypeModel.create!(uuid_f: value)
+            AllTypeModel.all.last!.uuid_f!.should eq(value)
           end
         end
 
@@ -610,7 +691,8 @@ describe Jennifer::Model::Mapping do
       context "mismatching data type" do
         it "raises DataTypeMismatch exception" do
           ContactWithNillableName.create({name: nil})
-          expect_raises(::Jennifer::DataTypeMismatch, "Column ContactWithCustomField.name is expected to be a String but got Nil.") do
+          expected_type = db_specific(mysql: ->{ "String" }, postgres: ->{ "(Slice(UInt8) | String)" })
+          expect_raises(::Jennifer::DataTypeMismatch, "Column ContactWithCustomField.name is expected to be a #{expected_type} but got Nil.") do
             ContactWithCustomField.all.last!
           end
         end
@@ -675,9 +757,14 @@ describe Jennifer::Model::Mapping do
         c.name.should eq("b")
       end
 
+      it "returns given value" do
+        c = Factory.build_contact(name: "a")
+        (c.name = "b").should eq("b")
+      end
+
       context "with DBAny" do
         it do
-          hash = { :name => "new_name" } of Symbol => Jennifer::DBAny
+          hash = {:name => "new_name"} of Symbol => Jennifer::DBAny
           c = Factory.build_contact(name: "a")
           c.name = hash[:name]
           c.name.should eq("new_name")
@@ -686,7 +773,7 @@ describe Jennifer::Model::Mapping do
 
       context "with subset of DBAny" do
         it do
-          hash = { :name => "new_name", :age => 12 }
+          hash = {:name => "new_name", :age => 12}
           c = Factory.build_contact(name: "a")
           c.name = hash[:name]
           c.name.should eq("new_name")
@@ -694,12 +781,93 @@ describe Jennifer::Model::Mapping do
 
         context "with wrong type" do
           it do
-            hash = { :name => "new_name", :age => 12 }
+            hash = {:name => "new_name", :age => 12}
             c = Factory.build_contact(name: "a")
             expect_raises(TypeCastError) do
               c.name = hash[:age]
             end
           end
+        end
+      end
+
+      context "with stringified value" do
+        it "sets nil for empty value" do
+          c = Factory.build_contact(user_id: 1)
+          c.user_id = ""
+          c.user_id.should be_nil
+        end
+
+        it "raises an error for blank string if field isn't nullable" do
+          c = Factory.build_contact(age: 12)
+          expect_raises(NilAssertionError) { c.age = "" }
+        end
+
+        postgres_only do
+          it "doesn't support PG::Numeric" do
+            c = Factory.build_contact
+            expect_raises(Jennifer::BaseException, "Type (PG::Numeric | Nil) can't be coerced") { c.ballance = "32" }
+          end
+
+          it "doesn't support Array" do
+            c = Factory.build_contact(tags: [32])
+            expect_raises(Jennifer::BaseException, "Type (Array(Int32) | Nil) can't be coerced") { c.tags = "32" }
+          end
+        end
+
+        it "supports Int16" do
+          record = AllTypeModel.new
+          record.short_f = "12"
+          record.short_f.should eq(12i16)
+        end
+
+        it "supports Int64" do
+          record = AllTypeModel.new
+          record.bigint_f = "12"
+          record.bigint_f.should eq(12i64)
+        end
+
+        it "supports Int32" do
+          record = AllTypeModel.new
+          record.integer_f = "12"
+          record.integer_f.should eq(12)
+        end
+
+        it "supports Float32" do
+          record = AllTypeModel.new
+          record.float_f = "12"
+          record.float_f.should eq(12.0f32)
+        end
+
+        it "supports Float64" do
+          record = AllTypeModel.new
+          record.double_f = "12"
+          record.double_f.should eq(12.0)
+        end
+
+        it "supports Bool" do
+          record = AllTypeModel.new
+          record.bool_f = "true"
+          record.bool_f.should be_true
+          record.bool_f = "1"
+          record.bool_f.should be_true
+          record.bool_f = "t"
+          record.bool_f.should be_true
+          record.bool_f = "f"
+          record.bool_f.should be_false
+          record.bool_f = "any"
+          record.bool_f.should be_false
+        end
+
+        it "supports JSON" do
+          record = AllTypeModel.new
+          record.json_f = %({"a": 1})
+          record.json_f.should eq(JSON.parse({a: 1}.to_json))
+        end
+
+        it "supports Time" do
+          record = AllTypeModel.new
+          record.timestamp_f = "2010-12-10 20:10:10"
+          record.timestamp_f.should eq(Time.local(2010, 12, 10, 20, 10, 10, location: ::Jennifer::Config.local_time_zone))
         end
       end
     end
@@ -803,7 +971,7 @@ describe Jennifer::Model::Mapping do
         end
       end
 
-      context "attribute exists" do
+      context "when attribute exists" do
         it "sets attribute if value has proper type" do
           c = Factory.build_contact
           c.set_attribute(:name, "123")
@@ -821,6 +989,12 @@ describe Jennifer::Model::Mapping do
           c = Factory.build_contact
           c.set_attribute(:name, "asd")
           c.name_changed?.should be_true
+        end
+
+        it "supports string coercing" do
+          c = Factory.build_contact
+          c.set_attribute(:user_id, "12")
+          c.user_id.should eq(12)
         end
       end
 
@@ -930,7 +1104,7 @@ describe Jennifer::Model::Mapping do
       it "uses attributes before typecast" do
         raw_json = %({"asd":1})
         json = JSON.parse(raw_json)
-        user = UserWithConverter.new({ name: JSON.parse("{}") })
+        user = UserWithConverter.new({name: JSON.parse("{}")})
         user.name = json
         user.name.should eq(json)
         user.arguments_to_save[:args].should eq([raw_json])
@@ -946,32 +1120,32 @@ describe Jennifer::Model::Mapping do
 
       it "returns tuple with all fields" do
         r = Factory.build_profile.arguments_to_insert
-        match_array(r[:fields], %w(login contact_id type))
+        r[:fields].should match_array(%w(login contact_id type))
       end
 
       it "returns tuple with all values" do
         r = Factory.build_profile.arguments_to_insert
-        match_array(r[:args], db_array("some_login", nil, "Profile"))
+        r[:args].should match_array(db_array("some_login", nil, "Profile"))
       end
 
       it "returns aliased columns" do
         r = Author
           .build(name1: "Prob", name2: "AblyTheLast")
           .arguments_to_insert
-        match_array(r[:args], db_array("Prob", "AblyTheLast"))
-        match_array(r[:fields], %w(first_name last_name))
+        r[:args].should match_array(db_array("Prob", "AblyTheLast"))
+        r[:fields].should match_array(%w(first_name last_name))
       end
 
       it "includes non autoincrementable primary field" do
-        r = NoteWithManualId.new({ id: 12, text: "test" }).arguments_to_insert
-        match_array(r[:args], db_array(12, "test", nil, nil))
-        match_array(r[:fields], %w(id text created_at updated_at))
+        r = NoteWithManualId.new({id: 12, text: "test"}).arguments_to_insert
+        r[:args].should match_array(db_array(12, "test", nil, nil))
+        r[:fields].should match_array(%w(id text created_at updated_at))
       end
 
       it "uses attributes before typecast" do
         raw_json = %({"asd":1})
         json = JSON.parse(raw_json)
-        user = UserWithConverter.new({ name: json })
+        user = UserWithConverter.new({name: json})
         user.name.should eq(json)
         user.arguments_to_insert[:args].should eq([raw_json])
       end
@@ -1006,33 +1180,6 @@ describe Jennifer::Model::Mapping do
     describe ".primary_auto_incrementable?" do
       it { Note.primary_auto_incrementable?.should be_true }
       it { NoteWithManualId.primary_auto_incrementable?.should be_false }
-    end
-  end
-
-  describe "%with_timestamps" do
-    it "adds callbacks" do
-      Contact::CALLBACKS[:create][:before].should contain("__update_created_at")
-      Contact::CALLBACKS[:save][:before].should contain("__update_updated_at")
-    end
-  end
-
-  describe "#__update_created_at" do
-    it "updates created_at field" do
-      c = Factory.build_contact
-      c.created_at.should be_nil
-      c.__update_created_at
-      c.created_at!.should_not be_nil
-      ((c.created_at! - Time.local).total_seconds < 1).should be_true
-    end
-  end
-
-  describe "#__update_updated_at" do
-    it "updates updated_at field" do
-      c = Factory.build_contact
-      c.updated_at.should be_nil
-      c.__update_updated_at
-      c.updated_at!.should_not be_nil
-      ((c.updated_at! - Time.local).total_seconds < 1).should be_true
     end
   end
 end

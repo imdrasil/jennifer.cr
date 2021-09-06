@@ -8,16 +8,16 @@ module Jennifer
 
       # :nodoc:
       OPERATORS = {
-        like: "LIKE",
-        not_like: "NOT LIKE",
-        regexp: "~",
+        like:       "LIKE",
+        not_like:   "NOT LIKE",
+        regexp:     "~",
         not_regexp: "!~",
-        "==": "=",
-        is: "IS",
-        is_not: "IS NOT",
-        contain: "@>",
-        contained: "<@",
-        overlap: "&&"
+        "==":       "=",
+        is:         "IS",
+        is_not:     "IS NOT",
+        contain:    "@>",
+        contained:  "<@",
+        overlap:    "&&",
       }
 
       def self.insert(obj : Model::Base, with_primary_field = true)

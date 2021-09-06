@@ -26,7 +26,6 @@ require "./support/*"
 require "../scripts/migrations/20170119011451314_create_contacts"
 require "../scripts/migrations/20180909200027509_create_notes"
 
-
 class Jennifer::Adapter::ICommandShell
   class_property stub = false
 end
@@ -34,7 +33,7 @@ end
 class Jennifer::Adapter::Bash < Jennifer::Adapter::ICommandShell
   private def invoke(string, options)
     if Jennifer::Adapter::ICommandShell.stub
-      { result: 0, output: [string, options] }
+      {result: 0, output: [string, options]}
     else
       super
     end
@@ -44,7 +43,7 @@ end
 class Jennifer::Adapter::Docker < Jennifer::Adapter::ICommandShell
   private def invoke(string, options)
     if Jennifer::Adapter::ICommandShell.stub
-      { result: 0, output: [string, options] }
+      {result: 0, output: [string, options]}
     else
       super
     end
@@ -69,12 +68,18 @@ end
 
 # Helper methods ================
 
-UTC = Time::Location.load("UTC")
+UTC    = Time::Location.load("UTC")
 BERLIN = Time::Location.load("Europe/Berlin")
 
 macro validated_by_record(type, value, field = :age, allow_blank = true)
   Factory.build_contact.tap do |record|
-    described_class.instance.validate(record, {{field}}, {{value}}, {{allow_blank}}, **{{type}})
+    described_class.instance.validate(
+      record,
+      field: {{field}},
+      value: {{value}},
+      allow_blank: {{allow_blank}},
+      {{type.stringify[1...-1].id}}
+    )
   end
 end
 
@@ -84,7 +89,7 @@ def clean_db
       .as(Jennifer::Postgres::Adapter)
       .refresh_materialized_view(FemaleContact.table_name)
   end
-  (Jennifer::Model::Base.models - [Jennifer::Migration::Version]).select { |t| t.has_table? }.each(&.all.delete)
+  (Jennifer::Model::Base.models - [Jennifer::Migration::Version]).select(&.has_table?).each(&.all.delete)
 end
 
 # Ends current transaction, yields to the block, clear and starts next one

@@ -146,7 +146,7 @@ describe Jennifer::Model::Callback do
 
     it "is not called if record is invalid" do
       c = CountryWithValidationCallbacks.create(name: "cOuntry")
-      c.errors.any?.should be_true
+      c.errors.empty?.should be_false
       c.name.should eq("cOuntry")
     end
   end

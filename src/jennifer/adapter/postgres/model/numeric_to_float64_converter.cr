@@ -7,27 +7,27 @@ module Jennifer::Model
   # class Order < Jennifer::Model::Base
   #   mapping(
   #     id: Primary32,
-  #     total: { type: Float64?, converter: Jennifer::Model::NumericToFloat64Converter }
+  #     total: {type: Float64?, converter: Jennifer::Model::NumericToFloat64Converter}
   #   )
   # end
   # ```
   class NumericToFloat64Converter
-    def self.from_db(pull, nillable)
-      if nillable
+    def self.from_db(pull, options)
+      if options[:null]
         pull.read(PG::Numeric?).try(&.to_f64)
       else
         pull.read(PG::Numeric).to_f64
       end
     end
 
-    def self.to_db(value : Float?)
+    def self.to_db(value : Float?, options)
       value
     end
 
-    def self.from_hash(hash : Hash, column)
+    def self.from_hash(hash : Hash, column, options)
       value = hash[column]
       case value
-      when PG::Numeric
+      when PG::Numeric, String
         value.to_f64
       else
         value

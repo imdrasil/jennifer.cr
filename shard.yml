@@ -1,40 +1,39 @@
 name: jennifer
-version: 0.10.0
+version: 0.11.1
 
 authors:
   - Roman Kalnytskyi <moranibaca@gmail.com>
 
-crystal: 0.35.1
+crystal: ">= 0.36.0"
 
 license: MIT
 
 development_dependencies:
   mysql:
     github: crystal-lang/crystal-mysql
-    version: "= 0.11.2"
+    version: "= 0.13.0"
   pg:
     github: will/crystal-pg
-    version: "= 0.21.1"
+    version: "= 0.23.2"
   factory:
     github: imdrasil/factory
-    version: "~> 0.1.4"
+    version: "~> 0.1.5"
   sam:
     github: imdrasil/sam.cr
-    version: "~> 0.3.0"
+    version: "~> 0.4.1"
   ameba:
     github: crystal-ameba/ameba
-    version: "= 0.13.2"
-  # TODO: add back after they add support of latest pg
-  # micrate:
-  #   github: "amberframework/micrate"
-  #   version: "= 0.9.0"
+    version: "= 0.14.3"
+  micrate:
+    github: "amberframework/micrate"
+    version: "= 0.11.0"
 dependencies:
   inflector:
     github: phoffer/inflector.cr
-    version: "= 0.1.8"
+    version: "~> 1.0.0"
   ifrit:
     github: imdrasil/ifrit
-    version: "= 0.1.2"
+    version: "= 0.1.3"
   i18n:
-    github: TechMagister/i18n.cr
-    version: "= 0.3.1"
+    github: crimson-knight/i18n.cr
+    version: "~> 0.4.1"

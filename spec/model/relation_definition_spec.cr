@@ -144,7 +144,7 @@ module Jennifer::Model
         TwitterProfile.all.count.should eq(1)
       end
 
-       it "passes if no associated object exists" do
+      it "passes if no associated object exists" do
         c = Factory.create_contact
         c.destroy
       end
@@ -180,13 +180,7 @@ module Jennifer::Model
 
       context "query" do
         it "sets correct query part" do
-          Contact.relation("addresses").condition_clause.as_sql.should eq("addresses.contact_id = contacts.id")
-        end
-
-        context "when declaration has additional block" do
-          it "sets correct query part" do
-            Contact.relation("main_address").condition_clause.as_sql.should match(/addresses\.contact_id = contacts\.id AND addresses\.main/)
-          end
+          Contact.relation("addresses").as(Jennifer::Relation::HasMany).condition_clause.as_sql.should eq("addresses.contact_id = contacts.id")
         end
       end
 
@@ -309,7 +303,7 @@ module Jennifer::Model
       end
 
       describe "polymorphic" do
-        relation = FacebookProfileWithDestroyNotable.relation("notes")
+        relation = FacebookProfileWithDestroyNotable.relation("notes").as(Jennifer::Relation::PolymorphicHasMany)
 
         describe "query" do
           it "sets correct query part" do
@@ -344,14 +338,15 @@ module Jennifer::Model
         Address::RELATIONS.has_key?("contact").should be_true
       end
 
-      context "query" do
+      describe "query" do
         it "sets correct query part" do
-          Address.relation("contact").condition_clause.as_sql.should eq("contacts.id = addresses.contact_id")
+          Address.relation("contact").as(Jennifer::Relation::BelongsTo).condition_clause.as_sql
+            .should eq("contacts.id = addresses.contact_id")
         end
 
         context "when declaration has additional block" do
           it "sets correct query part" do
-            query = JohnPassport.relation("contact").condition_clause
+            query = JohnPassport.relation("contact").as(Jennifer::Relation::BelongsTo).condition_clause
             query.as_sql.should match(/contacts\.id = passports\.contact_id AND contacts\.name = %s/)
             query.sql_args.should eq(db_array("John"))
           end
@@ -487,7 +482,7 @@ module Jennifer::Model
           context "with given hash" do
             it "builds new object" do
               note = Factory.create_note
-              note.add_notable({ "name" => "Jack", "age" => 16, "notable_type" => "Contact"})
+              note.add_notable({"name" => "Jack", "age" => 16, "notable_type" => "Contact"})
               note.notable.should be_a(Contact)
               note.notable_contact.name.should eq("Jack")
               note.notable_id.should_not be_nil
@@ -538,15 +533,16 @@ module Jennifer::Model
         Contact::RELATIONS.has_key?("addresses").should be_true
       end
 
-      context "query" do
+      describe "query" do
         it "sets correct query part" do
-          Contact.relation("passport").condition_clause.as_sql.should eq("passports.contact_id = contacts.id")
+          Contact.relation("passport").as(Jennifer::Relation::HasOne).condition_clause.as_sql
+            .should eq("passports.contact_id = contacts.id")
         end
 
         context "when declaration has additional block" do
           it "sets correct query part" do
             sql_reg = /addresses\.contact_id = contacts\.id AND addresses\.main/
-            Contact.relation("main_address").condition_clause.as_sql.should match(sql_reg)
+            Contact.relation("main_address").as(Jennifer::Relation::HasOne).condition_clause.as_sql.should match(sql_reg)
           end
         end
       end
@@ -636,7 +632,7 @@ module Jennifer::Model
       end
 
       describe "polymorphic" do
-        relation = ProfileWithOneNote.relation("note")
+        relation = ProfileWithOneNote.relation("note").as(Jennifer::Relation::PolymorphicHasOne)
 
         describe "query" do
           it "sets correct query part" do
@@ -665,9 +661,9 @@ module Jennifer::Model
     end
 
     describe "%has_and_belongs_many" do
-      context "query" do
+      describe "query" do
         it "sets correct query part" do
-          query = ContactWithDependencies.relation("u_countries")
+          query = ContactWithDependencies.relation("u_countries").as(Jennifer::Relation::ManyToMany)
           query.condition_clause.as_sql.should eq("countries.contact_id = contacts.id AND countries.name LIKE %s")
           query.condition_clause.sql_args.should eq(db_array("U%"))
         end

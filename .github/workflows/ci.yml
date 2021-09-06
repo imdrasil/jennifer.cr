@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  pull_request:
+    branches: "*"
+  push:
+    branches: master
+  schedule:
+    - cron: "0 7 * * 1"
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - crystal_version: 1.1.0
+            DB: mysql
+            other: INTEGRATION=1
+            linter: true
+            db_user: root
+            db_password:
+          - crystal_version: 1.1.0
+            DB: postgres
+            other: INTEGRATION=1
+            linter: true
+            db_user: dbuser
+            db_password: dbpassword
+          - crystal_version: 1.1.0
+            DB: postgres
+            mt: true
+            db_user: dbuser
+            db_password: dbpassword
+          - crystal_version: 1.1.0
+            DB: postgres
+            pair: true
+            db_user: dbuser
+            db_password: dbpassword
+            other: PAIR_DB_USER=root PAIR_DB_PASSWORD=
+          - crystal_version: 1.1.0
+            DB: mysql
+            pair: true
+            db_user: root
+            db_password:
+            other: PAIR_DB_USER=dbuser PAIR_DB_PASSWORD=dbpassword
+          - DB: postgres
+            db_user: dbuser
+            db_password: dbpassword
+            crystal_version: nightly
+
+    runs-on: ubuntu-latest
+
+    env:
+      DB: ${{ matrix.DB }}
+      PAIR: ${{ matrix.pair }}
+      DB_USER: ${{ matrix.db_user }}
+      DB_PASSWORD: ${{ matrix.db_password }}
+
+    steps:
+      - name: Export rest variables
+        run: export ${{ matrix.other }}
+
+      - name: Install Crystal
+        uses: oprypin/install-crystal@v1
+        with:
+          crystal: ${{matrix.crystal_version}}
+
+      - name: Donwload sources
+        uses: actions/checkout@v2
+
+      - name: Check formatting
+        if: ${{ matrix.linter }}
+        run: crystal tool format --check -e"./scripts"
+
+      - name: Install dependencies
+        run: shards install
+
+      - name: Run linter
+        if: ${{ matrix.linter }}
+        run: ./bin/ameba
+
+      - name: 'Install MySQL'
+        if: ${{ matrix.DB == 'mysql' || matrix.pair }}
+        run: bash .github/setup_mysql.sh
+
+      - name: Install PostgreSQL
+        if: ${{ matrix.DB == 'postgres' || matrix.pair }}
+        uses: harmon758/postgresql-action@v1
+        with:
+          postgresql version: '9.5'
+          postgresql user: ${{ env.DB_USER }}
+          postgresql password: ${{ env.DB_PASSWORD }}
+
+      - name: Create configuration file
+        run: bash ./scripts/setup.sh .github/database.yml
+
+      - name: Run migrations
+        run: make sam db:setup
+
+      - name: Run specs
+        run: |
+          if [ "MT" == '1' ]
+          then
+            crystal spec -Dpreview_mt
+          else
+            crystal spec
+          fi
+
+      - name: Run integration specs
+        if: ${{ matrix.integration }}
+        run: |
+          crystal spec spec/integration/sam_test.cr &&
+            crystal spec spec/integration/concurrency_test.cr -Dpreview_mt

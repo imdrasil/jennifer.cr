@@ -48,9 +48,9 @@ module Jennifer
         # * `:default` - `:none` value drops any default value specified before.
         #
         # ```
-        # change_column :description, { :new_name => "information" }
+        # change_column :description, {:new_name => "information"}
         #
-        # change_column :price, { :default => :none }
+        # change_column :price, {:default => :none}
         # ```
         def change_column(name : String | Symbol, type : Symbol? = nil,
                           options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
@@ -79,8 +79,8 @@ module Jennifer
         #
         # ```
         # add_column :picture, :blob
-        # add_column :status, :string, { :size => 20, :default => "draft", :null => false }
-        # add_column :skills, :text, { :array => true }
+        # add_column :status, :string, {:size => 20, :default => "draft", :null => false}
+        # add_column :skills, :text, {:array => true}
         # ```
         def add_column(name : String | Symbol, type : Symbol? = nil,
                        options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
@@ -107,16 +107,16 @@ module Jennifer
         # ```
         # add_reference :user
         # add_reference :order, :bigint
-        # add_reference :taggable, { :polymorphic => true }
+        # add_reference :taggable, {:polymorphic => true}
         # ```
         def add_reference(name, type : Symbol = :integer, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
           column = Inflector.foreign_key(name)
           is_null = options.has_key?(:null) ? options[:null] : true
           field_internal_type = options.has_key?(:sql_type) ? nil : type
 
-          @new_columns[column.to_s] = build_column_options(field_internal_type, options.merge({ :null => is_null }))
+          @new_columns[column.to_s] = build_column_options(field_internal_type, options.merge({:null => is_null}))
           if options[:polymorphic]?
-            add_column("#{name}_type", :string, { :null => is_null })
+            add_column("#{name}_type", :string, {:null => is_null})
           else
             add_foreign_key(
               (options[:to_table]? || Inflector.pluralize(name)).as(String | Symbol),
@@ -136,13 +136,14 @@ module Jennifer
         # `#add_reference`.
         def drop_reference(name, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
           column = Inflector.foreign_key(name)
-
-          drop_column(column)
           if options[:polymorphic]?
             drop_column("#{name}_type")
+            drop_column(column)
           else
-            drop_foreign_key(
-              (options[:to_table]? || Inflector.pluralize(name)).as(String | Symbol),
+            @commands << DropReference.new(
+              @adapter,
+              @name,
+              (options[:to_table]? || Inflector.pluralize(name)).to_s,
               options[:column]?.as(String | Symbol?)
             )
           end
@@ -153,8 +154,8 @@ module Jennifer
         #
         # Argument *null* sets `:null` option for both columns.
         def add_timestamps(null : Bool = false)
-          add_column(:created_at, :timestamp, { :null => null })
-          add_column(:updated_at, :timestamp, { :null => null })
+          add_column(:created_at, :timestamp, {:null => null})
+          add_column(:updated_at, :timestamp, {:null => null})
         end
 
         # Adds new index.
@@ -218,14 +219,25 @@ module Jennifer
         end
 
         def process
+          high_priority_commands.each(&.process)
           @drop_columns.each { |c| schema_processor.drop_column(@name, c) }
           @new_columns.each { |n, opts| schema_processor.add_column(@name, n, opts) }
           @changed_columns.each do |n, opts|
             schema_processor.change_column(@name, n, opts[:new_name].as(String | Symbol), opts)
           end
+          low_priority_commands.each(&.process)
 
-          process_commands
           schema_processor.rename_table(@name, @new_table_name) unless @new_table_name.empty?
+        end
+
+        private def high_priority_commands
+          @commands.select do |command|
+            command.is_a?(DropForeignKey) || command.is_a?(DropIndex) || command.is_a?(DropReference)
+          end
+        end
+
+        private def low_priority_commands
+          @commands - high_priority_commands
         end
       end
     end

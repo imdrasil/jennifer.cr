@@ -49,15 +49,6 @@ module Jennifer
 
         __field_declaration({{properties}}, false)
 
-        private def inspect_attributes(io) : Nil
-          super
-          {% for var, i in properties.keys %}
-            io << ", {{var.id}}: "
-            @{{var.id}}.inspect(io)
-          {% end %}
-          nil
-        end
-
         private def _extract_attributes(pull : DB::ResultSet)
           requested_columns_count = self.class.actual_table_field_count
           ::Jennifer::BaseException.assert_column_count(requested_columns_count, pull.column_count)
@@ -75,7 +66,7 @@ module Jennifer
                 begin
                   %var{key.id} =
                     {% if value[:converter] %}
-                      {{ value[:converter] }}.from_db(pull, {{value[:null]}})
+                      {{ value[:converter] }}.from_db(pull, self.class.columns_tuple[:{{key.id}}])
                     {% else %}
                       pull.read({{value[:parsed_type].id}})
                     {% end %}
@@ -120,14 +111,14 @@ module Jennifer
             if values.has_key?({{column1}})
               %var{key.id} =
                 {% if value[:converter] %}
-                  {{value[:converter]}}.from_hash(values, {{column1}})
+                  {{value[:converter]}}.from_hash(values, {{column1}}, self.class.columns_tuple[:{{key.id}}])
                 {% else %}
                   values[{{column1}}]
                 {% end %}
             elsif values.has_key?({{column2}})
               %var{key.id} =
                 {% if value[:converter] %}
-                  {{value[:converter]}}.from_hash(values, {{column2}})
+                  {{value[:converter]}}.from_hash(values, {{column2}}, self.class.columns_tuple[:{{key.id}}])
                 {% else %}
                   values[{{column2}}]
                 {% end %}
@@ -171,7 +162,6 @@ module Jennifer
         # Creates object from db tuple
         def initialize(%pull : DB::ResultSet)
           @new_record = false
-          # ameba:disable Lint/ShadowingOuterLocalVar
           {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(%pull)
         end
 
@@ -195,7 +185,6 @@ module Jennifer
 
         def initialize(values : Hash(String, ::Jennifer::DBAny))
           values["type"] = "{{@type.id}}" if values["type"]?.nil?
-          # ameba:disable Lint/ShadowingOuterLocalVar
           {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
@@ -275,8 +264,8 @@ module Jennifer
           {% for key, value in properties %}
             {% if value[:setter] != false %}
               when "{{key.id}}"
-                if value.is_a?({{value[:parsed_type].id}})
-                  self.{{key.id}} = value.as({{value[:parsed_type].id}})
+                if value.is_a?({{value[:parsed_type].id}}) || value.is_a?(String)
+                  self.{{key.id}} = value
                 else
                   raise ::Jennifer::BaseException.new("Wrong type for #{name} : #{value.class}")
                 end
@@ -305,7 +294,7 @@ module Jennifer
           {% for attr, options in properties %}
           when "{{attr.id}}"
             {% if options[:converter] %}
-              {{options[:converter]}}.to_db(self.{{attr.id}})
+              {{options[:converter]}}.to_db(self.{{attr.id}}, self.class.columns_tuple[:{{attr.id}}])
             {% else %}
               self.{{attr.id}}
             {% end %}
@@ -388,7 +377,12 @@ module Jennifer
 
         # :nodoc:
         def self.field_names : Array(String)
-          FIELD_NAMES
+          [{{properties.keys.map { |e| "#{e.id.stringify}" }.join(", ").id}}]
+        end
+
+        # :nodoc:
+        def self.column_names : Array(String)
+          [{{all_properties.keys.select { |attr| !all_properties[attr][:virtual] }.map { |e| "#{e.id.stringify}" }.join(", ").id}}]
         end
       end
     end

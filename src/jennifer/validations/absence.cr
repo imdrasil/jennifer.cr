@@ -4,8 +4,8 @@ module Jennifer
     #
     # For more details see `Macros.validates_absence`.
     class Absence < Validator
-      def validate(record, field, value, allow_blank)
-        record.errors.add(field, :present) if value.present?
+      def validate(record, **opts)
+        record.errors.add(opts[:field], :present) if opts[:value].present?
       end
     end
   end

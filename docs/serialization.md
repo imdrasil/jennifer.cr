@@ -4,7 +4,7 @@ There are multiple approaches to implement model serialization to a required for
 
 ## General
 
-Jennifer defines some hidden instance attributes in defined models for own use. Sometimes we would like to operate with a class where we have full access to all defined attributes/methods. For this case the easiest way is to use [JenniferTwin](https://github.com/imdrasil/jennifer_twin). Using it you can dump Jennifer model instance to a one that is totally under your control. One of the cases when this approach may come in handy when we would like to use attribute annotations, like [MessagePack::Serializable](https://github.com/crystal-community/msgpack-crystal) or [JSON::Serializable](https://crystal-lang.org/api/0.31.1/JSON/Serializable.html).
+Jennifer defines some hidden instance attributes in defined models for own use. Sometimes we would like to operate with a class where we have full access to all defined attributes/methods. For this case the easiest way is to use [JenniferTwin](https://github.com/imdrasil/jennifer_twin) lib. Using it you can dump Jennifer model instance to a separate object that is totally under your control. One of the cases when this approach may come in handy when ther is a need to use attribute annotations, like [MessagePack::Serializable](https://github.com/crystal-community/msgpack-crystal) or [JSON::Serializable](https://crystal-lang.org/api/0.31.1/JSON/Serializable.html).
 
 ```crystal
 class User < Jennifer::Model::Base
@@ -21,8 +21,8 @@ class UserTwin
   include JSON::Serializable
 
   map_fields(User, {
-    name: { key: :full_name },
-    password_hash: { ignore: true }
+    name: {key: :full_name},
+    password_hash: {ignore: true}
   })
 
   setter full_name
@@ -45,17 +45,45 @@ user_twin.to_modal # <User:0x000000000030 id: nil, name: "New Name", age: nil, p
 
 ## JSON
 
-For JSON serialization there are 2 options (apart from described above).
+For JSON serialization there are 3 options (one of which is described above).
 
-### `Model::Base#to_h`
+### `#to_json`
 
-If you need just to dump all non virtual fields to a JSON string - use `Jennifer::Model::Base#to_h` to get `Hash(Symbol, T::AttrType)` (or `#to_str_h` to get `Hash(String, T::AttrType)`) and then `#to_json` to get a JSON string. The disadvantages of this approach are obvious - **all** non virtual fields are serialized. This can be partially resolved by manual deleting/adding entries by keys (as before final serialization we get hash).
+Out of the box Jennifer provides `#to_json` method at model and query levels. They allows you to serialize specific records all together with any additional custom properties.
 
 ```crystal
 user = User.all.first # <User:0x000000000010 id: 1, name: "User 8", age: nil, password_hash: "<hash>">
-hash = user.to_h # => {:id => 1, :full_name => "User 8", :age => null}
-hash.delete(:age) if hash[:age].nil?
-hash.to_json # => %({"id":1,"full_name":"User 8"})
+user.to_json # => {"id":1,"name":"User 8","age":null}
+```
+
+To specify exact subset of fields that should be serialized use `only` argument
+
+```crystal
+user.to_json(only: %w[id name]) # => {"id":1,"name":"User 8"}
+# or just
+user.to_json(%w[id name])
+```
+
+It is possible to specify exception list of fields by `except` argument:
+
+```crystal
+user.to_json(except: %w[id]) # => {"name":"User 8","age":null}
+```
+
+To extend serialized object you can pass a block:
+
+```crystal
+user.to_json(only: %w[id name]) do |json|
+  json.field "custom", "value"
+end # => {"id":1,"name":"User 8","custom":"value}
+```
+
+To serialize collection retrieved from the database call `#to_json` method of `Jennifer::Query` directly. It accepts the same arguments as described above.
+
+```crystal
+User.all.where { _name.like("%ohn%) }.to_json(except: %w[age]) do |json, record|
+  json.field "custom", record.age
+end # => [{"id":1,"name":"John","custom":23}]
 ```
 
 ### Serializer

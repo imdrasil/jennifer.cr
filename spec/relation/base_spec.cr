@@ -84,13 +84,13 @@ describe Jennifer::Relation::Base do
     context "with hash" do
       it do
         p = profile.find!(Factory.create_facebook_profile.id)
-        n = example_relation.insert(p, { "text" => "text"} of String => Jennifer::DBAny)
+        n = example_relation.insert(p, {"text" => "text"} of String => Jennifer::DBAny)
         n.notable_id.should eq(p.id)
       end
 
       it do
         p = profile.find!(Factory.create_facebook_profile.id)
-        n = example_relation.insert(p, { :text => "text"} of Symbol => Jennifer::DBAny)
+        n = example_relation.insert(p, {:text => "text"} of Symbol => Jennifer::DBAny)
         n.notable_id.should eq(p.id)
       end
     end

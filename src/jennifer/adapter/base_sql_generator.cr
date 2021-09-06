@@ -8,10 +8,10 @@ module Jennifer
         # Generates query for inserting new record to db
         abstract def insert(obj : Model::Base)
         abstract def json_path(path : QueryBuilder::JSONSelector)
-        abstract def insert_on_duplicate(table, fields, values, unique_fields, on_conflict)
+        abstract def insert_on_duplicate(table, fields, rows : Int32, unique_fields, on_conflict)
 
         # Generates SQL for VALUES reference in `INSERT ... ON DUPLICATE` query.
-        abstract def values_expression(field)
+        abstract def values_expression(field : Symbol)
       end
 
       extend ClassMethods
@@ -230,7 +230,7 @@ module Jennifer
         where_clause(io, query.tree.not_nil!) if query.tree
       end
 
-      # ditto
+      # :ditto:
       def self.where_clause(io : String::Builder, tree)
         return unless tree
 
@@ -309,8 +309,10 @@ module Jennifer
       end
 
       def self.parse_query(query : String, args : Array(DBAny))
-        args.each_with_index do |arg, i|
-          args[i] = arg.as(Time).to_utc if arg.is_a?(Time)
+        if Config.time_zone_aware_attributes
+          args.each_with_index do |arg, i|
+            args[i] = arg.to_utc if arg.is_a?(Time) && !arg.utc?
+          end
         end
         {query % Array.new(args.size, "?"), args}
       end

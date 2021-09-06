@@ -18,7 +18,7 @@ module Jennifer
       # Allow to specify an order by hash with string keys.
       #
       # ```
-      # Contact.all.order({ "name" => :asc })
+      # Contact.all.order({"name" => :asc})
       # ```
       def order(opts : Hash(String, String | Symbol))
         opts.each do |k, v|
@@ -32,7 +32,7 @@ module Jennifer
       # Allow to specify an order by hash with symbol keys.
       #
       # ```
-      # Contact.all.order({ :name => :asc })
+      # Contact.all.order({:name => :asc})
       # ```
       def order(opts : Hash(Symbol, String | Symbol))
         opts.each do |k, v|

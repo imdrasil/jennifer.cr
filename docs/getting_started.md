@@ -2,13 +2,13 @@
 
 ## Installation
 
-Add the shard to your `shard.yml`. Also
+Add the shard to your `shard.yml`
 
 ```yml
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.10.0"
+    version: "~> 0.11.1"
 ```
 
 For MySQL and PostgreSQL you need to add related driver shard - [crystal-mysql](https://github.com/crystal-lang/crystal-mysql) or [crystal-pg](https://github.com/will/crystal-pg):
@@ -17,14 +17,14 @@ For MySQL and PostgreSQL you need to add related driver shard - [crystal-mysql](
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "= 0.10.0"
+    version: "= 0.11.1"
   pg:
     github: will/crystal-pg
-    version: "= 0.21.0"
+    version: "= 0.23.2"
   # or for mysql
   crystal-mysql:
     github: crystal-lang/crystal-mysql
-    version: "= 0.11.0"
+    version: "= 0.13.0"
 ```
 
 If you want to use SQLite3 - add [Jennifer SQLite3 **adapter**](https://github.com/imdrasil/jennifer_sqlite3_adapter):
@@ -33,10 +33,10 @@ If you want to use SQLite3 - add [Jennifer SQLite3 **adapter**](https://github.c
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "= 0.10.0"
+    version: "= 0.11.1"
   jennifer_sqlite3_adapter:
     github: imdrasil/jennifer_sqlite3_adapter
-    version: "~> 0.3.0"
+    version: "~> 0.3.1"
 ```
 
 It is shipped with SQLite driver.
@@ -152,8 +152,8 @@ This generates 2 files:
   class CreateUsers < Jennifer::Migration::Base
     def up
       create_table :users do |t|
-        t.string :title, { :null => false }
-        t.integer :age, { :null => false }
+        t.string :title, {:null => false}
+        t.integer :age, {:null => false}
 
         t.timestamps
       end
@@ -194,6 +194,6 @@ To be able to use our new model we need to populate schema changes to the databa
 Now we are able to use our model:
 
 ```crystal
-user = User.create({ name: "New User", age: 100 })
+user = User.create({name: "New User", age: 100})
 puts user.inspect
 ```

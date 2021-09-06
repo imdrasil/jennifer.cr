@@ -13,8 +13,8 @@ module Jennifer
       ON_EVENT_ACTION_TRANSLATIONS = {
         FkEventActions::NoAction => "NO ACTION",
         FkEventActions::Restrict => "RESTRICT",
-        FkEventActions::Cascade => "CASCADE",
-        FkEventActions::SetNull => "SET NULL"
+        FkEventActions::Cascade  => "CASCADE",
+        FkEventActions::SetNull  => "SET NULL",
       }
 
       # :nodoc:
@@ -35,7 +35,7 @@ module Jennifer
       def initialize(@adapter)
       end
 
-      abstract def rename_table(old_name, new_name)
+      abstract def rename_table(old_name : String | Symbol, new_name : String | Symbol)
       private abstract def index_type_translate(name)
       private abstract def column_definition(name, options, io)
 

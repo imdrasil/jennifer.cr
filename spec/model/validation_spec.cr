@@ -2,6 +2,7 @@ require "../spec_helper"
 
 macro validation_class_generator(klass, name, **options)
   class {{klass}} < AbstractContactModel
+    {{yield}}
     validates_numericality {{name}}, {{**options}}
   end
 end
@@ -16,13 +17,26 @@ validation_class_generator(OddContact, :age, odd: true)
 validation_class_generator(EvenContact, :age, even: true)
 validation_class_generator(SeveralValidationsContact, :age, greater_than: 20, less_than_or_equal_to: 30)
 
+postgres_only do
+  class NumericGTContact < Jennifer::Model::Base
+    table_name "contacts"
+
+    mapping({
+      id:       Primary32,
+      ballance: {type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2},
+    }, false)
+
+    validates_numericality :ballance, greater_than: 20
+  end
+end
+
 class GTNContact < Jennifer::Model::Base
   table_name "contacts"
 
   mapping({
-    id: Primary32,
-    age: Int32?,
-    validatable: { type: Bool, default: true, virtual: true}
+    id:          Primary32,
+    age:         Int32?,
+    validatable: {type: Bool, default: true, virtual: true},
   }, false)
 
   validates_numericality :age, greater_than: 20, allow_blank: true, if: :validatable
@@ -31,10 +45,10 @@ end
 
 class AcceptanceContact < ApplicationRecord
   mapping({
-    id: Primary32,
-    name: String,
-    terms_of_service: { type: Bool, default: false, virtual: true },
-    eula: { type: String?, virtual: true }
+    id:               Primary32,
+    name:             String,
+    terms_of_service: {type: Bool, default: false, virtual: true},
+    eula:             {type: String?, virtual: true},
   }, false)
 
   validates_acceptance :terms_of_service
@@ -43,11 +57,11 @@ end
 
 class ConfirmationContact < ApplicationRecord
   mapping({
-    id: Primary32,
-    name: String?,
-    case_insensitive_name: String?,
-    name_confirmation: { type: String?, virtual: true },
-    case_insensitive_name_confirmation: { type: String?, virtual: true }
+    id:                                 Primary32,
+    name:                               String?,
+    case_insensitive_name:              String?,
+    name_confirmation:                  {type: String?, virtual: true},
+    case_insensitive_name_confirmation: {type: String?, virtual: true},
   }, false)
 
   validates_confirmation :name
@@ -56,10 +70,10 @@ end
 
 class PresenceContact < ApplicationRecord
   mapping({
-    id: Primary32,
-    name: String?,
-    address: String?,
-    confirmable: {type: Bool, virtual: true, default: true}
+    id:          Primary32,
+    name:        String?,
+    address:     String?,
+    confirmable: {type: Bool, virtual: true, default: true},
   })
 
   validates_presence :name, if: :confirmable?
@@ -72,17 +86,19 @@ class PresenceContact < ApplicationRecord
 end
 
 class ValidatorWithOptions < Jennifer::Validations::Validator
-  def validate(record, field, message = nil)
+  def validate(record, **opts)
+    field = opts[:field]
+
     if record.attribute(field) == "invalid"
-      record.errors.add(field, message || "blank")
+      record.errors.add(field, opts[:message]? || "blank")
     end
   end
 end
 
 class CustomValidatorModel < ApplicationRecord
   mapping({
-    id: Primary32,
-    name: String
+    id:   Primary32,
+    name: String,
   })
 
   validates_with ValidatorWithOptions, field: :name, message: "Custom Message"
@@ -100,7 +116,7 @@ describe Jennifer::Model::Validation do
 
     context "with expression" do
       it do
-        c = GTNContact.build({ :age => 16 })
+        c = GTNContact.build({:age => 16})
         c.validatable = false
         c.should be_valid
         c.age = 14
@@ -301,13 +317,13 @@ describe Jennifer::Model::Validation do
       p.should validate(:name).with("has already been taken")
     end
 
-    pending "allows blank" {}
+    pending "allows blank"
 
     it "should do nothing if the combination of values is unique" do
       c = Factory.create_contact(
-        name:        "Tess Tee",
-        age:         22,
-        gender:      "female"
+        name: "Tess Tee",
+        age: 22,
+        gender: "female"
       )
 
       p1 = Factory.create_passport(enn: "xyz0", contact_id: c.id)
@@ -319,9 +335,9 @@ describe Jennifer::Model::Validation do
 
     it "should not allow combinations of values that already exist" do
       c = Factory.create_contact(
-        name:        "Test R. Numberone",
-        age:         43,
-        gender:      "male"
+        name: "Test R. Numberone",
+        age: 43,
+        gender: "male"
       )
 
       p1 = Factory.create_passport(enn: "z0134", contact_id: c.id)
@@ -359,7 +375,7 @@ describe Jennifer::Model::Validation do
 
     context "when field is nil" do
       it "doesn't pass validation" do
-        c = PresenceContact.build({ :address => "asd" })
+        c = PresenceContact.build({:address => "asd"})
         c.should validate(:address).with("must be blank")
       end
     end
@@ -368,12 +384,12 @@ describe Jennifer::Model::Validation do
   describe "%validates_numericality" do
     context "with allowed nil value" do
       it "passes validation if value is nil" do
-        c = GTNContact.build({ :age => nil })
+        c = GTNContact.build({:age => nil})
         c.should be_valid
       end
 
       it "process validation if value is not nil" do
-        c = GTNContact.build({ :age => 20 })
+        c = GTNContact.build({:age => 20})
         c.should_not be_valid
       end
     end
@@ -387,6 +403,13 @@ describe Jennifer::Model::Validation do
       it "pass validation if an attribute satisfies condition" do
         c = GTContact.build(age: 21)
         c.should be_valid
+      end
+
+      postgres_only do
+        it "works with BigDecimal" do
+          c = NumericGTContact.new({ballance: 19.0})
+          c.should validate(:ballance).with("must be greater than 20")
+        end
       end
     end
 
@@ -490,7 +513,7 @@ describe Jennifer::Model::Validation do
 
     context "with if condition" do
       it "doesn't invoke related validation if condition is negative" do
-        c = GTNContact.build({ :age => 16 })
+        c = GTNContact.build({:age => 16})
         c.validatable = false
         c.should be_valid
       end
@@ -520,20 +543,20 @@ describe Jennifer::Model::Validation do
 
     it "pass validation" do
       c = ConfirmationContact.build({
-        :name => "name",
-        :case_insensitive_name => "cin",
-        :name_confirmation => "name",
-        :case_insensitive_name_confirmation => "CIN"
+        :name                               => "name",
+        :case_insensitive_name              => "cin",
+        :name_confirmation                  => "name",
+        :case_insensitive_name_confirmation => "CIN",
       })
       c.should be_valid
     end
 
     it "adds error message if doesn't satisfies validation" do
       c = ConfirmationContact.build({
-        :name => "name",
-        :case_insensitive_name => "cin",
-        :name_confirmation => "Name",
-        :case_insensitive_name_confirmation => "NIC"
+        :name                               => "name",
+        :case_insensitive_name              => "cin",
+        :name_confirmation                  => "Name",
+        :case_insensitive_name_confirmation => "NIC",
       })
       c.should validate(:name).with("doesn't match Name")
       c.should validate(:case_insensitive_name).with("doesn't match Case insensitive name")

@@ -52,7 +52,7 @@ describe Jennifer::Relation::PolymorphicHasMany do
     context "with hash" do
       it do
         p = FacebookProfileWithDestroyNotable.find!(Factory.create_facebook_profile.id)
-        n = example_class.new(relation_name, nil, nil, NoteWithCallback.all, nil, :notable).insert(p, { "text" => "text"} of String => Jennifer::DBAny)
+        n = example_class.new(relation_name, nil, nil, NoteWithCallback.all, nil, :notable).insert(p, {"text" => "text"} of String => Jennifer::DBAny)
         n.notable_id.should eq(p.id)
         n.notable_type.should eq(profile.to_s)
       end

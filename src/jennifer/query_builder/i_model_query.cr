@@ -101,13 +101,13 @@ module Jennifer
       # As a result all callbacks and validations are invoked.
       #
       # ```
-      # Contact.all.where { _name == "Ohn" }.patch({ name: "John" })
+      # Contact.all.where { _name == "Ohn" }.patch({name: "John"})
       # ```
       def patch(options : Hash | NamedTuple)
         find_each(&.update(options))
       end
 
-      # ditto
+      # :ditto:
       def patch(**opts)
         patch(opts)
       end
@@ -118,13 +118,13 @@ module Jennifer
       # it will stop all following operations.
       #
       # ```
-      # Contact.all.where { _name == "Ohn" }.patch!({ name: "John" })
+      # Contact.all.where { _name == "Ohn" }.patch!({name: "John"})
       # ```
       def patch!(options : Hash | NamedTuple)
         find_each(&.update!(options))
       end
 
-      # ditto
+      # :ditto:
       def patch!(**opts)
         patch!(opts)
       end
@@ -137,7 +137,7 @@ module Jennifer
 
       private def add_aliases
         table_names = [table]
-        table_names.concat(_joins!.map { |e| e.table unless e.has_alias? }.compact) if _joins?
+        table_names.concat(_joins!.compact_map { |e| e.table unless e.has_alias? }) if _joins?
         duplicates = extract_duplicates(table_names)
         return if duplicates.empty?
 
@@ -150,7 +150,7 @@ module Jennifer
               i += 1
             end
           end
-          _joins!.each { |j| j.alias_tables(@table_aliases) }
+          _joins!.each(&.alias_tables(@table_aliases))
         end
         @tree.not_nil!.alias_tables(@table_aliases) if @tree
       end

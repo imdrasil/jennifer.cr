@@ -24,9 +24,9 @@ end
 
 ```crystal
 Password = {
-  type: String?,
+  type:    String?,
   virtual: true,
-  setter: false
+  setter:  false,
 }
 ```
 

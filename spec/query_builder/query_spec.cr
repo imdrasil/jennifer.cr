@@ -177,6 +177,12 @@ describe Jennifer::QueryBuilder::Query do
       q1.tree.to_s.should eq("contacts.name = %s AND (age > %s)")
     end
 
+    it "generates correct request for given hash arguments" do
+      q1 = Query["contacts"].where({:name => "John", :age => 12})
+      q1.tree.to_s.should eq("(contacts.name = %s AND contacts.age = %s)")
+      q1.tree.not_nil!.sql_args.should eq(db_array("John", 12))
+    end
+
     postgres_only do
       it "gracefully handle argument type mismatch" do
         void_transaction do
@@ -477,7 +483,7 @@ describe Jennifer::QueryBuilder::Query do
         it "updates nothing" do
           expect_query_silence do
             block_is_executed = false
-            Query["contacts"].none.update { block_is_executed = true; { :age => _age + 10 } }
+            Query["contacts"].none.update { block_is_executed = true; {:age => _age + 10} }
             block_is_executed.should be_true
           end
         end
@@ -486,7 +492,7 @@ describe Jennifer::QueryBuilder::Query do
       context "when arguments is passed as hash" do
         it "updates nothing" do
           expect_query_silence do
-            Query["contacts"].none.update({ :age => 40 })
+            Query["contacts"].none.update({:age => 40})
           end
         end
       end
@@ -568,6 +574,50 @@ describe Jennifer::QueryBuilder::Query do
     describe "do nothing" do
       it do
         Query["contacts"].merge(Query["users"].none).do_nothing?.should be_true
+      end
+    end
+  end
+
+  describe "#to_json" do
+    it "includes all fields by default" do
+      Factory.create_passport
+      Passport.all.to_json.should eq(%([{"enn":"dsa","contact_id":null}]))
+    end
+
+    it "allows to specify *only* argument solely" do
+      Factory.create_passport
+      Passport.all.to_json(%w[enn]).should eq(%([{"enn":"dsa"}]))
+    end
+
+    it "allows to specify *except* argument solely" do
+      Factory.create_passport
+      Passport.all.to_json(except: %w[enn]).should eq(%([{"contact_id":null}]))
+    end
+
+    context "with block" do
+      it "allows to extend json using block" do
+        executed = false
+        Factory.create_passport
+        Passport.all.to_json do |json, obj|
+          executed = true
+          obj.class.should eq(Passport)
+          json.field "custom", "value #{obj.enn}"
+        end.should eq(%([{"enn":"dsa","contact_id":null,"custom":"value dsa"}]))
+        executed.should be_true
+      end
+
+      it "respects :only option" do
+        Factory.create_passport
+        Passport.all.to_json(%w[enn]) do |json|
+          json.field "custom", "value"
+        end.should eq(%([{"enn":"dsa","custom":"value"}]))
+      end
+
+      it "respects :except option" do
+        Factory.create_passport
+        Passport.all.to_json(except: %w[enn]) do |json|
+          json.field "custom", "value"
+        end.should eq(%([{"contact_id":null,"custom":"value"}]))
       end
     end
   end

@@ -1,7 +1,7 @@
 abstract class BaseView < Jennifer::View::Materialized
   BlankString = {
     type: String,
-    null: true
+    null: true,
   }
 
   {% Jennifer::Macros::TYPES << "BlankString" %}
@@ -19,7 +19,7 @@ class MaleContact < Jennifer::View::Base
     mapping({
       id:         Primary32,
       name:       String,
-      gender:     { type: String, converter: Jennifer::Model::PgEnumConverter },
+      gender:     {type: String, converter: Jennifer::Model::PgEnumConverter},
       age:        Int32,
       created_at: Time?,
     }, false)
@@ -43,13 +43,13 @@ end
 # ==================
 
 class FakeFemaleContact < Jennifer::View::Base
-  view_name "female_contacs"
+  view_name "female_contacts"
 
   {% if env("DB") == "postgres" || env("DB") == nil %}
     mapping({
       id:         Primary32,
       name:       String,
-      gender:     { type: String, converter: Jennifer::Model::PgEnumConverter },
+      gender:     {type: String, converter: Jennifer::Model::PgEnumConverter},
       age:        Int32,
       created_at: Time?,
     }, false)
@@ -100,23 +100,23 @@ end
 class PrintPublication < Jennifer::View::Base
   {% if env("DB") == "postgres" || env("DB") == nil %}
     mapping(
-      id:         Primary32,
-      title:      String,
-      v:          {type: Int32, column: :version},
-      publisher:  String,
-      pages:      Int32?,
-      url:        String?,
-      type:       { type: String, converter: Jennifer::Model::PgEnumConverter }
+      id: Primary32,
+      title: String,
+      v: {type: Int32, column: :version},
+      publisher: String,
+      pages: Int32?,
+      url: String?,
+      type: {type: String, converter: Jennifer::Model::PgEnumConverter}
     )
   {% else %}
     mapping(
-      id:         Primary32,
-      title:      String,
-      v:          {type: Int32, column: :version},
-      publisher:  String,
-      pages:      Int32?,
-      url:        String?,
-      type:       String
+      id: Primary32,
+      title: String,
+      v: {type: Int32, column: :version},
+      publisher: String,
+      pages: Int32?,
+      url: String?,
+      type: String
     )
   {% end %}
 end

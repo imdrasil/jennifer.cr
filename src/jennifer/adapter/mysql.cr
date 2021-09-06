@@ -24,21 +24,21 @@ module Jennifer
 
         :decimal => "decimal", # Float64
 
-        :string     => "varchar",
-        :varchar    => "varchar",
-        :text       => "text",
+        :string  => "varchar",
+        :varchar => "varchar",
+        :text    => "text",
 
         :timestamp => "datetime", # "timestamp",
         :date_time => "datetime",
-        :date => "date",
+        :date      => "date",
 
         :blob => "blob",
         :json => "json",
       }
 
       DEFAULT_SIZES = {
-        :string => 254,
-        :varchar => 254
+        :string  => 254,
+        :varchar => 254,
       }
 
       # NOTE: ATM is not used
@@ -58,7 +58,7 @@ module Jennifer
         @schema_processor ||= SchemaProcessor.new(self)
       end
 
-      def translate_type(name : Symbol)
+      def translate_type(name)
         TYPE_TRANSLATIONS[name]
       rescue e : KeyError
         raise BaseException.new("Unknown data alias #{name}")
@@ -113,7 +113,7 @@ module Jennifer
         end.exists?
       end
 
-      def foreign_key_exists?(from_table, to_table = nil, column = nil, name : String? = nil)
+      def foreign_key_exists?(from_table, to_table = nil, column = nil, name : String? = nil) : Bool
         name = self.class.foreign_key_name(from_table, to_table, column, name)
         Query["information_schema.KEY_COLUMN_USAGE", self]
           .where { and(_constraint_name == name, _table_schema == config.db) }
@@ -177,7 +177,7 @@ module Jennifer
               WHERE SCHEMA_NAME = ?
             )
           SQL
-          config.db
+            config.db
         end == 1
       end
 
@@ -189,7 +189,7 @@ module Jennifer
         if column.column_type == MySql::Type::Tiny && column.column_length == 1u32
           (rs.read.as(DBAny) == 1i8).as(Bool)
         else
-          rs.read.as(DBAny)
+          super
         end
       end
 

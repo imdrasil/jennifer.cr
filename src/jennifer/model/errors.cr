@@ -148,13 +148,17 @@ module Jennifer
       def full_message(attribute : Symbol, message : String)
         return message if attribute == :base
         attr_name = @base.class.human_attribute_name(attribute)
-        I18n.translate("#{Translation::GLOBAL_SCOPE}.errors.format", default: "#{attribute} #{message}", options: { "attribute" => attr_name, "message" => message })
+        I18n.translate(
+          "#{Translation::GLOBAL_SCOPE}.errors.format",
+          default: "#{attribute} #{message}",
+          options: {"attribute" => attr_name, "message" => message}
+        )
       end
 
       # Translates an error message in its default scope
       def generate_message(attribute : Symbol, message : Symbol, count, options : Hash)
         prefix = "#{Translation::GLOBAL_SCOPE}.errors."
-        opts = { count: count, options: options }
+        opts = {count: count, options: options}
 
         @base.class.lookup_ancestors do |ancestor|
           path = "#{prefix}#{ancestor.i18n_key}.attributes.#{attribute}.#{message}"
@@ -177,7 +181,7 @@ module Jennifer
 
       def inspect(io) : Nil
         io << "#<" << {{@type.name.id.stringify}} << ":0x"
-        object_id.to_s(16, io)
+        object_id.to_s(io, 16)
         io << " @messages="
         @messages.inspect(io)
         io << '>'

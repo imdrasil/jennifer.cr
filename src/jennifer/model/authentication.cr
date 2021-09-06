@@ -5,9 +5,9 @@ module Jennifer
     module Authentication
       # Password virtual attribute type definition.
       Password = {
-        type: String?,
+        type:    String?,
         virtual: true,
-        setter: false
+        setter:  false,
       }
 
       {% Macros::TYPES << "Password" %}
@@ -38,6 +38,7 @@ module Jennifer
               unencrypted_password,
               cost: self.class.{{password_hash.id}}_cost
             ).to_s
+            unencrypted_password
           end
         end
 

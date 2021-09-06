@@ -16,11 +16,11 @@ You can specifies orders to sort by:
 # named tuple
 Contact.all.order(name: :asc, id: "desc")
 # symbol key hash
-Contact.all.order({ :name => :asc })
+Contact.all.order({:name => :asc})
 # string key hash
-Contact.all.order({ "name" => :asc })
+Contact.all.order({"name" => :asc})
 # with block returning array of Jennifer::QueryBuilder::OrderExpression
-Contact.all.order{ [_name.asc] }
+Contact.all.order { [_name.asc] }
 # or pass it as an argument
 Contact.all.order(Contact._name.asc)
 ```

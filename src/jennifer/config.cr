@@ -35,6 +35,7 @@ module Jennifer
   # * `allow_outdated_pending_migration = false`
   # * `max_bind_vars_count = nil`
   # * `quote_identifiers = false`
+  # * `time_zone_aware_attributes = true`
   #
   # ```
   # Jennifer::Config.configure do |conf|
@@ -64,13 +65,13 @@ module Jennifer
     # :nodoc:
     CONNECTION_URI_PARAMS = {
       :max_pool_size, :initial_pool_size, :max_idle_pool_size,
-      :retry_attempts, :checkout_timeout, :retry_delay
+      :retry_attempts, :checkout_timeout, :retry_delay,
     }
     # :nodoc:
     STRING_FIELDS = {
       :user, :password, :db, :host, :adapter, :migration_files_path, :schema,
       :structure_folder, :local_time_zone_name, :command_shell, :docker_container, :docker_source_location,
-      :model_files_path
+      :model_files_path,
     }
     # :nodoc:
     INT_FIELDS = {:port, :max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
@@ -82,7 +83,8 @@ module Jennifer
       :skip_dumping_schema_sql,
       :verbose_migrations,
       :allow_outdated_pending_migration,
-      :quote_identifiers
+      :quote_identifiers,
+      :time_zone_aware_attributes,
     }
     # :nodoc:
     ALLOWED_MIGRATION_FAILURE_HANDLER_METHODS = %w(reverse_direction callback none)
@@ -141,6 +143,12 @@ module Jennifer
     # Default is `Log.for("db", Log::Severity::Debug)`
     property logger : Log
 
+    # Whether Jennifer should convert time objects to UTC and back to application time zone when store/load them
+    # from a database.
+    #
+    # If set to `false` all time objects will be treated as local time - `Time#to_local_in` will be used instead of `Time#in`.
+    getter time_zone_aware_attributes = true
+
     @@instance = new
 
     def initialize
@@ -183,7 +191,7 @@ module Jennifer
       instance
     end
 
-    # ditto
+    # :ditto:
     def self.config : self
       instance
     end
@@ -228,13 +236,13 @@ module Jennifer
     end
 
     # Delegates call to #structure_path.
-    def self.structure_path
+    def self.structure_path : String
       instance.structure_path
     end
 
-    # Resets configurations to default ones.
-    def self.reset_config
-      @@instance.tap(&.initialize)
+    # Reinitialize new configuration object with default values
+    def self.reset_config : Config
+      @@instance = new
     end
 
     delegate_property(:logger, :max_bind_vars_count)
@@ -265,7 +273,7 @@ module Jennifer
       read(path, env.to_s)
     end
 
-    # ditto
+    # :ditto:
     def read(path : String, env : String)
       read(path) { |document| document[env] }
     end
@@ -356,8 +364,8 @@ module Jennifer
       return if max_idle_pool_size == max_pool_size && max_pool_size == initial_pool_size
 
       logger.warn do
-        "It is highly recommended to set max_idle_pool_size = max_pool_size = initial_pool_size to prevent "\
-        "blowing up count of DB connections. For any details take a look at "\
+        "It is highly recommended to set max_idle_pool_size = max_pool_size = initial_pool_size to prevent " \
+        "blowing up count of DB connections. For any details take a look at " \
         "https://github.com/crystal-lang/crystal-db/issues/77"
       end
     end

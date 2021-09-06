@@ -28,11 +28,11 @@ module Jennifer
         :numeric => "numeric", # PG::Numeric
         :decimal => "decimal", # PG::Numeric - alias for numeric
 
-        :string     => "varchar",
-        :char       => "char", # String
-        :text       => "text",
-        :varchar    => "varchar",
-        :blchar     => "blchar", # String
+        :string  => "varchar",
+        :char    => "char", # String
+        :text    => "text",
+        :varchar => "varchar",
+        :blchar  => "blchar", # String
 
         :uuid => "uuid", # String
 
@@ -57,7 +57,7 @@ module Jennifer
       }
 
       DEFAULT_SIZES = {
-        :string     => 254
+        :string => 254,
       }
 
       TABLE_LOCK_TYPES = {
@@ -179,7 +179,7 @@ module Jennifer
           .exists?
       end
 
-      def foreign_key_exists?(from_table, to_table = nil, column = nil, name : String? = nil)
+      def foreign_key_exists?(from_table, to_table = nil, column = nil, name : String? = nil) : Bool
         name = self.class.foreign_key_name(from_table, to_table, column, name)
         Query["information_schema.table_constraints", self]
           .where { and(_constraint_name == name, _table_schema == config.schema) }
@@ -194,7 +194,7 @@ module Jennifer
         query_array("SELECT unnest(enum_range(NULL::#{name})::varchar[])", String).map { |array| array[0] }
       end
 
-      def with_table_lock(table : String, type : String = "default", &block)
+      def with_table_lock(table : String, type : String = "default", &block : DB::Transaction -> Void)
         transaction do |t|
           exec "LOCK TABLE #{table} IN #{TABLE_LOCK_TYPES[type]} MODE"
           yield t

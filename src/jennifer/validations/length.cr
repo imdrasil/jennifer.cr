@@ -4,8 +4,16 @@ module Jennifer
     #
     # For more details see `Macros.validates_length`.
     class Length < Validator
-      def validate(record, field : Symbol, value, allow_blank : Bool, in in_value = nil, is = nil, minimum = nil, maximum = nil)
-        with_blank_validation do
+      def validate(record, **opts)
+        field = opts[:field]
+        value = opts[:value]
+        allow_blank = opts[:allow_blank]
+        in_value = opts[:in]?
+        is = opts[:is]?
+        minimum = opts[:minimum]?
+        maximum = opts[:maximum]?
+
+        with_blank_validation(record, field, value, allow_blank) do
           size = value.not_nil!.size
           errors = record.errors
           if in_value

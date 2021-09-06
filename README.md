@@ -1,4 +1,4 @@
-# Jennifer [![Build Status](https://travis-ci.org/imdrasil/jennifer.cr.svg)](https://travis-ci.org/imdrasil/jennifer.cr) [![Latest Release](https://img.shields.io/github/release/imdrasil/jennifer.cr.svg)](https://github.com/imdrasil/jennifer.cr/releases) [![Docs](https://img.shields.io/badge/docs-available-brightgreen.svg)](https://imdrasil.github.io/jennifer.cr/docs/)
+# Jennifer [![Latest Release](https://img.shields.io/github/release/imdrasil/jennifer.cr.svg)](https://github.com/imdrasil/jennifer.cr/releases) [![Docs](https://img.shields.io/badge/docs-available-brightgreen.svg)](https://imdrasil.github.io/jennifer.cr/docs/)
 
 ActiveRecord pattern implementation for Crystal with a powerful query DSL, validation, relationship definition, translation and migration mechanism.
 
@@ -10,13 +10,13 @@ Add this to your application's `shard.yml`:
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.10.0"
+    version: "~> 0.11.1"
 ```
 
 ### Requirements
 
 - you need to choose one of the existing drivers for your DB: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgres](https://github.com/will/crystal-pg); sqlite3 adapter automatically installs required driver for it;
-- crystal `>= 0.35.0`.
+- crystal `>= 1.0.0`.
 
 ## Usage
 

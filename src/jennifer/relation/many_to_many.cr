@@ -104,7 +104,7 @@ module Jennifer
           join_table!,
           {
             foreign_field           => obj.attribute_before_typecast(primary_field),
-            association_foreign_key => rel.primary
+            association_foreign_key => rel.primary,
           }
         )
       end

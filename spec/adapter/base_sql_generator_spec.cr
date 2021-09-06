@@ -5,7 +5,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
   described_class = Jennifer::Adapter.default_adapter.sql_generator
   expression_builder = Factory.build_expression
 
-  describe "::filter_out" do
+  describe ".filter_out" do
     c2 = Factory.build_criteria
 
     context "with Criteria" do
@@ -31,7 +31,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     end
   end
 
-  describe "::select_query" do
+  describe ".select_query" do
     s = Contact.where { _age == 1 }.join(Contact) { _age == Contact._age }.order(age: :desc).limit(1)
     select_query = described_class.select(s)
 
@@ -48,13 +48,13 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     end
   end
 
-  describe "::select_clause" do
+  describe ".select_clause" do
     it "includes definitions of select fields" do
       sb { |io| described_class.select_clause(io, Contact.all.select { [now.alias("now")] }) }.should match(/SELECT NOW\(\) AS now/)
     end
   end
 
-  describe "::from_clause" do
+  describe ".from_clause" do
     context "with given table name" do
       it { sb { |io| described_class.from_clause(io, "contacts") }.should eq("FROM contacts ") }
     end
@@ -76,14 +76,14 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     end
   end
 
-  describe "::body_section" do
+  describe ".body_section" do
     s = Contact.where { _age == 1 }
-               .join(Contact) { _age == Contact._age }
-               .order(age: :desc)
-               .limit(1)
-               .having { _age > 1 }
-               .group(:age)
-               .lock
+      .join(Contact) { _age == Contact._age }
+      .order(age: :desc)
+      .limit(1)
+      .having { _age > 1 }
+      .group(:age)
+      .lock
     # TODO: rewrite to match text instead of methods calls
     body_section = sb { |io| described_class.body_section(io, s) }
     join_clause = sb { |io| described_class.join_clause(io, s) }
@@ -130,7 +130,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     end
   end
 
-  describe "::group_clause" do
+  describe ".group_clause" do
     it "adds nothing if query has grouping" do
       sb { |io| described_class.group_clause(io, Contact.all) }.should_not match(/GROUP/)
     end
@@ -187,7 +187,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     end
   end
 
-  describe "::where_clause" do
+  describe ".where_clause" do
     context "condition exists" do
       it "includes its SQL" do
         sb { |io| described_class.where_clause(io, Contact.where { _id == 1 }) }
@@ -202,7 +202,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     end
   end
 
-  describe "::limit_clause" do
+  describe ".limit_clause" do
     it "includes limit if is set" do
       sb { |io| described_class.limit_clause(io, Contact.all.limit(2)) }
         .should match(/LIMIT 2/)
@@ -214,7 +214,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     end
   end
 
-  describe "::order_clause" do
+  describe ".order_clause" do
     it "returns empty string if there is no orders" do
       sb { |io| described_class.order_clause(io, Contact.all) }.should eq("")
     end
@@ -225,7 +225,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     end
   end
 
-  describe "::lock_clause" do
+  describe ".lock_clause" do
     it "renders default lock if @lock is true" do
       query = Contact.all.lock
       sb { |s| described_class.lock_clause(s, query) }.should match(/FOR UPDATE/)
@@ -254,18 +254,27 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     end
   end
 
-  describe "::parse_query" do
+  describe ".parse_query" do
     context "with given Time object" do
-      it do
+      it "converts time to UTC" do
         with_time_zone("Etc/GMT+1") do
           adapter.parse_query("%s", [Time.local(local_time_zone)] of Jennifer::DBAny)[1][0].as(Time)
             .should be_close(Time.utc, 1.second)
         end
       end
+
+      it "ignores times zone if .time_zone_aware_attributes config is set to false" do
+        Jennifer::Config.time_zone_aware_attributes = false
+        with_time_zone("Etc/GMT+1") do
+          time = Time.local(local_time_zone)
+          adapter.parse_query("%s", [time] of Jennifer::DBAny)[1][0].as(Time)
+            .should eq(time)
+        end
+      end
     end
   end
 
-  describe "::escape_string" do
+  describe ".escape_string" do
     it "returns prepared placeholder string" do
       described_class.escape_string(3).should eq("%s, %s, %s")
     end
@@ -313,15 +322,15 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     context "with multiple expressions" do
       it do
         query = Jennifer::Query["contacts"].with("test", Contact.all).with("test 2", Contact.all)
-        expected_sql = "WITH test AS (SELECT contacts.* FROM contacts ) , "\
-          "test 2 AS (SELECT contacts.* FROM contacts ) "
+        expected_sql = "WITH test AS (SELECT contacts.* FROM contacts ) , " \
+                       "test 2 AS (SELECT contacts.* FROM contacts ) "
         sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
       end
 
       it "hoists the RECURSIVE keyword to the query beginning" do
         query = Jennifer::Query["contacts"].with("test", Contact.all).with("test 2", Contact.all, true)
-        expected_sql = "WITH RECURSIVE test AS (SELECT contacts.* FROM contacts ) , "\
-          "test 2 AS (SELECT contacts.* FROM contacts ) "
+        expected_sql = "WITH RECURSIVE test AS (SELECT contacts.* FROM contacts ) , " \
+                       "test 2 AS (SELECT contacts.* FROM contacts ) "
         sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
       end
     end

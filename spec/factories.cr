@@ -80,6 +80,10 @@ class ContactFactory < Factory::Jennifer::Base
     argument_type (Array(Int32) | Int32 | PG::Numeric | String?)
   end
 
+  mysql_only do
+    argument_type (Array(Int32) | Int32 | Float64 | String?)
+  end
+
   attr :name, "Deepthi"
   attr :age, 28
   attr :description, nil
@@ -104,7 +108,7 @@ end
 
 class CityFactory < Factory::Jennifer::Base
   attr :name, "Guda"
-  attr :country_id, -> { Factory.create_country.id }, Int32
+  attr :country_id, ->{ Factory.create_country.id }, Int32
 end
 
 class ProfileFactory < Factory::Jennifer::Base
@@ -144,12 +148,12 @@ class NoteFactory < Factory::Jennifer::Base
   attr :notable_type, nil
 
   trait :with_user do
-    attr :notable_id, -> { Factory.create_user([:with_valid_password]).id }, Int32
+    attr :notable_id, ->{ Factory.create_user([:with_valid_password]).id }, Int32
     attr :notable_type, "User"
   end
 
   trait :with_contact do
-    attr :notable_id, -> { Factory.create_contact.id }, Int32
+    attr :notable_id, ->{ Factory.create_contact.id }, Int32
     attr :notable_type, "Contact"
   end
 end

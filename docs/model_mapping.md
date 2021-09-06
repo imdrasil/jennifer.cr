@@ -131,29 +131,30 @@ To make some field nillable tou can use any of the next options:
 
 If you don't want to define all the table fields - pass `false` as second argument (this will disable default strict mapping mode).
 
-`%mapping` defines next methods:
+`.mapping` defines next methods:
 
 | method | args | description |
 | --- | --- | --- |
-| `#initialize` | `Hash(String \| Symbol, DB::Any), NamedTuple, MySql::ResultSet` | constructors |
-| `::field_count`| | number of fields |
-| `::field_names`| | all fields names |
+| `.new` | `Hash(String \| Symbol, DB::Any), NamedTuple, MySql::ResultSet` | constructors |
+| `.field_count`| | number of fields |
+| `.field_names`| | all fields names |
+| `._{{field_name}}` | | helper method for building queries |
+| `.coerce_{{field_name}}` | `String` | coerces string to `field_name` type |
+| `.primary` | | returns criterion for primary field (query DSL) |
+| `.primary_field_name` | | name of primary field |
+| `.create` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | creates object, stores it to db and returns it |
+| `.create!` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | creates object, stores it to db and returns it; otherwise raise exception |
+| `.build` | `Hash(String \| Symbol, DB::Any), NamedTuple` | builds object |
+| `.create` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with all callbacks |
+| `.create!` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with callbacks or raise exception |
 | `#{{field_name}}` | | getter |
 | `#{{field_name}}_changed?` | | presents whether field is changed |
 | `#{{field_name}}!` | | getter with `not_nil!` if `null: true` was passed |
 | `#{{field_name}}=`| | setter |
-| `::_{{field_name}}` | | helper method for building queries |
 | `#{{field_name}}_changed?` | | shows if field was changed |
+| `#new_record?` | | returns `true` if record has `nil` primary key (is not stored to db) |
 | `#changed?` | | shows if any field was changed |
 | `#primary` | | value of primary key field |
-| `::primary` | | returns criterion for primary field (query DSL) |
-| `::primary_field_name` | | name of primary field |
-| `#new_record?` | | returns `true` if record has `nil` primary key (is not stored to db) |
-| `::create` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | creates object, stores it to db and returns it |
-| `::create!` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | creates object, stores it to db and returns it; otherwise raise exception |
-| `::build` | `Hash(String \| Symbol, DB::Any), NamedTuple` | builds object |
-| `::create` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with all callbacks |
-| `::create!` | `Hash(String \| Symbol, DB::Any)`, `NamedTuple` | builds object from hash and saves it to db with callbacks or raise exception |
 | `#save` | | saves object to db; returns `true` if success and `false` elsewhere |
 | `#save!` | | saves object to db; returns `true` if success or rise exception otherwise |
 | `#to_h` | | returns hash with all attributes |
@@ -186,7 +187,7 @@ end
 ### Important restrictions:
 
 - models currently must have a `primary` field.
-- if your model also uses `JSON.mapping`, `JSON::Serializable`, or other kinds of mapping macros, you must be careful
+- if your model also uses `JSON.mapping`, `JSON::Serializable` or other kinds of mapping macros, you must be careful
   to use Jennifer's `mapping` macro last in order for all model features to work correctly.
 
 ```crystal
@@ -203,42 +204,34 @@ end
 
 To define a field converter create a class/module which implements next static methods:
 
-- `.from_db(DB::ResultSet, Bool)` - converts field reading it from db result set (second argument describes wether field is nillable);
-- `.to_db(T)` - converts field to the db format;
-- `.from_hash(Hash(String, Jennifer::DBAny | T), String)` - converts field (which name is the 2nd argument) from the given hash (this method is called only if hash has required key).
+- `.from_db(DB::ResultSet, NamedTuple)` - converts field reading it from db result set;
+- `.to_db(T, NamedTuple)` - converts field to the db format;
+- `.from_hash(Hash(String, Jennifer::DBAny | T), String, NamedTuple)` - converts field (which name is the 2nd argument) from the given hash (this method is called only if hash has required key).
 
-There are 6 predefined converters:
+As an optional feature it also can implement `.coerce(String, NamedTuple)` method to be used for coercing. Doing this custom string parsing mechanism can be specified (for reference see `Jennifer::Model::TimeZoneConverter`).
 
-- `Jennifer::Model::JSONConverter` - default converter for `JSON::Any` (it is applied automatically for `JSON::Any` fields) - takes care of JSON-string-JSON conversion;
-- `Jennifer::Model::TimeZoneConverter` - default converter for `Time` - converts from UTC time to local time zone;
-- `Jennifer::Model::EnumConverter` - converts string values to crystal `enum`;
-- `Jennifer::Model::JSONSerializableConverter(T)` - converts JSON to `T` (which includes `JSON::Serializable);
-- `Jennifer::Model::NumericToFloat64Converter` - converts `PG::Numeric` to `Float64` (Postgres only);
-- `Jennifer::Model::PgEnumConverter` - converts `ENUM` value to `String` (Postgres only).
+#### Jennifer::Model::TimeZoneConverter
 
-### Arbitrary type
+This is default converter for `Time` field class - is applied automatically if other isn't specified. It converts time object from UTC time to application time zone.
 
-Model field can be of any type it is required to. But to achieve this you should specify corresponding converter to serialize/deserialize value to/from database format. One of the most popular examples is "embedded document" - JSON field that has known mapping and is mapped to crystal class.
+Next additional options can be specified in a field mapping:
 
-```crystal
-class Location
-  include JSON::Serializable
+* `time_zone_aware: Bool` - disable time zone coverting for the field
+* `time_format: String` - custom time format that will be used to parse *time-only* strings (`%H:%M` by default)
+* `date_format: String` - custom date format that will be used to parse *date-only* string (`%F` by default)
+* `date_time_format: String` - custom date-time format that will be applied to parse date-time string (`%F %T` by default).
 
-  property latitude : Float64
-  property longitude : Float64
-end
+Also it is possible to customize how converter determines whether string is time/date/date-time. To do some you can inherit from `Jennifer::Model::TimeZoneConverter` converter and customize `.time?` and `.date_time?` methods.
 
-class Address < Jennifer::Model::Base
-  mapping(
-    # ...
-    details: { type: Location?, converter: Jennifer::Model::JSONSerializableConverter(Location) }
-  )
-end
-```
+> Also you can manky-patch it
 
-Now instances of `Location` class can be used in all constructors/setters/update methods. The only exception is query methods - they support only `Jennifer::DBAny` values.
+#### Jennifer::Model::JSONConverter
 
-Other popular example is crystal `enum` usage.
+This is default converter for `JSON::Any` field class - is applied automatically if other isn't specified. It takes care of JSON-string to `JSON::Any` conversion.
+
+#### Jennifer::Model::EnumConverter
+
+This converter allows to map enums to strings and back:
 
 ```crystal
 enum Category
@@ -248,10 +241,64 @@ end
 
 class Note < Jennifer::Model::Base
   mapping(
-    category: { type: Category?, converter: Jennifer::Model::EnumConverter(Category) }
+    category: {type: Category?, converter: Jennifer::Model::EnumConverter(Category)}
   )
 end
 ```
+
+#### Jennifer::Model::BigDecimalConverter(T)
+
+Converts numeric database type to `BigDecimal` value which allows to perform operations with specific scale. It is expected that `Float64` or `PG::Numeric` are used as an argument `T`.
+
+It expects next options to be specified in a field mapping:
+
+* `scale: Int32` - the count of decimal digits in the fractional part, to the right of decimal point.
+
+```crystal
+class Order < Jennifer::Model::Base
+   mapping(
+    # ...
+    total: { type: BigDecimal?, converter: Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2 }
+     # for MySQL use Float64
+   )
+end
+```
+
+#### Jennifer::Model::JSONSerializableConverter(T)
+
+converts JSON to `T` class. `T` class should includes `JSON::Serializable.
+
+```crystal
+class Location
+  include JSON::Serializable
+
+  property latitude : Float64
+  property longitude : Float64
+end
+
+class User < Jennifer::Model::Base
+  mapping(
+    # ...
+    location: { type: Location, converter: Jennifer::Model::JSONSerializableConverter(Location) }
+   )
+end
+```
+
+#### Jennifer::Model::NumericToFloat64Converter
+
+Converts `PG::Numeric` to `Float64`. Can be used only when PostgreSQL adapter is used.
+
+#### Jennifer::Model::PgEnumConverter
+
+Converts `ENUM` database column type value to `String`. Can be used only when PostgreSQL adapter is used.
+
+### Arbitrary type
+
+Model field can be of any type it is required to. But to achieve this you should specify corresponding converter to serialize/deserialize value to/from database format. One of the most popular examples is "embedded document" - JSON field that has known mapping and is mapped to crystal class.
+
+For example see **Jennifer::Model::JSONSerializableConverter(T)** section above.
+
+Now instances of `Location` class can be used in all constructors/setters/update methods. The only exception is query methods - they support only `Jennifer::DBAny` values.
 
 ### Mapping Types
 
@@ -262,7 +309,7 @@ class Post < Jennifer::Model::Base
   mapping(
     id: Primary32,
     # or even with full definition
-    pk: { type: Primary32, primary: false, virtual: true }
+    pk: {type: Primary32, primary: false, virtual: true}
   )
 end
 ```
@@ -274,8 +321,8 @@ To defined your own type define it such a way it may be lexically accessible fro
 ```crystal
 class ApplicationRecord < Jennifer::Model::Base
   EmptyString = {
-    type: String,
-    default: ""
+    type:    String,
+    default: "",
   }
 
   {% TYPES << "EmptyString" %}
@@ -301,8 +348,8 @@ class User < Jennifer::Model::Base
   mapping(
     id: Primary32,
     password_hash: String,
-    password: { type: String?, virtual: true },
-    password_confirmation: { type: String?, virtual: true }
+    password: {type: String?, virtual: true},
+    password_confirmation: {type: String?, virtual: true}
   )
 
   validate_confirmation :password

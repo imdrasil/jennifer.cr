@@ -8,6 +8,16 @@ module Jennifer::Model
         @[JSON::Field(ignore: true)]
         @{{key.id}}_changed = false
 
+        # :nodoc:
+        def self.coerce_{{key.id}}(_{{key.id}} : String)
+          {% if value[:converter] && value[:converter].resolve.class.has_method?(:coerce) %}
+            {{value[:converter]}}.coerce(_{{key.id}}, columns_tuple[:{{key.id}}])
+          {% else %}
+            coercer.coerce(_{{key.id}}, {{value[:parsed_type].id}})
+          {% end %}
+            {% if !value[:null] %}.not_nil!{% end %}
+        end
+
         {% if value[:setter] != false %}
           def {{key.id}}=(_{{key.id}} : {{value[:parsed_type].id}})
             {% if !value[:virtual] %}
@@ -17,11 +27,14 @@ module Jennifer::Model
           end
 
           def {{key.id}}=(_{{key.id}} : AttrType)
-            {% if !value[:virtual] %}
-              {{key.id}}_will_change! if _{{key.id}} != @{{key.id}}
-            {% end %}
-            @{{key.id}} = _{{key.id}}.as({{value[:parsed_type].id}})
+            self.{{key.id}} = _{{key.id}}.as({{value[:parsed_type].id}})
           end
+
+          {% unless value[:parsed_type] =~ /String/ %}
+            def {{key.id}}=(_{{key.id}} : String)
+              self.{{key.id}} = self.class.coerce_{{key.id}}(_{{key.id}})
+            end
+          {% end %}
         {% end %}
 
         {% if value[:getter] != false %}
@@ -29,11 +42,9 @@ module Jennifer::Model
             @{{key.id}}
           end
 
-          {% if value[:null] != false %}
-            def {{key.id}}!
-              @{{key.id}}.not_nil!
-            end
-          {% end %}
+          def {{key.id}}!
+            @{{key.id}}.not_nil!
+          end
 
           {% resolved_type = value[:type].resolve %}
           {% if resolved_type == Bool || (resolved_type.union? && resolved_type.union_types[0] == Bool) %}

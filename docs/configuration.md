@@ -37,7 +37,16 @@ test:
   <<: *defaults
 ```
 
-This also can be written using DSL:
+You cam also use `.ecr` extension to leverage environmet variables in your configuration file. To do this use:
+
+```crystal
+config_file = YAML.parse(ECR.render("config/database.yml.ecr"))
+Jennifer::Config.configure do |conf|
+  conf.from_yaml(config_file[ENV["APP_ENV"]])
+end
+```
+
+All configurations also can be set using DSL:
 
 ```crystal
 Jennifer::Config.configure do |conf|
@@ -81,6 +90,7 @@ Take into account - some configs can't be initialized using URI or yaml file but
 | `migration_failure_handler_method` | ✔ | ❌ |
 | `allow_outdated_pending_migration` | ✔ | ❌ |
 | `max_bind_vars_count` | ✔ | ❌ |
+| `time_zone_aware_attributes` | ✔ | ❌ |
 
 ## Supported configuration options
 
@@ -112,6 +122,7 @@ Take into account - some configs can't be initialized using URI or yaml file but
 * `model_files_path` - path to the models locations; is used by model and migration generators; default: `"./src/models"`
 * `structure_folder` - path to the database structure file location; if set to empty string - parent folder of `migration_files_path` is used; default: `""`
 * `max_bind_vars_count` - maximum allowed count of bind variables; if nothing specified - used adapter's default value; default: `nil`
+* `time_zone_aware_attributes` - whether Jennifer should convert time objects to UTC and back to application time zone when store/load them from a database; default: `true`
 
 ## Logging
 

@@ -21,3 +21,15 @@ ModelName.all
   .order(f1: :asc)
   .no_argument_query
 ```
+
+## Default model scope
+
+To define a default model scope override `.all` method:
+
+```crystal
+class Model < Jennifer::Mode::Base
+  def self.all
+    super.where { _deleted == false }
+  end
+end
+```

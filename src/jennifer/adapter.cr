@@ -49,7 +49,7 @@ module Jennifer
     rescue e : KeyError
       if Config.adapter.empty?
         raise BaseException.new(
-          "It seems you are trying to initialize adapter before setting Jennifer configurations. "\
+          "It seems you are trying to initialize adapter before setting Jennifer configurations. " \
           "Ensure that you require adapter and load configurations."
         )
       end

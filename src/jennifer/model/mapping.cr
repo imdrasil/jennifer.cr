@@ -32,8 +32,8 @@ module Jennifer
     #   mapping(
     #     id: Primary32, # same as { type: Int32, primary: true }
     #     name: String,
-    #     gender: { type: String? },
-    #     age: { type: Int32, default: 10 },
+    #     gender: {type: String?},
+    #     age: {type: Int32, default: 10},
     #     description: String?,
     #     created_at: Time?,
     #     updated_at: Time | Nil
@@ -49,8 +49,8 @@ module Jennifer
     # ```
     # class ApplicationRecord < Jennifer::Model::Base
     #   EmptyString = {
-    #     type: String,
-    #     default: ""
+    #     type:    String,
+    #     default: "",
     #   }
     #
     #   {% TYPES << "EmptyString" %}
@@ -173,7 +173,7 @@ module Jennifer
               end
             end
             options[:parsed_type] = stringified_type
-
+            options[:null] = false if options[:null] == nil
             options[:column] = (options[:column] || key).id.stringify
 
             if options[:type].resolve.nilable?
@@ -194,39 +194,6 @@ module Jennifer
         COLUMNS_METADATA = { {{new_props.map { |field, mapping| "#{field}: #{mapping}" }.join(", ").id}} }
 
         alias AttrType = ::Jennifer::DBAny | {{new_props.map { |field, mapping| mapping[:parsed_type] }.join(" | ").id}}
-      end
-
-      # Adds callbacks for `created_at` and `updated_at` fields.
-      #
-      # ```
-      # class MyModel < Jennifer::Model::Base
-      #   with_timestamps
-      #
-      #   mapping(
-      #     id: { type: Int32, primary: true },
-      #     created_at: { type: Time, null: true },
-      #     updated_at: { type: Time, null: true }
-      #   )
-      # end
-      # ```
-      macro with_timestamps(created_at = true, updated_at = true)
-        {% if created_at %}
-          before_save :__update_updated_at
-
-          # :nodoc:
-          def __update_created_at
-            @created_at = Time.local(Jennifer::Config.local_time_zone)
-          end
-        {% end %}
-
-        {% if updated_at %}
-          before_create :__update_created_at
-
-          # :nodoc:
-          def __update_updated_at
-            @updated_at = Time.local(Jennifer::Config.local_time_zone)
-          end
-        {% end %}
       end
 
       # :nodoc:
@@ -334,8 +301,8 @@ module Jennifer
           {% for key, value in properties %}
             {% if value[:setter] != false %}
               when "{{key.id}}"
-                if value.is_a?({{value[:parsed_type].id}})
-                  self.{{key.id}} = value.as({{value[:parsed_type].id}})
+                if value.is_a?({{value[:parsed_type].id}}) || value.is_a?(String)
+                  self.{{key.id}} = value
                 else
                   raise ::Jennifer::BaseException.new("wrong type for #{name} : #{value.class}")
                 end
@@ -396,7 +363,7 @@ module Jennifer
                 begin
                   %var{key.id} =
                     {% if value[:converter] %}
-                      {{ value[:converter] }}.from_db(pull, {{value[:null]}})
+                      {{ value[:converter] }}.from_db(pull, self.class.columns_tuple[:{{key.id}}])
                     {% else %}
                       pull.read({{value[:parsed_type].id}})
                     {% end %}
@@ -442,39 +409,34 @@ module Jennifer
         private def _extract_attributes(values : Hash(String, AttrType))
           {% for key, value in properties %}
             %var{key.id} = {{value[:default]}}
-            %found{key.id} = true
-          {% end %}
-
-          {% for key, value in properties %}
             {% column1 = key.id.stringify %}
             {% column2 = value[:column] %}
             if values.has_key?({{column1}})
               %var{key.id} =
                 {% if value[:converter] %}
-                  {{value[:converter]}}.from_hash(values, {{column1}})
+                  {{value[:converter]}}.from_hash(values, {{column1}}, self.class.columns_tuple[:{{key.id}}])
                 {% else %}
                   values[{{column1}}]
                 {% end %}
             elsif values.has_key?({{column2}})
               %var{key.id} =
                 {% if value[:converter] %}
-                  {{value[:converter]}}.from_hash(values, {{column2}})
+                  {{value[:converter]}}.from_hash(values, {{column2}}, self.class.columns_tuple[:{{key.id}}])
                 {% else %}
                   values[{{column2}}]
                 {% end %}
-            else
-              %found{key.id} = false
             end
           {% end %}
 
           {% for key, value in properties %}
             begin
               %casted_var{key.id} =
-                {% if value[:default] != nil %}
-                  %found{key.id} ? %var{key.id}.as({{value[:parsed_type].id}}) : {{value[:default]}}
+                {% if value[:parsed_type] =~ /String/ %}
+                  %var{key.id}
                 {% else %}
-                  %var{key.id}.as({{value[:parsed_type].id}})
+                  (%var{key.id}.is_a?(String) ? self.class.coerce_{{key.id}}(%var{key.id}) : %var{key.id})
                 {% end %}
+                .as({{value[:parsed_type].id}})
             rescue e : Exception
               raise ::Jennifer::DataTypeCasting.match?(e) ? ::Jennifer::DataTypeCasting.new({{key.id.stringify}}, {{@type}}, e) : e
             end
@@ -554,7 +516,7 @@ module Jennifer
         draw_mapping({{strict}})
       end
 
-      # ditto
+      # :ditto:
       macro mapping(**properties)
         {% if properties.size > 0 %}
           mapping({{properties}})

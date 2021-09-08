@@ -35,6 +35,7 @@ module Jennifer
 
       def change_table(old_name : String, new_name : String)
         return if @table != old_name
+
         @table = new_name
         @relation = nil
       end
@@ -140,20 +141,28 @@ module Jennifer
         io << as_sql
       end
 
-      def as_sql(_generator) : String
-        @ident ||= _generator.quote_identifier(identifier)
+      def as_sql(generator) : String
+        @ident ||= identifier(generator)
       end
 
       def identifier : String
-        "#{@table}.#{@field}"
+        identifier(Adapter.default_adapter.sql_generator)
+      end
+
+      def identifier(sql_generator)
+        "#{sql_generator.quote_table(table)}.#{sql_generator.quote_identifier(field)}"
       end
 
       def definition
-        @alias ? "#{identifier} AS #{@alias}" : identifier
+        definition(Adapter.default_adapter.sql_generator)
       end
 
-      def definition(_sql_generator)
-        definition
+      def definition(sql_generator)
+        if self.alias
+          "#{identifier(sql_generator)} AS #{sql_generator.quote_identifier(self.alias.not_nil!)}"
+        else
+          identifier(sql_generator)
+        end
       end
 
       def order(direction : String | Symbol)

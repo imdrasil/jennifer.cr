@@ -188,13 +188,14 @@ describe Jennifer::Model::STIMapping do
   describe "::all" do
     it "generates correct query" do
       q = FacebookProfile.all
-      q.as_sql.should match(/profiles\.type = %s/)
+      q.as_sql.should match(/#{reg_quote_identifier("profiles.type")} = %s/)
       q.sql_args.should eq(db_array("FacebookProfile"))
     end
 
     it "generates correct queries for tables with column aliases" do
       q = Article.all
-      q.as_sql.should match /publications\.type = %s/
+      q.as_sql
+        .should match(/#{reg_quote_identifier("publications.type")} = %s/)
       q.sql_args.should eq db_array("Article")
     end
   end

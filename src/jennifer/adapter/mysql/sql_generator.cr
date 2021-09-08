@@ -42,7 +42,7 @@ module Jennifer
         String.build do |io|
           io << "INSERT "
           io << "IGNORE " if is_ignore
-          io << "INTO " << table << " ("
+          io << "INTO " << quote_identifier(table) << " ("
           quote_identifiers(fields).join(io, ", ")
           escaped_row = "(" + escape_string(fields.size) + ")"
           io << ") VALUES "
@@ -59,7 +59,7 @@ module Jennifer
 
       def self.json_path(path : QueryBuilder::JSONSelector)
         value = path.path.is_a?(Number) ? "$[#{path.path}]" : path.path
-        "#{path.identifier}->#{json_quote(value)}"
+        "#{path.identifier(self)}->#{json_quote(value)}"
       end
 
       def self.order_expression(expression : QueryBuilder::OrderExpression)
@@ -102,11 +102,11 @@ module Jennifer
       end
 
       def self.quote_identifier(identifier : String | Symbol)
-        if Config.quote_identifiers
-          identifier.to_s.gsub(/[^\.]+/, "`\\0`")
-        else
-          identifier
-        end
+        %(`#{identifier.to_s.gsub('`', "``")}`)
+      end
+
+      def self.quote_table(table : String)
+        %(`#{table.gsub(".", "`.`")}`)
       end
     end
   end

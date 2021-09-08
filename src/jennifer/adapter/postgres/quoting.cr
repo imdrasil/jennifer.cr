@@ -77,11 +77,11 @@ module Jennifer
       end
 
       def quote_identifier(identifier : String | Symbol)
-        if Config.quote_identifiers
-          identifier.to_s.gsub(/[^\.]+/, "\"\\0\"")
-        else
-          identifier
-        end
+        PG::EscapeHelper.escape_identifier(identifier.to_s)
+      end
+
+      def quote_table(table : String)
+        %("#{table.gsub('.', %("."))}")
       end
     end
   end

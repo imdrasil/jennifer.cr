@@ -24,7 +24,7 @@ module Jennifer
       # Generates insert query
       def self.insert(table, hash)
         String.build do |s|
-          s << "INSERT INTO " << table << "("
+          s << "INSERT INTO " << quote_identifier(table) << "("
           quote_identifiers(hash.keys).join(s, ", ")
           s << ") VALUES (" << escape_string(hash.size) << ")"
         end
@@ -32,7 +32,7 @@ module Jennifer
 
       def self.bulk_insert(table : String, field_names : Array(String), rows : Int32)
         String.build do |s|
-          s << "INSERT INTO " << table << "("
+          s << "INSERT INTO " << quote_identifier(table) << "("
           quote_identifiers(field_names).join(s, ", ") { |e| s << e }
           s << ") VALUES "
           escaped_row = "(" + escape_string(field_names.size) + ")"
@@ -42,7 +42,7 @@ module Jennifer
 
       def self.bulk_insert(table : String, field_names : Array(String), rows : Array)
         String.build do |s|
-          s << "INSERT INTO " << table << "("
+          s << "INSERT INTO " << quote_identifier(table) << "("
           quote_identifiers(field_names).join(s, ", ") { |e| s << e }
           s << ") VALUES "
 
@@ -69,7 +69,7 @@ module Jennifer
       end
 
       def self.truncate(table : String)
-        "TRUNCATE #{table}"
+        "TRUNCATE #{quote_identifier(table)}"
       end
 
       def self.delete(query)
@@ -102,16 +102,16 @@ module Jennifer
       def self.update(obj : Model::Base)
         esc = escape_string(1)
         String.build do |s|
-          s << "UPDATE " << obj.class.table_name << " SET "
-          obj.arguments_to_save[:fields].map { |f| "#{f}= #{esc}" }.join(s, ", ")
-          s << " WHERE " << obj.class.primary_field_name << " = " << esc
+          s << "UPDATE " << quote_identifier(obj.class.table_name) << " SET "
+          obj.arguments_to_save[:fields].map { |f| "#{quote_identifier(f)}= #{esc}" }.join(s, ", ")
+          s << " WHERE " << quote_identifier(obj.class.primary_field_name) << " = " << esc
         end
       end
 
       def self.update(query, options : Hash)
         esc = escape_string(1)
         String.build do |s|
-          s << "UPDATE " << query.table << " SET "
+          s << "UPDATE " << quote_table(query.table) << " SET "
           options.map { |k, _| "#{quote_identifier(k)}= #{esc}" }.join(s, ", ")
           s << ' '
           body_section(s, query)
@@ -120,7 +120,7 @@ module Jennifer
 
       def self.modify(q, modifications : Hash)
         String.build do |s|
-          s << "UPDATE " << q.table << " SET "
+          s << "UPDATE " << quote_table(q.table) << " SET "
           modifications.each_with_index do |(field, value), i|
             s << ", " if i != 0
             s << field_assign_statement(field.to_s, value)
@@ -166,9 +166,9 @@ module Jennifer
         io << "SELECT "
         io << "DISTINCT " if query._distinct
         if !query._raw_select
-          table = query._table
+          table = quote_table(query.table)
           if !exact_fields.empty?
-            exact_fields.join(io, ", ") { |f| io << "#{quote_identifier(table)}.#{quote_identifier(f)}" }
+            exact_fields.join(io, ", ") { |f| io << "#{table}.#{quote_identifier(f)}" }
           else
             query._select_fields.join(io, ", ") { |f| io << f.definition(self) }
           end
@@ -178,6 +178,7 @@ module Jennifer
         io << ' '
       end
 
+      # `FROM` clause for quoted table *from*
       def self.from_clause(io : String::Builder, from : String)
         io << "FROM " << from << ' '
       end
@@ -198,7 +199,7 @@ module Jennifer
             end
           io << " ) "
         elsif !query._table.empty?
-          from_clause(io, query._table)
+          from_clause(io, quote_table(query.table))
         end
       end
 
@@ -283,7 +284,7 @@ module Jennifer
       # ======== utils
 
       def self.order_expression(expression : QueryBuilder::OrderExpression)
-        "#{expression.criteria.identifier} #{expression.direction}"
+        "#{expression.criteria.identifier(self)} #{expression.direction}"
       end
 
       # Converts operator to SQL.
@@ -318,11 +319,11 @@ module Jennifer
       end
 
       private def self.field_assign_statement(field, _value : DBAny)
-        "#{field} = #{escape_string(1)}"
+        "#{quote_identifier(field)} = #{escape_string(1)}"
       end
 
       private def self.field_assign_statement(field, value : QueryBuilder::Statement)
-        "#{field} = #{value.as_sql(self)}"
+        "#{quote_identifier(field)} = #{value.as_sql(self)}"
       end
     end
   end

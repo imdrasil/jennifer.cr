@@ -34,7 +34,6 @@ module Jennifer
   # * `migration_failure_handler_method = :none`
   # * `allow_outdated_pending_migration = false`
   # * `max_bind_vars_count = nil`
-  # * `quote_identifiers = false`
   # * `time_zone_aware_attributes = true`
   #
   # ```
@@ -83,7 +82,6 @@ module Jennifer
       :skip_dumping_schema_sql,
       :verbose_migrations,
       :allow_outdated_pending_migration,
-      :quote_identifiers,
       :time_zone_aware_attributes,
     }
     # :nodoc:

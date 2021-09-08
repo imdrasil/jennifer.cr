@@ -33,7 +33,7 @@ module Jennifer
           end
 
           if with_primary_field
-            s << " RETURNING " << obj.class.primary_field_name
+            s << " RETURNING " << quote_identifier(obj.class.primary_field_name)
           end
         end
       end
@@ -64,7 +64,9 @@ module Jennifer
           escaped_row = "(" + escape_string(fields.size) + ")"
           io << ") VALUES "
           rows.times.join(io, ", ") { io << escaped_row }
-          io << " ON CONFLICT (" << unique_fields.join(", ") << ") "
+          io << " ON CONFLICT ("
+          unique_fields.join(io, ", ") { |field| io << quote_identifier(field) }
+          io << ") "
           if on_conflict.empty?
             io << "DO NOTHING"
           else
@@ -105,7 +107,7 @@ module Jennifer
           else
             raise "Wrong json path type"
           end
-        "#{path.identifier}#{operator}#{quote(path.path)}"
+        "#{path.identifier(self)}#{operator}#{quote(path.path)}"
       end
 
       def self.escape(value : Nil)

@@ -64,12 +64,12 @@ module Jennifer
       end
 
       def table_definition(generator)
-        @aliass ? "#{table_name(generator)} #{@aliass}" : table_name(generator)
+        @aliass ? "#{table_name(generator)} #{generator.quote_identifier(@aliass.not_nil!)}" : table_name(generator)
       end
 
       def table_name(generator) : String
         if @table.is_a?(String)
-          @table.as(String)
+          generator.quote_table(@table.as(String))
         else
           "(" + @table.as(Query).as_sql(generator) + ")"
         end

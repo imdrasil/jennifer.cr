@@ -10,7 +10,7 @@ describe Jennifer::QueryBuilder::All do
     end
 
     it "nested request includes template argument placeholders" do
-      expression.all(query).as_sql.should match(/id = %s/)
+      expression.all(query).as_sql.should match(/#{reg_quote_identifier("id")} = %s/)
     end
   end
 

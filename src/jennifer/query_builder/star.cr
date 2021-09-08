@@ -7,6 +7,10 @@ module Jennifer
       def initialize(@table : String)
         @field = "*"
       end
+
+      def identifier(sql_generator)
+        "#{sql_generator.quote_table(table)}.*"
+      end
     end
   end
 end

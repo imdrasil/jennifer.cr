@@ -7,7 +7,7 @@ describe Jennifer::QueryBuilder::Condition do
     {% for op in [:<, :>, :<=, :>=, :!=] %}
       context "{{op.id}} operator" do
         it "returns string presentation" do
-          Factory.build_criteria.{{op.id}}("asd").as_sql.should eq("tests.f1 {{op.id}} %s")
+          Factory.build_criteria.{{op.id}}("asd").as_sql.should eq(%(#{quote_identifier("tests.f1")} {{op.id}} %s))
         end
       end
 
@@ -15,7 +15,7 @@ describe Jennifer::QueryBuilder::Condition do
         it do
           c = Factory.build_criteria
           query = grouping(Contact.all.where { _age > 12 }.select { [_id] })
-          c.{{op.id}}(query).as_sql.should eq("tests.f1 {{op.id}} #{query.as_sql}")
+          c.{{op.id}}(query).as_sql.should eq(%(#{quote_identifier("tests.f1")} {{op.id}} #{query.as_sql}))
         end
       end
 
@@ -23,19 +23,19 @@ describe Jennifer::QueryBuilder::Condition do
         it do
           c = Factory.build_criteria
           query = grouping(Query["contacts"].where { _age > 12 }.select { [_id] })
-          c.{{op.id}}(query).as_sql.should eq("tests.f1 {{op.id}} #{query.as_sql}")
+          c.{{op.id}}(query).as_sql.should eq(%(#{quote_identifier("tests.f1")} {{op.id}} #{query.as_sql}))
         end
       end
     {% end %}
 
     context "= operator" do
-      it { (Factory.build_criteria == "asd").as_sql.should eq("tests.f1 = %s") }
+      it { (Factory.build_criteria == "asd").as_sql.should eq(%(#{quote_identifier("tests.f1")} = %s)) }
 
       context "with model query" do
         it do
           c = Factory.build_criteria
           query = grouping(Contact.all.where { _age > 12 }.select { [_id] })
-          c.==(query).as_sql.should eq("tests.f1 = #{query.as_sql}")
+          c.==(query).as_sql.should eq(%(#{quote_identifier("tests.f1")} = #{query.as_sql}))
         end
       end
 
@@ -43,7 +43,7 @@ describe Jennifer::QueryBuilder::Condition do
         it do
           c = Factory.build_criteria
           query = grouping(Query["contacts"].where { _age > 12 }.select { [_id] })
-          c.==(query).as_sql.should eq("tests.f1 = #{query.as_sql}")
+          c.==(query).as_sql.should eq(%(#{quote_identifier("tests.f1")} = #{query.as_sql}))
         end
       end
     end
@@ -51,31 +51,31 @@ describe Jennifer::QueryBuilder::Condition do
     postgres_only do
       context "operator overlap" do
         it "accepts plain args" do
-          Factory.build_criteria.overlap([1, 2]).as_sql.should eq("tests.f1 && %s")
+          Factory.build_criteria.overlap([1, 2]).as_sql.should eq(%("tests"."f1" && %s))
         end
 
         it "accepts criteria" do
-          Factory.build_criteria.overlap(Factory.build_criteria).as_sql.should eq("tests.f1 && tests.f1")
+          Factory.build_criteria.overlap(Factory.build_criteria).as_sql.should eq(%("tests"."f1" && "tests"."f1"))
         end
       end
 
       context "operator contain" do
         it "accepts plain args" do
-          Factory.build_criteria.contain([1, 2]).as_sql.should eq("tests.f1 @> %s")
+          Factory.build_criteria.contain([1, 2]).as_sql.should eq(%("tests"."f1" @> %s))
         end
 
         it "accepts criteria" do
-          Factory.build_criteria.contain(Factory.build_criteria).as_sql.should eq("tests.f1 @> tests.f1")
+          Factory.build_criteria.contain(Factory.build_criteria).as_sql.should eq(%("tests"."f1" @> "tests"."f1"))
         end
       end
 
       context "operator contained" do
         it "accepts plain args" do
-          Factory.build_criteria.contained([1, 2]).as_sql.should eq("tests.f1 <@ %s")
+          Factory.build_criteria.contained([1, 2]).as_sql.should eq(%("tests"."f1" <@ %s))
         end
 
         it "accepts criteria" do
-          Factory.build_criteria.contained(Factory.build_criteria).as_sql.should eq("tests.f1 <@ tests.f1")
+          Factory.build_criteria.contained(Factory.build_criteria).as_sql.should eq(%("tests"."f1" <@ "tests"."f1"))
         end
       end
     end
@@ -93,7 +93,7 @@ describe Jennifer::QueryBuilder::Condition do
 
     context "BETWEEN operator" do
       it "generates proper SQL" do
-        expression._age.between(20, 30).as_sql.should match(/age BETWEEN %s AND %s/)
+        expression._age.between(20, 30).as_sql.should match(/#{reg_quote_identifier("age")} BETWEEN %s AND %s/)
       end
     end
 
@@ -107,14 +107,14 @@ describe Jennifer::QueryBuilder::Condition do
 
     context "bool" do
       it "renders table name and field name" do
-        Factory.build_criteria.to_condition.as_sql.should eq("tests.f1")
+        Factory.build_criteria.to_condition.as_sql.should eq(quote_identifier("tests.f1"))
       end
     end
 
     context "IN operator" do
       context "with array" do
         it "correctly renders" do
-          Factory.build_criteria.in([1, "asd"]).as_sql.should eq("tests.f1 IN(%s, %s)")
+          Factory.build_criteria.in([1, "asd"]).as_sql.should eq(%(#{quote_identifier("tests.f1")} IN(%s, %s)))
         end
 
         context "with 0 size" do
@@ -128,7 +128,7 @@ describe Jennifer::QueryBuilder::Condition do
         it do
           c = Factory.build_criteria
           query = grouping(Contact.all.where { _age > 12 }.select { [_id] })
-          c.in(query).as_sql.should eq("tests.f1 IN(#{query.as_sql})")
+          c.in(query).as_sql.should eq(%(#{quote_identifier("tests.f1")} IN(#{query.as_sql})))
         end
       end
 
@@ -136,14 +136,14 @@ describe Jennifer::QueryBuilder::Condition do
         it do
           c = Factory.build_criteria
           query = grouping(Query["contacts"].where { _age > 12 }.select { [_id] })
-          c.in(query).as_sql.should eq("tests.f1 IN(#{query.as_sql})")
+          c.in(query).as_sql.should eq(%(#{quote_identifier("tests.f1")} IN(#{query.as_sql})))
         end
       end
     end
 
     context "regular operator" do
       it "renders table name, field name and operator" do
-        (Factory.build_criteria != 1).as_sql.should match(/^tests\.f1 !=/)
+        (Factory.build_criteria != 1).as_sql.should match(/^#{reg_quote_identifier("tests.f1")} !=/)
       end
 
       it "renders escape symbol if rhs is regular argument" do
@@ -151,7 +151,7 @@ describe Jennifer::QueryBuilder::Condition do
       end
 
       it "renders field if rhs is criteria" do
-        (Factory.build_criteria != Factory.build_criteria(field: "f2")).as_sql.should match(/tests\.f2$/)
+        (Factory.build_criteria != Factory.build_criteria(field: "f2")).as_sql.should match(/#{reg_quote_identifier("tests.f2")}$/)
       end
     end
   end

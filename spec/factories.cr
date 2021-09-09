@@ -109,6 +109,7 @@ end
 class CityFactory < Factory::Jennifer::Base
   attr :name, "Guda"
   attr :country_id, ->{ Factory.create_country.id }, Int32
+  attr :optimistic_lock, 0
 end
 
 class ProfileFactory < Factory::Jennifer::Base

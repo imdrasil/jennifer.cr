@@ -313,9 +313,12 @@ class Country < Jennifer::Model::Base
 end
 
 class City < ApplicationRecord
+  with_optimistic_lock :optimistic_lock
+
   mapping(
     id: Primary32,
     name: String,
+    optimistic_lock: {type: Int32, default: 0},
     country_id: Int32
   )
 

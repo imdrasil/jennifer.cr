@@ -305,22 +305,6 @@ module Jennifer
         end
 
         # :nodoc:
-        def arguments_to_save
-          named_tuple = super
-          args = named_tuple[:args]
-          fields = named_tuple[:fields]
-          {% for attr, options in properties %}
-            {% unless options[:virtual] %}
-              if @{{attr.id}}_changed
-                args << attribute_before_typecast("{{attr}}")
-                fields << {{options[:column]}}
-              end
-            {% end %}
-          {% end %}
-          named_tuple
-        end
-
-        # :nodoc:
         def arguments_to_insert
           named_tuple = super
           args = named_tuple[:args]
@@ -332,6 +316,17 @@ module Jennifer
             {% end %}
           {% end %}
           named_tuple
+        end
+
+        # :nodoc:
+        def changes : Hash(String, ::Jennifer::DBAny)
+          hash = super
+          {% for attr, options in properties %}
+            {% unless options[:virtual] %}
+              hash[{{options[:column]}}] = attribute_before_typecast("{{attr}}") if @{{attr.id}}_changed
+            {% end %}
+          {% end %}
+          hash
         end
 
         # :nodoc:

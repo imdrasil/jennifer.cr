@@ -91,6 +91,27 @@ module Jennifer
         read_adapter.pluck(self, field.to_s)
       end
 
+      def pluck(**types : **T) forall T
+        {% begin %}
+          if do_nothing?
+            return [] of {
+              {% for name, type in T %}
+                {{name}}: {{type.instance}},
+              {% end %}
+            }
+          end
+
+          read_adapter.pluck(self, types.keys.to_a.map(&.to_s)).map do |record|
+            {
+              {% index = -1 %}
+              {% for name, type in T %}
+                {{name}}: record[{{index += 1}}].as({{type.instance}}),
+              {% end %}
+            }
+          end
+        {% end %}
+      end
+
       # Delete all records which satisfy given conditions.
       #
       # No model callbacks or validation will be executed.

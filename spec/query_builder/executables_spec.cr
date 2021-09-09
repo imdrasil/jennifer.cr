@@ -117,6 +117,38 @@ describe Jennifer::QueryBuilder::Executables do
         res[1][1].should eq(14)
       end
     end
+
+    context "with splatted named tuple" do
+      it "returns array of named tuples of given type" do
+        Factory.create_contact(name: "a", age: 13)
+        Factory.create_contact(name: "b", age: 14)
+        res = Query["contacts"].pluck(name: String, age: Int32)
+        res.size.should eq(2)
+        res[0][:name].should eq("a")
+        res[1][:age].should eq(14)
+        typeof(res[1]).should eq(NamedTuple(name: String, age: Int32))
+      end
+
+      it "returns an empty array if there is no record" do
+        res = Query["contacts"].pluck(name: String, age: Int32)
+        res.size.should eq(0)
+        typeof(res).should eq(Array(NamedTuple(name: String, age: Int32)))
+      end
+    end
+
+    context "when select is already specified" do
+      it "respects raw SQL" do
+        Factory.create_contact(name: "a", age: 13)
+        res = Query["contacts"].select("age * 2 as test, name").pluck(:test)
+        res[0].should eq(26)
+      end
+
+      it "respects array of criteria specified to select" do
+        Factory.create_contact(name: "a", age: 13)
+        res = Query["contacts"].select { [sql("age * 2").alias("age")] }.pluck(:age)
+        res[0].should eq(26)
+      end
+    end
   end
 
   describe "#delete" do

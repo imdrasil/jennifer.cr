@@ -11,3 +11,6 @@ sam:
 
 db-reset:
 	make sam db:drop @ db:setup
+
+format:
+	crystal tool format --check -e"./scripts"

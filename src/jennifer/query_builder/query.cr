@@ -241,8 +241,8 @@ module Jennifer
       # ```
       # Jennifer::Query.build("contacts").where { _name == "Jack London" }
       # ```
-      def self.build(*opts)
-        q = new(*opts)
+      def self.build(*args)
+        q = new(*args)
         q.expression_builder.query = q
         q
       end
@@ -252,8 +252,8 @@ module Jennifer
       # ```
       # Jennifer::Query["contacts"].where { _name == "Jack London" }
       # ```
-      def self.[](*opts)
-        build(*opts)
+      def self.[](*args)
+        build(*args)
       end
 
       def as_sql

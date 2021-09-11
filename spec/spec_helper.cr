@@ -160,10 +160,6 @@ end
 
 # SQL query clauses =============
 
-private def sql_generator
-  ::Jennifer::Adapter.default_adapter.sql_generator
-end
-
 def sb
   String.build { |io| yield io }
 end
@@ -174,6 +170,10 @@ end
 
 def join_clause(query)
   sb { |io| sql_generator.join_clause(io, query) }
+end
+
+private def sql_generator
+  ::Jennifer::Adapter.default_adapter.sql_generator
 end
 
 def stub_command_shell

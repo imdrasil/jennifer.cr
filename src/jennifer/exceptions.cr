@@ -171,4 +171,10 @@ module Jennifer
       @message = "Unknown attribute #{attr} for model #{model}"
     end
   end
+
+  class StaleObjectError < BaseException
+    def initialize(model)
+      @message = "Optimistic locking failed due to stale object for model #{model}"
+    end
+  end
 end

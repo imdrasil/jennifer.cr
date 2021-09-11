@@ -32,6 +32,8 @@ class ModelWithTablePrefix < SuperModel
 end
 
 describe Jennifer::Model::Base do
+  generator = Jennifer::Adapter.default_adapter.sql_generator
+
   describe "#changed?" do
     it "returns true if at list one field was changed" do
       c = Factory.build_contact
@@ -149,7 +151,7 @@ describe Jennifer::Model::Base do
       end
 
       it "raised exception includes query explanation" do
-        select_regexp = /[\S\s]*SELECT contacts\.\*/i
+        select_regexp = /[\S\s]*SELECT #{generator.quote_identifier("contacts")}\.\*/i
         Factory.create_contact
         expect_raises(::Jennifer::BaseException, select_regexp) do
           Contact.all.each_result_set do |rs|
@@ -429,25 +431,28 @@ describe Jennifer::Model::Base do
   describe "%scope" do
     context "with block" do
       it "executes in query context" do
-        ::Jennifer::Adapter.default_adapter.sql_generator.select(Contact.all.ordered).should match(/ORDER BY contacts\.name ASC/)
+        generator.select(Contact.all.ordered)
+          .should match(/ORDER BY #{generator.quote_identifier("contacts")}\.#{generator.quote_identifier("name")} ASC/)
       end
 
       context "without argument" do
         it "is accessible from query object" do
-          Contact.all.main.as_sql.should match(/contacts\.age >/)
+          Contact.all.main.as_sql
+            .should match(/#{generator.quote_identifier("contacts")}\.#{generator.quote_identifier("age")} >/)
         end
       end
 
       context "with argument" do
         it "is accessible from query object" do
-          Contact.all.older(12).as_sql.should match(/contacts\.age >=/)
+          Contact.all.older(12)
+            .as_sql.should match(/#{generator.quote_identifier("contacts")}\.#{generator.quote_identifier("age")} >=/)
         end
       end
 
       context "same names" do
         it "is accessible from query object" do
-          Address.all.main.as_sql.should match(/addresses\.main/)
-          Contact.all.main.as_sql.should match(/contacts\.age >/)
+          Address.all.main.as_sql.should match(/#{generator.quote_identifier("addresses")}\.#{generator.quote_identifier("main")}/)
+          Contact.all.main.as_sql.should match(/#{generator.quote_identifier("contacts")}\.#{generator.quote_identifier("age")} >/)
         end
       end
 
@@ -464,18 +469,20 @@ describe Jennifer::Model::Base do
 
     context "with query object class" do
       it "executes in class context" do
-        ::Jennifer::Adapter.default_adapter.sql_generator.select(Contact.johny).should match(/name =/)
+        generator.select(Contact.johny).should match(/#{generator.quote_identifier("name")} =/)
       end
 
       context "without argument" do
         it "is accessible from query object" do
-          Contact.johny.as_sql.should match(/contacts\.name =/)
+          Contact.johny.as_sql
+            .should match(/#{generator.quote_identifier("contacts")}\.#{generator.quote_identifier("name")} =/)
         end
       end
 
       context "with argument" do
         it do
-          Contact.by_gender("female").as_sql.should match(/contacts\.gender =/)
+          Contact.by_gender("female").as_sql
+            .should match(/#{generator.quote_identifier("contacts")}\.#{generator.quote_identifier("gender")} =/)
         end
       end
 

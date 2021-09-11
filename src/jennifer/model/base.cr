@@ -15,6 +15,7 @@ require "./json_converter"
 require "./json_serializable_converter"
 require "./time_zone_converter"
 require "./timestamp"
+require "./optimistic_locking"
 
 module Jennifer
   module Model
@@ -56,6 +57,7 @@ module Jennifer
       include Presentable
       include Mapping
       include Timestamp
+      include OptimisticLocking
       include STIMapping
       include Validation
       include Callback
@@ -289,11 +291,18 @@ module Jennifer
       # NOTE: internal method
       abstract def arguments_to_insert
 
+      # Hash of changed columns and their new values.
+      abstract def changes : Hash(String, Jennifer::DBAny)
+
+      abstract def destroy_without_transaction
+
       private abstract def save_record_under_transaction(skip_validation)
       private abstract def init_attributes(values : Hash)
       private abstract def init_attributes(values : DB::ResultSet)
       private abstract def __refresh_changes
       private abstract def __refresh_relation_retrieves
+      private abstract def store_record : Bool
+      private abstract def update_record : Bool
 
       # Sets attributes based on given *values* using `#set_attribute`
       # and saves it to the database, if validation pass.

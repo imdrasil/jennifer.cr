@@ -48,7 +48,7 @@ describe Jennifer::QueryBuilder::Criteria do
       it "creates is condition" do
         c = Factory.build_criteria
         cond = c.is(nil)
-        cond.as_sql.should eq("tests.f1 IS NULL")
+        cond.as_sql.should eq(%(#{quote_identifier("tests.f1")} IS NULL))
         cond.sql_args.empty?.should be_true
       end
     end
@@ -56,7 +56,7 @@ describe Jennifer::QueryBuilder::Criteria do
     context "value is true" do
       it "creates is condition" do
         cond = Factory.build_criteria.is(true)
-        cond.as_sql.should eq("tests.f1 IS TRUE")
+        cond.as_sql.should eq(%(#{quote_identifier("tests.f1")} IS TRUE))
         cond.sql_args.empty?.should be_true
       end
     end
@@ -65,14 +65,14 @@ describe Jennifer::QueryBuilder::Criteria do
       it "creates is condition" do
         c = Factory.build_criteria
         cond = c.is(false)
-        cond.as_sql.should eq("tests.f1 IS FALSE")
+        cond.as_sql.should eq(%(#{quote_identifier("tests.f1")} IS FALSE))
         cond.sql_args.empty?.should be_true
       end
     end
 
     it "works via == and nil as well" do
       c = Factory.build_criteria(field: "f1") == nil
-      c.as_sql.should eq("tests.f1 IS NULL")
+      c.as_sql.should eq(%(#{quote_identifier("tests.f1")} IS NULL))
       c.sql_args.empty?.should be_true
     end
   end
@@ -86,7 +86,7 @@ describe Jennifer::QueryBuilder::Criteria do
     context "value is nil" do
       it "creates is condition" do
         cond = Factory.build_criteria.not(nil)
-        cond.as_sql.should eq("tests.f1 IS NOT NULL")
+        cond.as_sql.should eq(%(#{quote_identifier("tests.f1")} IS NOT NULL))
         cond.sql_args.empty?.should be_true
       end
     end
@@ -94,7 +94,7 @@ describe Jennifer::QueryBuilder::Criteria do
     context "value is true" do
       it "creates is condition" do
         cond = Factory.build_criteria.not(true)
-        cond.as_sql.should eq("tests.f1 IS NOT TRUE")
+        cond.as_sql.should eq(%(#{quote_identifier("tests.f1")} IS NOT TRUE))
         cond.sql_args.empty?.should be_true
       end
     end
@@ -102,7 +102,7 @@ describe Jennifer::QueryBuilder::Criteria do
     context "value is false" do
       it "creates is condition" do
         cond = Factory.build_criteria.not(false)
-        cond.as_sql.should eq("tests.f1 IS NOT FALSE")
+        cond.as_sql.should eq(%(#{quote_identifier("tests.f1")} IS NOT FALSE))
         cond.sql_args.empty?.should be_true
       end
     end
@@ -110,13 +110,13 @@ describe Jennifer::QueryBuilder::Criteria do
     context "without arguments" do
       it "creates inversed condition" do
         cond = Factory.build_criteria.not
-        cond.as_sql.should eq("NOT (tests.f1)")
+        cond.as_sql.should eq(%(NOT (#{quote_identifier("tests.f1")})))
       end
     end
 
     it "works via != and nil as well" do
       c = Factory.build_criteria(field: "f1") != nil
-      c.as_sql.should eq("tests.f1 IS NOT NULL")
+      c.as_sql.should eq(%(#{quote_identifier("tests.f1")} IS NOT NULL))
       c.sql_args.empty?.should be_true
     end
   end
@@ -210,14 +210,14 @@ describe Jennifer::QueryBuilder::Criteria do
 
   describe "#identifier" do
     it "returns table name and field separated by dot" do
-      Factory.build_criteria(table: "tab", field: "field").identifier.should eq("tab.field")
+      Factory.build_criteria(table: "tab", field: "field").identifier.should eq(quote_identifier("tab.field"))
     end
   end
 
   describe "#definition" do
     context "with alias" do
       it "add alias name at the end" do
-        Factory.build_criteria.alias("asd").definition.ends_with?("AS asd").should be_true
+        Factory.build_criteria.alias("asd").definition.ends_with?(%(AS #{quote_identifier("asd")})).should be_true
       end
     end
 

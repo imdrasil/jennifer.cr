@@ -5,7 +5,7 @@ describe Jennifer::QueryBuilder::Star do
 
   describe "#identifier" do
     it "adds star" do
-      described_class.new("table").identifier.should eq("table.*")
+      described_class.new("table").identifier.should eq(%(#{quote_identifier("table")}.*))
     end
   end
 end

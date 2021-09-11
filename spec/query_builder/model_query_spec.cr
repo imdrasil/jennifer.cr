@@ -26,7 +26,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
       adapter
         .sql_generator
         .select(Contact.all.relation(:addresses))
-        .should match(/LEFT JOIN addresses ON addresses.contact_id = contacts.id/)
+        .should match(/LEFT JOIN #{reg_quote_identifier("addresses")} ON #{reg_quote_identifier("addresses.contact_id")} = #{reg_quote_identifier("contacts.id")}/)
     end
   end
 

@@ -38,13 +38,13 @@ mysql_only do
       context "array index" do
         it "converts number to proper selector" do
           s = criteria.take(1)
-          described_class.json_path(s).should eq("tests.f1->\"$[1]\"")
+          described_class.json_path(s).should eq("`tests`.`f1`->\"$[1]\"")
         end
       end
 
       it "quotes path" do
         s = criteria.path("$[1][2]")
-        described_class.json_path(s).should eq("tests.f1->\"$[1][2]\"")
+        described_class.json_path(s).should eq("`tests`.`f1`->\"$[1][2]\"")
       end
     end
 
@@ -55,27 +55,49 @@ mysql_only do
 
       it "replaces user provided argument symbols with database specific" do
         query = Contact.where { _name == sql("lower(%s)", ["john"], false) }
-        described_class.parse_query(described_class.select(query), query.sql_args)[0].should match(/name = lower\(\?\)/m)
+        described_class.parse_query(described_class.select(query), query.sql_args)[0]
+          .should match(/`name` = lower\(\?\)/m)
       end
     end
 
     describe ".order_expression" do
       context "with nulls first" do
         it do
-          Factory.build_criteria.asc.nulls_first.as_sql.should eq("CASE WHEN tests.f1 IS NULL THEN 0 ELSE 1 ASC END, tests.f1 ASC")
-          Factory.build_criteria.desc.nulls_first.as_sql.should eq("CASE WHEN tests.f1 IS NULL THEN 0 ELSE 1 ASC END, tests.f1 DESC")
+          Factory.build_criteria.asc.nulls_first.as_sql
+            .should eq("CASE WHEN `tests`.`f1` IS NULL THEN 0 ELSE 1 ASC END, `tests`.`f1` ASC")
+          Factory.build_criteria.desc.nulls_first.as_sql
+            .should eq("CASE WHEN `tests`.`f1` IS NULL THEN 0 ELSE 1 ASC END, `tests`.`f1` DESC")
         end
       end
 
       context "with nulls last" do
         it do
-          Factory.build_criteria.asc.nulls_last.as_sql.should eq("CASE WHEN tests.f1 IS NULL THEN 0 ELSE 1 DESC END, tests.f1 ASC")
-          Factory.build_criteria.desc.nulls_last.as_sql.should eq("CASE WHEN tests.f1 IS NULL THEN 0 ELSE 1 DESC END, tests.f1 DESC")
+          Factory.build_criteria.asc.nulls_last.as_sql
+            .should eq("CASE WHEN `tests`.`f1` IS NULL THEN 0 ELSE 1 DESC END, `tests`.`f1` ASC")
+          Factory.build_criteria.desc.nulls_last.as_sql
+            .should eq("CASE WHEN `tests`.`f1` IS NULL THEN 0 ELSE 1 DESC END, `tests`.`f1` DESC")
         end
       end
     end
 
     describe "#quote" do
+      it "correctly escapes blob" do
+        value = Bytes[1, 123, 123, 34, 54]
+        adapter.exec("INSERT INTO all_types (blob_f) values(#{described_class.quote(value)})")
+        AllTypeModel.all.first!.blob_f.should eq(value)
+      end
+
+      quote_example(Time.utc(2010, 10, 10, 12, 34, 56), "datetime")
+      quote_example(Time.utc(2010, 10, 10, 0, 0, 0), "date")
+      quote_example(nil)
+      quote_example(true)
+      quote_example(false)
+      quote_example(%(foo))
+      quote_example(%(this has a \\))
+      quote_example(%(what's your "name"))
+      quote_example(1)
+      quote_example(1.0)
+
       describe "JSON::Any" do
         it "is raises exception on '\\'" do
           executed = false
@@ -96,23 +118,16 @@ mysql_only do
         quote_example(JSON::Any.from_json({"asd" => {"asd" => [1, 2, 3], "b" => ["asd"]}}.to_json), "json")
         quote_example(JSON::Any.from_json({ %(this) => {"b" => [%(what's your name)]} }.to_json), "json")
       end
+    end
 
-      it "correctly escapes blob" do
-        value = Bytes[1, 123, 123, 34, 54]
-        adapter.exec("INSERT INTO all_types (blob_f) values(#{described_class.quote(value)})")
-        AllTypeModel.all.first!.blob_f.should eq(value)
-      end
+    describe "#quote_table" do
+      it { sql_generator.quote_table("user posts").should eq(%(`user posts`)) }
+      it { sql_generator.quote_table("user.posts").should eq(%(`user`.`posts`)) }
+    end
 
-      quote_example(Time.utc(2010, 10, 10, 12, 34, 56), "datetime")
-      quote_example(Time.utc(2010, 10, 10, 0, 0, 0), "date")
-      quote_example(nil)
-      quote_example(true)
-      quote_example(false)
-      quote_example(%(foo))
-      quote_example(%(this has a \\))
-      quote_example(%(what's your "name"))
-      quote_example(1)
-      quote_example(1.0)
+    describe "#quote_identifier" do
+      it { sql_generator.quote_identifier("user posts").should eq(%(`user posts`)) }
+      it { sql_generator.quote_identifier(%(what`s \\ your "name")).should eq(%(`what``s \\ your "name"`)) }
     end
   end
 end

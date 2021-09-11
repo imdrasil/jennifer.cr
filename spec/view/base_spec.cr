@@ -2,12 +2,12 @@ require "../spec_helper"
 
 describe Jennifer::View::Base do
   describe "#inspect" do
-    it {
+    it do
       Factory.create_contact(gender: "male")
       view = MaleContact.all.first!
       view.inspect.should eq("#<MaleContact:0x#{view.object_id.to_s(16)} id: #{view.id}, name: \"Deepthi\", " \
                              "gender: \"male\", age: 28, created_at: #{view.created_at.inspect}>")
-    }
+    end
   end
 
   describe "::primary" do
@@ -57,26 +57,26 @@ describe Jennifer::View::Base do
   describe "%scope" do
     context "with block" do
       it "executes in query context" do
-        ::Jennifer::Adapter.default_adapter.sql_generator.select(MaleContact.all.older(18))
-          .should match(/male_contacts.age >/)
+        sql_generator.select(MaleContact.all.older(18))
+          .should match(/#{reg_quote_identifier("male_contacts.age")} >/)
       end
 
       context "without arguemnt" do
         it "is accessible from query object" do
-          MaleContact.all.main.as_sql.should match(/male_contacts\.age </)
+          MaleContact.all.main.as_sql.should match(/#{reg_quote_identifier("male_contacts.age")} </)
         end
       end
 
       context "with argument" do
         it "is accessible from query object" do
-          MaleContact.all.older(12).as_sql.should match(/contacts\.age >=/)
+          MaleContact.all.older(12).as_sql.should match(/#{reg_quote_identifier("male_contacts.age")} >=/)
         end
       end
 
       context "same names" do
         it "is accessible from query object" do
-          MaleContact.all.main.as_sql.should match(/male_contacts\.age </)
-          Contact.all.main.as_sql.should match(/contacts\.age >/)
+          MaleContact.all.main.as_sql.should match(/#{reg_quote_identifier("male_contacts.age")} </)
+          Contact.all.main.as_sql.should match(/#{reg_quote_identifier("contacts.age")} >/)
         end
       end
 
@@ -90,18 +90,18 @@ describe Jennifer::View::Base do
 
     context "with query object class" do
       it "executes in class context" do
-        ::Jennifer::Adapter.default_adapter.sql_generator.select(MaleContact.johny).should match(/name =/)
+        sql_generator.select(MaleContact.johny).should match(/#{reg_quote_identifier("name")} =/)
       end
 
       context "without arguemnt" do
         it "is accessible from query object" do
-          MaleContact.johny.as_sql.should match(/male_contacts\.name =/)
+          MaleContact.johny.as_sql.should match(/#{reg_quote_identifier("male_contacts.name")} =/)
         end
       end
 
       context "with argument" do
         it "is accessible from query object" do
-          MaleContact.older(12).as_sql.should match(/male_contacts\.age >=/)
+          MaleContact.older(12).as_sql.should match(/#{reg_quote_identifier("male_contacts.age")} >=/)
         end
       end
 

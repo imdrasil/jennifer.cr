@@ -3,6 +3,7 @@ class AddCity20180221164419175 < Jennifer::Migration::Base
     create_table :cities do |t|
       t.string :name, { :null => false }
       t.integer :country_id, { :null => false }
+      t.integer :optimistic_lock, {:default => 0}
     end
   end
 

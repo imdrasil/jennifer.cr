@@ -9,7 +9,8 @@ describe Jennifer::QueryBuilder::Grouping do
     context "with query" do
       it do
         g = described_class.new(Query["contacts"].where { _id == 2 })
-        g.as_sql.should eq("(SELECT contacts.* FROM contacts WHERE contacts.id = %s )")
+        g.as_sql
+          .should eq(%((SELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")} WHERE #{quote_identifier("contacts.id")} = %s )))
       end
     end
   end
@@ -17,7 +18,7 @@ describe Jennifer::QueryBuilder::Grouping do
   describe "#as_sql" do
     it "wrap SQL with parenthesis" do
       g = described_class.new(c1 & c2)
-      g.as_sql.should match(/\(tests\.f1 AND tests\.f1 = %s\)/)
+      g.as_sql.should match(/\(#{reg_quote_identifier("tests.f1")} AND #{reg_quote_identifier("tests.f1")} = %s\)/)
     end
   end
 

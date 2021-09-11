@@ -7,7 +7,8 @@ describe Jennifer::QueryBuilder::Query do
     it "returns SQL presentation of condition" do
       q = Factory.build_query
       c = Factory.build_criteria
-      q.where { c }.as_sql.should eq("SELECT tests.* FROM tests WHERE tests.f1 ")
+      q.where { c }.as_sql
+        .should eq(%(SELECT #{quote_identifier("tests")}.* FROM #{quote_identifier("tests")} WHERE #{quote_identifier("tests.f1")} ))
     end
   end
 
@@ -169,17 +170,18 @@ describe Jennifer::QueryBuilder::Query do
   describe "#where" do
     it "allows to pass criteria and sets it via AND" do
       q1 = Factory.build_query.where { c("f1") & c("f2") }
-      q1.tree.to_s.should match(/tests\.f1 AND tests\.f2/)
+      q1.tree.to_s.should match(/#{reg_quote_identifier("tests.f1")} AND #{reg_quote_identifier("tests.f2")}/)
     end
 
     it "generates proper request for given raw SQL as condition part with arguments" do
       q1 = Query["contacts"].where { (_name == "John") & sql("age > %s", [12]) }
-      q1.tree.to_s.should eq("contacts.name = %s AND (age > %s)")
+      q1.tree.to_s.should eq(%(#{quote_identifier("contacts.name")} = %s AND (age > %s)))
     end
 
     it "generates correct request for given hash arguments" do
       q1 = Query["contacts"].where({:name => "John", :age => 12})
-      q1.tree.to_s.should eq("(contacts.name = %s AND contacts.age = %s)")
+      q1.tree.to_s
+        .should eq(%((#{quote_identifier("contacts.name")} = %s AND #{quote_identifier("contacts.age")} = %s)))
       q1.tree.not_nil!.sql_args.should eq(db_array("John", 12))
     end
 
@@ -208,7 +210,12 @@ describe Jennifer::QueryBuilder::Query do
     end
 
     it "joins several having invocation with AND" do
-      Contact.all.having { _id > 1 }.having { _id < 2 }._having!.as_sql.should eq("contacts.id > %s AND contacts.id < %s")
+      Contact.all
+        .having { _id > 1 }
+        .having { _id < 2 }
+        ._having!
+        .as_sql
+        .should eq(%(#{quote_identifier("contacts.id")} > %s AND #{quote_identifier("contacts.id")} < %s))
     end
   end
 
@@ -277,12 +284,12 @@ describe Jennifer::QueryBuilder::Query do
   describe "#from" do
     it "accepts plain query" do
       Factory.build_query(table: "contacts").from("select * from contacts where id > 2").as_sql
-        .should eq("SELECT contacts.* FROM ( select * from contacts where id > 2 ) ")
+        .should eq(%(SELECT #{quote_identifier("contacts")}.* FROM ( select * from contacts where id > 2 ) ))
     end
 
     it "accepts query object" do
       Factory.build_query(table: "contacts").from(Contact.where { _id > 2 }).as_sql
-        .should eq("SELECT contacts.* FROM ( SELECT contacts.* FROM contacts WHERE contacts.id > %s  ) ")
+        .should eq(%(SELECT #{quote_identifier("contacts")}.* FROM ( SELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")} WHERE #{quote_identifier("contacts.id")} > %s  ) ))
     end
   end
 
@@ -341,7 +348,7 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#distinct" do
     it "adds DISTINCT to SELECT clause" do
-      Query["contacts"].select(:age).distinct.as_sql.should match(/SELECT DISTINCT contacts\.age/)
+      Query["contacts"].select(:age).distinct.as_sql.should match(/SELECT DISTINCT #{reg_quote_identifier("contacts.age")}/)
     end
 
     it "returns uniq rows" do
@@ -535,39 +542,43 @@ describe Jennifer::QueryBuilder::Query do
   describe "#merge" do
     describe "having" do
       it do
-        Query["contacts"].merge(Query["users"].having { _id > 1 }).as_sql.should match(/HAVING users\.id >/)
+        Query["contacts"].merge(Query["users"].having { _id > 1 }).as_sql
+          .should match(/HAVING #{reg_quote_identifier("users.id")} >/)
       end
     end
 
     describe "order" do
       it do
-        Query["contacts"].merge(Query["users"].order(id: :desc)).as_sql.should match(/ORDER BY users\.id DESC/)
+        Query["contacts"].merge(Query["users"].order(id: :desc)).as_sql
+          .should match(/ORDER BY #{reg_quote_identifier("users.id")} DESC/)
       end
     end
 
     describe "join" do
       it do
         Query["contacts"].merge(Query["users"].join("addresses") { _user_id == c("id", "users") }).as_sql
-          .should match(/JOIN addresses ON addresses.user_id = users\.id/)
+          .should match(/JOIN #{reg_quote_identifier("addresses")} ON #{reg_quote_identifier("addresses.user_id")} = #{reg_quote_identifier("users.id")}/)
       end
     end
 
     describe "group by" do
       it do
-        Query["contacts"].merge(Query["users"].group(:id)).as_sql.should match(/GROUP BY users\.id/)
+        Query["contacts"].merge(Query["users"].group(:id)).as_sql.should match(/GROUP BY #{reg_quote_identifier("users.id")}/)
       end
     end
 
     describe "CTE" do
       it do
         query = Query["contacts"].with("test", Contact.all)
-        Query["contacts"].merge(query).as_sql.should match(/WITH test AS \(SELECT contacts\.\* FROM contacts \)/)
+        Query["contacts"].merge(query)
+          .as_sql
+          .should match(/WITH test AS \(SELECT #{reg_quote_identifier("contacts")}\.\* FROM #{reg_quote_identifier("contacts")} \)/)
       end
     end
 
     describe "where" do
       it do
-        Query["contacts"].merge(Query["users"].where { _id > 1 }).as_sql.should match(/WHERE users\.id >/)
+        Query["contacts"].merge(Query["users"].where { _id > 1 }).as_sql.should match(/WHERE #{reg_quote_identifier("users.id")} >/)
       end
     end
 

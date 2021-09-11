@@ -59,7 +59,7 @@ module Jennifer
       end
 
       # Generates common select SQL request
-      def self.select(query, exact_fields = [] of String)
+      def self.select(query, exact_fields : Array = [] of String)
         String.build do |s|
           with_clause(s, query)
           select_clause(s, query, exact_fields)
@@ -165,15 +165,15 @@ module Jennifer
       def self.select_clause(io : String::Builder, query, exact_fields : Array = [] of String)
         io << "SELECT "
         io << "DISTINCT " if query._distinct
-        if !query._raw_select
-          table = quote_table(query.table)
-          if !exact_fields.empty?
-            exact_fields.join(io, ", ") { |f| io << "#{table}.#{quote_identifier(f)}" }
-          else
-            query._select_fields.join(io, ", ") { |f| io << f.definition(self) }
-          end
-        else
+        if query._raw_select
           io << query._raw_select.not_nil!
+        else
+          table = quote_table(query.table)
+          if exact_fields.empty? || !query._select_fields!.empty?
+            query._select_fields.join(io, ", ") { |f| io << f.definition(self) }
+          else
+            exact_fields.join(io, ", ") { |f| io << "#{table}.#{quote_identifier(f)}" }
+          end
         end
         io << ' '
       end

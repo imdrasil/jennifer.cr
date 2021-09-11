@@ -6,7 +6,7 @@ As was said Jennifer provide lazy query evaluation so it will be performed only 
 - `#last!` - returns last record or raise `RecordNotFound` if nothing was found;
 - `#first` - returns first found record or `nil` if nothing was found;
 - `#first!` - returns first record or raise `RecordNotFound` if nothing was found;
-- `#pluck` - returns array of specified fields values instead of records;
+- `#pluck` - returns array of specified fields values instead of records; also can return array of named tuples;
 - `#delete` - deletes all records in db by query;
 - `#exists?` - checks if there is any record in DB that fits query;
 - `#update` - updates fields by given values;
@@ -24,14 +24,40 @@ As was said Jennifer provide lazy query evaluation so it will be performed only 
 - `#find_records_by_sql` - returns array of `Jennifer::Record` found by given plain SQL request;
 - `#destroy` - invokes `#to_a` and calls `#destroy` on each record`.
 
-`#pluck` returns array of values if only one field was given and array of arrays otherwise. By default it uses scope of current table (e.g. in previous example select clause included `contacts.id`). To allow grepping custom fields or any statement you need to specify custom select clause:
+#### Pluck
+
+User `#pluck` as a shortcut to select one or more attributes without loading a bunch of records to grab the attributes you want.
+
+```crystal
+Contact.all.pluck(:name)
+```
+
+instead of
+
+```crystal
+Contact.all.map(&.name)
+```
+
+`#pluck` returns array of values if only one field was given and array of arrays otherwise. If query object has no specified custom attributes to select given attributes is used to compose `SELECT` clause (query's table is used as a target - `contacts.name` for example above).
+
+To grab custom attributes you need to specify custom select clause:
 
 ```crystal
 Contact.all
-  .select("COUNT(id) as count, contacts.name")
+  .select("COUNT(id) as count") # same as .select { [sql("COUNT(id)").alias("count")] }
   .group("name")
   .having { sql("COUNT(id)") > 1 }
   .pluck(:count)
+```
+
+To return array of named tuple instead of array of arrays specify fields and desired data types as splatted named tuple:
+
+```crystal
+Contact.all
+  .select { [sql("COUNT(id)").alias("count"), _name] }
+  .group("name")
+  .having { sql("COUNT(id)") > 1 }
+  .pluck(count: Int32, name: String) # => Array(NamedTuple(count: Int32, name: String))
 ```
 
 ## Relation Eager Loading

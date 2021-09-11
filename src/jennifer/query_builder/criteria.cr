@@ -40,6 +40,9 @@ module Jennifer
         @relation = nil
       end
 
+      # Specifies identifier alias
+      #
+      # `nil` value disable alias.
       def alias(name : String?)
         @alias = name
         self

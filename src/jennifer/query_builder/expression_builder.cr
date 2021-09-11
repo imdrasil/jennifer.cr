@@ -76,20 +76,20 @@ module Jennifer
       # Creates criterion for current table by given name *name*.
       #
       # ```
-      # Jennifer::Query["users"].where { c("id") }
+      # Jennifer::Query["users"].where { c("id") } # => "users"."id"
       # ```
       def c(name : String)
         Criteria.new(name, @table, @relation)
       end
 
-      def c(name : String, table_name : String? = nil, relation : String? = nil)
+      def c(name : String, table_name : String = @table, relation : String? = nil)
         if @query
           @query.not_nil!.with_relation!
         end
-        Criteria.new(name, table_name || @table, relation || @relation)
+        Criteria.new(name, table_name, relation || @relation)
       end
 
-      # Creates criterion by given name *name* for relation *relation*.
+      # Creates criterion by given name *name* for the *relation*.
       def c_with_relation(name : String, relation : String)
         if @query
           @query.not_nil!.with_relation!

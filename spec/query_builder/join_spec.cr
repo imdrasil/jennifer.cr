@@ -17,7 +17,7 @@ describe Jennifer::QueryBuilder::Join do
 
   describe "#as_sql" do
     it "includes table name" do
-      Factory.build_join.as_sql.should match(/ tests ON /)
+      Factory.build_join.as_sql.should match(/ #{reg_quote_identifier("tests")} ON /)
     end
 
     it "calls as_sql on @on" do
@@ -95,7 +95,8 @@ end
 describe Jennifer::QueryBuilder::LateralJoin do
   describe "#as_sql" do
     it "includes source request definition" do
-      lateral_join.as_sql.should match(/ \(SELECT tests\.\* FROM tests WHERE tests\.id = %s \) ON /m)
+      lateral_join.as_sql
+        .should match(/ \(SELECT #{reg_quote_identifier("tests")}\.\* FROM #{reg_quote_identifier("tests")} WHERE #{reg_quote_identifier("tests.id")} = %s \) ON /m)
     end
 
     it "calls as_sql on @on" do

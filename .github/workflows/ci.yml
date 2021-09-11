@@ -70,7 +70,7 @@ jobs:
 
       - name: Check formatting
         if: ${{ matrix.linter }}
-        run: crystal tool format --check -e"./scripts"
+        run: make format
 
       - name: Install dependencies
         run: shards install

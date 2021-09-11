@@ -60,7 +60,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     end
 
     context "with non-empty table name" do
-      it { sb { |io| described_class.from_clause(io, Jennifer::Query["contacts"]) }.should eq("FROM contacts ") }
+      it { sb { |io| described_class.from_clause(io, Jennifer::Query["contacts"]) }.should eq("FROM #{quote_identifier("contacts")} ") }
     end
 
     context "with query that has FROM set to string" do
@@ -68,7 +68,10 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     end
 
     context "with query that has FROM set to query" do
-      it { sb { |io| described_class.from_clause(io, Contact.all.from(Contact.all)) }.should eq("FROM ( SELECT contacts.* FROM contacts  ) ") }
+      it do
+        sb { |io| described_class.from_clause(io, Contact.all.from(Contact.all)) }
+          .should eq(%(FROM ( SELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")}  ) ))
+      end
     end
 
     context "with empty table" do
@@ -136,7 +139,8 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     end
 
     it "correctly generates SQL" do
-      sb { |io| described_class.group_clause(io, Contact.all.group(:age)) }.should match(/GROUP BY contacts.age/)
+      sb { |io| described_class.group_clause(io, Contact.all.group(:age)) }
+        .should match(/GROUP BY #{reg_quote_identifier("contacts.age")}/)
     end
   end
 
@@ -153,36 +157,41 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     context "with alias" do
       it do
         query = Contact.all.join(Address, "some_table") { |t| _contact_id == t._id }
-        join_clause(query).should eq("JOIN addresses some_table ON some_table.contact_id = contacts.id\n")
+        join_clause(query)
+          .should eq(%(JOIN #{quote_identifier("addresses")} #{quote_identifier("some_table")} ON #{quote_identifier("some_table.contact_id")} = #{quote_identifier("contacts.id")}\n))
       end
     end
 
     describe "RIGHT" do
       it do
         query = Contact.all.right_join(Address) { |t| _contact_id == t._id }
-        join_clause(query).should eq("RIGHT JOIN addresses ON addresses.contact_id = contacts.id\n")
+        join_clause(query)
+          .should eq(%(RIGHT JOIN #{quote_identifier("addresses")} ON #{quote_identifier("addresses.contact_id")} = #{quote_identifier("contacts.id")}\n))
       end
     end
 
     describe "LEFT" do
       it do
         query = Contact.all.left_join(Address) { |t| _contact_id == t._id }
-        join_clause(query).should eq("LEFT JOIN addresses ON addresses.contact_id = contacts.id\n")
+        join_clause(query)
+          .should eq(%(LEFT JOIN #{quote_identifier("addresses")} ON #{quote_identifier("addresses.contact_id")} = #{quote_identifier("contacts.id")}\n))
       end
     end
 
     describe "INNER" do
       it do
         query = Contact.all.join(Address) { |t| _contact_id == t._id }
-        join_clause(query).should eq("JOIN addresses ON addresses.contact_id = contacts.id\n")
+        join_clause(query)
+          .should eq(%(JOIN #{quote_identifier("addresses")} ON #{quote_identifier("addresses.contact_id")} = #{quote_identifier("contacts.id")}\n))
       end
     end
 
     describe "LATERAL" do
       it do
         query = Contact.all.lateral_join(Address.all, "some_table") { |t| _contact_id == t._id }
-        sub_query = "SELECT addresses.* FROM addresses "
-        join_clause(query).should eq("JOIN LATERAL (#{sub_query}) some_table ON some_table.contact_id = contacts.id\n")
+        sub_query = %(SELECT #{quote_identifier("addresses")}.* FROM #{quote_identifier("addresses")} )
+        join_clause(query)
+          .should eq("JOIN LATERAL (#{sub_query}) #{quote_identifier("some_table")} ON #{quote_identifier("some_table.contact_id")} = #{quote_identifier("contacts.id")}\n")
       end
     end
   end
@@ -191,7 +200,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     context "condition exists" do
       it "includes its SQL" do
         sb { |io| described_class.where_clause(io, Contact.where { _id == 1 }) }
-          .should eq("WHERE contacts.id = %s ")
+          .should eq(%(WHERE #{quote_identifier("contacts.id")} = %s ))
       end
     end
 
@@ -221,7 +230,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
 
     it "returns all orders" do
       sb { |s| described_class.order_clause(s, Contact.all.order(age: :desc, name: :asc)) }
-        .should match(/ORDER BY contacts\.age DESC, contacts\.name ASC/)
+        .should match(/ORDER BY #{reg_quote_identifier("contacts.age")} DESC, #{reg_quote_identifier("contacts.name")} ASC/)
     end
   end
 
@@ -240,17 +249,20 @@ describe Jennifer::Adapter::BaseSQLGenerator do
   describe ".union_clause" do
     describe "ALL" do
       it do
-        sb { |s| described_class.union_clause(s, Query["contacts"].union(Query["users"], true)) }.should match(/UNION ALL /)
+        sb { |s| described_class.union_clause(s, Query["contacts"].union(Query["users"], true)) }
+          .should match(/UNION ALL /)
       end
     end
 
     it "add keyword" do
-      sb { |s| described_class.union_clause(s, Jennifer::Query["users"].union(Jennifer::Query["contacts"])) }.should match(/UNION/)
+      sb { |s| described_class.union_clause(s, Jennifer::Query["users"].union(Jennifer::Query["contacts"])) }
+        .should match(/UNION/)
     end
 
     it "adds next query to current one" do
       query = Jennifer::Query["contacts"].union(Jennifer::Query["users"])
-      sb { |s| described_class.union_clause(s, query) }.should match(Regex.new(Jennifer::Adapter.default_adapter.sql_generator.select(Jennifer::Query["users"])))
+      sb { |s| described_class.union_clause(s, query) }
+        .should match(Regex.new(sql_generator.select(Jennifer::Query["users"])))
     end
   end
 
@@ -296,8 +308,8 @@ describe Jennifer::Adapter::BaseSQLGenerator do
       end
 
       it do
-        Factory.build_criteria.asc.as_sql.should eq("tests.f1 ASC")
-        Factory.build_criteria.desc.as_sql.should eq("tests.f1 DESC")
+        Factory.build_criteria.asc.as_sql.should eq(%(#{quote_identifier("tests.f1")} ASC))
+        Factory.build_criteria.desc.as_sql.should eq(%(#{quote_identifier("tests.f1")} DESC))
       end
     end
   end
@@ -306,7 +318,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     describe "recursive" do
       it do
         query = Jennifer::Query["contacts"].with("test", Contact.all, true)
-        expected_sql = "WITH RECURSIVE test AS (SELECT contacts.* FROM contacts ) "
+        expected_sql = "WITH RECURSIVE test AS (SELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")} ) "
         sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
       end
     end
@@ -314,7 +326,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     describe "multiple recursive" do
       it do
         query = Jennifer::Query["contacts"].with("test", Contact.all, true).with("test2", Address.all, true)
-        expected_sql = "WITH RECURSIVE test AS (SELECT contacts.* FROM contacts ) , test2 AS (SELECT addresses.* FROM addresses ) "
+        expected_sql = %(WITH RECURSIVE test AS (SELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")} ) , test2 AS (SELECT #{quote_identifier("addresses")}.* FROM #{quote_identifier("addresses")} ) )
         sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
       end
     end
@@ -322,15 +334,15 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     context "with multiple expressions" do
       it do
         query = Jennifer::Query["contacts"].with("test", Contact.all).with("test 2", Contact.all)
-        expected_sql = "WITH test AS (SELECT contacts.* FROM contacts ) , " \
-                       "test 2 AS (SELECT contacts.* FROM contacts ) "
+        expected_sql = "WITH test AS (SELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")} ) , " \
+                       "test 2 AS (SELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")} ) "
         sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
       end
 
       it "hoists the RECURSIVE keyword to the query beginning" do
         query = Jennifer::Query["contacts"].with("test", Contact.all).with("test 2", Contact.all, true)
-        expected_sql = "WITH RECURSIVE test AS (SELECT contacts.* FROM contacts ) , " \
-                       "test 2 AS (SELECT contacts.* FROM contacts ) "
+        expected_sql = "WITH RECURSIVE test AS (SELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")} ) , " \
+                       "test 2 AS (SELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")} ) "
         sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
       end
     end
@@ -338,8 +350,10 @@ describe Jennifer::Adapter::BaseSQLGenerator do
 
   describe ".cast_expression" do
     it do
-      described_class.cast_expression(expression_builder.sql("'2000-10-20'", false), "DATE").should eq("CAST('2000-10-20' AS DATE)")
-      described_class.cast_expression(expression_builder._date, "DATE").should eq("CAST(tests.date AS DATE)")
+      described_class.cast_expression(expression_builder.sql("'2000-10-20'", false), "DATE")
+        .should eq("CAST('2000-10-20' AS DATE)")
+      described_class.cast_expression(expression_builder._date, "DATE")
+        .should eq(%(CAST(#{quote_identifier("tests.date")} AS DATE)))
     end
   end
 end

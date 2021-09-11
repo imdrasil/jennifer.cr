@@ -7,6 +7,19 @@ module Jennifer
       # Quotes the column value to help prevent -[SQL injection attacks][https://en.wikipedia.org/wiki/SQL_injection].
       abstract def quote(value : String)
 
+      # Quotes the given identifier according to the language specification to prevent overlappings with predefined
+      # keywords.
+      abstract def quote_identifier(identifier : String | Symbol)
+
+      # Quotes the given table name according to the language specification.
+      #
+      # Dot inside of name is allowed to specify schema name.
+      abstract def quote_table(table : String)
+
+      def quote_identifiers(identifiers)
+        identifiers.map { |id| quote_identifier(id) }
+      end
+
       abstract def quote_json_string(value : String)
 
       # :ditto:

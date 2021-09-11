@@ -82,7 +82,7 @@ class UserWithConverter < Jennifer::Model::Base
 end
 
 describe Jennifer::Model::Mapping do
-  select_regexp = /[\S\s]*SELECT contacts\.\*/i
+  generator = Jennifer::Adapter.default_adapter.sql_generator
 
   describe "#reload" do
     it "assign all values from db to existing object" do
@@ -699,7 +699,7 @@ describe Jennifer::Model::Mapping do
 
         it "raised exception includes query explanation" do
           ContactWithNillableName.create({name: nil})
-          expect_raises(::Jennifer::DataTypeMismatch, select_regexp) do
+          expect_raises(::Jennifer::DataTypeMismatch, /[\S\s]*SELECT #{generator.quote_identifier("contacts")}\.\*/i) do
             ContactWithCustomField.all.last!
           end
         end
@@ -716,7 +716,7 @@ describe Jennifer::Model::Mapping do
 
         it "raised exception includes query explanation" do
           ContactWithNillableName.create({name: nil})
-          expect_raises(::Jennifer::DataTypeMismatch, select_regexp) do
+          expect_raises(::Jennifer::DataTypeMismatch, /[\S\s]*SELECT #{generator.quote_identifier("contacts")}\.\*/i) do
             ContactWithCustomField.all.last!
           end
         end

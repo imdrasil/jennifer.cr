@@ -24,14 +24,14 @@ module Jennifer::Model
     macro with_timestamps(created_at = true, updated_at = true)
       {% if updated_at %}
         def track_timestamps_on_update
-          self.updated_at = Time.local(Jennifer::Config.local_time_zone)
+          self.updated_at = Time.local(Jennifer::Config.local_time_zone) unless updated_at_changed?
         end
       {% end %}
 
       def track_timestamps_on_create
-        {% if updated_at %}self.updated_at ={% end %}
-        {% if created_at %}self.created_at ={% end %}
-          Time.local(Jennifer::Config.local_time_zone)
+        current_time = Time.local(Jennifer::Config.local_time_zone)
+        {% if updated_at %}self.updated_at ||= current_time{% end %}
+        {% if created_at %}self.created_at ||= current_time{% end %}
       end
     end
   end

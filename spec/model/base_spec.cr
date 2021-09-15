@@ -685,6 +685,19 @@ describe Jennifer::Model::Base do
     end
   end
 
+  describe "::upsert" do
+    it "do nothing on conflict when inserting" do
+      contact = Factory.build_contact
+      contact.description = "unique"
+      contact.save.should be_true
+
+      c = Factory.build_contact(age: 12, description: "unique")
+      Contact.upsert([c])
+      Contact.all.count.should eq(1)
+      Contact.all.first!.age.should_not eq(12)
+    end
+  end
+
   describe "#set_attributes" do
     context "when given attribute exists" do
       it "raises exception if value has wrong type" do

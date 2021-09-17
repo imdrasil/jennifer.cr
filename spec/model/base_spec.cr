@@ -689,12 +689,14 @@ describe Jennifer::Model::Base do
     it "do nothing on conflict when inserting" do
       contact = Factory.build_contact
       contact.description = "unique"
+      contact.age = 23
       contact.save.should be_true
 
-      c = Factory.build_contact(age: 12, description: "unique")
-      Contact.upsert([c])
-      Contact.all.count.should eq(1)
-      Contact.all.first!.age.should_not eq(12)
+      c1 = Factory.build_contact(age: 13, description: "unique")
+      c2 = Factory.build_contact(age: 31, description: "not unique")
+      Contact.upsert([c1, c2])
+      Contact.all.count.should eq(2)
+      Contact.all.pluck(:age).should eq([contact.age, c2.age])
     end
   end
 

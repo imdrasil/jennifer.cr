@@ -14,30 +14,46 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - crystal_version: 1.0.0
+            DB: mysql
+            db_user: root
+            db_password:
+          - crystal_version: 1.0.0
+            DB: postgres
+            db_user: dbuser
+            db_password: dbpassword
           - crystal_version: 1.1.0
+            DB: mysql
+            db_user: root
+            db_password:
+          - crystal_version: 1.1.0
+            DB: postgres
+            db_user: dbuser
+            db_password: dbpassword
+          - crystal_version: 1.2.0
             DB: mysql
             other: INTEGRATION=1
             linter: true
             db_user: root
             db_password:
-          - crystal_version: 1.1.0
+          - crystal_version: 1.2.0
             DB: postgres
             other: INTEGRATION=1
             linter: true
             db_user: dbuser
             db_password: dbpassword
-          - crystal_version: 1.1.0
+          - crystal_version: 1.2.0
             DB: postgres
             mt: true
             db_user: dbuser
             db_password: dbpassword
-          - crystal_version: 1.1.0
+          - crystal_version: 1.2.0
             DB: postgres
             pair: true
             db_user: dbuser
             db_password: dbpassword
             other: PAIR_DB_USER=root PAIR_DB_PASSWORD=
-          - crystal_version: 1.1.0
+          - crystal_version: 1.2.0
             DB: mysql
             pair: true
             db_user: root

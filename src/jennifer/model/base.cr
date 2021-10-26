@@ -603,6 +603,11 @@ module Jennifer
         write_adapter.upsert(collection, unique_fields)
       end
 
+      def self.upsert(collection : Array(self), unique_fields = %w[], &block)
+        definition = (with context yield context)
+        write_adapter.upsert(collection, unique_fields, definition)
+      end
+
       macro inherited
         ::Jennifer::Model::Validation.inherited_hook
         ::Jennifer::Model::Callback.inherited_hook

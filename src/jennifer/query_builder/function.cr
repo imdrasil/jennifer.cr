@@ -117,14 +117,14 @@ module Jennifer
       # To access arguments passed to the function use `#operands` method.
       #
       # ```
-      # Function.define( "lower", arity: 1, comment: <<-TEXT
-      #     Creates `LOWER` SQL function instance with the given
+      # Function.define("lower", arity: 1, comment: <<-TEXT
+      #   Creates `LOWER` SQL function instance with the given
       #
-      #     next line
+      #   next line
       #
-      #     ```
-      #     1 + 2
-      #     ```
+      #   ```
+      #   1 + 2
+      #   ```
       #   TEXT
       # ) do
       #   def as_sql(generator)

@@ -8,6 +8,8 @@ require "./mysql/schema_processor"
 module Jennifer
   module Mysql
     class Adapter < Adapter::Base
+      include ::Jennifer::Adapter::RequestMethods
+
       alias EnumType = String
 
       TYPE_TRANSLATIONS = {

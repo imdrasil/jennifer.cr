@@ -701,7 +701,7 @@ describe Jennifer::Model::Base do
       c1 = Factory.build_contact(age: 13, description: "unique")
       c2 = Factory.build_contact(age: 31, description: "not unique")
       Contact.upsert([c1, c2], %w[description]) do
-        { :description => concat_ws(" ", values(:description), sql("'updated'", false)) }
+        {:description => concat_ws(" ", values(:description), sql("'updated'", false))}
       end
       Contact.all.order(id: :asc).pluck(:description).should eq(["#{c1.description} updated", c2.description])
     end

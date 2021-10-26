@@ -27,7 +27,6 @@ module Jennifer
       extend AbstractClassMethods
       include Transactions
       include ResultParsers
-      include RequestMethods
 
       @db : DB::Database?
       getter config : Config
@@ -260,7 +259,7 @@ module Jennifer
           config.host,
           config.port.try(&.>(0)) ? config.port : nil,
           type.db? ? config.db : "",
-          URI.encode(connection_query),
+          connection_query,
           config.user,
           config.password && !config.password.empty? ? config.password : nil
         ).to_s
@@ -363,15 +362,15 @@ module Jennifer
       # private ===========================
 
       private def connection_query
-        String.build do |s|
+        URI::Params.encode(
           {% begin %}
-          [
-            {% for arg in Config::CONNECTION_URI_PARAMS %}
-              "{{arg.id}}=#{config.{{arg.id}}}",
-            {% end %}
-          ].join(s, "&")
+            {
+              {% for arg in Config::CONNECTION_URI_PARAMS %}
+                "{{arg.id}}": config.{{arg.id}}.to_s,
+              {% end %}
+            }
           {% end %}
-        end
+        )
       end
 
       private def model_escaped_bulk_insert(collection : Array, klass, fields : Array)

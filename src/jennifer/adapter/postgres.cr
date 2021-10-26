@@ -12,6 +12,8 @@ require "./postgres/command_interface"
 module Jennifer
   module Postgres
     class Adapter < Adapter::Base
+      include ::Jennifer::Adapter::RequestMethods
+
       alias EnumType = Bytes
 
       TYPE_TRANSLATIONS = {

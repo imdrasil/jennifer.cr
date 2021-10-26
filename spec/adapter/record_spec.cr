@@ -83,6 +83,7 @@ describe Jennifer::Record do
             :updated_at  => record.updated_at,
             :description => nil,
             :user_id     => nil,
+            :email       => nil,
           }
         end,
         postgres: ->do
@@ -97,6 +98,7 @@ describe Jennifer::Record do
             :updated_at  => record.updated_at,
             :description => nil,
             :user_id     => nil,
+            :email       => nil,
           }
         end
       )
@@ -121,6 +123,7 @@ describe Jennifer::Record do
             :updated_at  => record.updated_at,
             :description => nil,
             :user_id     => nil,
+            :email       => nil,
           }
         end,
         postgres: ->do
@@ -134,6 +137,7 @@ describe Jennifer::Record do
             :updated_at  => record.updated_at,
             :description => nil,
             :user_id     => nil,
+            :email       => nil,
           }
         end
       )
@@ -156,6 +160,7 @@ describe Jennifer::Record do
               :updated_at  => record.updated_at,
               :description => nil,
               :user_id     => nil,
+              :email       => nil,
               :custom      => "value",
             }
           end,
@@ -171,6 +176,7 @@ describe Jennifer::Record do
               :updated_at  => record.updated_at,
               :description => nil,
               :user_id     => nil,
+              :email       => nil,
               :custom      => "value",
             }
           end
@@ -203,6 +209,7 @@ describe Jennifer::Record do
               :updated_at  => record.updated_at,
               :description => nil,
               :user_id     => nil,
+              :email       => nil,
               :custom      => "value",
             }
           end,
@@ -217,6 +224,7 @@ describe Jennifer::Record do
               :updated_at  => record.updated_at,
               :description => nil,
               :user_id     => nil,
+              :email       => nil,
               :custom      => "value",
             }
           end

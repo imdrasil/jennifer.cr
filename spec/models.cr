@@ -109,7 +109,8 @@ class Contact < ApplicationRecord
         created_at: Time?,
         updated_at: Time?,
         user_id: Int32?,
-        tags: {type: Array(Int32)?}
+        tags: {type: Array(Int32)?},
+        email: String?
       )
     {% else %}
       mapping(
@@ -121,7 +122,8 @@ class Contact < ApplicationRecord
         description: String?,
         created_at: Time?,
         updated_at: Time?,
-        user_id: Int32?
+        user_id: Int32?,
+        email: String?
       )
     {% end %}
   end

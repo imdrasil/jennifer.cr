@@ -142,7 +142,19 @@ module Jennifer
         end
       end
 
-      def upsert(table : String, fields : Array(String), values : Array(ArgsType), unique_fields, on_conflict : Hash)
+      def upsert(collection : Array(Model::Base), unique_fields : Array, definition : Hash = {} of Nil => Nil)
+        return collection if collection.empty?
+
+        klass = collection[0].class
+
+        all_arguments_to_insert = collection.map(&.arguments_to_insert)
+        fields = all_arguments_to_insert[0][:fields]
+        values = all_arguments_to_insert.map(&.[:args])
+
+        upsert(klass.table_name, fields, values, unique_fields, definition)
+      end
+
+      def upsert(table : String, fields : Array(String), values : Array(ArgsType), unique_fields : Array, on_conflict : Hash)
         query = sql_generator.insert_on_duplicate(table, fields, values.size, unique_fields, on_conflict)
         args = [] of DBAny
         values.each { |row| args.concat(row) }

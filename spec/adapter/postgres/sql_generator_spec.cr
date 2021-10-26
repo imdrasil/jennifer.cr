@@ -62,6 +62,13 @@ postgres_only do
       end
     end
 
+    describe "::insert_on_duplicate" do
+      it "do not add on conflict columns if none present" do
+        query = described_class.insert_on_duplicate("contacts", ["field1"], 1, [] of String, {} of Nil => Nil)
+        query.should match(/ON CONFLICT DO NOTHING/)
+      end
+    end
+
     describe ".order_expression" do
       context "with nulls first" do
         it do

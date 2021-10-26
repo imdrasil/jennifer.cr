@@ -201,7 +201,7 @@ module Jennifer
       def upsert(fields : Array(String), values : Array(Array(DBAny)), unique_fields : Array, &block)
         return if do_nothing? || values.empty?
 
-        definition = (with @expression yield)
+        definition = (with @expression yield @expression)
         write_adapter.upsert(table, fields, values, unique_fields, definition)
       end
 

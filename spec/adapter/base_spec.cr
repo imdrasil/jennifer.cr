@@ -264,6 +264,70 @@ describe Jennifer::Adapter::Base do
     end
   end
 
+  describe "#upsert" do
+    it "do nothing if empty array was given" do
+      expect_query_silence do
+        default_adapter.upsert([] of Contact, [] of String)
+      end
+    end
+
+    it "avoid model validation" do
+      c = Factory.build_contact(age: 12)
+      c.should_not be_valid
+      default_adapter.upsert([c], [] of String)
+      c = Contact.all.first!
+      c.should_not be_valid
+    end
+
+    it "properly sets object attributes" do
+      c = Factory.build_contact(name: "Syd", age: 150)
+      default_adapter.upsert([c], [] of String)
+      Contact.all.count.should eq(1)
+      c = Contact.all.first!
+      c.age.should eq(150)
+      c.name.should eq("Syd")
+    end
+
+    it "ignore duplicate values" do
+      contact = Factory.build_contact
+      contact.description = "unique"
+      contact.save.should be_true
+
+      c = Factory.build_contact(age: 12, description: "unique")
+      default_adapter.upsert([c], [] of String)
+      Contact.all.count.should eq(1)
+      Contact.all.first!.age.should_not eq(12)
+    end
+
+    postgres_only do
+      it "still conflict if not in unique fields" do
+        contact = Factory.build_contact
+        contact.description = "not unique"
+        contact.email = "unique@email"
+        contact.save.should be_true
+
+        c = Factory.build_contact(age: 12, description: "not unique either", email: "unique@email")
+        expect_raises(Jennifer::BadQuery, /duplicate key value violates unique constraint "contacts_email_idx"/) do
+          default_adapter.upsert([c], ["description"] of String)
+        end
+      end
+    end
+
+    context "with array of hashes" do
+      argument_regex = db_specific(mysql: ->{ /\(\?/ }, postgres: ->{ /\(\$\d/ })
+      amount = 4681
+      fields = %w(name ballance age description created_at updated_at user_id)
+      values = ["Deepthi", nil, 28, nil, nil, nil, nil] of Jennifer::DBAny
+
+      it "imports objects by prepared statement" do
+        Contact.all.count.should eq(0)
+        default_adapter.upsert(Contact.table_name, fields, (amount - 1).times.map { values }.to_a, [] of String, {} of Nil => Nil)
+        query_log[1][:query].to_s.should match(argument_regex)
+        Contact.all.count.should eq(amount - 1)
+      end
+    end
+  end
+
   describe "::join_table_name" do
     it "returns join table name in alphabetic order" do
       default_adapter.class.join_table_name("b", "a").should eq("a_b")

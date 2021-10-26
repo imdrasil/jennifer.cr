@@ -586,6 +586,28 @@ module Jennifer
         write_adapter.bulk_insert(collection)
       end
 
+      # Performs bulk import of given *collection* while ignoring models that would cause a duplicate value of any `UNIQUE` index on given *unique_fields*.
+      #
+      # Some RDBMS (like MySQL) doesn't require specifying exact constraint to be violated, therefore *unique_fields* argument by default is `[] of String`.
+      #
+      # Any callback is ignored.
+      #
+      # ```
+      # Order.create({:uid => 123})
+      # Order.upsert([
+      #   Order.new({:uid => 123}),
+      #   Order.new({:uid => 321}),
+      # ])
+      # ```
+      def self.upsert(collection : Array(self), unique_fields = [] of String)
+        write_adapter.upsert(collection, unique_fields)
+      end
+
+      def self.upsert(collection : Array(self), unique_fields = %w[], &block)
+        definition = (with context yield context)
+        write_adapter.upsert(collection, unique_fields, definition)
+      end
+
       macro inherited
         ::Jennifer::Model::Validation.inherited_hook
         ::Jennifer::Model::Callback.inherited_hook

@@ -64,9 +64,12 @@ module Jennifer
           escaped_row = "(" + escape_string(fields.size) + ")"
           io << ") VALUES "
           rows.times.join(io, ", ") { io << escaped_row }
-          io << " ON CONFLICT ("
-          unique_fields.join(io, ", ") { |field| io << quote_identifier(field) }
-          io << ") "
+          io << " ON CONFLICT "
+          unless unique_fields.empty?
+            io << "("
+            unique_fields.join(io, ", ") { |field| io << quote_identifier(field) }
+            io << ") "
+          end
           if on_conflict.empty?
             io << "DO NOTHING"
           else

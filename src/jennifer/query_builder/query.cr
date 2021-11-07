@@ -287,8 +287,7 @@ module Jennifer
       end
 
       def empty?
-        @tree.nil? && @limit.nil? && @offset.nil? &&
-          @joins.nil? && @order.nil?
+        @tree.nil? && @limit.nil? && @offset.nil? && @joins.nil? && @order.nil?
       end
 
       # Allows executing a block in the query context.

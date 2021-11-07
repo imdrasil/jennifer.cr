@@ -7,19 +7,19 @@ end
 describe Jennifer::Config do
   described_class = Jennifer::Config
 
-  describe "::read" do
+  describe ".read" do
     it "reads data from yaml file" do
       config.read("./spec/fixtures/database.yml")
       config.db.should eq("jennifer_develop")
     end
 
-    it "" do
+    it do
       config.read("./spec/fixtures/database_with_nesting.yml", &.["database"]["development"])
       config.db.should eq("jennifer_develop")
     end
   end
 
-  describe "::from_uri" do
+  describe ".from_uri" do
     it "should parse uri string" do
       db_uri = "mysql://root:password@somehost:3306/some_database"
       config.from_uri(db_uri)

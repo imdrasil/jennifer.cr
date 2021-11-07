@@ -181,7 +181,7 @@ describe Jennifer::Model::Mapping do
       end
     end
 
-    describe "::columns_tuple" do
+    describe ".columns_tuple" do
       it "returns named tuple with column metadata" do
         metadata = Contact.columns_tuple
         metadata.is_a?(NamedTuple).should be_true
@@ -396,7 +396,7 @@ describe Jennifer::Model::Mapping do
       end
     end
 
-    describe "::field_count" do
+    describe ".field_count" do
       it "returns correct number of model fields" do
         proper_count = db_specific(
           mysql: ->{ 10 },
@@ -888,6 +888,14 @@ describe Jennifer::Model::Mapping do
       end
     end
 
+    describe "#initialize" do
+      it "reads generated column" do
+        Author.create!({:name1 => "First", :name2 => "Last"})
+        puts Author.all.pluck(:full_name)
+        Author.all.last!.full_name.should eq("First Last")
+      end
+    end
+
     describe "#primary" do
       context "default primary field" do
         it "returns id value" do
@@ -1109,6 +1117,13 @@ describe Jennifer::Model::Mapping do
         user.name.should eq(json)
         user.arguments_to_save[:args].should eq([raw_json])
       end
+
+      it "doesn't include generated columns" do
+        author = Author.create(name1: "NoIt", name2: "SNot")
+        author.name1 = "1"
+        author.full_name = "test"
+        author.arguments_to_save[:fields].should eq(%w(first_name))
+      end
     end
 
     describe "#arguments_to_insert" do
@@ -1149,6 +1164,22 @@ describe Jennifer::Model::Mapping do
         user.name.should eq(json)
         user.arguments_to_insert[:args].should eq([raw_json])
       end
+
+      it "doesn't include generated columns" do
+        tuple = Author.build(name1: "NoIt", name2: "SNot").arguments_to_insert
+        tuple[:fields].should eq(%w(first_name last_name))
+      end
+    end
+
+    describe "#changes_before_typecast" do
+      it "includes only changed fields for existing record" do
+        author = Author.create(name1: "NoIt", name2: "SNot")
+        author.changes_before_typecast.should be_empty
+
+        author.name1 = "test"
+        author.full_name = "asd"
+        author.changes_before_typecast.should eq({"first_name" => "test"})
+      end
     end
 
     describe "#to_h" do
@@ -1160,7 +1191,7 @@ describe Jennifer::Model::Mapping do
 
       it "creates hash with symbol keys that does not contain the column names" do
         hash = Author.build(name1: "IsThi", name2: "SFinallyOver").to_h
-        hash.keys.should eq(%i(id name1 name2))
+        hash.keys.should eq(%i(id name1 name2 full_name))
       end
     end
 
@@ -1173,7 +1204,7 @@ describe Jennifer::Model::Mapping do
 
       it "creates hash with string keys that does not contain the column names" do
         hash = Author.build(name1: "NoIt", name2: "SNot").to_str_h
-        hash.keys.should eq(%w(id name1 name2))
+        hash.keys.should eq(%w(id name1 name2 full_name))
       end
     end
 

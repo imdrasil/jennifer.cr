@@ -35,6 +35,10 @@ module Jennifer
           end
           io << ") "
         end
+        if options[:generated]?
+          io << " AS (" << options[:as] << ')'
+          io << " STORED" if options[:stored]
+        end
         if options.has_key?(:null)
           io << " NOT" unless options[:null]
           io << " NULL"

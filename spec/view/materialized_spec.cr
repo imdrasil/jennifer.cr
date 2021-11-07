@@ -1,7 +1,7 @@
 require "../spec_helper"
 postgres_only do
   describe Jennifer::View::Materialized do
-    describe "::refresh" do
+    describe ".refresh" do
       it "refreshes view" do
         Factory.create_contact(gender: "female")
         FemaleContact.all.count.should eq(0)

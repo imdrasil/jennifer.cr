@@ -10,7 +10,7 @@ describe Jennifer::View::Base do
     end
   end
 
-  describe "::primary" do
+  describe ".primary" do
     it "return criteria with primary key" do
       c = MaleContact.primary
       c.table.should eq("male_contacts")
@@ -18,13 +18,13 @@ describe Jennifer::View::Base do
     end
   end
 
-  describe "::primary_field_name" do
+  describe ".primary_field_name" do
     it "returns name of primary field" do
       MaleContact.primary_field_name.should eq("id")
     end
   end
 
-  describe "::view_name" do
+  describe ".view_name" do
     it "loads from class name automatically" do
       FemaleContact.view_name.should eq("female_contacts")
     end
@@ -34,23 +34,21 @@ describe Jennifer::View::Base do
     end
   end
 
-  describe "::c" do
-    describe "::c" do
-      it "creates criteria with given name" do
-        c = FemaleContact.c("some_field")
-        c.is_a?(Jennifer::QueryBuilder::Criteria)
-        c.field.should eq("some_field")
-        c.table.should eq("female_contacts")
-        c.relation.should be_nil
-      end
+  describe ".c" do
+    it "creates criteria with given name" do
+      c = FemaleContact.c("some_field")
+      c.is_a?(Jennifer::QueryBuilder::Criteria)
+      c.field.should eq("some_field")
+      c.table.should eq("female_contacts")
+      c.relation.should be_nil
+    end
 
-      it "creates criteria with given name and relation" do
-        c = FemaleContact.c("some_field", "some_relation")
-        c.is_a?(Jennifer::QueryBuilder::Criteria)
-        c.field.should eq("some_field")
-        c.table.should eq("female_contacts")
-        c.relation.should eq("some_relation")
-      end
+    it "creates criteria with given name and relation" do
+      c = FemaleContact.c("some_field", "some_relation")
+      c.is_a?(Jennifer::QueryBuilder::Criteria)
+      c.field.should eq("some_field")
+      c.table.should eq("female_contacts")
+      c.relation.should eq("some_relation")
     end
   end
 
@@ -113,26 +111,26 @@ describe Jennifer::View::Base do
     end
   end
 
-  describe "::relations" do
+  describe ".relations" do
     pending "add" do
       # NOTE: now views don't support relations
     end
   end
 
-  describe "::where" do
+  describe ".where" do
     it "returns query" do
       res = MaleContact.where { _id == 1 }
       res.should be_a(::Jennifer::QueryBuilder::ModelQuery(MaleContact))
     end
   end
 
-  describe "::all" do
+  describe ".all" do
     it "returns empty query" do
       MaleContact.all.empty?.should be_true
     end
   end
 
-  describe "::views" do
+  describe ".views" do
     it "returns all model classes" do
       views = Jennifer::View::Base.views
       views.is_a?(Array).should be_true
@@ -145,7 +143,7 @@ describe Jennifer::View::Base do
     end
   end
 
-  describe "::build" do
+  describe ".build" do
     context "strict mapping" do
       it "raises exception if not all fields are described" do
         Factory.create_contact

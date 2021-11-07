@@ -328,7 +328,7 @@ describe Jennifer::Adapter::Base do
     end
   end
 
-  describe "::join_table_name" do
+  describe ".join_table_name" do
     it "returns join table name in alphabetic order" do
       default_adapter.class.join_table_name("b", "a").should eq("a_b")
     end

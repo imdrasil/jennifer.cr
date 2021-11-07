@@ -68,19 +68,22 @@ module Jennifer
         #
         # Available options are (none of these exists by default):
         # - `:array` - creates and array of given type;
-        # - `:serial` - makes column `SERIAL`;
-        # - `:sql_type` - allow to specify custom SQL data type;
         # - `:size` - requests a maximum column length; e.g. this is a number of characters in `string` column and
         # number of bytes for `text` or `integer`;
         # - `:null` - allows or disallows `NULL` values;
         # - `:primary` - adds primary key constraint to the column; ATM only one field may be a primary key;
         # - `:default` - the column's default value;
-        # - `:auto_increment` - add autoincrement to the column.
+        # - `:auto_increment` - add autoincrement to the column;
+        # - `:serial` - makes column `SERIAL`;
+        # - `:sql_type` - allow to specify custom SQL data type (use this only when really required);
+        # - `:as` - specify query for generated column;
+        # - `:
         #
         # ```
         # add_column :picture, :blob
         # add_column :status, :string, {:size => 20, :default => "draft", :null => false}
         # add_column :skills, :text, {:array => true}
+        # add_column :full_name, :string, {:generated => true, :as => "CONCAT(first_name, ' ', last_name)"}
         # ```
         def add_column(name : String | Symbol, type : Symbol? = nil,
                        options : Hash(Symbol, AAllowedTypes) = DbOptions.new)

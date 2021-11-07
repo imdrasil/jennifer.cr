@@ -21,7 +21,8 @@ module Jennifer
     # * `:column` - database column name associated with this attribute (default is attribute name);
     # * `:getter` - whether attribute reader should be generated (`true` by default);
     # * `:setter` - whether attribute writer should be generated (`true` by default);
-    # * `:virtual` - whether attribute is virtual (will not be stored to / retrieved from database);
+    # * `:virtual` - whether attribute is virtual (will not be stored to / read from the database);
+    # * `:generated` - whether attribute represents generated column (is only read from the database);
     # * `:converter` - class to be used to serialize/deserialize data.
     # * `:auto` - mark primary key as autoincrementable - it's value will be assigned by database automatically
     # (`true` for `Int32` & `Int64`)
@@ -315,7 +316,7 @@ module Jennifer
 
         # :nodoc:
         def arguments_to_save
-          hash = changes
+          hash = changes_before_typecast
           {args: hash.values, fields: hash.keys}
         end
 
@@ -324,7 +325,7 @@ module Jennifer
           args = [] of ::Jennifer::DBAny
           fields = [] of String
           {% for attr, options in properties %}
-            {% unless options[:virtual] || options[:primary] && options[:auto] %}
+            {% unless options[:generated] || options[:virtual] || options[:primary] && options[:auto] %}
               args << attribute_before_typecast("{{attr}}")
               fields << {{options[:column]}}
             {% end %}
@@ -333,11 +334,11 @@ module Jennifer
         end
 
         # :nodoc:
-        def changes : Hash(String, ::Jennifer::DBAny)
+        def changes_before_typecast : Hash(String, ::Jennifer::DBAny)
           hash = Hash(String, ::Jennifer::DBAny).new
           {% for attr in nonvirtual_attrs %}
             {% options = properties[attr] %}
-            {% unless options[:primary] %}
+            {% unless options[:primary] || options[:generated] %}
               hash[{{options[:column]}}] = attribute_before_typecast("{{attr}}") if @{{attr.id}}_changed
             {% end %}
           {% end %}
@@ -420,13 +421,15 @@ module Jennifer
                 {% else %}
                   values[{{column1}}]
                 {% end %}
-            elsif values.has_key?({{column2}})
-              %var{key.id} =
-                {% if value[:converter] %}
-                  {{value[:converter]}}.from_hash(values, {{column2}}, self.class.columns_tuple[:{{key.id}}])
-                {% else %}
-                  values[{{column2}}]
-                {% end %}
+            {% if column2 %}
+              elsif values.has_key?({{column2}})
+                %var{key.id} =
+                  {% if value[:converter] %}
+                    {{value[:converter]}}.from_hash(values, {{column2}}, self.class.columns_tuple[:{{key.id}}])
+                  {% else %}
+                    values[{{column2}}]
+                  {% end %}
+            {% end %}
             end
           {% end %}
 
@@ -509,6 +512,7 @@ module Jennifer
       # - default
       # - converter
       # - column
+      # - generated
       #
       # For more details see `Mapping` module documentation.
       macro mapping(properties, strict = true)

@@ -55,7 +55,7 @@ describe Jennifer::View::Mapping do
   end
 
   describe "%mapping" do
-    describe "::columns_tuple" do
+    describe ".columns_tuple" do
       it "returns named tuple with column metedata" do
         metadata = MaleContact.columns_tuple
         metadata.is_a?(NamedTuple).should be_true
@@ -88,8 +88,8 @@ describe Jennifer::View::Mapping do
     end
 
     describe "#initialize" do
-      context "from result set" do
-        it "properly creates object" do
+      describe "from result set" do
+        it "creates object" do
           Factory.create_contact(gender: "male", name: "John")
           count = 0
           MaleContact.all.each_result_set do |rs|
@@ -102,8 +102,8 @@ describe Jennifer::View::Mapping do
         end
       end
 
-      context "from result set with mapped columns" do
-        it "properly creates the object" do
+      describe "from result set with mapped columns" do
+        it "creates the object" do
           Article.create(
             name: "ItsNoFunTillSomeoneDies",
             version: 11235,
@@ -125,13 +125,13 @@ describe Jennifer::View::Mapping do
         end
       end
 
-      context "from hash" do
-        it "properly creates object" do
+      describe "from hash" do
+        it "creates object" do
           MaleContact.build({"name" => "Deepthi", "age" => 18, "gender" => "female"})
           MaleContact.build({:name => "Deepthi", :age => 18, :gender => "female"})
         end
 
-        it "properly maps aliased columns" do
+        it "maps aliased columns" do
           PrintPublication.build({
             "title"     => "OverthinkingOveranalying",
             "v"         => 4,
@@ -149,12 +149,12 @@ describe Jennifer::View::Mapping do
         end
       end
 
-      context "from named tuple" do
-        it "properly creates object" do
+      describe "from named tuple" do
+        it "creates object" do
           MaleContact.build({name: "Deepthi", age: 18, gender: "female"})
         end
 
-        it "properly maps aliased columns" do
+        it "maps aliased columns" do
           PrintPublication.build({
             title:     "AndTheWind",
             v:         2,
@@ -166,7 +166,7 @@ describe Jennifer::View::Mapping do
       end
     end
 
-    describe "::field_count" do
+    describe ".field_count" do
       it "returns correct number of model fields" do
         MaleContact.field_count.should eq(5)
       end
@@ -298,7 +298,7 @@ describe Jennifer::View::Mapping do
         end
       end
 
-      describe "::_{{attribute}}" do
+      describe "._{{attribute}}" do
         c = MaleContact._name
         pb = PrintPublication._v
         it { c.table.should eq(MaleContact.view_name) }
@@ -406,7 +406,7 @@ describe Jennifer::View::Mapping do
     end
   end
 
-  describe "::field_names" do
+  describe ".field_names" do
     it "returns array of defined fields" do
       MaleContact.field_names.should eq(%w(id name gender age created_at))
     end

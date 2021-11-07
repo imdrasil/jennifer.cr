@@ -425,9 +425,10 @@ end
 
 class Author < Jennifer::Model::Base
   mapping({
-    id:    Primary32,
-    name1: {type: String, column: :first_name},
-    name2: {type: String, column: :last_name},
+    id:        Primary32,
+    name1:     {type: String, column: :first_name},
+    name2:     {type: String, column: :last_name},
+    full_name: {type: String?, generated: true},
   })
 end
 

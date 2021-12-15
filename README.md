@@ -10,7 +10,7 @@ Add this to your application's `shard.yml`:
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.11.1"
+    version: "~> 0.12.0"
 ```
 
 ### Requirements

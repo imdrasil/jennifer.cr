@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.12.0 (15-12-2021)
+
+**General**
+
+* add crystal 1.2.0 support
+
+**QueryBuilder**
+
+* `#pluck` accepts splatted named tuple of desired attribute-type pairs and returns array of such tuples as a records
+* `#upsert` passes expression builder as a block argument
+
+**Model**
+
+* add Optimistic locking support via macro `with_optimistic_lock(column_name = lock_version)`
+* `updated_at` and `created_at` fields aren't override on save if have been set manually
+* add `upsert` class method to insert multiple models while ignoring conflicts on specified unique fields
+
+**Adapter**
+
+* fix database connection query arguments building
+* each adapter includes `RequestMethods` instead of including it by base adapter class
+* add a new `upsert` overload that allows passing a collection of `Jennifer::Model::Base`
+* fix `insert_on_duplicates` sql generation for postgres adapter if no unique fields given
+
+**SqlGenerator**
+
+* any `INSERT`, `UPDATE`, `SELECT` and `DELETE` requests uses quoted tables/columns if they are created by `QueryBuilder::ExpressionBuilder` (raw SQL is placed as-is)
+* `.select_clause`  uses specified query attributes to select and fall back to custom fields only if there is no custom attribute to select
+
+**Migration**
+
+* `TableBuilder::ChangeTable` now performs `DropForeignKey`, `DropIndex` & `DropReference` before any column manipulation
+* fix `TableBuilder::ChangeEnum` to use specified adapter to query effected tables
+
 ## 0.11.1 (24-08-2021)
 
 **General**

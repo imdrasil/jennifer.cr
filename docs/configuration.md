@@ -105,6 +105,11 @@ Take into account - some configs can't be initialized using URI or yaml file but
 * `pool_size` - count of simultaneously alive database connection; default: `1`
 * `retry_attempts` - count of attempts to connect to the database before raising an exception; default: `1`
 * `retry_delay` - amount of seconds to wait between connection retries; default: `1.0`
+* `auth_methods` - comma separated list of auth methods; optional; default: `""`; available methods: `cleartext,md5,scram-sha-256,scram-sha-256-plus`; `crystal-pg` uses `scram-sha-256-plus,scram-sha-256,md5` if not provided
+* `sslmode` - determines whether or with what priority a secure SSL TCP/IP connection will be negotiated with the server; optional; default `""`; There are six modes: `disable`, `allow`, `prefer`, `require`, `verify-ca`, `verify-full`; `crystal-pg` uses `prefer` if not provided
+* `sslcert` - file path to client SSL certificate; optional; default: `""`
+* `sslkey` - file path to secret key used for the client certificate; optional; default: `""`
+* `sslrootcert` - file path to SSL certificate authority (CA) certificate(s) which is used to verify the server's certificate; optional; default: `""`
 * `checkout_timeout` - amount of seconds to be wait for connection; default: `5.0`
 * `local_time_zone_name` - local time zone name; automatically taken from `Time::Location.local.name`
 * `skip_dumping_schema_sql` - skip dumping database structure if set to `true`; default: `false`

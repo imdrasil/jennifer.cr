@@ -65,12 +65,13 @@ module Jennifer
     CONNECTION_URI_PARAMS = {
       :max_pool_size, :initial_pool_size, :max_idle_pool_size,
       :retry_attempts, :checkout_timeout, :retry_delay,
+      :auth_methods, :sslmode, :sslcert, :sslkey, :sslrootcert,
     }
     # :nodoc:
     STRING_FIELDS = {
       :user, :password, :db, :host, :adapter, :migration_files_path, :schema,
       :structure_folder, :local_time_zone_name, :command_shell, :docker_container, :docker_source_location,
-      :model_files_path,
+      :model_files_path, :auth_methods, :sslmode, :sslcert, :sslkey, :sslrootcert,
     }
     # :nodoc:
     INT_FIELDS = {:port, :max_pool_size, :initial_pool_size, :max_idle_pool_size, :retry_attempts}
@@ -166,6 +167,12 @@ module Jennifer
 
       @checkout_timeout = 5.0
       @retry_delay = 1.0
+
+      @auth_methods = ""
+      @sslmode = ""
+      @sslcert = ""
+      @sslkey = ""
+      @sslrootcert = ""
 
       @command_shell = "bash"
       @migration_failure_handler_method = MigrationFailureHandler::None

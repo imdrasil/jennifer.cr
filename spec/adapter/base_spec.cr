@@ -396,6 +396,64 @@ describe Jennifer::Adapter::Base do
       end
     end
 
+    context "with defined auth_methods" do
+      it "generates proper connection string" do
+        config.port = -1
+        config.password = ""
+        config.auth_methods = "cleartext,md5,scram-sha-256"
+        connection_string = "#{adapter.class.protocol}://#{config.user}@#{config.host}?" \
+                            "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0&auth_methods=cleartext%2Cmd5%2Cscram-sha-256"
+        adapter.connection_string(:root).should eq(connection_string)
+      end
+    end
+
+    context "with defined sslmode" do
+      it "generates proper connection string" do
+        config.port = -1
+        config.password = ""
+        config.sslmode = "verify-full"
+        connection_string = "#{adapter.class.protocol}://#{config.user}@#{config.host}?" \
+                            "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0&sslmode=verify-full"
+        adapter.connection_string(:root).should eq(connection_string)
+      end
+    end
+
+    context "with defined sslmode and sslcert" do
+      it "generates proper connection string" do
+        config.port = -1
+        config.password = ""
+        config.sslmode = "verify-full"
+        config.sslcert = "/path/to/ssl.crt"
+        connection_string = "#{adapter.class.protocol}://#{config.user}@#{config.host}?" \
+                            "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0&sslmode=verify-full&sslcert=%2Fpath%2Fto%2Fssl.crt"
+        adapter.connection_string(:root).should eq(connection_string)
+      end
+    end
+
+    context "with defined sslmode and sslkey" do
+      it "generates proper connection string" do
+        config.port = -1
+        config.password = ""
+        config.sslmode = "verify-full"
+        config.sslkey = "/path/to/ssl.key"
+        connection_string = "#{adapter.class.protocol}://#{config.user}@#{config.host}?" \
+                            "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0&sslmode=verify-full&sslkey=%2Fpath%2Fto%2Fssl.key"
+        adapter.connection_string(:root).should eq(connection_string)
+      end
+    end
+
+    context "with defined sslmode and sslrootcert" do
+      it "generates proper connection string" do
+        config.port = -1
+        config.password = ""
+        config.sslmode = "verify-full"
+        config.sslrootcert = "/path/to/sslroot.crt"
+        connection_string = "#{adapter.class.protocol}://#{config.user}@#{config.host}?" \
+                            "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0&sslmode=verify-full&sslrootcert=%2Fpath%2Fto%2Fsslroot.crt"
+        adapter.connection_string(:root).should eq(connection_string)
+      end
+    end
+
     context "without password" do
       it do
         config.password = ""

@@ -362,15 +362,13 @@ module Jennifer
       # private ===========================
 
       private def connection_query
-        URI::Params.encode(
+        URI::Params.build do |form|
           {% begin %}
-            {
-              {% for arg in Config::CONNECTION_URI_PARAMS %}
-                "{{arg.id}}": config.{{arg.id}}.to_s,
-              {% end %}
-            }
+            {% for arg in Config::CONNECTION_URI_PARAMS %}
+              form.add("{{arg.id}}", config.{{arg.id}}.to_s) unless config.{{arg.id}}.to_s.empty?
+            {% end %}
           {% end %}
-        )
+        end
       end
 
       private def model_escaped_bulk_insert(collection : Array, klass, fields : Array)

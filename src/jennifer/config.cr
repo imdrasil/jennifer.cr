@@ -25,6 +25,11 @@ module Jennifer
   # * `retry_attempts = 1`
   # * `checkout_timeout = 5.0`
   # * `retry_delay = 1.0`
+  # * `auth_methods = ""`
+  # * `sslmode = ""`
+  # * `sslcert = ""`
+  # * `sslkey = ""`
+  # * `sslrootcert = ""`
   # * `local_time_zone_name` default time zone name
   # * `skip_dumping_schema_sql = false`
   # * `command_shell = "bash"`

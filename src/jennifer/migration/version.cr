@@ -5,7 +5,7 @@ module Jennifer
       table_name "migration_versions"
 
       mapping(
-        id: Primary32,
+        id: Primary64,
         version: String
       )
 

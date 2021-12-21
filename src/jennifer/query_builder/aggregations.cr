@@ -7,7 +7,7 @@ module Jennifer
       # ```
       # Jennifer::Query["contacts"].count # => 123
       # ```
-      def count : Int32
+      def count : Int64
         adapter.count(self)
       end
 

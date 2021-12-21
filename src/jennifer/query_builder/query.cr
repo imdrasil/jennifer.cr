@@ -46,7 +46,7 @@ module Jennifer
       @having : Condition | LogicOperator?
       @limit : Int32?
       @distinct : Bool = false
-      @offset : Int64?
+      @offset : Int32 | Int64 | Nil
       @raw_select : String?
       @from : String | Query?
       @lock : String | Bool?
@@ -543,11 +543,15 @@ module Jennifer
       end
 
       # Specifies the number of rows to skip before returning rows.
+      # The offset could be Int32 or Int64.
       #
       # ```
+      # Offset in Int32
       # Jennifer::Query["contacts"].offset(10)
+      # Or in Int64
+      # Jennifer::Query["contacts"].offset(10_i64)
       # ```
-      def offset(count : Int64)
+      def offset(count : Int32 | Int64)
         @offset = count
         self
       end

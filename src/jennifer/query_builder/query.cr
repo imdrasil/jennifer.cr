@@ -46,7 +46,7 @@ module Jennifer
       @having : Condition | LogicOperator?
       @limit : Int32?
       @distinct : Bool = false
-      @offset : Int32?
+      @offset : Int64?
       @raw_select : String?
       @from : String | Query?
       @lock : String | Bool?
@@ -547,7 +547,7 @@ module Jennifer
       # ```
       # Jennifer::Query["contacts"].offset(10)
       # ```
-      def offset(count : Int32)
+      def offset(count : Int64)
         @offset = count
         self
       end

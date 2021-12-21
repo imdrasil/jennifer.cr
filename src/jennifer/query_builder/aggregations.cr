@@ -2,7 +2,7 @@ module Jennifer
   module QueryBuilder
     # Contains aggregation query functions.
     module Aggregations
-      # Returns result row count.
+      # Returns result row count in `Int64`.
       #
       # ```
       # Jennifer::Query["contacts"].count # => 123

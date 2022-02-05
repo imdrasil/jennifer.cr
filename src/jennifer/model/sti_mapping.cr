@@ -319,10 +319,10 @@ module Jennifer
         end
 
         # :nodoc:
-        def changes : Hash(String, ::Jennifer::DBAny)
+        def changes_before_typecast : Hash(String, ::Jennifer::DBAny)
           hash = super
           {% for attr, options in properties %}
-            {% unless options[:virtual] %}
+            {% unless options[:virtual] || options[:generated] %}
               hash[{{options[:column]}}] = attribute_before_typecast("{{attr}}") if @{{attr.id}}_changed
             {% end %}
           {% end %}

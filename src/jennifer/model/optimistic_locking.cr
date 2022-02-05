@@ -76,7 +76,7 @@ module Jennifer::Model
         this = self
         res = self.class.all
           .where { (this.class.primary == this.primary) & (this.class._lock_version == previous_lock_value) }
-          .update(changes)
+          .update(changes_before_typecast)
         __after_update_callback
         raise ::Jennifer::StaleObjectError.new(self) if !res.nil? && res.rows_affected != 1
 

@@ -41,7 +41,7 @@ describe Jennifer::Model::STIMapping do
       end
     end
 
-    describe "::columns_tuple" do
+    describe ".columns_tuple" do
       it "returns named tuple mith column metedata" do
         metadata = FacebookProfile.columns_tuple
         metadata.is_a?(NamedTuple).should be_true
@@ -185,7 +185,7 @@ describe Jennifer::Model::STIMapping do
     end
   end
 
-  describe "::all" do
+  describe ".all" do
     it "generates correct query" do
       q = FacebookProfile.all
       q.as_sql.should match(/#{reg_quote_identifier("profiles.type")} = %s/)

@@ -103,7 +103,7 @@ jobs:
         if: ${{ matrix.DB == 'postgres' || matrix.pair }}
         uses: harmon758/postgresql-action@v1
         with:
-          postgresql version: '9.5'
+          postgresql version: '12.0'
           postgresql user: ${{ env.DB_USER }}
           postgresql password: ${{ env.DB_PASSWORD }}
 

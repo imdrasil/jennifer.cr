@@ -14,3 +14,6 @@ db-reset:
 
 format:
 	crystal tool format --check -e"./scripts"
+
+format-fix:
+	crystal tool format -e"./scripts"

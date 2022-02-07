@@ -68,7 +68,7 @@ class DatabaseSeeder
   private def self.docker_drop_db_command
     case Spec.adapter
     # when POSTGRES_DB
-    #   "PGPASSWORD=#{password} dropdb #{db} -U#{user}"
+    #   "PGPASSWORD=#{db_password} dropdb #{db} -U#{user}"
     when MYSQL_DB
       common_command = "echo \"drop database #{db};\" | sudo docker exec -i #{DEFAULT_DOCKER_CONTAINER} mysql -u#{db_user}"
       common_command += " -p#{db_password}" unless db_password.empty?
@@ -81,7 +81,7 @@ class DatabaseSeeder
   private def self.bash_drop_db_command
     case Spec.adapter
     when "postgres"
-      "PGPASSWORD=#{db_password} dropdb #{db} -U#{db_user}"
+      "PGPASSWORD=#{db_password} dropdb #{db} -U#{db_user} -hlocalhost"
     when "mysql"
       common_command = "echo \"drop database #{db};\" | mysql -u#{db_user}"
       common_command += " -p#{db_password}" unless db_password.empty?
@@ -107,7 +107,7 @@ class DatabaseSeeder
   private def self.bash_create_db_command
     case Spec.adapter
     when POSTGRES_DB
-      "PGPASSWORD=#{db_password} createdb #{db} -U#{db_user}"
+      "PGPASSWORD=#{db_password} createdb #{db} -U#{db_user} -hlocalhost"
     when MYSQL_DB
       common_command = "mysql -u#{db_user} -e\"create database #{db}\""
       common_command += " -p#{db_password}" unless db_password.empty?

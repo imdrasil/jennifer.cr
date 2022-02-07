@@ -292,7 +292,7 @@ module Jennifer
       abstract def arguments_to_insert
 
       # Hash of changed columns and their new values.
-      abstract def changes : Hash(String, Jennifer::DBAny)
+      abstract def changes_before_typecast : Hash(String, Jennifer::DBAny)
 
       abstract def destroy_without_transaction
 

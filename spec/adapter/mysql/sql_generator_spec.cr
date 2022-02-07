@@ -25,7 +25,7 @@ mysql_only do
     described_class = Jennifer::Adapter.default_adapter.sql_generator
     adapter = Jennifer::Adapter.default_adapter
 
-    describe "::lock_clause" do
+    describe ".lock_clause" do
       it "render custom query part if specified" do
         query = Contact.all.lock("LOCK IN SHARE MODE")
         sb { |s| described_class.lock_clause(s, query) }.should match(/LOCK IN SHARE MODE/)
@@ -48,7 +48,7 @@ mysql_only do
       end
     end
 
-    describe "::parse_query" do
+    describe ".parse_query" do
       it "replace placeholders with question marks" do
         described_class.parse_query("asd %s qwe %s", [1, 2] of Jennifer::DBAny).should eq({"asd ? qwe ?", [1, 2]})
       end

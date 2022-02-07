@@ -18,5 +18,5 @@ lint:
 format:
 	crystal tool format --check -e"./scripts"
 
-fix-format:
+format-fix:
 	crystal tool format -e"./scripts"

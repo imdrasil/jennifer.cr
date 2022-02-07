@@ -116,6 +116,11 @@ module Jennifer
       private def column_definition(name, options, io)
         io << name
         column_type_definition(options, io)
+        if options[:generated]?
+          raise ArgumentError.new("not stored generated columns are not supported yet") unless options[:stored]
+
+          io << " GENERATED ALWAYS AS (" << options[:as] << ") STORED"
+        end
         if options.has_key?(:null)
           io << " NOT" unless options[:null]
           io << " NULL"

@@ -80,11 +80,11 @@ development:
 
 test:
   <<: *default
-  db: application_database_name_development
+  db: application_database_name_test
 
 production:
   <<: *default
-  db: application_database_name_development
+  db: application_database_name_production
 ```
 
 > NOTE: prefer creating shared database configuration file template rather than exact one (aka `database.example.yml`) so everyone can configure it for themselves.

@@ -187,7 +187,7 @@ describe Jennifer::QueryBuilder::Function do
     end
 
     it do
-      Factory.create_facebook_profile(contact_id: -10)
+      Factory.create_facebook_profile(contact_id: -10i64)
       Query["profiles"].select { [abs(_contact_id).alias("id")] }.first!.id(Int).should eq(10)
     end
   end

@@ -25,6 +25,8 @@ class CreateContacts < Jennifer::Migration::Base
 
   def down
     drop_table :contacts
-    drop_enum(:gender_enum)
+    {% if env("DB") == "postgres" || env("DB") == nil %}
+      drop_enum(:gender_enum)
+    {% end %}
   end
 end

@@ -173,16 +173,16 @@ module Jennifer
               end
             end
             options[:parsed_type] = stringified_type
-            options[:null] = false if options[:null] == nil
+            options[:null] = options[:primary] == true if options[:null] == nil
             options[:column] = (options[:column] || key).id.stringify
 
             if options[:type].resolve.nilable?
               options[:null] = true
-            elsif options[:null] || options[:primary]
+            elsif options[:null]
               options[:parsed_type] = stringified_type + "?"
             end
 
-            if options[:primary] && options[:auto] != false
+            if options[:primary] && options[:auto] == nil
               options[:auto] = AUTOINCREMENTABLE_STR_TYPES.includes?(stringified_type)
             end
 
@@ -211,7 +211,7 @@ module Jennifer
           add_default_constructor = COLUMNS_METADATA.keys.all? do |field|
             options = COLUMNS_METADATA[field]
 
-            options[:primary] || options[:null] || options.keys.includes?(:default.id)
+            options[:null] || options.keys.includes?(:default.id)
           end
           properties = COLUMNS_METADATA
           nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] }
@@ -433,10 +433,18 @@ module Jennifer
           {% for key, value in properties %}
             begin
               %casted_var{key.id} =
-                {% if value[:parsed_type] =~ /String/ %}
+                {% if value[:parsed_type].includes?("String") %}
                   %var{key.id}
                 {% else %}
-                  (%var{key.id}.is_a?(String) ? self.class.coerce_{{key.id}}(%var{key.id}) : %var{key.id})
+                  if %var{key.id}.is_a?(String)
+                    self.class.coerce_{{key.id}}(%var{key.id})
+                  else
+                    {% if value[:parsed_type].includes?("Int64") %}
+                      %var{key.id}.is_a?(Int32) ? %var{key.id}.to_i64 : %var{key.id}
+                    {% else %}
+                      %var{key.id}
+                    {% end %}
+                  end
                 {% end %}
                 .as({{value[:parsed_type].id}})
             rescue e : Exception

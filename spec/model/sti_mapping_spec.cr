@@ -2,7 +2,7 @@ require "../spec_helper"
 
 class SimplifiedProfile < ApplicationRecord
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     type: String,
   }, false)
 end
@@ -29,8 +29,8 @@ describe Jennifer::Model::STIMapping do
       it "copies data from superclass" do
         id = FacebookProfile::COLUMNS_METADATA[:id]
         id.is_a?(NamedTuple).should be_true
-        id[:type].should eq(Int32)
-        id[:parsed_type].should eq("Int32?")
+        id[:type].should eq(Int64?)
+        id[:parsed_type].should eq("::Union(Int64, ::Nil)")
       end
 
       it "copies column aliases fro superclass" do

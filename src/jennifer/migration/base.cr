@@ -226,7 +226,7 @@ module Jennifer
       # For more details about new  table definition see `TableBuilder::CreateTable`.
       def create_table(name : String | Symbol, id : Bool = true)
         tb = TableBuilder::CreateTable.new(adapter, name)
-        tb.integer(:id, {:primary => true, :auto_increment => true}) if id
+        tb.bigint(:id, {:primary => true, :auto_increment => true}) if id
         yield tb
         process_builder(tb)
       end
@@ -241,8 +241,8 @@ module Jennifer
       # ```
       def create_join_table(table1 : String | Symbol, table2 : String | Symbol, table_name : String? = nil)
         create_table(table_name || adapter.class.join_table_name(table1, table2), false) do |tb|
-          tb.integer(Inflector.foreign_key(Inflector.singularize(table1.to_s)))
-          tb.integer(Inflector.foreign_key(Inflector.singularize(table2.to_s)))
+          tb.bigint(Inflector.foreign_key(Inflector.singularize(table1.to_s)))
+          tb.bigint(Inflector.foreign_key(Inflector.singularize(table2.to_s)))
           yield tb
         end
       end

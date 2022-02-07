@@ -8,7 +8,7 @@ module Jennifer
 
       private delegate :write_adapter, :read_adapter, to: model_class
 
-      # NOTE: improperly detects source of #abstract_class if run sam with only Version model
+      # NOTE: improperly detects source of #abstract_class if run Sam with only Version model
       def model_class
         raise AbstractMethod.new(:model_class, {{@type}})
       end

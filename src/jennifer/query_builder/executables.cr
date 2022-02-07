@@ -313,9 +313,9 @@ module Jennifer
 
       # Returns array of record ids.
       #
-      # This method requires model to have field `id : Int32`.
+      # This method requires model to have field named `id` with type `Int64`.
       def ids
-        pluck(:id).map(&.as(Int32))
+        pluck(:id).map(&.as(Int64))
       end
 
       # Yields each matched record to a block.

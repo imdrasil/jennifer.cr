@@ -2,18 +2,18 @@ require "../spec_helper"
 
 class ModelWithIntName < Jennifer::Model::Base
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     name: Int32,
   })
 end
 
 module SomeModule
   class SomeModel < Jennifer::Model::Base
-    mapping(id: Primary32)
+    mapping(id: Primary64)
   end
 
   class AnotherModel < Jennifer::Model::Base
-    mapping(id: Primary32)
+    mapping(id: Primary64)
 
     def self.table_prefix
       "custom_table_prefix_"
@@ -194,7 +194,7 @@ describe Jennifer::Model::Base do
 
     context "with non-auto primary key" do
       it do
-        NoteWithManualId.create(id: 1)
+        NoteWithManualId.create(id: 1) # ?
         NoteWithManualId.all.where { _id == 1 }.exists?.should be_true
       end
     end
@@ -595,7 +595,7 @@ describe Jennifer::Model::Base do
 
   describe "::destroy" do
     it "deletes from db by given ids" do
-      c = [] of Int32?
+      c = [] of Int64?
       3.times { c << Factory.create_contact.id }
       Contact.destroy(c[0..1])
       Contact.all.count.should eq(1)
@@ -611,7 +611,7 @@ describe Jennifer::Model::Base do
 
   describe "::delete" do
     it "deletes from db by given ids" do
-      c = [] of Int32?
+      c = [] of Int64?
       3.times { c << Factory.create_contact.id }
       Contact.delete(c[0..1])
       Contact.all.count.should eq(1)

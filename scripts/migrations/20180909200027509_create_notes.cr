@@ -5,7 +5,7 @@ class CreateNotes < Jennifer::Migration::Base
     create_table :notes do |t|
       t.string :text
 
-      t.integer :notable_id
+      t.bigint :notable_id
       t.string :notable_type
 
       t.timestamps

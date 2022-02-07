@@ -9,7 +9,7 @@ end
 
 class FemaleContact < BaseView
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     name: BlankString,
   }, false)
 end
@@ -17,7 +17,7 @@ end
 class MaleContact < Jennifer::View::Base
   {% if env("DB") == "postgres" || env("DB") == nil %}
     mapping({
-      id:         Primary32,
+      id:         Primary64,
       name:       String,
       gender:     {type: String, converter: Jennifer::Model::PgEnumConverter},
       age:        Int32,
@@ -25,7 +25,7 @@ class MaleContact < Jennifer::View::Base
     }, false)
   {% else %}
     mapping({
-      id:         Primary32,
+      id:         Primary64,
       name:       String,
       gender:     String,
       age:        Int32,
@@ -47,7 +47,7 @@ class FakeFemaleContact < Jennifer::View::Base
 
   {% if env("DB") == "postgres" || env("DB") == nil %}
     mapping({
-      id:         Primary32,
+      id:         Primary64,
       name:       String,
       gender:     {type: String, converter: Jennifer::Model::PgEnumConverter},
       age:        Int32,
@@ -55,7 +55,7 @@ class FakeFemaleContact < Jennifer::View::Base
     }, false)
   {% else %}
     mapping({
-      id:         Primary32,
+      id:         Primary64,
       name:       String,
       gender:     String,
       age:        Int32,
@@ -68,7 +68,7 @@ class FakeContactView < Jennifer::View::Base
   view_name "male_contacs"
 
   mapping({
-    id: Primary32,
+    id: Primary64,
   }, false)
 end
 
@@ -76,7 +76,7 @@ class StrictBrokenMaleContact < Jennifer::View::Base
   view_name "male_contacts"
 
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     name: String,
   })
 end
@@ -84,7 +84,7 @@ end
 class StrictMaleContactWithExtraField < Jennifer::View::Base
   view_name "male_contacts"
   mapping({
-    id:            Primary64,
+    id:            Primary32,
     missing_field: String,
   })
 end
@@ -92,7 +92,7 @@ end
 class MaleContactWithDescription < Jennifer::View::Base
   view_name "male_contacts"
   mapping({
-    id:          Primary32,
+    id:          Primary64,
     description: String,
   }, false)
 end
@@ -100,7 +100,7 @@ end
 class PrintPublication < Jennifer::View::Base
   {% if env("DB") == "postgres" || env("DB") == nil %}
     mapping(
-      id: Primary32,
+      id: Primary64,
       title: String,
       v: {type: Int32, column: :version},
       publisher: String,
@@ -110,7 +110,7 @@ class PrintPublication < Jennifer::View::Base
     )
   {% else %}
     mapping(
-      id: Primary32,
+      id: Primary64,
       title: String,
       v: {type: Int32, column: :version},
       publisher: String,

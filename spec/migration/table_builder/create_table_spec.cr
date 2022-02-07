@@ -41,7 +41,7 @@ describe Jennifer::Migration::TableBuilder::CreateTable do
     it "creates column based on given field" do
       table = create_table_expr
       table.reference(:user)
-      table.fields["user_id"].should eq({:type => :integer, :null => true})
+      table.fields["user_id"].should eq({:type => :bigint, :null => true})
 
       command = table.@commands[0].as(Jennifer::Migration::TableBuilder::CreateForeignKey)
       command.from_table.should eq(DEFAULT_TABLE)
@@ -55,7 +55,7 @@ describe Jennifer::Migration::TableBuilder::CreateTable do
       it "adds foreign and polymorphic columns" do
         table = create_table_expr
         table.reference(:user, options: {:polymorphic => true})
-        table.fields["user_id"].should eq({:polymorphic => true, :type => :integer, :null => true})
+        table.fields["user_id"].should eq({:polymorphic => true, :type => :bigint, :null => true})
         table.fields["user_type"].should eq({:type => :string, :null => true})
         table.@commands.should be_empty
       end

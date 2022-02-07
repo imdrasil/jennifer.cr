@@ -180,7 +180,7 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
       it "uses attributes before typecast for foreign and type fields" do
         c = Factory.create_contact
         n = PolymorphicNoteWithConverter.new({notable_type: contact_class.to_s, notable_id: c.id})
-        n.notable_id.should eq("Int32: #{c.id}")
+        n.notable_id.should eq("Int64: #{c.id}")
         n.notable_type.should eq("String: #{contact_class}")
 
         count = contact_class.all.count

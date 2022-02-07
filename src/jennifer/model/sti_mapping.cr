@@ -27,7 +27,7 @@ module Jennifer
             super_properties.keys.all? do |field|
               options = super_properties[field]
 
-              options[:primary] || options[:null] || options.keys.includes?(:default.id) || field == :type
+              options[:null] || options.keys.includes?(:default.id) || field == :type
             end &&
               COLUMNS_METADATA.keys.all? do |field|
                 options = COLUMNS_METADATA[field]

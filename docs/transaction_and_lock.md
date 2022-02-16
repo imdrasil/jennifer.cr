@@ -75,3 +75,62 @@ end
 Database-specific information on row locking:
 - [MySQL](http://dev.mysql.com/doc/refman/5.7/en/innodb-locking-reads.html)
 - [PostgreSQL](http://www.postgresql.org/docs/current/interactive/sql-select.html#SQL-FOR-UPDATE-SHARE)
+
+
+#### Optimistic locking
+
+`Jennifer.cr` supports optimistic locking by using an `Int32` or `Int64` column acting as a `lock`. Each update to the record increments the `lock` column and the locking facilities ensure that records instantiated twice will let the last one saved raise a `StaleObjectError` if the first was also updated. Example:
+
+```crystal
+p1 = Person.find(1)
+p2 = Person.find(1)
+
+p1.first_name = "Michael"
+p1.save
+
+p2.first_name = "should fail"
+p2.save # Raises an Jennifer::StaleObjectError
+```
+
+`StaleObjectError` could also be raised when objects are destroyed.
+
+```crystal
+p1 = Person.find(1)
+p2 = Person.find(1)
+
+p1.first_name = "Michael"
+p1.save
+
+p2.destroy # Raises an Jennifer::StaleObjectError
+```
+
+NOTE: *Only `#save` and `#destroy` check for stale data. `#update_columns` and `#delete` bypass all checks.*
+
+To add optimistic locking to a model use macro method `with_optimistic_lock` in model class definition.
+By default, it uses column `lock_version : Int32` as lock.
+The column used as lock must be type `Int32` or `Int64` and the default value set to 0.
+You can use a different column name as lock by passing the column name to the method.
+
+```crystal
+class MyModel < Jennifer::Model::Base
+  with_optimistic_lock
+
+  mapping(
+    id: {type: Int64, primary: true},
+    lock_version: {type: Int32, default: 0},
+  )
+end
+```
+
+Or use a custom column name for the locking column:
+
+```crystal
+class MyModel < Jennifer::Model::Base
+  with_optimistic_lock :custom_lock
+
+  mapping(
+    id: {type: Int64, primary: true},
+    custom_lock: {type: Int64, default: 0},
+  )
+end
+```

@@ -35,7 +35,7 @@ There is an example of defining view:
 ```crystal
 class MaleContact < Jennifer::View::Base
   mapping({
-    id:     Primary32,
+    id:     Primary64,
     name:   String,
     gender: String,
     age:    Int32,
@@ -81,7 +81,7 @@ Example of defining created before materialized view looks like:
 ```crystal
 class FemaleContact < Jennifer::Model::Materialized
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     name: String?,
   }, false)
 end

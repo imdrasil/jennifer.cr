@@ -5,9 +5,9 @@ To use single table inheritance just inherit from your parent model and use regu
 ```crystal
 class Profile < Jennifer::Model::Base
   mapping(
-    id: {type: Int32, primary: true},
+    id: {type: Int64, primary: true},
     login: String,
-    contact_id: Int32?,
+    contact_id: Int64?,
     type: String
   )
 

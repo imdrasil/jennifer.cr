@@ -6,7 +6,7 @@ Several model examples
 class Contact < Jennifer::Model::Base
   with_timestamps
   mapping(
-    id: Primary32, # same as {type: Int32, primary: true}
+    id: Primary64, # same as {type: Int64, primary: true}
     name: String,
     gender: {type: String?, default: "male"},
     age: {type: Int32, default: 10},
@@ -39,10 +39,10 @@ end
 
 class Address < Jennifer::Model::Base
   mapping(
-    id: {type: Int32, primary: true},
+    id: {type: Int64, primary: true},
     main: Bool,
     street: String,
-    contact_id: Int32?,
+    contact_id: Int64?,
     details: JSON::Any?
   )
   validates_format :street, /st\.|street/
@@ -55,7 +55,7 @@ end
 class Passport < Jennifer::Model::Base
   mapping(
     enn: {type: String, primary: true},
-    contact_id: {type: Int32, null: true}
+    contact_id: {type: Int64, null: true}
   )
 
   validates_with EnnValidator
@@ -64,9 +64,9 @@ end
 
 class Profile < Jennifer::Model::Base
   mapping(
-    id: Primary32,
+    id: Primary64,
     login: String,
-    contact_id: Int32?,
+    contact_id: Int64?,
     type: String
   )
 
@@ -89,7 +89,7 @@ end
 
 class Country < Jennifer::Model::Base
   mapping(
-    id: Primary32,
+    id: Primary64,
     name: String
   )
 
@@ -179,7 +179,7 @@ end
 
 class SomeModel < ApplicationRecord
   mapping(
-    id: Int32,
+    id: Int64,
     name: String
   )
 end
@@ -194,10 +194,10 @@ end
 ```crystal
 class User < Jennifer::Model::Base
   # JSON.mapping used *before* model mapping:
-  JSON.mapping(id: Int32, name: String)
+  JSON.mapping(id: Int64, name: String)
 
   # Model mapping used last:
-  mapping(id: Primary32, name: String)
+  mapping(id: Primary64, name: String)
 end
 ```
 
@@ -303,14 +303,14 @@ Now instances of `Location` class can be used in all constructors/setters/update
 
 ### Mapping Types
 
-Jennifer has built-in system of predefined options for some usage. They are not data types on language level (you can't defined variable of `Primary32` type) and can be used only in mapping definition (standard usage).
+Jennifer has built-in system of predefined options for some usage. They are not data types on language level (you can't defined variable of `Primary64` type) and can be used only in mapping definition (standard usage).
 
 ```crystal
 class Post < Jennifer::Model::Base
   mapping(
-    id: Primary32,
+    id: Primary64,
     # or even with full definition
-    pk: {type: Primary32, primary: false, virtual: true}
+    pk: {type: Primary64, primary: false, virtual: true}
   )
 end
 ```
@@ -347,7 +347,7 @@ If you pass `virtual: true` option for some field - it will not be stored to db 
 ```crystal
 class User < Jennifer::Model::Base
   mapping(
-    id: Primary32,
+    id: Primary64,
     password_hash: String,
     password: {type: String?, virtual: true},
     password_confirmation: {type: String?, virtual: true}
@@ -370,7 +370,7 @@ It is important to distinguish between virtual and generated attributes. Generat
 ```crystal
 class User < Jennifer::Model::Base
   mapping(
-    id: Primary32,
+    id: Primary64,
     first_name: String,
     last_name: String,
     full_name: { type: String?, generated: true}

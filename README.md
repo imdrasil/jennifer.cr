@@ -85,7 +85,7 @@ Hers is a model example:
 class Contact < Jennifer::Model::Base
   with_timestamps
   mapping(
-    id: Primary32, # is an alias for Int32? primary key
+    id: Primary64, # is an alias for Int64? primary key
     name: String,
     gender: { type: String?, default: "male" },
     age: { type: Int32, default: 10 },

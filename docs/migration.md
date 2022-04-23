@@ -79,7 +79,7 @@ All those methods accepts additional options:
 - `:null` - present nullable if field (by default is `false` for all types and field);
 - `:primary` - marks field as primary key field (could be several ones but this provides some bugs with query generation for such model - for now try to avoid this).
 - `:default` - default value for field
-- `:auto_increment` - marks field to use auto increment (properly works only with `Int32` fields, another crystal types have cut functionality for it);
+- `:auto_increment` - marks field to use auto increment (properly works only with `Int32 | Int64` fields, another crystal types have cut functionality for it);
 - `:array` - mark field to be array type (postgres only)
 
 Also there is `#field` method which allows to directly define SQL type.

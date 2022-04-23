@@ -11,7 +11,7 @@ class User < Jennifer::Model::Base
   with_authentication
 
   mapping(
-    id: Primary32,
+    id: Primary64,
     email: {type: String, default: ""},
     password_digest: {type: String, default: ""},
     password: Password,

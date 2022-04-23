@@ -391,13 +391,13 @@ module Jennifer
         end
         request = clone.reorder.limit(batch_size)
 
-        records = request.offset(start * batch_size).to_a
+        records = request.offset(start.to_i64 * batch_size.to_i64).to_a
         while !records.empty?
           records_size = records.size
           yield records
           break if records_size < batch_size
           start += 1
-          records = request.offset(start * batch_size).to_a
+          records = request.offset(start.to_i64 * batch_size.to_i64).to_a
         end
       end
 

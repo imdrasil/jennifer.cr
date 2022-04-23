@@ -82,7 +82,7 @@ module Jennifer
       # If somewhy you define model with custom table name after the place where adapter is used the first time -
       # manually invoke this method anywhere after table name definition.
       def self.actual_table_field_count
-        @@actual_table_field_count ||= read_adapter.table_column_count(table_name)
+        @@actual_table_field_count ||= read_adapter.table_column_count(table_name).to_i
       end
 
       # :nodoc:

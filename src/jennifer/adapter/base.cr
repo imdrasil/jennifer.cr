@@ -111,7 +111,7 @@ module Jennifer
       end
 
       def count(query : QueryBuilder::Query)
-        scalar(*parse_query(sql_generator.count(query), query.sql_args)).as(Int64).to_i
+        scalar(*parse_query(sql_generator.count(query), query.sql_args)).as(Int64)
       end
 
       def bulk_insert(collection : Array(Model::Base))

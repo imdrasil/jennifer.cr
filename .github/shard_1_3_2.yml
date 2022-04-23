@@ -1,3 +1,4 @@
+# NOTE: the only difference from 1.4.1 is missing ameba
 name: jennifer
 version: 0.12.0
 
@@ -21,9 +22,6 @@ development_dependencies:
   sam:
     github: imdrasil/sam.cr
     version: "~> 0.4.1"
-  ameba:
-    github: crystal-ameba/ameba
-    version: "= 1.0.0"
   micrate:
     github: "amberframework/micrate"
     version: "= 0.11.0"

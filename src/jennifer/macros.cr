@@ -8,14 +8,16 @@ module Jennifer
 
     # Mapping type for `Int32` primary key.
     Primary32 = {
-      type:    Int32,
+      type:    Int32?,
       primary: true,
+      auto:    true,
     }
 
     # Mapping type for `Int64` primary key.
     Primary64 = {
-      type:    Int64,
+      type:    Int64?,
       primary: true,
+      auto:    true,
     }
   end
 end

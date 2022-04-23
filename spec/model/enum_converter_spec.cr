@@ -10,7 +10,7 @@ class NoteWithEnumText < Jennifer::Model::Base
   with_timestamps
 
   mapping({
-    id:         Primary32,
+    id:         Primary64,
     text:       {type: Category?, converter: Jennifer::Model::EnumConverter(Category)},
     created_at: Time?,
     updated_at: Time?,

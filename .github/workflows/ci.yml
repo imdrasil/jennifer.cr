@@ -32,28 +32,44 @@ jobs:
             db_password: dbpassword
           - crystal_version: 1.2.2
             DB: mysql
-            other: INTEGRATION=1
-            linter: true
             db_user: root
             db_password:
           - crystal_version: 1.2.2
             DB: postgres
-            other: INTEGRATION=1
+            db_user: dbuser
+            db_password: dbpassword
+          - crystal_version: 1.3.2
+            DB: mysql
+            db_user: root
+            db_password:
+          - crystal_version: 1.3.2
+            DB: postgres
+            db_user: dbuser
+            db_password: dbpassword
+          - crystal_version: 1.4.1
+            DB: mysql
+            integration: true
+            linter: true
+            db_user: root
+            db_password:
+          - crystal_version: 1.4.1
+            DB: postgres
+            integration: true
             linter: true
             db_user: dbuser
             db_password: dbpassword
-          - crystal_version: 1.2.2
+          - crystal_version: 1.4.1
             DB: postgres
-            mt: true
             db_user: dbuser
             db_password: dbpassword
-          - crystal_version: 1.2.2
+            other: MT=1
+          - crystal_version: 1.4.1
             DB: postgres
             pair: true
             db_user: dbuser
             db_password: dbpassword
             other: PAIR_DB_USER=root PAIR_DB_PASSWORD=
-          - crystal_version: 1.2.2
+          - crystal_version: 1.4.1
             DB: mysql
             pair: true
             db_user: root
@@ -89,11 +105,16 @@ jobs:
         run: make format
 
       - name: Install dependencies
-        run: shards install
+        run: |
+          function version { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
+          if [ $(version '${{ matrix.crystal_version }}') -lt $(version '1.4.1') ]; then
+            cp .github/shard_1_3_2.yml shard.yml
+          fi
+          shards install
 
       - name: Run linter
         if: ${{ matrix.linter }}
-        run: ./bin/ameba
+        run: make lint
 
       - name: 'Install MySQL'
         if: ${{ matrix.DB == 'mysql' || matrix.pair }}
@@ -101,11 +122,11 @@ jobs:
 
       - name: Install PostgreSQL
         if: ${{ matrix.DB == 'postgres' || matrix.pair }}
-        uses: harmon758/postgresql-action@v1
+        uses: Daniel-Marynicz/postgresql-action@master
         with:
-          postgresql version: '12.0'
-          postgresql user: ${{ env.DB_USER }}
-          postgresql password: ${{ env.DB_PASSWORD }}
+          postgres_image_tag: '12'
+          postgres_user: ${{ env.DB_USER }}
+          postgres_password: ${{ env.DB_PASSWORD }}
 
       - name: Create configuration file
         run: bash ./scripts/setup.sh .github/database.yml
@@ -115,15 +136,13 @@ jobs:
 
       - name: Run specs
         run: |
-          if [ "MT" == '1' ]
+          if [ $MT == '1' ]
           then
             crystal spec -Dpreview_mt
           else
-            crystal spec
+            crystal spec --error-trace
           fi
 
       - name: Run integration specs
         if: ${{ matrix.integration }}
-        run: |
-          crystal spec spec/integration/sam_test.cr &&
-            crystal spec spec/integration/concurrency_test.cr -Dpreview_mt
+        run: bash .github/run_integration_tests.sh

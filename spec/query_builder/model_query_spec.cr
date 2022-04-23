@@ -5,7 +5,7 @@ pair_only do
     table_name "addresses"
 
     mapping({
-      id:      Primary32,
+      id:      Primary64,
       details: JSON::Any?,
       street:  String,
       main:    Bool,
@@ -298,7 +298,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
   describe "#find_each" do
     it "loads each in batches without specifying primary key" do
       ids = Factory.create_contact(3).map(&.id)
-      buff = [] of Int32
+      buff = [] of Int64
       Contact.all.find_each(2, ids[1]) do |record|
         buff << record.id!
       end

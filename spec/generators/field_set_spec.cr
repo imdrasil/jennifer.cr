@@ -7,7 +7,7 @@ describe Jennifer::Generators::FieldSet do
   describe ".new" do
     context "without id definition" do
       it do
-        described_class.new(%w(name:string)).id.should eq(field_class.new("id", "integer", true))
+        described_class.new(%w(name:string)).id.should eq(field_class.new("id", "bigint", true))
       end
     end
   end

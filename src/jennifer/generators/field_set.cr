@@ -10,7 +10,7 @@ module Jennifer
         args.each do |definition|
           @fields << Field.new(*parse_field_definition(definition))
         end
-        @id = @fields.find(&.id?) || Field.new("id", "integer", true)
+        @id = @fields.find(&.id?) || Field.new("id", "bigint", true)
       end
 
       def references

@@ -159,7 +159,7 @@ module Jennifer
       private def self.assert_outdated_pending_migrations
         return if !Version.all.exists? || Config.config.allow_outdated_pending_migration
 
-        db_version = Version.all.order(version: :desc).limit(1).pluck(:version)[0].as(String)
+        db_version = Version.all.order(version: :desc).first!.version
         broken = pending_versions.select { |version| version < db_version }
         return if broken.empty?
 

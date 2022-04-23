@@ -4,21 +4,21 @@ class ViewWithArray < Jennifer::View::Base
   view_name "contacts"
 
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     tags: Array(Int32),
   }, false)
 end
 
 class ViewWithBool < Jennifer::View::Base
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     bool: Bool,
   }, false)
 end
 
 class ViewWithNilableBool < Jennifer::View::Base
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     bool: Bool?,
   }, false)
 end
@@ -56,12 +56,12 @@ describe Jennifer::View::Mapping do
 
   describe "%mapping" do
     describe ".columns_tuple" do
-      it "returns named tuple with column metedata" do
+      it "returns named tuple with column metadata" do
         metadata = MaleContact.columns_tuple
         metadata.is_a?(NamedTuple).should be_true
         metadata[:id].is_a?(NamedTuple).should be_true
-        metadata[:id][:type].should eq(Int32)
-        metadata[:id][:parsed_type].should eq("Int32?")
+        metadata[:id][:type].should eq(Int64?)
+        metadata[:id][:parsed_type].should eq("::Union(Int64, ::Nil)")
       end
 
       it "correctly maps column aliases" do

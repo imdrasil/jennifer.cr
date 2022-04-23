@@ -339,7 +339,7 @@ describe Jennifer::QueryBuilder::Executables do
     it "returns array of ids" do
       id = Factory.create_contact.id
       ids = Contact.all.ids
-      ids.should be_a(Array(Int32))
+      ids.should be_a(Array(Int64))
       ids.should eq([id])
     end
 
@@ -470,9 +470,9 @@ describe Jennifer::QueryBuilder::Executables do
 
         it "use 'start' argument as start primary key value" do
           ids = Factory.create_contact(3).map(&.id)
-          buff = [] of Int32
+          buff = [] of Int64
           query.find_each(pk, 2, ids[1]) do |record|
-            buff << record.id(Int32)
+            buff << record.id(Int64)
           end
           buff.should eq(ids[1..2])
         end

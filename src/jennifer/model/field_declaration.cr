@@ -30,10 +30,16 @@ module Jennifer::Model
             self.{{key.id}} = _{{key.id}}.as({{value[:parsed_type].id}})
           end
 
-          {% unless value[:parsed_type] =~ /String/ %}
+          {% if !value[:parsed_type].includes?("String") %}
             def {{key.id}}=(_{{key.id}} : String)
               self.{{key.id}} = self.class.coerce_{{key.id}}(_{{key.id}})
             end
+
+            {% if value[:parsed_type].includes?("Int64") %}
+              def {{key.id}}=(_{{key.id}} : Int32)
+                self.{{key.id}} = _{{key.id}}.to_i64
+              end
+            {% end %}
           {% end %}
         {% end %}
 
@@ -83,13 +89,13 @@ module Jennifer::Model
               "{{key.id}}"
             end
 
-            # :nodoc:
-            def init_primary_field(value : Int)
-              {% if primary_auto_incrementable %}
+            {% if primary_auto_incrementable %}
+              # :nodoc:
+              def init_primary_field(value : Int)
                 raise ::Jennifer::AlreadyInitialized.new(@{{key.id}}, value) if @{{key.id}}
                 @{{key.id}} = value{% if value[:parsed_type] =~ /32/ %}.to_i{% else %}.to_i64{% end %}
-              {% end %}
-            end
+              end
+            {% end %}
 
             # :nodoc:
             def init_primary_field(value); end

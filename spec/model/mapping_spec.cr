@@ -3,7 +3,7 @@ require "../spec_helper"
 postgres_only do
   class ContactWithArray < ApplicationRecord
     mapping({
-      id:   Primary32,
+      id:   Primary64,
       tags: Array(Int32),
     })
   end
@@ -12,7 +12,7 @@ postgres_only do
     table_name "contacts"
 
     mapping({
-      id:       Primary32,
+      id:       Primary64,
       name:     String,
       ballance: {type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2},
     }, false)
@@ -24,7 +24,7 @@ mysql_only do
     table_name "contacts"
 
     mapping({
-      id:       Primary32,
+      id:       Primary64,
       name:     String,
       ballance: {type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(Float64), scale: 2},
     }, false)
@@ -36,7 +36,7 @@ private module Mapping11
   include Jennifer::Model::Mapping
 
   mapping(
-    id: Primary32
+    id: Primary64
   )
 end
 
@@ -76,7 +76,7 @@ class UserWithConverter < Jennifer::Model::Base
   table_name "users"
 
   mapping(
-    id: Primary32,
+    id: Primary64,
     name: {type: JSON::Any, converter: Jennifer::Model::JSONConverter}
   )
 end
@@ -115,8 +115,14 @@ describe Jennifer::Model::Mapping do
   describe "#attribute_metadata" do
     describe "with symbol argument" do
       it do
-        Factory.build_contact.attribute_metadata(:id)
-          .should eq({type: Int32, primary: true, parsed_type: "Int32?", column: "id", auto: true, null: false})
+        Factory.build_contact.attribute_metadata(:id).should eq({
+          type:        Int64?,
+          primary:     true,
+          parsed_type: "::Union(Int64, ::Nil)",
+          column:      "id",
+          auto:        true,
+          null:        true,
+        })
         Factory.build_contact.attribute_metadata(:name)
           .should eq({type: String, parsed_type: "String", column: "name", null: false})
         Factory.build_address.attribute_metadata(:street)
@@ -126,8 +132,14 @@ describe Jennifer::Model::Mapping do
 
     describe "with string argument" do
       it do
-        Factory.build_contact.attribute_metadata("id")
-          .should eq({type: Int32, primary: true, parsed_type: "Int32?", column: "id", auto: true, null: false})
+        Factory.build_contact.attribute_metadata("id").should eq({
+          type:        Int64?,
+          primary:     true,
+          parsed_type: "::Union(Int64, ::Nil)",
+          column:      "id",
+          auto:        true,
+          null:        true,
+        })
         Factory.build_contact.attribute_metadata("name")
           .should eq({type: String, parsed_type: "String", column: "name", null: false})
         Factory.build_address.attribute_metadata("street")
@@ -186,8 +198,8 @@ describe Jennifer::Model::Mapping do
         metadata = Contact.columns_tuple
         metadata.is_a?(NamedTuple).should be_true
         metadata[:id].is_a?(NamedTuple).should be_true
-        metadata[:id][:type].should eq(Int32)
-        metadata[:id][:parsed_type].should eq("Int32?")
+        metadata[:id][:type].should eq(Int64?)
+        metadata[:id][:parsed_type].should eq("::Union(Int64, ::Nil)")
       end
 
       it "ignores column aliases" do
@@ -410,13 +422,13 @@ describe Jennifer::Model::Mapping do
       describe "mapping types" do
         describe "Primary32" do
           it "makes field nillable" do
-            Contact.columns_tuple[:id][:parsed_type].should eq("Int32?")
+            OneFieldModel.columns_tuple[:id][:parsed_type].should eq("::Union(Int32, ::Nil)")
           end
         end
 
         describe "Primary64" do
           it "makes field nillable" do
-            ContactWithInValidation.columns_tuple[:id][:parsed_type].should eq("Int64?")
+            City.columns_tuple[:id][:parsed_type].should eq("::Union(Int64, ::Nil)")
           end
         end
 

@@ -77,11 +77,11 @@ end
 
 class ContactFactory < Factory::Jennifer::Base
   postgres_only do
-    argument_type (Array(Int32) | Int32 | PG::Numeric | String?)
+    argument_type(Array(Int32) | Int32 | Int64 | PG::Numeric | String?)
   end
 
   mysql_only do
-    argument_type (Array(Int32) | Int32 | Float64 | String?)
+    argument_type(Array(Int32) | Int32 | Int64 | Float64 | String?)
   end
 
   attr :name, "Deepthi"
@@ -94,13 +94,13 @@ end
 class AddressFactory < Factory::Jennifer::Base
   attr :main, false
   sequence(:street) { |i| "Ant st. #{i}" }
-  attr :contact_id, nil, Int32?
+  attr :contact_id, nil, Int64?
   attr :details, nil, JSON::Any?
 end
 
 class PassportFactory < Factory::Jennifer::Base
   attr :enn, "dsa"
-  attr :contact_id, nil, Int32?
+  attr :contact_id, nil, Int64?
 end
 
 class CountryFactory < Factory::Jennifer::Base
@@ -109,14 +109,14 @@ end
 
 class CityFactory < Factory::Jennifer::Base
   attr :name, "Guda"
-  attr :country_id, ->{ Factory.create_country.id }, Int32
+  attr :country_id, ->{ Factory.create_country.id }, Int64
   attr :optimistic_lock, 0
 end
 
 class ProfileFactory < Factory::Jennifer::Base
   attr :login, "some_login"
   attr :type, Profile.to_s
-  attr :contact_id, nil, Int32?
+  attr :contact_id, nil, Int64?
 end
 
 class FacebookProfileFactory < ProfileFactory
@@ -133,7 +133,7 @@ end
 
 class MaleContactFactory < Factory::Jennifer::Base
   postgres_only do
-    argument_type (Array(Int32) | Int32 | PG::Numeric | String? | Time)
+    argument_type(Array(Int32) | Int32 | Int64 | PG::Numeric | String? | Time)
   end
 
   attr :name, "Raphael"
@@ -150,12 +150,12 @@ class NoteFactory < Factory::Jennifer::Base
   attr :notable_type, nil
 
   trait :with_user do
-    attr :notable_id, ->{ Factory.create_user([:with_valid_password]).id }, Int32
+    attr :notable_id, ->{ Factory.create_user([:with_valid_password]).id }, Int64
     attr :notable_type, "User"
   end
 
   trait :with_contact do
-    attr :notable_id, ->{ Factory.create_contact.id }, Int32
+    attr :notable_id, ->{ Factory.create_contact.id }, Int64
     attr :notable_type, "Contact"
   end
 end

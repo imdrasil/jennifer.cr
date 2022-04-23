@@ -4,10 +4,9 @@ module Jennifer
     class Version < Model::Base
       table_name "migration_versions"
 
-      mapping(
-        id: Primary32,
-        version: String
-      )
+      mapping({
+        version: {type: String, primary: true, auto: false, null: false},
+      }, false)
 
       def self.has_table?
         false

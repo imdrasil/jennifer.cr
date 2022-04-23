@@ -19,7 +19,7 @@ class AddressWithSerializable < Jennifer::Model::Base
   with_timestamps
 
   mapping({
-    id:         Primary32,
+    id:         Primary64,
     details:    {type: Location?, converter: Jennifer::Model::JSONSerializableConverter(Location)},
     created_at: Time?,
     updated_at: Time?,

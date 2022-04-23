@@ -99,7 +99,7 @@ module Jennifer
 
         # Adds a reference.
         #
-        # The reference column is an `integer` by default, *type* argument can be used to specify a different type.
+        # The reference column is an `bigint` by default, *type* argument can be used to specify a different type.
         #
         # If *polymorphic* option is `true` - additional string field `"#{name}_type"` is created and foreign key is
         # not added.
@@ -109,10 +109,10 @@ module Jennifer
         #
         # ```
         # add_reference :user
-        # add_reference :order, :bigint
+        # add_reference :order, :integer
         # add_reference :taggable, {:polymorphic => true}
         # ```
-        def add_reference(name, type : Symbol = :integer, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
+        def add_reference(name, type : Symbol = :bigint, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
           column = Inflector.foreign_key(name)
           is_null = options.has_key?(:null) ? options[:null] : true
           field_internal_type = options.has_key?(:sql_type) ? nil : type

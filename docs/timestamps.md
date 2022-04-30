@@ -7,7 +7,7 @@ class MyModel < Jennifer::Model::Base
   with_timestamps
 
   mapping(
-    id: Primary32,
+    id: Primary64,
     created_at: {type: Time, null: true},
     updated_at: {type: Time, null: true}
   )

@@ -16,7 +16,7 @@ As was said Jennifer provide lazy query evaluation so it will be performed only 
 - `#to_a` - calls `#results`;
 - `#db_results` - returns array of hashes found by query execution;
 - `#results` - returns array of results found by query execution;
-- `#ids` - plucks `id` field and converts it to the `Int32`;
+- `#ids` - plucks `id` field as `Int64` array;
 - `#each` - calls `#to_a` and yields each object;
 - `#each_result_set` - perform request and yield each result set;
 - `#find_in_batches` - retrieves from db result sets of given size and yields them;

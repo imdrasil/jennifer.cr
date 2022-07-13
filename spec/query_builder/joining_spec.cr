@@ -34,7 +34,7 @@ describe Jennifer::QueryBuilder::Joining do
       it "creates proper join" do
         q = Factory.build_query
         q.join(Contact.where { _id == 2 }, "t1") { sql("true") }
-        q._joins![0].as_sql.should match(/SELECT contacts/m)
+        q._joins![0].as_sql.should match(/SELECT #{reg_quote_identifier("contacts")}/m)
       end
     end
   end
@@ -78,7 +78,7 @@ describe Jennifer::QueryBuilder::Joining do
       it "creates proper join" do
         q = Factory.build_query
         q.lateral_join(join_query, "t1") { sql("true") }
-        q._joins![0].as_sql.should match(/SELECT contacts/m)
+        q._joins![0].as_sql.should match(/SELECT #{reg_quote_identifier("contacts")}/m)
       end
     end
   end

@@ -28,8 +28,12 @@ module Jennifer
 
       def alias_tables(aliases); end
 
-      def identifier
+      def identifier(_generator)
         @use_brackets ? "(" + @field + ")" : @field
+      end
+
+      def as_sql(_generator) : String
+        @ident ||= identifier
       end
 
       def sql_args : Array(DBAny)

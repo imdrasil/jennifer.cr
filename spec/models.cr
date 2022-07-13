@@ -74,7 +74,7 @@ class User < ApplicationRecord
   include Jennifer::Model::Authentication
 
   mapping(
-    id: Primary32,
+    id: Primary64,
     name: String?,
     password_digest: EmptyString,
     email: {type: EmptyString},
@@ -100,7 +100,7 @@ class Contact < ApplicationRecord
 
     {% if env("DB") == "postgres" || env("DB") == nil %}
       mapping(
-        id: Primary32,
+        id: Primary64,
         name: String,
         ballance: PG::Numeric?,
         age: {type: Int32, default: 10},
@@ -108,12 +108,13 @@ class Contact < ApplicationRecord
         description: String?,
         created_at: Time?,
         updated_at: Time?,
-        user_id: Int32?,
-        tags: {type: Array(Int32)?}
+        user_id: Int64?,
+        tags: {type: Array(Int32)?},
+        email: String?
       )
     {% else %}
       mapping(
-        id: Primary32,
+        id: Primary64,
         name: String,
         ballance: Float64?,
         age: {type: Int32, default: 10},
@@ -121,7 +122,8 @@ class Contact < ApplicationRecord
         description: String?,
         created_at: Time?,
         updated_at: Time?,
-        user_id: Int32?
+        user_id: Int64?,
+        email: String?
       )
     {% end %}
   end
@@ -163,10 +165,10 @@ class Address < Jennifer::Model::Base
   with_timestamps
 
   mapping(
-    id: {type: Int32, primary: true},
+    id: {type: Int64, primary: true},
     main: Bool,
     street: String,
-    contact_id: Int32?,
+    contact_id: Int64?,
     details: JSON::Any?,
     created_at: Time?,
     updated_at: Time?
@@ -194,7 +196,7 @@ end
 class Passport < Jennifer::Model::Base
   mapping(
     enn: {type: String, primary: true},
-    contact_id: Int32?
+    contact_id: Int64?
   )
 
   validates_with EnnValidator
@@ -217,9 +219,9 @@ end
 
 class Profile < ApplicationRecord
   mapping(
-    id: Primary32,
+    id: Primary64,
     login: String,
-    contact_id: Int32?,
+    contact_id: Int64?,
     type: String,
     virtual_parent_field: {type: String?, virtual: true}
   )
@@ -273,7 +275,7 @@ end
 
 class Country < Jennifer::Model::Base
   mapping(
-    id: Primary32,
+    id: Primary64,
     name: String?
   )
 
@@ -299,24 +301,23 @@ class Country < Jennifer::Model::Base
   before_update :test_skip
 
   def test_skip
-    if name == "not create"
-      raise ::Jennifer::Skip.new
-    end
+    raise ::Jennifer::Skip.new if name == "not create"
   end
 
   def before_destroy_check
-    if name == "not kill"
-      errors.add(:name, "Cant destroy")
-    end
+    errors.add(:name, "Cant destroy") if name == "not kill"
     @before_destroy_attr = true
   end
 end
 
 class City < ApplicationRecord
+  with_optimistic_lock :optimistic_lock
+
   mapping(
-    id: Primary32,
+    id: Primary64,
     name: String,
-    country_id: Int32
+    optimistic_lock: {type: Int32, default: 0},
+    country_id: Int64
   )
 
   belongs_to :country, Country
@@ -326,9 +327,9 @@ class Note < ApplicationRecord
   module Mapping
     macro included
       mapping(
-        id: Primary32,
+        id: Primary64,
         text: String?,
-        notable_id: Int32?,
+        notable_id: Int64?,
         notable_type: String?,
         created_at: Time?,
         updated_at: Time?
@@ -345,7 +346,7 @@ end
 
 class OneFieldModel < Jennifer::Model::Base
   mapping(
-    id: Primary64
+    id: Primary32
   )
 end
 
@@ -382,7 +383,7 @@ class AllTypeModel < ApplicationRecord
   table_name "all_types"
 
   mapping(
-    id: Primary32,
+    id: Primary64,
     bool_f: Bool?,
     bigint_f: Int64?,
     integer_f: Int32?,
@@ -410,7 +411,7 @@ end
     table_name "addresses"
 
     mapping(
-      id: Primary32,
+      id: Primary64,
       street: String?,
       details: JSON::Any?,
       number: Int32?
@@ -420,16 +421,17 @@ end
 
 class Author < Jennifer::Model::Base
   mapping({
-    id:    Primary32,
-    name1: {type: String, column: :first_name},
-    name2: {type: String, column: :last_name},
+    id:        Primary64,
+    name1:     {type: String, column: :first_name},
+    name2:     {type: String, column: :last_name},
+    full_name: {type: String?, generated: true},
   })
 end
 
 class Publication < Jennifer::Model::Base
   {% if env("DB") == "postgres" || env("DB") == nil %}
     mapping(
-      id: Primary32,
+      id: Primary64,
       name: {type: String, column: :title},
       version: Int32,
       publisher: String,
@@ -437,7 +439,7 @@ class Publication < Jennifer::Model::Base
     )
   {% else %}
     mapping(
-      id: Primary32,
+      id: Primary64,
       name: {type: String, column: :title},
       version: Int32,
       publisher: String,
@@ -473,7 +475,7 @@ class CountryWithTransactionCallbacks < ApplicationRecord
   table_name "countries"
 
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     name: String,
   }, false)
 
@@ -496,7 +498,7 @@ class CountryWithValidationCallbacks < ApplicationRecord
   table_name "countries"
 
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     name: String,
   })
 
@@ -531,7 +533,7 @@ class JohnPassport < Jennifer::Model::Base
 
   mapping(
     enn: {type: String, primary: true},
-    contact_id: Int32?
+    contact_id: Int64?
   )
 
   belongs_to :contact, Contact, {where { _name == "John" }}
@@ -541,7 +543,7 @@ class OneFieldModelWithExtraArgument < Jennifer::Model::Base
   table_name "one_field_models"
 
   mapping(
-    id: Primary64,
+    id: Primary32,
     missing_field: String
   )
 end
@@ -550,7 +552,7 @@ class ContactWithNotAllFields < Jennifer::Model::Base
   table_name "contacts"
 
   mapping(
-    id: Primary32,
+    id: Primary64,
     name: String?,
   )
 end
@@ -559,7 +561,7 @@ class ContactWithNotStrictMapping < Jennifer::Model::Base
   table_name "contacts"
 
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     name: String?,
   }, false)
 end
@@ -569,7 +571,7 @@ class ContactWithDependencies < Jennifer::Model::Base
 
   {% if env("DB") == "postgres" || env("DB") == nil %}
     mapping({
-      id:          Primary32,
+      id:          Primary64,
       name:        String?,
       description: String?,
       age:         {type: Int32, default: 10},
@@ -577,7 +579,7 @@ class ContactWithDependencies < Jennifer::Model::Base
     }, false)
   {% else %}
     mapping({
-      id:          Primary32,
+      id:          Primary64,
       name:        String?,
       description: String?,
       age:         {type: Int32, default: 10},
@@ -598,7 +600,7 @@ end
 class ContactWithCustomField < Jennifer::Model::Base
   table_name "contacts"
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     name: String,
   }, false)
 end
@@ -606,7 +608,7 @@ end
 class ContactWithInValidation < Jennifer::Model::Base
   table_name "contacts"
   mapping({
-    id:   Primary64,
+    id:   Primary32,
     name: String?,
   }, false)
 
@@ -616,7 +618,7 @@ end
 class ContactWithNillableName < Jennifer::Model::Base
   table_name "contacts"
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     name: String?,
   }, false)
 end
@@ -624,7 +626,7 @@ end
 class AbstractContactModel < Jennifer::Model::Base
   table_name "contacts"
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     name: String?,
     age:  Int32,
   }, false)
@@ -635,7 +637,7 @@ end
     table_name "contacts"
 
     mapping({
-      id:       Primary32,
+      id:       Primary64,
       ballance: {type: Float64?, converter: Jennifer::Model::NumericToFloat64Converter},
     }, false)
   end
@@ -643,7 +645,7 @@ end
 
 class CountryWithDefault < Jennifer::Model::Base
   mapping(
-    id: Primary32,
+    id: Primary64,
     virtual: {type: Bool, default: true, virtual: true},
     name: String?
   )
@@ -652,7 +654,7 @@ end
 class NoteWithCallback < ApplicationRecord
   include Note::Mapping
 
-  self.table_name "notes"
+  table_name "notes"
 
   belongs_to :notable, Union(User | FacebookProfileWithDestroyNotable), polymorphic: true
 
@@ -673,9 +675,9 @@ class FacebookProfileWithDestroyNotable < Jennifer::Model::Base
   module Mapping
     macro included
       mapping({
-        id: Primary32,
+        id: Primary64,
         login: String,
-        contact_id: Int32?,
+        contact_id: Int64?,
         type: String,
         uid: String?
     }, false)
@@ -713,7 +715,7 @@ class AddressWithNilableBool < Jennifer::Model::Base
   with_timestamps
 
   mapping({
-    id:   {type: Int32, primary: true},
+    id:   {type: Int64, primary: true},
     main: Bool?,
   }, false)
 end
@@ -723,7 +725,7 @@ class NoteWithManualId < Jennifer::Model::Base
   with_timestamps
 
   mapping(
-    id: {type: Primary32, auto: false},
+    id: {type: Primary64, auto: false},
     text: {type: String?},
     created_at: Time?,
     updated_at: Time?
@@ -733,7 +735,7 @@ end
 class OrderItem < ApplicationRecord
   table_name "all_types"
 
-  mapping(id: Primary32)
+  mapping(id: Primary64)
 end
 
 class PolymorphicNote < ApplicationRecord
@@ -751,7 +753,7 @@ class PolymorphicNoteWithConverter < Jennifer::Model::Base
 
   mapping(
     id: Primary32,
-    notable_id: {type: String, converter: InspectConverter(Int32)},
+    notable_id: {type: String, converter: InspectConverter(Int64)},
     notable_type: {type: String, converter: InspectConverter(String)}
   )
 

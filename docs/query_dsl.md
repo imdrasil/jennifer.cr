@@ -213,15 +213,15 @@ They allows pass argument (tuple, named tuple or hash - depending on context) of
 
 ## SELECT
 
-Raw SQL for `SELECT` clause could be passed into `#select` method. This have highest priority during forming this query part.
+Raw SQL for `SELECT` clause could be passed into `#select` method. This have the highest priority during `SELECT` clause composing  of SQL request.
 
 ```crystal
 Contact
   .all
-  .select("COUNT(id) as count, contacts.name")
+  .select("COUNT(id) AS count")
   .group("name")
   .having { sql("COUNT(id)") > 1 }
-  .pluck(:name)
+  .pluck(:count)
 ```
 
 Also `#select` accepts block where all fields could be specified and aliased:
@@ -229,10 +229,13 @@ Also `#select` accepts block where all fields could be specified and aliased:
 ```crystal
 Contact
   .all
-  .select { [sql("COUNT(id)").alias("count"), _name] }
+  .select { [sql("COUNT(id)").alias("count")] }
   .group("name")
-  .having { sql("count") > 1 }.pluck(:name)
+  .having { sql("count") > 1 }
+  .pluck(:count)
 ```
+
+It is important to note that currently it is impossible to pass `Jennifer::QueryBuilder::Condition` to `#select`. In other words `Contact.all.select { [(_age * 2).alias("age")] }` isn't allowed. As a workaround you can temporary use `#sql`: `Contact.all.select { [sql("age * 2").alias("age")] }`.
 
 ## JOIN
 

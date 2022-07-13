@@ -46,7 +46,7 @@ module Jennifer
       @having : Condition | LogicOperator?
       @limit : Int32?
       @distinct : Bool = false
-      @offset : Int32?
+      @offset : Int32 | Int64 | Nil
       @raw_select : String?
       @from : String | Query?
       @lock : String | Bool?
@@ -241,8 +241,8 @@ module Jennifer
       # ```
       # Jennifer::Query.build("contacts").where { _name == "Jack London" }
       # ```
-      def self.build(*opts)
-        q = new(*opts)
+      def self.build(*args)
+        q = new(*args)
         q.expression_builder.query = q
         q
       end
@@ -252,8 +252,8 @@ module Jennifer
       # ```
       # Jennifer::Query["contacts"].where { _name == "Jack London" }
       # ```
-      def self.[](*opts)
-        build(*opts)
+      def self.[](*args)
+        build(*args)
       end
 
       def as_sql
@@ -287,8 +287,7 @@ module Jennifer
       end
 
       def empty?
-        @tree.nil? && @limit.nil? && @offset.nil? &&
-          @joins.nil? && @order.nil?
+        @tree.nil? && @limit.nil? && @offset.nil? && @joins.nil? && @order.nil?
       end
 
       # Allows executing a block in the query context.
@@ -311,6 +310,20 @@ module Jennifer
       def where(&block)
         other = (with @expression yield @expression)
         set_tree(other)
+        self
+      end
+
+      # Mutates query by given conditions.
+      #
+      # All key-value pairs are treated as a sequence of equal conditions
+      #
+      # ```
+      # Jennifer::Query["contacts"].where({:name => "test", :age => 23})
+      # # SELECT contacts.* FROM contacts WHERE (contacts.name = 'test' AND contacts.age = 23)
+      # ```
+      def where(conditions : Hash(Symbol, _))
+        array = conditions.map { |field, value| @expression.c(field.to_s).equal(value) }
+        set_tree(@expression.and(array))
         self
       end
 
@@ -529,11 +542,15 @@ module Jennifer
       end
 
       # Specifies the number of rows to skip before returning rows.
+      # The offset could be Int32 or Int64.
       #
       # ```
+      # Offset in Int32
       # Jennifer::Query["contacts"].offset(10)
+      # Or in Int64
+      # Jennifer::Query["contacts"].offset(10_i64)
       # ```
-      def offset(count : Int32)
+      def offset(count : Int32 | Int64)
         @offset = count
         self
       end
@@ -569,17 +586,17 @@ module Jennifer
         self
       end
 
-      # ditto
+      # :ditto:
       def set_tree(other : Query)
         set_tree(other.tree)
       end
 
-      # ditto
+      # :ditto:
       def set_tree(other : SQLNode)
         set_tree(other.to_condition)
       end
 
-      # ditto
+      # :ditto:
       def set_tree(other : Nil)
         raise ArgumentError.new("Condition tree can't be blank.")
       end

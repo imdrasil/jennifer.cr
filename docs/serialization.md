@@ -9,7 +9,7 @@ Jennifer defines some hidden instance attributes in defined models for own use. 
 ```crystal
 class User < Jennifer::Model::Base
   mapping(
-    id: Primary32,
+    id: Primary64,
     name: String?,
     age: Int32?,
     password_hash: String?

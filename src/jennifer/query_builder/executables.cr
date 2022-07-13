@@ -91,6 +91,27 @@ module Jennifer
         read_adapter.pluck(self, field.to_s)
       end
 
+      def pluck(**types : **T) forall T
+        {% begin %}
+          if do_nothing?
+            return [] of {
+              {% for name, type in T %}
+                {{name}}: {{type.instance}},
+              {% end %}
+            }
+          end
+
+          read_adapter.pluck(self, types.keys.to_a.map(&.to_s)).map do |record|
+            {
+              {% index = -1 %}
+              {% for name, type in T %}
+                {{name}}: record[{{index += 1}}].as({{type.instance}}),
+              {% end %}
+            }
+          end
+        {% end %}
+      end
+
       # Delete all records which satisfy given conditions.
       #
       # No model callbacks or validation will be executed.
@@ -180,7 +201,7 @@ module Jennifer
       def upsert(fields : Array(String), values : Array(Array(DBAny)), unique_fields : Array, &block)
         return if do_nothing? || values.empty?
 
-        definition = (with @expression yield)
+        definition = (with @expression yield @expression)
         write_adapter.upsert(table, fields, values, unique_fields, definition)
       end
 
@@ -255,7 +276,7 @@ module Jennifer
         end
       end
 
-      # ditto
+      # :ditto:
       def decrement(**fields)
         decrement(fields.to_h)
       end
@@ -292,9 +313,9 @@ module Jennifer
 
       # Returns array of record ids.
       #
-      # This method requires model to have field `id : Int32`.
+      # This method requires model to have field named `id` with type `Int64`.
       def ids
-        pluck(:id).map(&.as(Int32))
+        pluck(:id).map(&.as(Int64))
       end
 
       # Yields each matched record to a block.
@@ -370,13 +391,13 @@ module Jennifer
         end
         request = clone.reorder.limit(batch_size)
 
-        records = request.offset(start * batch_size).to_a
+        records = request.offset(start.to_i64 * batch_size.to_i64).to_a
         while !records.empty?
           records_size = records.size
           yield records
           break if records_size < batch_size
           start += 1
-          records = request.offset(start * batch_size).to_a
+          records = request.offset(start.to_i64 * batch_size.to_i64).to_a
         end
       end
 

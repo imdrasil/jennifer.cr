@@ -68,19 +68,22 @@ module Jennifer
         #
         # Available options are (none of these exists by default):
         # - `:array` - creates and array of given type;
-        # - `:serial` - makes column `SERIAL`;
-        # - `:sql_type` - allow to specify custom SQL data type;
         # - `:size` - requests a maximum column length; e.g. this is a number of characters in `string` column and
         # number of bytes for `text` or `integer`;
         # - `:null` - allows or disallows `NULL` values;
         # - `:primary` - adds primary key constraint to the column; ATM only one field may be a primary key;
         # - `:default` - the column's default value;
-        # - `:auto_increment` - add autoincrement to the column.
+        # - `:auto_increment` - add autoincrement to the column;
+        # - `:serial` - makes column `SERIAL`;
+        # - `:sql_type` - allow to specify custom SQL data type (use this only when really required);
+        # - `:as` - specify query for generated column;
+        # - `:
         #
         # ```
         # add_column :picture, :blob
         # add_column :status, :string, {:size => 20, :default => "draft", :null => false}
         # add_column :skills, :text, {:array => true}
+        # add_column :full_name, :string, {:generated => true, :as => "CONCAT(first_name, ' ', last_name)"}
         # ```
         def add_column(name : String | Symbol, type : Symbol? = nil,
                        options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
@@ -96,7 +99,7 @@ module Jennifer
 
         # Adds a reference.
         #
-        # The reference column is an `integer` by default, *type* argument can be used to specify a different type.
+        # The reference column is an `bigint` by default, *type* argument can be used to specify a different type.
         #
         # If *polymorphic* option is `true` - additional string field `"#{name}_type"` is created and foreign key is
         # not added.
@@ -106,10 +109,10 @@ module Jennifer
         #
         # ```
         # add_reference :user
-        # add_reference :order, :bigint
+        # add_reference :order, :integer
         # add_reference :taggable, {:polymorphic => true}
         # ```
-        def add_reference(name, type : Symbol = :integer, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
+        def add_reference(name, type : Symbol = :bigint, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
           column = Inflector.foreign_key(name)
           is_null = options.has_key?(:null) ? options[:null] : true
           field_internal_type = options.has_key?(:sql_type) ? nil : type
@@ -136,13 +139,14 @@ module Jennifer
         # `#add_reference`.
         def drop_reference(name, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
           column = Inflector.foreign_key(name)
-
-          drop_column(column)
           if options[:polymorphic]?
             drop_column("#{name}_type")
+            drop_column(column)
           else
-            drop_foreign_key(
-              (options[:to_table]? || Inflector.pluralize(name)).as(String | Symbol),
+            @commands << DropReference.new(
+              @adapter,
+              @name,
+              (options[:to_table]? || Inflector.pluralize(name)).to_s,
               options[:column]?.as(String | Symbol?)
             )
           end
@@ -218,14 +222,25 @@ module Jennifer
         end
 
         def process
+          high_priority_commands.each(&.process)
           @drop_columns.each { |c| schema_processor.drop_column(@name, c) }
           @new_columns.each { |n, opts| schema_processor.add_column(@name, n, opts) }
           @changed_columns.each do |n, opts|
             schema_processor.change_column(@name, n, opts[:new_name].as(String | Symbol), opts)
           end
+          low_priority_commands.each(&.process)
 
-          process_commands
           schema_processor.rename_table(@name, @new_table_name) unless @new_table_name.empty?
+        end
+
+        private def high_priority_commands
+          @commands.select do |command|
+            command.is_a?(DropForeignKey) || command.is_a?(DropIndex) || command.is_a?(DropReference)
+          end
+        end
+
+        private def low_priority_commands
+          @commands - high_priority_commands
         end
       end
     end

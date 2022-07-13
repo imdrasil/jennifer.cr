@@ -58,7 +58,7 @@ describe Jennifer::Generators::Field do
 
     describe "reference" do
       it do
-        described_class.new("name", "reference", false).cr_type.should eq("Int32?")
+        described_class.new("name", "reference", false).cr_type.should eq("Int64?")
       end
     end
 

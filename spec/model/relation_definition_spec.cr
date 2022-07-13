@@ -180,7 +180,8 @@ module Jennifer::Model
 
       context "query" do
         it "sets correct query part" do
-          Contact.relation("addresses").as(Jennifer::Relation::HasMany).condition_clause.as_sql.should eq("addresses.contact_id = contacts.id")
+          Contact.relation("addresses").as(Jennifer::Relation::HasMany).condition_clause.as_sql
+            .should eq(%(#{quote_identifier("addresses.contact_id")} = #{quote_identifier("contacts.id")}))
         end
       end
 
@@ -188,7 +189,7 @@ module Jennifer::Model
         it "returns query object" do
           c = Factory.create_contact
           q = c.addresses_query
-          q.as_sql.should match(/addresses.contact_id = %s/)
+          q.as_sql.should match(/#{reg_quote_identifier("addresses.contact_id")} = %s/)
           q.sql_args.should eq(db_array(c.id))
         end
 
@@ -196,7 +197,7 @@ module Jennifer::Model
           it "returns proper objects" do
             c = Factory.build_contact
             q = c.facebook_profiles_query
-            q.as_sql.should match(/profiles\.type = %s/)
+            q.as_sql.should match(/#{reg_quote_identifier("profiles.type")} = %s/)
             q.sql_args.includes?("FacebookProfile").should be_true
           end
         end
@@ -307,7 +308,8 @@ module Jennifer::Model
 
         describe "query" do
           it "sets correct query part" do
-            relation.condition_clause.as_sql.should eq("notes.notable_id = profiles.id AND notes.notable_type = %s")
+            relation.condition_clause.as_sql
+              .should eq("#{quote_identifier("notes.notable_id")} = #{quote_identifier("profiles.id")} AND #{quote_identifier("notes.notable_type")} = %s")
             relation.condition_clause.sql_args.should eq(db_array("FacebookProfileWithDestroyNotable"))
           end
         end
@@ -316,7 +318,7 @@ module Jennifer::Model
           it "returns query object" do
             p = FacebookProfileWithDestroyNotable.find!(Factory.create_facebook_profile(type: "FacebookProfileWithDestroyNotable").id)
             q = p.notes_query
-            q.as_sql.should match(/notes.notable_id = %s AND notes.notable_type = %s/)
+            q.as_sql.should match(/#{reg_quote_identifier("notes.notable_id")} = %s AND #{reg_quote_identifier("notes.notable_type")} = %s/)
             q.sql_args.should eq(db_array(p.id, "FacebookProfileWithDestroyNotable"))
           end
         end
@@ -341,13 +343,14 @@ module Jennifer::Model
       describe "query" do
         it "sets correct query part" do
           Address.relation("contact").as(Jennifer::Relation::BelongsTo).condition_clause.as_sql
-            .should eq("contacts.id = addresses.contact_id")
+            .should eq(%(#{quote_identifier("contacts.id")} = #{quote_identifier("addresses.contact_id")}))
         end
 
         context "when declaration has additional block" do
           it "sets correct query part" do
             query = JohnPassport.relation("contact").as(Jennifer::Relation::BelongsTo).condition_clause
-            query.as_sql.should match(/contacts\.id = passports\.contact_id AND contacts\.name = %s/)
+            query.as_sql
+              .should match(/#{reg_quote_identifier("contacts.id")} = #{reg_quote_identifier("passports.contact_id")} AND #{reg_quote_identifier("contacts.name")} = %s/)
             query.sql_args.should eq(db_array("John"))
           end
         end
@@ -358,7 +361,7 @@ module Jennifer::Model
           c = Factory.create_contact
           a = Factory.create_address(contact_id: c.id)
           q = a.contact_query
-          q.as_sql.should match(/contacts.id = %s/)
+          q.as_sql.should match(/#{reg_quote_identifier("contacts.id")} = %s/)
           q.sql_args.should eq(db_array(c.id))
         end
       end
@@ -430,7 +433,7 @@ module Jennifer::Model
           it "returns query object" do
             n = Factory.create_note([:with_user])
             q = n.notable_query
-            q.as_sql.should match(/users.id = %s/)
+            q.as_sql.should match(/#{reg_quote_identifier("users.id")} = %s/)
             q.sql_args.should eq(db_array(n.notable!.id, "%on"))
           end
         end
@@ -536,13 +539,14 @@ module Jennifer::Model
       describe "query" do
         it "sets correct query part" do
           Contact.relation("passport").as(Jennifer::Relation::HasOne).condition_clause.as_sql
-            .should eq("passports.contact_id = contacts.id")
+            .should eq(%(#{quote_identifier("passports.contact_id")} = #{quote_identifier("contacts.id")}))
         end
 
         context "when declaration has additional block" do
           it "sets correct query part" do
-            sql_reg = /addresses\.contact_id = contacts\.id AND addresses\.main/
-            Contact.relation("main_address").as(Jennifer::Relation::HasOne).condition_clause.as_sql.should match(sql_reg)
+            sql_reg = /#{reg_quote_identifier("addresses.contact_id")} = #{reg_quote_identifier("contacts.id")} AND #{reg_quote_identifier("addresses.main")}/
+            Contact.relation("main_address").as(Jennifer::Relation::HasOne).condition_clause.as_sql
+              .should match(sql_reg)
           end
         end
       end
@@ -551,7 +555,8 @@ module Jennifer::Model
         it "returns query object" do
           c = Factory.create_contact
           q = c.main_address_query
-          q.as_sql.should match(/addresses.contact_id = %s AND addresses.main/)
+          q.as_sql
+            .should match(/#{reg_quote_identifier("addresses.contact_id")} = %s AND #{reg_quote_identifier("addresses.main")}/)
           q.sql_args.should eq(db_array(c.id))
         end
       end
@@ -636,7 +641,8 @@ module Jennifer::Model
 
         describe "query" do
           it "sets correct query part" do
-            relation.condition_clause.as_sql.should eq("notes.notable_id = profiles.id AND notes.notable_type = %s")
+            relation.condition_clause.as_sql
+              .should eq(%(#{quote_identifier("notes.notable_id")} = #{quote_identifier("profiles.id")} AND #{quote_identifier("notes.notable_type")} = %s))
             relation.condition_clause.sql_args.should eq(db_array("ProfileWithOneNote"))
           end
         end
@@ -645,7 +651,7 @@ module Jennifer::Model
           it "returns query object" do
             p = ProfileWithOneNote.find!(Factory.create_facebook_profile(type: "ProfileWithOneNote").id)
             q = p.note_query
-            q.as_sql.should match(/notes.notable_id = %s AND notes.notable_type = %s/)
+            q.as_sql.should match(/#{reg_quote_identifier("notes.notable_id")} = %s AND #{reg_quote_identifier("notes.notable_type")} = %s/)
             q.sql_args.should eq(db_array(p.id, "ProfileWithOneNote"))
           end
         end
@@ -664,7 +670,8 @@ module Jennifer::Model
       describe "query" do
         it "sets correct query part" do
           query = ContactWithDependencies.relation("u_countries").as(Jennifer::Relation::ManyToMany)
-          query.condition_clause.as_sql.should eq("countries.contact_id = contacts.id AND countries.name LIKE %s")
+          query.condition_clause.as_sql
+            .should eq(%(#{quote_identifier("countries.contact_id")} = #{quote_identifier("contacts.id")} AND #{quote_identifier("countries.name")} LIKE %s))
           query.condition_clause.sql_args.should eq(db_array("U%"))
         end
       end
@@ -674,7 +681,7 @@ module Jennifer::Model
           c = Factory.create_contact
           q = c.countries_query
           select_query(q)
-            .should match(/JOIN contacts_countries ON contacts_countries\.country_id = countries\.id AND contacts_countries\.contact_id = %s/)
+            .should match(/JOIN #{reg_quote_identifier("contacts_countries")} ON #{reg_quote_identifier("contacts_countries.country_id")} = #{reg_quote_identifier("countries.id")} AND #{reg_quote_identifier("contacts_countries.contact_id")} = %s/)
           q.sql_args.should eq(db_array(c.id))
         end
 
@@ -683,9 +690,9 @@ module Jennifer::Model
             c = Factory.create_contact
             q = c.facebook_many_profiles_query
             select_query(q)
-              .should match(/JOIN contacts_profiles ON contacts_profiles\.profile_id = profiles\.id AND contacts_profiles\.contact_id = %s/)
+              .should match(/JOIN #{reg_quote_identifier("contacts_profiles")} ON #{reg_quote_identifier("contacts_profiles.profile_id")} = #{reg_quote_identifier("profiles.id")} AND #{reg_quote_identifier("contacts_profiles.contact_id")} = %s/)
             select_query(q)
-              .should match(/profiles\.type = %s/)
+              .should match(/#{reg_quote_identifier("profiles.type")} = %s/)
             q.sql_args.includes?("FacebookProfile").should be_true
           end
 
@@ -693,7 +700,7 @@ module Jennifer::Model
             c = Factory.create_facebook_profile
             q = c.facebook_contacts_query
             select_query(q)
-              .should match(/JOIN contacts_profiles ON contacts_profiles\.contact_id = contacts\.id AND contacts_profiles\.profile_id = %s/)
+              .should match(/JOIN #{reg_quote_identifier("contacts_profiles")} ON #{reg_quote_identifier("contacts_profiles.contact_id")} = #{reg_quote_identifier("contacts.id")} AND #{reg_quote_identifier("contacts_profiles.profile_id")} = %s/)
             q.sql_args.should eq(db_array(c.id))
           end
         end

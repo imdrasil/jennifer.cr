@@ -27,7 +27,6 @@ module Jennifer
       extend AbstractClassMethods
       include Transactions
       include ResultParsers
-      include RequestMethods
 
       @db : DB::Database?
       getter config : Config
@@ -112,7 +111,7 @@ module Jennifer
       end
 
       def count(query : QueryBuilder::Query)
-        scalar(*parse_query(sql_generator.count(query), query.sql_args)).as(Int64).to_i
+        scalar(*parse_query(sql_generator.count(query), query.sql_args)).as(Int64)
       end
 
       def bulk_insert(collection : Array(Model::Base))
@@ -143,7 +142,19 @@ module Jennifer
         end
       end
 
-      def upsert(table : String, fields : Array(String), values : Array(ArgsType), unique_fields, on_conflict : Hash)
+      def upsert(collection : Array(Model::Base), unique_fields : Array, definition : Hash = {} of Nil => Nil)
+        return collection if collection.empty?
+
+        klass = collection[0].class
+
+        all_arguments_to_insert = collection.map(&.arguments_to_insert)
+        fields = all_arguments_to_insert[0][:fields]
+        values = all_arguments_to_insert.map(&.[:args])
+
+        upsert(klass.table_name, fields, values, unique_fields, definition)
+      end
+
+      def upsert(table : String, fields : Array(String), values : Array(ArgsType), unique_fields : Array, on_conflict : Hash)
         query = sql_generator.insert_on_duplicate(table, fields, values.size, unique_fields, on_conflict)
         args = [] of DBAny
         values.each { |row| args.concat(row) }
@@ -248,7 +259,7 @@ module Jennifer
           config.host,
           config.port.try(&.>(0)) ? config.port : nil,
           type.db? ? config.db : "",
-          URI.encode(connection_query),
+          connection_query,
           config.user,
           config.password && !config.password.empty? ? config.password : nil
         ).to_s
@@ -273,7 +284,6 @@ module Jennifer
         return if table_exists?(Migration::Version.table_name)
 
         tb = Migration::TableBuilder::CreateTable.new(self, Migration::Version.table_name)
-        tb.integer(:id, {:primary => true, :auto_increment => true})
         tb.string(:version, {:size => 17, :null => false})
         tb.process
       end
@@ -351,13 +361,11 @@ module Jennifer
       # private ===========================
 
       private def connection_query
-        String.build do |s|
+        URI::Params.build do |form|
           {% begin %}
-          [
             {% for arg in Config::CONNECTION_URI_PARAMS %}
-              "{{arg.id}}=#{config.{{arg.id}}}",
+              form.add("{{arg.id}}", config.{{arg.id}}.to_s) unless config.{{arg.id}}.to_s.empty?
             {% end %}
-          ].join(s, "&")
           {% end %}
         end
       end

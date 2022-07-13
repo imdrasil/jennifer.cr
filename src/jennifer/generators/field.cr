@@ -24,7 +24,7 @@ module Jennifer
 
         "json" => "JSON::Any",
 
-        REFERENCE_TYPE => "Int32",
+        REFERENCE_TYPE => "Int64",
       }
 
       getter name : String, type : String, nilable : Bool

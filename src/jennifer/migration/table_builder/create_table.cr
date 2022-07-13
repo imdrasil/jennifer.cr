@@ -77,7 +77,7 @@ module Jennifer
 
         # Adds a reference.
         #
-        # The reference column is an `integer` by default, *type* argument can be used to specify a different type.
+        # The reference column is an `bigint` by default, *type* argument can be used to specify a different type.
         #
         # If *polymorphic* option is `true` - additional string field `"#{name}_type"` is created and foreign key is
         # not added.
@@ -87,10 +87,10 @@ module Jennifer
         #
         # ```
         # reference :user
-        # reference :order, :bigint
+        # reference :order, :integer
         # reference :taggable, {:polymorphic => true}
         # ```
-        def reference(name, type : Symbol = :integer, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
+        def reference(name, type : Symbol = :bigint, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
           column = Inflector.foreign_key(name)
           is_null = options.has_key?(:null) ? options[:null] : true
 
@@ -119,6 +119,32 @@ module Jennifer
         def timestamps(null : Bool = false)
           timestamp(:created_at, {:null => null})
           timestamp(:updated_at, {:null => null})
+        end
+
+        # Defines generated column *name* of *type* type that will use *as_query* expression to generate.
+        #
+        # Supported options:
+        #
+        # * `null` - not null constraint (by default is omitted)
+        # * `stored` - whether column should be stored or generated on the fly (`false` by default)
+        #
+        # ```
+        # create_table :users do |t|
+        #   t.string :first_name
+        #   t.string :last_name
+        #   t.generated :full_name, :string, "first_name || ' ' || last_name", {:stored => true}
+        # end
+        # ```
+        def generated(name : String | Symbol, type : Symbol | String, as_query : String,
+                      options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
+          @fields[name.to_s] = build_column_options(
+            type,
+            ({
+              :stored    => false,
+              :generated => true,
+              :as        => as_query,
+            } of Symbol => AAllowedTypes).merge(options)
+          )
         end
 
         # Adds index.

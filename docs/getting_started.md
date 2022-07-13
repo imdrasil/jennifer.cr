@@ -2,13 +2,13 @@
 
 ## Installation
 
-Add the shard to your `shard.yml`. Also
+Add the shard to your `shard.yml`
 
 ```yml
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "~> 0.10.0"
+    version: "~> 0.12.0"
 ```
 
 For MySQL and PostgreSQL you need to add related driver shard - [crystal-mysql](https://github.com/crystal-lang/crystal-mysql) or [crystal-pg](https://github.com/will/crystal-pg):
@@ -17,14 +17,14 @@ For MySQL and PostgreSQL you need to add related driver shard - [crystal-mysql](
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "= 0.10.0"
+    version: "= 0.12.0"
   pg:
     github: will/crystal-pg
-    version: "= 0.21.0"
+    version: "= 0.23.2"
   # or for mysql
   crystal-mysql:
     github: crystal-lang/crystal-mysql
-    version: "= 0.11.0"
+    version: "= 0.13.0"
 ```
 
 If you want to use SQLite3 - add [Jennifer SQLite3 **adapter**](https://github.com/imdrasil/jennifer_sqlite3_adapter):
@@ -33,10 +33,10 @@ If you want to use SQLite3 - add [Jennifer SQLite3 **adapter**](https://github.c
 dependencies:
   jennifer:
     github: imdrasil/jennifer.cr
-    version: "= 0.10.0"
+    version: "= 0.12.0"
   jennifer_sqlite3_adapter:
     github: imdrasil/jennifer_sqlite3_adapter
-    version: "~> 0.3.0"
+    version: "~> 0.3.1"
 ```
 
 It is shipped with SQLite driver.
@@ -80,11 +80,11 @@ development:
 
 test:
   <<: *default
-  db: application_database_name_development
+  db: application_database_name_test
 
 production:
   <<: *default
-  db: application_database_name_development
+  db: application_database_name_production
 ```
 
 > NOTE: prefer creating shared database configuration file template rather than exact one (aka `database.example.yml`) so everyone can configure it for themselves.
@@ -140,7 +140,7 @@ This generates 2 files:
     with_timestamps
 
     mapping(
-      id: Primary32,
+      id: Primary64,
       name: String,
       age: Int32,
     )

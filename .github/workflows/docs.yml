@@ -1,0 +1,21 @@
+name: Docs generation
+
+on:
+  release:
+    types:
+      - created
+      - deleted
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Generate and publish docs"
+        uses: imdrasil/release-docs-action@main
+        with:
+          project_name: jennifer.cr
+          github_token: ${{ secrets.DOC_KEY }}
+          exclude: "v0.10.0"

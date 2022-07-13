@@ -77,7 +77,7 @@ module Jennifer
           s << "ALTER TABLE " << table
           if opts[:type]?
             s << column_name_part << " TYPE "
-            column_type_definition(opts, s)
+            change_column_type_definition(opts, s)
             s << ","
           end
           if opts[:null]?
@@ -99,7 +99,6 @@ module Jennifer
             s << ","
           end
         end
-
         adapter.exec query[0...-1]
       end
 
@@ -116,6 +115,11 @@ module Jennifer
       private def column_definition(name, options, io)
         io << name
         column_type_definition(options, io)
+        if options[:generated]?
+          raise ArgumentError.new("not stored generated columns are not supported yet") unless options[:stored]
+
+          io << " GENERATED ALWAYS AS (" << options[:as] << ") STORED"
+        end
         if options.has_key?(:null)
           io << " NOT" unless options[:null]
           io << " NULL"
@@ -166,6 +170,14 @@ module Jennifer
           else
             adapter.translate_type(type.as(Symbol))
           end
+        end
+      end
+
+      private def change_column_type_definition(opts, s)
+        if opts[:auto_increment]? && (opts[:type] == :bigint || opts[:type] == :int)
+          opts[:type].to_s(s)
+        else
+          column_type_definition(opts, s)
         end
       end
     end

@@ -5,7 +5,11 @@ module Jennifer::Model
     macro common_mapping(strict)
       {%
         primary = COLUMNS_METADATA.keys.find { |field| COLUMNS_METADATA[field][:primary] }
-        primary_auto_incrementable = primary && AUTOINCREMENTABLE_STR_TYPES.includes?(COLUMNS_METADATA[primary][:type].stringify)
+        primary_auto_incrementable = false
+        if primary
+          primary_options = COLUMNS_METADATA[primary]
+          primary_auto_incrementable = AUTOINCREMENTABLE_STR_TYPES.any? { |type| primary_options[:parsed_type].includes?(type) }
+        end
         properties = COLUMNS_METADATA
         nonvirtual_attrs = properties.keys.select { |attr| !properties[attr][:virtual] }
       %}

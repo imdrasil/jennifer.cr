@@ -1,5 +1,128 @@
 # Changelog
 
+## 0.12.0 (15-12-2021)
+
+**General**
+
+* add crystal 1.2.0 support
+
+**QueryBuilder**
+
+* `#pluck` accepts splatted named tuple of desired attribute-type pairs and returns array of such tuples as a records
+* `#upsert` passes expression builder as a block argument
+
+**Model**
+
+* add Optimistic locking support via macro `with_optimistic_lock(column_name = lock_version)`
+* `updated_at` and `created_at` fields aren't override on save if have been set manually
+* add `upsert` class method to insert multiple models while ignoring conflicts on specified unique fields
+
+**Adapter**
+
+* fix database connection query arguments building
+* each adapter includes `RequestMethods` instead of including it by base adapter class
+* add a new `upsert` overload that allows passing a collection of `Jennifer::Model::Base`
+* fix `insert_on_duplicates` sql generation for postgres adapter if no unique fields given
+
+**SqlGenerator**
+
+* any `INSERT`, `UPDATE`, `SELECT` and `DELETE` requests uses quoted tables/columns if they are created by `QueryBuilder::ExpressionBuilder` (raw SQL is placed as-is)
+* `.select_clause`  uses specified query attributes to select and fall back to custom fields only if there is no custom attribute to select
+
+**Migration**
+
+* `TableBuilder::ChangeTable` now performs `DropForeignKey`, `DropIndex` & `DropReference` before any column manipulation
+* fix `TableBuilder::ChangeEnum` to use specified adapter to query effected tables
+
+## 0.11.1 (24-08-2021)
+
+**General**
+
+* switch to the `crimson-knight/i18n.cr` `~> 0.4.1`
+
+**Migration**
+
+* fix `TableBuilder::ChangeTable#drop_reference` dropping column before reference
+* add `TableBuilder::DropReference`
+
+## 0.11.0 (20-07-2021)
+
+**General**
+
+* add crystal `>= 1.0.0` support
+* fix inconsistent method signatures in multiple places
+* add `#to_json` to the following structs: `PG::Numeric`, `PG::Geo::Point`, `PG::Geo::Line`, `PG::Geo::Circle`, `PG::Geo::LineSegment`, `PG::Geo::Box`, `PG::Geo::Path`, `PG::Geo::Polygon`, `Char`, `Time::Span`, `Slice`, `UUID`
+* add `crystal-mysql: 0.13.0` support
+* add `crystal-pg: 0.23.2` support
+
+**QueryBuilder**
+
+* add custom `#to_json` to serialize retrieved collection
+* add `#where` accepting `Hash(Symbol, _)`
+* add `Criteria#equal` and `Criteria#not_equal` as original implementation of `Criteria#==` and `Criteria#!=`
+* add `ExpressionBuilder` `#and`, `#or` and `#xor` methods that accepts array of conditions
+
+**Model**
+
+* `Authentication#password` returns given unecrypted value
+* add `Coercer` module with static methods to localize all coercing logic for different types
+* add `.coercer` method to return object responding to all coercing methods described in `Coercer`
+* `mapping` generates `.coerce_{{attribute}(value : String)` methods for every field to coerce string value to `attribute`'s type
+* `mapping` generates for every non-string attribute with a setter additional `#{{attribute}}=(value : String)` setter
+* allow all build methods (`.new`, `.create` and `.update`) to receive `Hash(String, String)` and coerce values to expected types
+* add `.column_name` to return all field names
+* fix `.field_names` from returning child's properties for parent class
+* add custom `#to_json`
+* change converter interface to `.from_db(DB::ResultSet, NamedTuple)`, `.from_db(DB::ResultSet, NamedTuple)` and `.from_hash(Hash, String | Symbol, NamedTuple)`
+* change all existing converters to support new required interface
+* add `BigDecimalConverter(T)` converter
+* add `Coercer.coerce(String, (BigDecimal?).class)`
+* add `time_zone_aware` option for `TimeZoneConverter` to specify whether field should respect time zone converting logic
+* add support of date only and time only string formats for `TimeZoneConverter`
+* add `time_format`, `date_time_format` and `date_format` to customize time, date time and date formats respectively
+* fix a bug where updated_at is not set in the generated sql query from model.save
+* `NumericToFloat64Converter`, `BigDecimalConverter`, `TimeZoneConverter` `#from_hash` accepts string as field value
+* `BigDecimalConverter#from_hash` accepts integer and float values as field value
+* fix `Errors#inspect` bug using old `UInt64#to_s` signature
+* introduce `Timestamp` module that now includes `with_timestamps` macro
+* reworked how `updated_at` and `created_at` fields are set before save - now they are set explicitly without utilizing callbacks
+* add `Resource.where` accepting `Hash(Symbol, _)`
+
+**Validation**
+
+* change `Validator#validate` abstract interface to `#validate(record, **opts)`
+* update all built-in validators to reflect new `Validator` interface
+* make `Validator.with_blank_validation` macro to accept arguments to reference record, field name, value and blank value acceptance
+
+**Relation**
+
+* remove abstract `#condition_clause` & `#condition_clause(a)` declarations from `IRelation`
+
+**View**
+
+* add custom `#to_json`
+
+**Adapter**
+
+* remove abstract `#update`  declaration from `Base`
+* `BaseSQLGenerator#parse_query` converts `Time` arguments to UTC only if `Config.time_zone_aware_attributes` set to `true`
+* `Mysql#read_column` calls `super` if column isn't a tiny int
+* `ResultParser#read_column` convert time to `Config.local_time_zone` if `Config.time_zone_aware_attributes` set to `true` or just change time zone to it otherwise
+
+**Config**
+
+* `.reset_config` creates new instance instead of executing `#initialize` on existing object
+* add `Config.time_zone_aware_attributes` to specify whether time zone converting logic should be globally disabled
+
+**Migration**
+
+* add `precision` and `scale` options support for `decimal` data type
+
+**Record**
+
+* add custom `#to_json`
+* add custom `#inspect`
+
 ## 0.10.0 (11-12-2020)
 
 **General**

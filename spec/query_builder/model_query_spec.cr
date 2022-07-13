@@ -5,7 +5,7 @@ pair_only do
     table_name "addresses"
 
     mapping({
-      id:      Primary32,
+      id:      Primary64,
       details: JSON::Any?,
       street:  String,
       main:    Bool,
@@ -26,7 +26,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
       adapter
         .sql_generator
         .select(Contact.all.relation(:addresses))
-        .should match(/LEFT JOIN addresses ON addresses.contact_id = contacts.id/)
+        .should match(/LEFT JOIN #{reg_quote_identifier("addresses")} ON #{reg_quote_identifier("addresses.contact_id")} = #{reg_quote_identifier("contacts.id")}/)
     end
   end
 
@@ -298,7 +298,7 @@ describe Jennifer::QueryBuilder::ModelQuery do
   describe "#find_each" do
     it "loads each in batches without specifying primary key" do
       ids = Factory.create_contact(3).map(&.id)
-      buff = [] of Int32
+      buff = [] of Int64
       Contact.all.find_each(2, ids[1]) do |record|
         buff << record.id!
       end

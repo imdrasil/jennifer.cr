@@ -8,12 +8,16 @@ describe Jennifer::QueryBuilder::LogicOperator do
   describe "complex expression with grouping" do
     it "puts parenthesis around proper elements" do
       c3 = Factory.build_criteria(field: "f3")
-      (c1 & expression.g(c2 | c3)).as_sql.should eq("tests.f1 AND (tests.f2 OR tests.f3)")
+      (c1 & expression.g(c2 | c3)).as_sql
+        .should eq(%(#{quote_identifier("tests.f1")} AND (#{quote_identifier("tests.f2")} OR #{quote_identifier("tests.f3")})))
     end
   end
 
   describe "#as_sql" do
-    it { ((c1 == 2) & (c2 == c1)).as_sql.should eq("tests.f1 = %s AND tests.f2 = tests.f1") }
+    it do
+      ((c1 == 2) & (c2 == c1)).as_sql
+        .should eq(%(#{quote_identifier("tests.f1")} = %s AND #{quote_identifier("tests.f2")} = #{quote_identifier("tests.f1")}))
+    end
   end
 
   describe "#sql_args" do

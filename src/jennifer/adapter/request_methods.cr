@@ -12,9 +12,9 @@ module Jennifer
       end
 
       def update(obj : Model::Base)
-        opts = obj.arguments_to_save
-        return DB::ExecResult.new(0i64, -1i64) if opts[:args].empty?
+        return DB::ExecResult.new(0i64, -1i64) unless obj.changed?
 
+        opts = obj.arguments_to_save
         opts[:args] << obj.primary
         exec(*parse_query(sql_generator.update(obj), opts[:args]))
       end

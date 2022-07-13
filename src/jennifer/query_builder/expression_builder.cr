@@ -68,7 +68,7 @@ module Jennifer
         RawSql.new(query, args, use_brackets)
       end
 
-      # ditto
+      # :ditto:
       def sql(query : String, use_brackets : Bool = true)
         RawSql.new(query, use_brackets)
       end
@@ -76,20 +76,20 @@ module Jennifer
       # Creates criterion for current table by given name *name*.
       #
       # ```
-      # Jennifer::Query["users"].where { c("id") }
+      # Jennifer::Query["users"].where { c("id") } # => "users"."id"
       # ```
       def c(name : String)
         Criteria.new(name, @table, @relation)
       end
 
-      def c(name : String, table_name : String? = nil, relation : String? = nil)
+      def c(name : String, table_name : String = @table, relation : String? = nil)
         if @query
           @query.not_nil!.with_relation!
         end
-        Criteria.new(name, table_name || @table, relation || @relation)
+        Criteria.new(name, table_name, relation || @relation)
       end
 
-      # Creates criterion by given name *name* for relation *relation*.
+      # Creates criterion by given name *name* for the *relation*.
       def c_with_relation(name : String, relation : String)
         if @query
           @query.not_nil!.with_relation!
@@ -177,6 +177,25 @@ module Jennifer
         )
       end
 
+      # Combines given array of conditions by `AND` operator.
+      #
+      # All given conditions will be wrapped in `Grouping`.
+      #
+      # ```
+      # User.all.where { and([_name.like("%on"), _age > 3]) }
+      # # WHERE (users.name LIKE '%on' AND users.age > 3)
+      # ```
+      def and(conditions : Array)
+        case conditions.size
+        when 0
+          raise ArgumentError.new("#and can't accept 0 conditions")
+        when 1
+          conditions[0]
+        else
+          g(conditions[2..-1].reduce(conditions[0] & conditions[1]) { |sum, e| sum & e })
+        end
+      end
+
       # Combines given *first_condition*, *second_condition* and all other *conditions* by `OR` operator.
       #
       # All given conditions will be wrapped in `Grouping`.
@@ -189,6 +208,25 @@ module Jennifer
         g(conditions.reduce(first_condition | second_condition) { |sum, e| sum | e })
       end
 
+      # Combines given array of conditions by `OR` operator.
+      #
+      # All given conditions will be wrapped in `Grouping`.
+      #
+      # ```
+      # User.all.where { or([_name.like("%on"), _age > 3]) }
+      # # WHERE (users.name LIKE '%on' OR users.age > 3)
+      # ```
+      def or(conditions : Array)
+        case conditions.size
+        when 0
+          raise ArgumentError.new("#or can't accept 0 conditions")
+        when 1
+          conditions[0]
+        else
+          g(conditions[2..-1].reduce(conditions[0] | conditions[1]) { |sum, e| sum | e })
+        end
+      end
+
       # Combines given *first_condition*, *second_condition* and all other *conditions* by `XOR` operator.
       #
       # All given conditions will be wrapped in `Grouping`.
@@ -198,9 +236,26 @@ module Jennifer
       # # => WHERE (users.name LIKE '%on' XOR users.age > 3)
       # ```
       def xor(first_condition, second_condition, *conditions)
-        g(
-          conditions.reduce(first_condition.xor second_condition) { |sum, e| sum.xor e }
-        )
+        g(conditions.reduce(first_condition.xor second_condition) { |sum, e| sum.xor(e) })
+      end
+
+      # Combines given array of conditions by `XOR` operator.
+      #
+      # All given conditions will be wrapped in `Grouping`.
+      #
+      # ```
+      # User.all.where { xor([_name.like("%on"), _age > 3]) }
+      # # WHERE (users.name LIKE '%on' XOR users.age > 3)
+      # ```
+      def xor(conditions : Array)
+        case conditions.size
+        when 0
+          raise ArgumentError.new("#xor can't accept 0 conditions")
+        when 1
+          conditions[0]
+        else
+          g(conditions[2..-1].reduce(conditions[0].xor(conditions[1])) { |sum, e| sum.xor(e) })
+        end
       end
 
       macro method_missing(call)

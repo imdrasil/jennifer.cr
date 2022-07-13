@@ -3,9 +3,12 @@
 ## Pagination
 
 For now you can only specify `limit` and `offset`:
+`#limit` only accepts an `Int32` while you can pass an `Int32` or `Int64` number to the `#offset`.
 
 ```crystal
 Contact.all.limit(10).offset(10)
+# Or an offset in Int64
+Contact.all.limit(10).offset(10_i64)
 ```
 
 ## Order

@@ -54,7 +54,7 @@ describe Jennifer::QueryBuilder::Function do
     describe "#as_sql" do
       it do
         Jennifer::QueryBuilder::CoalesceFunction.new("asd", Factory.build_criteria).as_sql
-          .should eq("COALESCE(%s, tests.f1)")
+          .should eq(%(COALESCE(%s, #{quote_identifier("tests.f1")})))
       end
     end
 
@@ -129,7 +129,8 @@ describe Jennifer::QueryBuilder::Function do
 
     it do
       Factory.create_contact
-      Jennifer::Query["contacts"].select { [current_date.alias("current_d")] }.first!.current_d(Time).should eq(Time.unix(Time.local.to_unix).at_beginning_of_day)
+      Jennifer::Query["contacts"].select { [current_date.alias("current_d")] }.first!.current_d(Time)
+        .should eq(Time.unix(Time.local.to_unix).at_beginning_of_day)
     end
   end
 
@@ -186,7 +187,7 @@ describe Jennifer::QueryBuilder::Function do
     end
 
     it do
-      Factory.create_facebook_profile(contact_id: -10)
+      Factory.create_facebook_profile(contact_id: -10i64)
       Query["profiles"].select { [abs(_contact_id).alias("id")] }.first!.id(Int).should eq(10)
     end
   end

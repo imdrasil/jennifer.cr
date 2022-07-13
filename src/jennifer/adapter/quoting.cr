@@ -7,50 +7,63 @@ module Jennifer
       # Quotes the column value to help prevent -[SQL injection attacks][https://en.wikipedia.org/wiki/SQL_injection].
       abstract def quote(value : String)
 
+      # Quotes the given identifier according to the language specification to prevent overlappings with predefined
+      # keywords.
+      abstract def quote_identifier(identifier : String | Symbol)
+
+      # Quotes the given table name according to the language specification.
+      #
+      # Dot inside of name is allowed to specify schema name.
+      abstract def quote_table(table : String)
+
+      def quote_identifiers(identifiers)
+        identifiers.map { |id| quote_identifier(id) }
+      end
+
       abstract def quote_json_string(value : String)
 
-      # ditto
+      # :ditto:
       def quote(value : Nil)
         "NULL"
       end
 
-      # ditto
+      # :ditto:
       def quote(value : Bool)
         value ? "TRUE" : "FALSE"
       end
 
-      # ditto
+      # :ditto:
       def quote(value : Int | Float | UInt32)
         value.to_s
       end
 
-      # ditto
+      # :ditto:
       def quote(value : Char)
         quote(value.to_s)
       end
 
-      # ditto
+      # :ditto:
       def quote(value : Time)
         "'#{value.to_utc.to_s("%F %T")}'"
       end
 
-      # ditto
+      # :ditto:
       def quote(value : Time::Span)
         # NOTE: isn't user by pg driver ATM
         "'#{value}'"
       end
 
-      # ditto
+      # :ditto:
       def quote(value : Slice(UInt8))
         "x'#{value.hexstring}'"
       end
 
-      # ditto
+      # :ditto:
       def quote(value : JSON::Any)
         "'" + ::Jennifer::Adapter::JSONEncoder.encode(value, self) + "'"
       end
 
-      # ditto
+      # :ditto:
       def quote(value)
         raise ArgumentError.new("Value #{value} can't be quoted")
       end

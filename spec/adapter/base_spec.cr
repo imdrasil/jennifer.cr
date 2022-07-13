@@ -264,7 +264,71 @@ describe Jennifer::Adapter::Base do
     end
   end
 
-  describe "::join_table_name" do
+  describe "#upsert" do
+    it "do nothing if empty array was given" do
+      expect_query_silence do
+        default_adapter.upsert([] of Contact, [] of String)
+      end
+    end
+
+    it "avoid model validation" do
+      c = Factory.build_contact(age: 12)
+      c.should_not be_valid
+      default_adapter.upsert([c], [] of String)
+      c = Contact.all.first!
+      c.should_not be_valid
+    end
+
+    it "properly sets object attributes" do
+      c = Factory.build_contact(name: "Syd", age: 150)
+      default_adapter.upsert([c], [] of String)
+      Contact.all.count.should eq(1)
+      c = Contact.all.first!
+      c.age.should eq(150)
+      c.name.should eq("Syd")
+    end
+
+    it "ignore duplicate values" do
+      contact = Factory.build_contact
+      contact.description = "unique"
+      contact.save.should be_true
+
+      c = Factory.build_contact(age: 12, description: "unique")
+      default_adapter.upsert([c], [] of String)
+      Contact.all.count.should eq(1)
+      Contact.all.first!.age.should_not eq(12)
+    end
+
+    postgres_only do
+      it "still conflict if not in unique fields" do
+        contact = Factory.build_contact
+        contact.description = "not unique"
+        contact.email = "unique@email"
+        contact.save.should be_true
+
+        c = Factory.build_contact(age: 12, description: "not unique either", email: "unique@email")
+        expect_raises(Jennifer::BadQuery, /duplicate key value violates unique constraint "contacts_email_idx"/) do
+          default_adapter.upsert([c], ["description"] of String)
+        end
+      end
+    end
+
+    context "with array of hashes" do
+      argument_regex = db_specific(mysql: ->{ /\(\?/ }, postgres: ->{ /\(\$\d/ })
+      amount = 4681
+      fields = %w(name ballance age description created_at updated_at user_id)
+      values = ["Deepthi", nil, 28, nil, nil, nil, nil] of Jennifer::DBAny
+
+      it "imports objects by prepared statement" do
+        Contact.all.count.should eq(0)
+        default_adapter.upsert(Contact.table_name, fields, (amount - 1).times.map { values }.to_a, [] of String, {} of Nil => Nil)
+        query_log[1][:query].to_s.should match(argument_regex)
+        Contact.all.count.should eq(amount - 1)
+      end
+    end
+  end
+
+  describe ".join_table_name" do
     it "returns join table name in alphabetic order" do
       default_adapter.class.join_table_name("b", "a").should eq("a_b")
     end
@@ -328,6 +392,64 @@ describe Jennifer::Adapter::Base do
         config.password = ""
         connection_string = "#{adapter.class.protocol}://#{config.user}@#{config.host}:3333?" \
                             "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0"
+        adapter.connection_string(:root).should eq(connection_string)
+      end
+    end
+
+    context "with defined auth_methods" do
+      it "generates proper connection string" do
+        config.port = -1
+        config.password = ""
+        config.auth_methods = "cleartext,md5,scram-sha-256"
+        connection_string = "#{adapter.class.protocol}://#{config.user}@#{config.host}?" \
+                            "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0&auth_methods=cleartext%2Cmd5%2Cscram-sha-256"
+        adapter.connection_string(:root).should eq(connection_string)
+      end
+    end
+
+    context "with defined sslmode" do
+      it "generates proper connection string" do
+        config.port = -1
+        config.password = ""
+        config.sslmode = "verify-full"
+        connection_string = "#{adapter.class.protocol}://#{config.user}@#{config.host}?" \
+                            "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0&sslmode=verify-full"
+        adapter.connection_string(:root).should eq(connection_string)
+      end
+    end
+
+    context "with defined sslmode and sslcert" do
+      it "generates proper connection string" do
+        config.port = -1
+        config.password = ""
+        config.sslmode = "verify-full"
+        config.sslcert = "/path/to/ssl.crt"
+        connection_string = "#{adapter.class.protocol}://#{config.user}@#{config.host}?" \
+                            "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0&sslmode=verify-full&sslcert=%2Fpath%2Fto%2Fssl.crt"
+        adapter.connection_string(:root).should eq(connection_string)
+      end
+    end
+
+    context "with defined sslmode and sslkey" do
+      it "generates proper connection string" do
+        config.port = -1
+        config.password = ""
+        config.sslmode = "verify-full"
+        config.sslkey = "/path/to/ssl.key"
+        connection_string = "#{adapter.class.protocol}://#{config.user}@#{config.host}?" \
+                            "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0&sslmode=verify-full&sslkey=%2Fpath%2Fto%2Fssl.key"
+        adapter.connection_string(:root).should eq(connection_string)
+      end
+    end
+
+    context "with defined sslmode and sslrootcert" do
+      it "generates proper connection string" do
+        config.port = -1
+        config.password = ""
+        config.sslmode = "verify-full"
+        config.sslrootcert = "/path/to/sslroot.crt"
+        connection_string = "#{adapter.class.protocol}://#{config.user}@#{config.host}?" \
+                            "max_pool_size=1&initial_pool_size=1&max_idle_pool_size=1&retry_attempts=1&checkout_timeout=5.0&retry_delay=1.0&sslmode=verify-full&sslrootcert=%2Fpath%2Fto%2Fsslroot.crt"
         adapter.connection_string(:root).should eq(connection_string)
       end
     end

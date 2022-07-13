@@ -28,7 +28,7 @@ describe Jennifer::QueryBuilder::Executables do
 
     it "raises error if there is no such records" do
       arg = db_specific(mysql: ->{ "?" }, postgres: ->{ "$1" })
-      message = "There is no record by given query:\nSELECT contacts.* FROM contacts WHERE contacts.id > #{arg}  | [2]"
+      message = %(There is no record by given query:\nSELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")} WHERE #{quote_identifier("contacts.id")} > #{arg}  | [2])
       expect_raises(Jennifer::RecordNotFound, message) do
         Contact.all.where { _id > 2 }.first!
       end
@@ -115,6 +115,38 @@ describe Jennifer::QueryBuilder::Executables do
         res.size.should eq(2)
         res[0][0].should eq("a")
         res[1][1].should eq(14)
+      end
+    end
+
+    context "with splatted named tuple" do
+      it "returns array of named tuples of given type" do
+        Factory.create_contact(name: "a", age: 13)
+        Factory.create_contact(name: "b", age: 14)
+        res = Query["contacts"].pluck(name: String, age: Int32)
+        res.size.should eq(2)
+        res[0][:name].should eq("a")
+        res[1][:age].should eq(14)
+        typeof(res[1]).should eq(NamedTuple(name: String, age: Int32))
+      end
+
+      it "returns an empty array if there is no record" do
+        res = Query["contacts"].pluck(name: String, age: Int32)
+        res.size.should eq(0)
+        typeof(res).should eq(Array(NamedTuple(name: String, age: Int32)))
+      end
+    end
+
+    context "when select is already specified" do
+      it "respects raw SQL" do
+        Factory.create_contact(name: "a", age: 13)
+        res = Query["contacts"].select("age * 2 as test, name").pluck(:test)
+        res[0].should eq(26)
+      end
+
+      it "respects array of criteria specified to select" do
+        Factory.create_contact(name: "a", age: 13)
+        res = Query["contacts"].select { [sql("age * 2").alias("age")] }.pluck(:age)
+        res[0].should eq(26)
       end
     end
   end
@@ -307,7 +339,7 @@ describe Jennifer::QueryBuilder::Executables do
     it "returns array of ids" do
       id = Factory.create_contact.id
       ids = Contact.all.ids
-      ids.should be_a(Array(Int32))
+      ids.should be_a(Array(Int64))
       ids.should eq([id])
     end
 
@@ -438,9 +470,9 @@ describe Jennifer::QueryBuilder::Executables do
 
         it "use 'start' argument as start primary key value" do
           ids = Factory.create_contact(3).map(&.id)
-          buff = [] of Int32
+          buff = [] of Int64
           query.find_each(pk, 2, ids[1]) do |record|
-            buff << record.id(Int32)
+            buff << record.id(Int64)
           end
           buff.should eq(ids[1..2])
         end

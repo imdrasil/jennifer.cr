@@ -2,6 +2,7 @@ require "../spec_helper"
 
 macro validation_class_generator(klass, name, **options)
   class {{klass}} < AbstractContactModel
+    {{yield}}
     validates_numericality {{name}}, {{**options}}
   end
 end
@@ -16,11 +17,24 @@ validation_class_generator(OddContact, :age, odd: true)
 validation_class_generator(EvenContact, :age, even: true)
 validation_class_generator(SeveralValidationsContact, :age, greater_than: 20, less_than_or_equal_to: 30)
 
+postgres_only do
+  class NumericGTContact < Jennifer::Model::Base
+    table_name "contacts"
+
+    mapping({
+      id:       Primary64,
+      ballance: {type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2},
+    }, false)
+
+    validates_numericality :ballance, greater_than: 20
+  end
+end
+
 class GTNContact < Jennifer::Model::Base
   table_name "contacts"
 
   mapping({
-    id:          Primary32,
+    id:          Primary64,
     age:         Int32?,
     validatable: {type: Bool, default: true, virtual: true},
   }, false)
@@ -31,7 +45,7 @@ end
 
 class AcceptanceContact < ApplicationRecord
   mapping({
-    id:               Primary32,
+    id:               Primary64,
     name:             String,
     terms_of_service: {type: Bool, default: false, virtual: true},
     eula:             {type: String?, virtual: true},
@@ -43,7 +57,7 @@ end
 
 class ConfirmationContact < ApplicationRecord
   mapping({
-    id:                                 Primary32,
+    id:                                 Primary64,
     name:                               String?,
     case_insensitive_name:              String?,
     name_confirmation:                  {type: String?, virtual: true},
@@ -56,7 +70,7 @@ end
 
 class PresenceContact < ApplicationRecord
   mapping({
-    id:          Primary32,
+    id:          Primary64,
     name:        String?,
     address:     String?,
     confirmable: {type: Bool, virtual: true, default: true},
@@ -83,7 +97,7 @@ end
 
 class CustomValidatorModel < ApplicationRecord
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     name: String,
   })
 
@@ -389,6 +403,13 @@ describe Jennifer::Model::Validation do
       it "pass validation if an attribute satisfies condition" do
         c = GTContact.build(age: 21)
         c.should be_valid
+      end
+
+      postgres_only do
+        it "works with BigDecimal" do
+          c = NumericGTContact.new({ballance: 19.0})
+          c.should validate(:ballance).with("must be greater than 20")
+        end
       end
     end
 

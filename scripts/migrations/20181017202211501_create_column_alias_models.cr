@@ -3,6 +3,11 @@ class AddColumnAliasModels20181017202211501 < Jennifer::Migration::Base
     create_table :authors do |t|
       t.string  :first_name,  { :null => false }
       t.string  :last_name,   { :null => false }
+      {% if env("DB") == "postgres" || env("DB") == nil %}
+        t.generated :full_name, :string, "first_name || ' ' || last_name", {:stored => true}
+      {% else %}
+        t.generated :full_name, :string, "CONCAT(first_name, ' ', last_name)", {:stored => true}
+      {% end %}
     end
 
     {% if env("DB") == "postgres" || env("DB") == nil %}

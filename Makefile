@@ -11,3 +11,12 @@ sam:
 
 db-reset:
 	make sam db:drop @ db:setup
+
+lint:
+	./bin/ameba
+
+format:
+	crystal tool format --check -e"./scripts"
+
+format-fix:
+	crystal tool format -e"./scripts"

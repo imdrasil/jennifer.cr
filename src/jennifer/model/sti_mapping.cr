@@ -27,7 +27,7 @@ module Jennifer
             super_properties.keys.all? do |field|
               options = super_properties[field]
 
-              options[:primary] || options[:null] || options.keys.includes?(:default.id) || field == :type
+              options[:null] || options.keys.includes?(:default.id) || field == :type
             end &&
               COLUMNS_METADATA.keys.all? do |field|
                 options = COLUMNS_METADATA[field]
@@ -305,22 +305,6 @@ module Jennifer
         end
 
         # :nodoc:
-        def arguments_to_save
-          named_tuple = super
-          args = named_tuple[:args]
-          fields = named_tuple[:fields]
-          {% for attr, options in properties %}
-            {% unless options[:virtual] %}
-              if @{{attr.id}}_changed
-                args << attribute_before_typecast("{{attr}}")
-                fields << {{options[:column]}}
-              end
-            {% end %}
-          {% end %}
-          named_tuple
-        end
-
-        # :nodoc:
         def arguments_to_insert
           named_tuple = super
           args = named_tuple[:args]
@@ -332,6 +316,17 @@ module Jennifer
             {% end %}
           {% end %}
           named_tuple
+        end
+
+        # :nodoc:
+        def changes_before_typecast : Hash(String, ::Jennifer::DBAny)
+          hash = super
+          {% for attr, options in properties %}
+            {% unless options[:virtual] || options[:generated] %}
+              hash[{{options[:column]}}] = attribute_before_typecast("{{attr}}") if @{{attr.id}}_changed
+            {% end %}
+          {% end %}
+          hash
         end
 
         # :nodoc:

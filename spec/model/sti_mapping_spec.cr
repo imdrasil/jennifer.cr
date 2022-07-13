@@ -2,7 +2,7 @@ require "../spec_helper"
 
 class SimplifiedProfile < ApplicationRecord
   mapping({
-    id:   Primary32,
+    id:   Primary64,
     type: String,
   }, false)
 end
@@ -29,8 +29,8 @@ describe Jennifer::Model::STIMapping do
       it "copies data from superclass" do
         id = FacebookProfile::COLUMNS_METADATA[:id]
         id.is_a?(NamedTuple).should be_true
-        id[:type].should eq(Int32)
-        id[:parsed_type].should eq("Int32?")
+        id[:type].should eq(Int64?)
+        id[:parsed_type].should eq("::Union(Int64, ::Nil)")
       end
 
       it "copies column aliases fro superclass" do
@@ -41,7 +41,7 @@ describe Jennifer::Model::STIMapping do
       end
     end
 
-    describe "::columns_tuple" do
+    describe ".columns_tuple" do
       it "returns named tuple mith column metedata" do
         metadata = FacebookProfile.columns_tuple
         metadata.is_a?(NamedTuple).should be_true
@@ -185,16 +185,17 @@ describe Jennifer::Model::STIMapping do
     end
   end
 
-  describe "::all" do
+  describe ".all" do
     it "generates correct query" do
       q = FacebookProfile.all
-      q.as_sql.should match(/profiles\.type = %s/)
+      q.as_sql.should match(/#{reg_quote_identifier("profiles.type")} = %s/)
       q.sql_args.should eq(db_array("FacebookProfile"))
     end
 
     it "generates correct queries for tables with column aliases" do
       q = Article.all
-      q.as_sql.should match /publications\.type = %s/
+      q.as_sql
+        .should match(/#{reg_quote_identifier("publications.type")} = %s/)
       q.sql_args.should eq db_array("Article")
     end
   end

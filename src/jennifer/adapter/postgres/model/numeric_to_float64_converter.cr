@@ -27,7 +27,7 @@ module Jennifer::Model
     def self.from_hash(hash : Hash, column, options)
       value = hash[column]
       case value
-      when PG::Numeric
+      when PG::Numeric, String
         value.to_f64
       else
         value

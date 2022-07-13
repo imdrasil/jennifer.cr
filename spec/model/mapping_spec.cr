@@ -3,7 +3,7 @@ require "../spec_helper"
 postgres_only do
   class ContactWithArray < ApplicationRecord
     mapping({
-      id:   Primary32,
+      id:   Primary64,
       tags: Array(Int32),
     })
   end
@@ -12,7 +12,7 @@ postgres_only do
     table_name "contacts"
 
     mapping({
-      id:       Primary32,
+      id:       Primary64,
       name:     String,
       ballance: {type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2},
     }, false)
@@ -24,7 +24,7 @@ mysql_only do
     table_name "contacts"
 
     mapping({
-      id:       Primary32,
+      id:       Primary64,
       name:     String,
       ballance: {type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(Float64), scale: 2},
     }, false)
@@ -36,7 +36,7 @@ private module Mapping11
   include Jennifer::Model::Mapping
 
   mapping(
-    id: Primary32
+    id: Primary64
   )
 end
 
@@ -76,13 +76,13 @@ class UserWithConverter < Jennifer::Model::Base
   table_name "users"
 
   mapping(
-    id: Primary32,
+    id: Primary64,
     name: {type: JSON::Any, converter: Jennifer::Model::JSONConverter}
   )
 end
 
 describe Jennifer::Model::Mapping do
-  select_regexp = /[\S\s]*SELECT contacts\.\*/i
+  generator = Jennifer::Adapter.default_adapter.sql_generator
 
   describe "#reload" do
     it "assign all values from db to existing object" do
@@ -115,8 +115,14 @@ describe Jennifer::Model::Mapping do
   describe "#attribute_metadata" do
     describe "with symbol argument" do
       it do
-        Factory.build_contact.attribute_metadata(:id)
-          .should eq({type: Int32, primary: true, parsed_type: "Int32?", column: "id", auto: true, null: false})
+        Factory.build_contact.attribute_metadata(:id).should eq({
+          type:        Int64?,
+          primary:     true,
+          parsed_type: "::Union(Int64, ::Nil)",
+          column:      "id",
+          auto:        true,
+          null:        true,
+        })
         Factory.build_contact.attribute_metadata(:name)
           .should eq({type: String, parsed_type: "String", column: "name", null: false})
         Factory.build_address.attribute_metadata(:street)
@@ -126,8 +132,14 @@ describe Jennifer::Model::Mapping do
 
     describe "with string argument" do
       it do
-        Factory.build_contact.attribute_metadata("id")
-          .should eq({type: Int32, primary: true, parsed_type: "Int32?", column: "id", auto: true, null: false})
+        Factory.build_contact.attribute_metadata("id").should eq({
+          type:        Int64?,
+          primary:     true,
+          parsed_type: "::Union(Int64, ::Nil)",
+          column:      "id",
+          auto:        true,
+          null:        true,
+        })
         Factory.build_contact.attribute_metadata("name")
           .should eq({type: String, parsed_type: "String", column: "name", null: false})
         Factory.build_address.attribute_metadata("street")
@@ -181,13 +193,13 @@ describe Jennifer::Model::Mapping do
       end
     end
 
-    describe "::columns_tuple" do
+    describe ".columns_tuple" do
       it "returns named tuple with column metadata" do
         metadata = Contact.columns_tuple
         metadata.is_a?(NamedTuple).should be_true
         metadata[:id].is_a?(NamedTuple).should be_true
-        metadata[:id][:type].should eq(Int32)
-        metadata[:id][:parsed_type].should eq("Int32?")
+        metadata[:id][:type].should eq(Int64?)
+        metadata[:id][:parsed_type].should eq("::Union(Int64, ::Nil)")
       end
 
       it "ignores column aliases" do
@@ -396,11 +408,11 @@ describe Jennifer::Model::Mapping do
       end
     end
 
-    describe "::field_count" do
+    describe ".field_count" do
       it "returns correct number of model fields" do
         proper_count = db_specific(
-          mysql: ->{ 9 },
-          postgres: ->{ 10 }
+          mysql: ->{ 10 },
+          postgres: ->{ 11 }
         )
         Contact.field_count.should eq(proper_count)
       end
@@ -410,13 +422,13 @@ describe Jennifer::Model::Mapping do
       describe "mapping types" do
         describe "Primary32" do
           it "makes field nillable" do
-            Contact.columns_tuple[:id][:parsed_type].should eq("Int32?")
+            OneFieldModel.columns_tuple[:id][:parsed_type].should eq("::Union(Int32, ::Nil)")
           end
         end
 
         describe "Primary64" do
           it "makes field nillable" do
-            ContactWithInValidation.columns_tuple[:id][:parsed_type].should eq("Int64?")
+            City.columns_tuple[:id][:parsed_type].should eq("::Union(Int64, ::Nil)")
           end
         end
 
@@ -699,7 +711,7 @@ describe Jennifer::Model::Mapping do
 
         it "raised exception includes query explanation" do
           ContactWithNillableName.create({name: nil})
-          expect_raises(::Jennifer::DataTypeMismatch, select_regexp) do
+          expect_raises(::Jennifer::DataTypeMismatch, /[\S\s]*SELECT #{generator.quote_identifier("contacts")}\.\*/i) do
             ContactWithCustomField.all.last!
           end
         end
@@ -716,7 +728,7 @@ describe Jennifer::Model::Mapping do
 
         it "raised exception includes query explanation" do
           ContactWithNillableName.create({name: nil})
-          expect_raises(::Jennifer::DataTypeMismatch, select_regexp) do
+          expect_raises(::Jennifer::DataTypeMismatch, /[\S\s]*SELECT #{generator.quote_identifier("contacts")}\.\*/i) do
             ContactWithCustomField.all.last!
           end
         end
@@ -885,6 +897,14 @@ describe Jennifer::Model::Mapping do
         c = Contact._name
         c.table.should eq("contacts")
         c.field.should eq("name")
+      end
+    end
+
+    describe "#initialize" do
+      it "reads generated column" do
+        Author.create!({:name1 => "First", :name2 => "Last"})
+        puts Author.all.pluck(:full_name)
+        Author.all.last!.full_name.should eq("First Last")
       end
     end
 
@@ -1109,6 +1129,13 @@ describe Jennifer::Model::Mapping do
         user.name.should eq(json)
         user.arguments_to_save[:args].should eq([raw_json])
       end
+
+      it "doesn't include generated columns" do
+        author = Author.create(name1: "NoIt", name2: "SNot")
+        author.name1 = "1"
+        author.full_name = "test"
+        author.arguments_to_save[:fields].should eq(%w(first_name))
+      end
     end
 
     describe "#arguments_to_insert" do
@@ -1149,6 +1176,22 @@ describe Jennifer::Model::Mapping do
         user.name.should eq(json)
         user.arguments_to_insert[:args].should eq([raw_json])
       end
+
+      it "doesn't include generated columns" do
+        tuple = Author.build(name1: "NoIt", name2: "SNot").arguments_to_insert
+        tuple[:fields].should eq(%w(first_name last_name))
+      end
+    end
+
+    describe "#changes_before_typecast" do
+      it "includes only changed fields for existing record" do
+        author = Author.create(name1: "NoIt", name2: "SNot")
+        author.changes_before_typecast.should be_empty
+
+        author.name1 = "test"
+        author.full_name = "asd"
+        author.changes_before_typecast.should eq({"first_name" => "test"})
+      end
     end
 
     describe "#to_h" do
@@ -1160,7 +1203,7 @@ describe Jennifer::Model::Mapping do
 
       it "creates hash with symbol keys that does not contain the column names" do
         hash = Author.build(name1: "IsThi", name2: "SFinallyOver").to_h
-        hash.keys.should eq(%i(id name1 name2))
+        hash.keys.should eq(%i(id name1 name2 full_name))
       end
     end
 
@@ -1173,40 +1216,13 @@ describe Jennifer::Model::Mapping do
 
       it "creates hash with string keys that does not contain the column names" do
         hash = Author.build(name1: "NoIt", name2: "SNot").to_str_h
-        hash.keys.should eq(%w(id name1 name2))
+        hash.keys.should eq(%w(id name1 name2 full_name))
       end
     end
 
     describe ".primary_auto_incrementable?" do
       it { Note.primary_auto_incrementable?.should be_true }
       it { NoteWithManualId.primary_auto_incrementable?.should be_false }
-    end
-  end
-
-  describe "%with_timestamps" do
-    it "adds callbacks" do
-      Contact::CALLBACKS[:create][:before].should contain("__update_created_at")
-      Contact::CALLBACKS[:save][:before].should contain("__update_updated_at")
-    end
-  end
-
-  describe "#__update_created_at" do
-    it "updates created_at field" do
-      c = Factory.build_contact
-      c.created_at.should be_nil
-      c.__update_created_at
-      c.created_at!.should_not be_nil
-      ((c.created_at! - Time.local).total_seconds < 1).should be_true
-    end
-  end
-
-  describe "#__update_updated_at" do
-    it "updates updated_at field" do
-      c = Factory.build_contact
-      c.updated_at.should be_nil
-      c.__update_updated_at
-      c.updated_at!.should_not be_nil
-      ((c.updated_at! - Time.local).total_seconds < 1).should be_true
     end
   end
 end

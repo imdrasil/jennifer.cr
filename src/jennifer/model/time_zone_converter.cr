@@ -39,6 +39,8 @@ module Jennifer::Model
         else
           value.in(Config.local_time_zone)
         end
+      when String
+        coerce(value, options)
       else
         value
       end

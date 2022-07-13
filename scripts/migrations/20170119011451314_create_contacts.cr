@@ -16,7 +16,7 @@ class CreateContacts < Jennifer::Migration::Base
       create_table(:contacts) do |t|
         t.string :name, {:size => 30}
         t.integer :age
-        t.decimal :ballance, { :precision => 6, :scale => 2 }
+        t.decimal :ballance, {:precision => 6, :scale => 2}
         t.enum :gender, ["male", "female"], {:default => "male"}
         t.timestamps true
       end
@@ -25,6 +25,8 @@ class CreateContacts < Jennifer::Migration::Base
 
   def down
     drop_table :contacts
-    drop_enum(:gender_enum)
+    {% if env("DB") == "postgres" || env("DB") == nil %}
+      drop_enum(:gender_enum)
+    {% end %}
   end
 end

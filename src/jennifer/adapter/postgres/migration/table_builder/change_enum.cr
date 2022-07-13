@@ -69,7 +69,7 @@ module Jennifer
           end
 
           private def _effected_tables
-            Query["information_schema.columns"]
+            Query["information_schema.columns", adapter]
               .select("table_name, column_name")
               .where { (c("udt_name") == @name.dup) & (c("table_catalog") == Config.db) }
               .pluck(:table_name, :column_name)

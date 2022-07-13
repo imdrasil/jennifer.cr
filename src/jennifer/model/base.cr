@@ -14,6 +14,8 @@ require "./enum_converter"
 require "./json_converter"
 require "./json_serializable_converter"
 require "./time_zone_converter"
+require "./timestamp"
+require "./optimistic_locking"
 
 module Jennifer
   module Model
@@ -54,6 +56,8 @@ module Jennifer
       extend AbstractClassMethods
       include Presentable
       include Mapping
+      include Timestamp
+      include OptimisticLocking
       include STIMapping
       include Validation
       include Callback
@@ -78,7 +82,7 @@ module Jennifer
       # If somewhy you define model with custom table name after the place where adapter is used the first time -
       # manually invoke this method anywhere after table name definition.
       def self.actual_table_field_count
-        @@actual_table_field_count ||= read_adapter.table_column_count(table_name)
+        @@actual_table_field_count ||= read_adapter.table_column_count(table_name).to_i
       end
 
       # :nodoc:
@@ -287,11 +291,18 @@ module Jennifer
       # NOTE: internal method
       abstract def arguments_to_insert
 
+      # Hash of changed columns and their new values.
+      abstract def changes_before_typecast : Hash(String, Jennifer::DBAny)
+
+      abstract def destroy_without_transaction
+
       private abstract def save_record_under_transaction(skip_validation)
       private abstract def init_attributes(values : Hash)
       private abstract def init_attributes(values : DB::ResultSet)
       private abstract def __refresh_changes
       private abstract def __refresh_relation_retrieves
+      private abstract def store_record : Bool
+      private abstract def update_record : Bool
 
       # Sets attributes based on given *values* using `#set_attribute`
       # and saves it to the database, if validation pass.
@@ -354,7 +365,7 @@ module Jennifer
         values.each { |k, v| set_attribute(k, v) }
       end
 
-      # ditto
+      # :ditto:
       def set_attributes(**values)
         set_attributes(values)
       end
@@ -456,6 +467,7 @@ module Jennifer
         return false unless __before_update_callback
         return true unless changed?
 
+        track_timestamps_on_update
         res = self.class.write_adapter.update(self)
         __after_update_callback
         res.rows_affected == 1
@@ -464,6 +476,7 @@ module Jennifer
       private def store_record : Bool
         return false unless __before_create_callback
 
+        track_timestamps_on_create
         res = self.class.write_adapter.insert(self)
         init_primary_field(res.last_insert_id.as(Int)) if primary.nil? && res.last_insert_id > -1
         raise ::Jennifer::BaseException.new("Record hasn't been stored to the db") if res.rows_affected == 0
@@ -530,7 +543,7 @@ module Jennifer
         destroy(ids.to_a)
       end
 
-      # ditto
+      # :ditto:
       def self.destroy(ids : Array)
         _ids = ids
         all.where do
@@ -547,7 +560,7 @@ module Jennifer
         delete(ids.to_a)
       end
 
-      # ditto
+      # :ditto:
       def self.delete(ids : Array)
         _ids = ids
         all.where do
@@ -571,6 +584,28 @@ module Jennifer
       # ```
       def self.import(collection : Array(self))
         write_adapter.bulk_insert(collection)
+      end
+
+      # Performs bulk import of given *collection* while ignoring models that would cause a duplicate value of any `UNIQUE` index on given *unique_fields*.
+      #
+      # Some RDBMS (like MySQL) doesn't require specifying exact constraint to be violated, therefore *unique_fields* argument by default is `[] of String`.
+      #
+      # Any callback is ignored.
+      #
+      # ```
+      # Order.create({:uid => 123})
+      # Order.upsert([
+      #   Order.new({:uid => 123}),
+      #   Order.new({:uid => 321}),
+      # ])
+      # ```
+      def self.upsert(collection : Array(self), unique_fields = [] of String)
+        write_adapter.upsert(collection, unique_fields)
+      end
+
+      def self.upsert(collection : Array(self), unique_fields = %w[], &block)
+        definition = (with context yield context)
+        write_adapter.upsert(collection, unique_fields, definition)
       end
 
       macro inherited

@@ -7,7 +7,7 @@ describe Jennifer::QueryBuilder::EagerLoading do
     it "adds to select clause given relation" do
       q1 = Contact.all.relation(:addresses)
       q1.with_relation(:addresses)
-      select_clause(q1).should match(/SELECT contacts\.\*, addresses\.\*/)
+      select_clause(q1).should match(/SELECT #{reg_quote_identifier("contacts")}\.\*, #{reg_quote_identifier("addresses")}\.\*/)
     end
 
     it "raises error if given relation is not exists" do

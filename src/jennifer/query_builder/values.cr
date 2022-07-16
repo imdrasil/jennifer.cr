@@ -12,8 +12,8 @@ module Jennifer::QueryBuilder
       end
     {% end %}
 
-    def as_sql(sql_generator)
-      sql_generator.values_expression(@field)
+    def as_sql(generator)
+      generator.values_expression(@field)
     end
 
     def sql_args : Array(DBAny)

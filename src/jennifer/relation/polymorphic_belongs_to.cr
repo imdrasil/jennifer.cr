@@ -76,8 +76,8 @@ module Jennifer
         related_model(polymorphic_type).new(opts, false)
       end
 
-      private def related_model(obj : Model::Base)
-        related_model(obj.attribute_before_typecast(foreign_type).as(String))
+      private def related_model(arg : Model::Base)
+        related_model(arg.attribute_before_typecast(foreign_type).as(String))
       end
 
       private def table_name(type : String)
@@ -87,14 +87,14 @@ module Jennifer
       macro define_relation_class(name, klass, related_class, types, request)
         # :nodoc:
         class {{name.id.camelcase}}Relation < ::Jennifer::Relation::IPolymorphicBelongsTo
-          private def related_model(type : String)
-            case type
+          private def related_model(arg : String)
+            case arg
             {% for type in types %}
             when {{type}}.to_s
               {{type}}
             {% end %}
             else
-              raise ::Jennifer::BaseException.new("Unknown polymorphic type #{type}")
+              raise ::Jennifer::BaseException.new("Unknown polymorphic type #{arg}")
             end
           end
 
@@ -160,7 +160,7 @@ module Jennifer
         raise AbstractMethod.new("join_query", self)
       end
 
-      def query(a)
+      def query(primary_value_or_array)
         raise AbstractMethod.new("query", self)
       end
 

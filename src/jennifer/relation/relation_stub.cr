@@ -11,15 +11,15 @@ module Jennifer
       raise "stubbed relation"
     end
 
-    def join_condition(a, b)
+    def join_condition(query, type)
       raise "stubbed relation"
     end
 
-    def join_condition(a, b, &block)
+    def join_condition(query, type, &block)
       raise "stubbed relation"
     end
 
-    def query(a)
+    def query(primary_value_or_array)
       raise "stubbed relation"
     end
 

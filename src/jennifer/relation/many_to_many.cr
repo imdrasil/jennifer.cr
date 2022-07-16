@@ -37,9 +37,9 @@ module Jennifer
         rel
       end
 
-      def query(primary_value)
+      def query(primary_value_or_array)
         afk = association_foreign_key
-        _primary_value = primary_value
+        _primary_value = primary_value_or_array
         mfk = foreign_field
         q = T.all.join(join_table!) do
           (c(afk) == T.primary) &

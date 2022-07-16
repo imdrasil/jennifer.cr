@@ -19,8 +19,8 @@ module Jennifer
         end
       end
 
-      def definition(sql_generator)
-        identifier = as_sql(sql_generator)
+      def definition(generator)
+        identifier = as_sql(generator)
         @alias ? "#{identifier} AS #{@alias}" : identifier
       end
 

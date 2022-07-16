@@ -174,7 +174,7 @@ module Jennifer
           .exists?
       end
 
-      def index_exists?(_table, name : String)
+      def index_exists?(table, name : String)
         Query["pg_class", self]
           .join("pg_namespace") { _oid == _pg_class__relnamespace }
           .where { (_pg_class__relname == name) & (_pg_namespace__nspname == config.schema) }

@@ -8,12 +8,12 @@ module PG
       new(*args)
     end
 
-    def <=>(v : Float64)
-      to_f <=> v
+    def <=>(other : Float64)
+      to_f <=> other
     end
 
-    def <=>(v : Int32)
-      to_f <=> v
+    def <=>(other : Int32)
+      to_f <=> other
     end
   end
 end

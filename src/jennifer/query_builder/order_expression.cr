@@ -66,8 +66,8 @@ module Jennifer
         self
       end
 
-      def as_sql(sql_generator)
-        sql_generator.order_expression(self)
+      def as_sql(generator)
+        generator.order_expression(self)
       end
 
       def sql_args : Array(DBAny)

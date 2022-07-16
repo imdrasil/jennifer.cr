@@ -152,9 +152,9 @@ module Jennifer
           {% end %}
         end
 
-        def self.new(pull : DB::ResultSet)
+        def self.new(values : DB::ResultSet)
           instance = allocate
-          instance.initialize(pull)
+          instance.initialize(values)
           instance.__after_initialize_callback
           instance
         end

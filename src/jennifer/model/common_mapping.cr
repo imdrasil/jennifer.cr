@@ -45,12 +45,12 @@ module Jennifer::Model
       end
 
       # :nodoc:
-      def self.new(pull : DB::ResultSet)
+      def self.new(values : DB::ResultSet)
         {% verbatim do %}
         {% begin %}
           {% klasses = @type.all_subclasses.select { |s| s.constant("STI") == true } %}
           {% if !klasses.empty? %}
-            hash = adapter.result_to_hash(pull)
+            hash = adapter.result_to_hash(values)
             case hash["type"]
             when "", nil, "{{@type}}"
               new(hash, false)
@@ -63,7 +63,7 @@ module Jennifer::Model
             end
           {% else %}
             instance = allocate
-            instance.initialize(pull)
+            instance.initialize(values)
             instance.__after_initialize_callback
             instance
           {% end %}

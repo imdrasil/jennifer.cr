@@ -5,18 +5,18 @@ module Jennifer
     # Depends of parent class `::lookup_ancestors` and `::i18n_scope` methods.
     module Translation
       module ClassMethods
-        # Search translation for given attribute.
-        def human_attribute_name(attribute : String | Symbol)
+        # Search translation for given attribute name.
+        def human_attribute_name(name : String | Symbol)
           prefix = "#{GLOBAL_SCOPE}.attributes."
 
           lookup_ancestors do |ancestor|
-            path = "#{prefix}#{ancestor.i18n_key}.#{attribute}"
+            path = "#{prefix}#{ancestor.i18n_key}.#{name}"
             return I18n.translate(path) if I18n.exists?(path)
           end
 
-          path = "#{prefix}.#{attribute}"
+          path = "#{prefix}.#{name}"
           return I18n.translate(path) if I18n.exists?(path)
-          Inflector.humanize(attribute)
+          Inflector.humanize(name)
         end
 
         # Returns localized model name.
@@ -66,8 +66,8 @@ module Jennifer
       end
 
       # Delegates the call to `self.class`.
-      def human_attribute_name(attribute : String | Symbol)
-        self.class.human_attribute_name(attribute)
+      def human_attribute_name(name : String | Symbol)
+        self.class.human_attribute_name(name)
       end
 
       def class_name : String

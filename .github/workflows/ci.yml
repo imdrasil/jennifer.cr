@@ -48,37 +48,41 @@ jobs:
             db_password: dbpassword
           - crystal_version: 1.4.1
             DB: mysql
-            integration: true
-            linter: true
             db_user: root
             db_password:
           - crystal_version: 1.4.1
             DB: postgres
+            db_user: dbuser
+            db_password: dbpassword
+          - crystal_version: 1.5.0
+            DB: mysql
+            integration: true
+            linter: true
+            db_user: root
+            db_password:
+          - crystal_version: 1.5.0
+            DB: postgres
             integration: true
             linter: true
             db_user: dbuser
             db_password: dbpassword
-          - crystal_version: 1.4.1
+          - crystal_version: 1.5.0
             DB: postgres
             db_user: dbuser
             db_password: dbpassword
             other: MT=1
-          - crystal_version: 1.4.1
+          - crystal_version: 1.5.0
             DB: postgres
             pair: true
             db_user: dbuser
             db_password: dbpassword
             other: PAIR_DB_USER=root PAIR_DB_PASSWORD=
-          - crystal_version: 1.4.1
+          - crystal_version: 1.5.0
             DB: mysql
             pair: true
             db_user: root
             db_password:
             other: PAIR_DB_USER=dbuser PAIR_DB_PASSWORD=dbpassword
-          - DB: postgres
-            db_user: dbuser
-            db_password: dbpassword
-            crystal_version: nightly
 
     runs-on: ubuntu-latest
 

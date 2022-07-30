@@ -64,6 +64,11 @@ module Jennifer
       end
 
       # :ditto:
+      def quote(value : JSON::PullParser)
+        "'" + ::Jennifer::Adapter::JSONEncoder.encode(JSON::Any.from_json(value.read_raw), self) + "'"
+      end
+
+      # :ditto:
       def quote(value)
         raise ArgumentError.new("Value #{value} can't be quoted")
       end

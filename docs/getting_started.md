@@ -20,11 +20,11 @@ dependencies:
     version: "= 0.12.0"
   pg:
     github: will/crystal-pg
-    version: "= 0.23.2"
+    version: "= 0.26.0"
   # or for mysql
   crystal-mysql:
     github: crystal-lang/crystal-mysql
-    version: "= 0.13.0"
+    version: "= 0.14.0"
 ```
 
 If you want to use SQLite3 - add [Jennifer SQLite3 **adapter**](https://github.com/imdrasil/jennifer_sqlite3_adapter):

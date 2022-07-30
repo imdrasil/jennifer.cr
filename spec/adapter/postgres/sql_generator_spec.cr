@@ -6,7 +6,12 @@ private macro quote_example(value, type_cast)
     value = {{value}}
     adapter.query("SELECT #{described_class.quote(value)}::{{type_cast.id}}") do |rs|
       rs.each do
-        result = rs.read
+        result =
+          {% if type_cast == "json" || type_cast == "jsonb" %}
+            rs.read(JSON::Any)
+          {% else %}
+            rs.read
+          {% end %}
         result.should eq(value)
         executed = true
       end

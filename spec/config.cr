@@ -60,7 +60,7 @@ def set_default_configuration
   Jennifer::Config.reset_config
 
   Jennifer::Config.configure do |conf|
-    conf.read(File.join(__DIR__, "..", "scripts", "database.yml"), Spec.adapter)
+    conf.read(File.join(__DIR__, "../scripts/database.yml"), Spec.adapter)
     conf.logger = Spec.logger
     conf.user = ENV["DB_USER"] if ENV["DB_USER"]?
     conf.password = ENV["DB_PASSWORD"] if ENV["DB_PASSWORD"]?

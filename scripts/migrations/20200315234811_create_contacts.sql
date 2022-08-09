@@ -1,14 +1,13 @@
 -- +micrate Up
 -- SQL in section 'Up' is executed when this migration is applied
 
-CREATE TABLE public.test_contacts (
+CREATE TABLE test_contacts (
     id integer NOT NULL,
     name character varying(30),
     age integer DEFAULT 0,
-    tags integer[],
     ballance numeric,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone,
+    created_at timestamp,
+    updated_at timestamp,
     description text,
     user_id integer
 );
@@ -16,4 +15,4 @@ CREATE TABLE public.test_contacts (
 -- +micrate Down
 -- SQL section 'Down' is executed when this migration is rolled back
 
-DROP TABLE public.test_contacts;
+DROP TABLE test_contacts;

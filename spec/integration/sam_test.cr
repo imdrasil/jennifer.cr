@@ -1,5 +1,4 @@
 require "./spec_helper"
-require "./shared_helpers"
 
 # drop existing db before running tests
 DatabaseSeeder.drop

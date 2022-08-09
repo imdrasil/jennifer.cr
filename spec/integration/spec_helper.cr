@@ -1,13 +1,20 @@
 require "spec"
 require "../support/matchers"
+require "./shared_helpers"
 
-POSTGRES_DB = "postgres"
-MYSQL_DB    = "mysql"
+macro jennifer_adapter
+  {% if env("DB") == "postgres" || env("DB") == nil %}
+    Jennifer::Adapter.default_adapter.as(Jennifer::Postgres::Adapter)
+  {% else %}
+    Jennifer::Adapter.default_adapter.as(Jennifer::Mysql::Adapter)
+  {% end %}
+end
 
 def execute(command, options)
   io = IO::Memory.new
 
   status = Process.run("#{command} \"${@}\"", options, shell: true, output: io, error: io).exit_status
+  puts io.to_s
   {status, io.to_s}
 end
 
@@ -15,6 +22,13 @@ def clean(type = DatabaseSeeder.default_interface)
   yield
 ensure
   DatabaseSeeder.drop(type)
+end
+
+def with_connection
+  Spec.config_jennifer
+  yield
+ensure
+  Jennifer::Adapter.default_adapter.db.close
 end
 
 def db_specific(mysql, postgres)
@@ -30,15 +44,19 @@ end
 
 class DatabaseSeeder
   def self.default_interface
-    db_specific(mysql: ->{ :docker }, postgres: ->{ :bash })
+    if (env = Spec.settings["command_shell"]?).nil?
+      "bash"
+    else
+      env.as_s
+    end
   end
 
   def self.drop(type = default_interface)
     command =
       case type
-      when :docker
+      when "docker"
         docker_drop_db_command
-      when :bash
+      when "bash"
         bash_drop_db_command
       else
         raise "Unknown connection type"
@@ -50,9 +68,9 @@ class DatabaseSeeder
   def self.create(type = default_interface)
     command =
       case type
-      when :docker
+      when "docker"
         docker_create_db_command
-      when :bash
+      when "bash"
         bash_create_db_command
       else
         raise "Unknown connection type"
@@ -61,87 +79,60 @@ class DatabaseSeeder
     Process.run(command, shell: true, output: io, error: io).tap { puts io.to_s }
   end
 
-  private def self.db
-    DEFAULT_DB
-  end
-
   private def self.docker_drop_db_command
     case Spec.adapter
-    # when POSTGRES_DB
-    #   "PGPASSWORD=#{db_password} dropdb #{db} -U#{user}"
+    when POSTGRES_DB
+      common_command = "docker exec -i -e PGPASSWORD=#{Spec.db_password} #{Spec.settings["docker_container"]} dropdb #{Spec.db} -U#{Spec.db_user}"
+      common_command = "sudo #{common_command}" if Spec.settings["command_shell_sudo"]?
+      common_command
     when MYSQL_DB
-      common_command = "echo \"drop database #{db};\" | sudo docker exec -i #{DEFAULT_DOCKER_CONTAINER} mysql -u#{db_user}"
-      common_command += " -p#{db_password}" unless db_password.empty?
+      common_command = "echo \"drop database #{Spec.db};\" | sudo docker exec -i #{Spec.settings["docker_container"]} mysql -u#{Spec.db_user}"
+      common_command += " -p#{Spec.db_password}" unless Spec.db_password.empty?
       common_command
     else
-      unknown_adapter!
+      Spec.unknown_adapter!
     end
   end
 
   private def self.bash_drop_db_command
     case Spec.adapter
     when "postgres"
-      "PGPASSWORD=#{db_password} dropdb #{db} -U#{db_user} -hlocalhost"
+      "PGPASSWORD=#{Spec.db_password} dropdb #{Spec.db} -U#{Spec.db_user} -hlocalhost"
     when "mysql"
-      common_command = "echo \"drop database #{db};\" | mysql -u#{db_user}"
-      common_command += " -p#{db_password}" unless db_password.empty?
+      common_command = "echo \"drop database #{Spec.db};\" | mysql -u#{Spec.db_user}"
+      common_command += " -p#{Spec.db_password}" unless Spec.db_password.empty?
       common_command
     else
-      unknown_adapter!
+      Spec.unknown_adapter!
     end
   end
 
   private def self.docker_create_db_command
     case Spec.adapter
-    # when POSTGRES_DB
-    #   "PGPASSWORD=#{db_password} createdb #{db} -U#{db_user}"
+    when POSTGRES_DB
+      common_command =
+        "docker exec -i -e PGPASSWORD=#{Spec.db_password} #{Spec.settings["docker_container"]} createdb #{Spec.db} -U#{Spec.db_user}"
+      common_command = "sudo #{common_command}" if Spec.settings["command_shell_sudo"]?
+      common_command
     when MYSQL_DB
-      common_command = "echo \"create database #{db};\" | sudo docker exec -i #{DEFAULT_DOCKER_CONTAINER} mysql -u#{db_user}"
-      common_command += " -p#{db_password}" unless db_password.empty?
+      common_command = "echo \"create database #{Spec.db};\" | sudo docker exec -i #{Spec.settings["docker_container"]} mysql -u#{Spec.db_user}"
+      common_command += " -p#{Spec.db_password}" unless Spec.db_password.empty?
       common_command
     else
-      unknown_adapter!
+      Spec.unknown_adapter!
     end
   end
 
   private def self.bash_create_db_command
     case Spec.adapter
     when POSTGRES_DB
-      "PGPASSWORD=#{db_password} createdb #{db} -U#{db_user} -hlocalhost"
+      "PGPASSWORD=#{Spec.db_password} createdb #{Spec.db} -U#{Spec.db_user} -hlocalhost"
     when MYSQL_DB
-      common_command = "mysql -u#{db_user} -e\"create database #{db}\""
-      common_command += " -p#{db_password}" unless db_password.empty?
+      common_command = "mysql -u#{Spec.db_user} -e\"create database #{Spec.db}\""
+      common_command += " -p#{Spec.db_password}" unless Spec.db_password.empty?
       common_command
     else
-      unknown_adapter!
+      Spec.unknown_adapter!
     end
-  end
-
-  private def self.db_user
-    ENV["DB_USER"]? ||
-      case Spec.adapter
-      when POSTGRES_DB
-        "developer"
-      when MYSQL_DB
-        "root"
-      else
-        unknown_adapter!
-      end
-  end
-
-  private def self.db_password
-    ENV["DB_PASSWORD"]? ||
-      case Spec.adapter
-      when POSTGRES_DB
-        "1qazxs2"
-      when MYSQL_DB
-        ""
-      else
-        unknown_adapter!
-      end
-  end
-
-  private def self.unknown_adapter!
-    raise "Unknown adapter"
   end
 end

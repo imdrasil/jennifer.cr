@@ -97,7 +97,11 @@ describe Jennifer::QueryBuilder::Executables do
     context "with one argument" do
       it "correctly extracts json" do
         Factory.create_address(details: JSON.parse({:city => "Duplin"}.to_json))
-        Query["addresses"].pluck(:details)[0].should be_a(JSON::Any)
+        value = Query["addresses"].pluck(:details)[0]
+        db_specific(
+          mysql: ->{ value.should be_a(JSON::Any) },
+          postgres: ->{ value.should be_a(JSON::PullParser) }
+        )
       end
 
       it "accepts plain SQL" do

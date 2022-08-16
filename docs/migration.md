@@ -203,7 +203,28 @@ For more details check source code and PostgreSQL docs.
 
 ## Micrate
 
-It it is more convenient to you to store migrations in a plain SQL it is possible to use [micrate]() together with Jennifer. To do so you need to add it to you dependencies and add `micrate.cr` file at the root (or any other convenient place) of your project with the following content:
+If it is more convenient to you to store migrations in a plain SQL it is possible to use [micrate](https://github.com/amberframework/micrate) together with Jennifer. To do so you need to:
+- add it to you dependencies
+
+```yml
+# shard.yml
+dependencies:
+  micrate:
+    github: "amberframework/micrate"
+    version: "= 0.12.0"
+```
+- add an override for a `crystal-db` to enforce latest version
+
+```yml
+# shard.override.yml
+dependencies:
+  db:
+    github: crystal-lang/crystal-db
+    version: ~> 0.11.0
+```
+
+- ensure your Jennifer configuration has `pool_size` set to at least 2
+- add `micrate.cr` file at the root (or any other convenient place) of your project with the following content:
 
 ```crystal
 require "micrate"
@@ -228,13 +249,11 @@ module Micrate
 end
 
 Micrate::DB.connection_url = Jennifer::Adapter.default_adapter.connection_string(:db)
-puts Dir.
 Micrate::Cli.run
-
 ```
 
 After this all migration files located in the specified directory is accessible for Micrate and you can use commands like
 
 ```sh
-$ crystal /micrate.cr -- up
+$ crystal micrate.cr -- up
 ```

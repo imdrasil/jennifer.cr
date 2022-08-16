@@ -1,4 +1,3 @@
-require "./shared_helpers"
 require "./spec_helper"
 
 POOL_SIZE     = 2
@@ -8,18 +7,13 @@ if Spec.adapter != "mysql"
   puts "This test only available for mysql adapter"
   exit 0
 end
+DatabaseSeeder.create
 
-Jennifer::Config.configure do |conf|
-  conf.read("./scripts/database.yml", Spec.adapter)
-  conf.max_pool_size = POOL_SIZE
-  conf.initial_pool_size = POOL_SIZE
-  conf.max_idle_pool_size = POOL_SIZE
+Spec.config_jennifer do |conf|
+  conf.pool_size = POOL_SIZE
   conf.checkout_timeout = 1.0
   conf.retry_attempts = 1
-  conf.retry_delay = 0.5
-
-  conf.user = ENV["DB_USER"] if ENV["DB_USER"]?
-  conf.password = ENV["DB_PASSWORD"] if ENV["DB_PASSWORD"]?
+  conf.retry_delay = 0.7
 end
 
 Spec.before_each do
@@ -27,7 +21,6 @@ Spec.before_each do
 end
 
 describe "Concurrent execution" do
-  adapter = Jennifer::Adapter.default_adapter
   tread_count = POOL_SIZE + 1
 
   describe "Jennifer::Adapter::Base" do
@@ -48,7 +41,7 @@ describe "Concurrent execution" do
           spawn do
             begin
               puts Time.utc
-              adapter.exec("CREATE temporary table table1 select #{sleep_command} as col")
+              jennifer_adapter.exec("CREATE temporary table table1 select #{sleep_command} as col")
               puts "finish: #{Time.utc}"
               ch.send("")
             rescue e : Exception
@@ -68,7 +61,7 @@ describe "Concurrent execution" do
         tread_count.times do
           spawn do
             begin
-              adapter.query("SELECT #{sleep_command}") do |rs|
+              jennifer_adapter.query("SELECT #{sleep_command}") do |rs|
                 rs.each do
                   rs.columns.size.times do
                     rs.read
@@ -78,6 +71,7 @@ describe "Concurrent execution" do
 
               ch.send("")
             rescue e : Exception
+              puts e.inspect
               ch.send(e.class.to_s)
             end
           end
@@ -94,7 +88,7 @@ describe "Concurrent execution" do
         tread_count.times do
           spawn do
             begin
-              adapter.scalar("SELECT MAX(#{sleep_command})")
+              jennifer_adapter.scalar("SELECT MAX(#{sleep_command})")
               ch.send("")
             rescue e : Exception
               ch.send(e.class.to_s)

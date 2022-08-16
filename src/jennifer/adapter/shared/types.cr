@@ -62,3 +62,20 @@ end
 struct UUID
   def_clone
 end
+
+# :nodoc:
+class JSON::PullParser
+  def to_json(json : JSON::Builder)
+    read_raw(json)
+  end
+
+  def clone
+    string =
+      if @lexer.is_a?(JSON::Lexer::StringBased)
+        @lexer.as(JSON::Lexer::StringBased).@reader.@string
+      else
+        raise ArgumentError.new
+      end
+    JSON::PullParser.new(string)
+  end
+end

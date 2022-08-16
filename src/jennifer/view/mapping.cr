@@ -78,6 +78,7 @@ module Jennifer
           own_attributes = self.class.actual_table_field_count
           pull.each_column do |column|
             break if own_attributes == 0
+
             case column
             {% for key, value in COLUMNS_METADATA %}
               when "{{key.id}}"{% if key.id.stringify != value[:column] %}, {{value[:column]}} {% end %}

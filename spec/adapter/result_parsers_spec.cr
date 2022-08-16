@@ -53,8 +53,16 @@ describe Jennifer::Adapter::ResultParsers do
           AllTypeModel.all.each_result_set do |rs|
             executed = true
             value = adapter.result_to_hash(rs)["json_f"]
-            value.is_a?(JSON::Any).should be_true
-            value.should eq(JSON.parse(%({"a": 2})))
+            db_specific(
+              mysql: ->do
+                value.is_a?(JSON::Any).should be_true
+                value.should eq(JSON.parse(%({"a": 2})))
+              end,
+              postgres: ->do
+                value.is_a?(JSON::PullParser).should be_true
+                JSON::Any.new(value.as(JSON::PullParser)).should eq(JSON.parse(%({"a": 2})))
+              end
+            )
           end
           executed.should be_true
         end
@@ -155,8 +163,8 @@ describe Jennifer::Adapter::ResultParsers do
             AllTypeModel.all.each_result_set do |rs|
               executed = true
               value = adapter.result_to_hash(rs)["jsonb_f"]
-              value.is_a?(JSON::Any).should be_true
-              value.should eq(JSON.parse(%(["a", "b", 1])))
+              value.is_a?(JSON::PullParser).should be_true
+              JSON::Any.new(value.as(JSON::PullParser)).should eq(JSON.parse(%(["a", "b", 1])))
             end
             executed.should be_true
           end

@@ -11,10 +11,10 @@ license: MIT
 development_dependencies:
   mysql:
     github: crystal-lang/crystal-mysql
-    version: "= 0.13.0"
+    version: "= 0.14.0"
   pg:
     github: will/crystal-pg
-    version: "= 0.23.2"
+    version: "= 0.26.0"
   factory:
     github: imdrasil/factory
     version: "~> 0.1.5"
@@ -26,7 +26,7 @@ development_dependencies:
     version: "= 1.0.0"
   micrate:
     github: "amberframework/micrate"
-    version: "= 0.11.0"
+    version: "= 0.12.0"
 dependencies:
   inflector:
     github: phoffer/inflector.cr

@@ -118,17 +118,17 @@ module Jennifer
   end
 
   class DataTypeMismatch < BaseException
-    MATCH_REG         = /#read returned a/
-    EXTRACT_WORDS_REG = /returned a (.+)\. A (.+) was/
+    MATCH_REGS         = [/#read returned a/, /#read the column .* returned a/]
+    EXTRACT_WORDS_REGS = [/returned a (.+)\. A (.+) was/, /returned a (.+) but a (.+) was/]
 
     def initialize(column, klass, exception)
-      match = EXTRACT_WORDS_REG.match(exception.message.to_s).not_nil!
+      match = EXTRACT_WORDS_REGS.map(&.match(exception.message.to_s)).compact![0].not_nil!
       @message = "Column #{klass}.#{column} is expected to be a #{match[2]} but got #{match[1]}."
     end
 
     # TODO: think about monkey patching DB::ResultSet#read for raising custom exception rather than `Exception`
     def self.match?(exception)
-      exception.message =~ MATCH_REG
+      MATCH_REGS.any? { |reg| exception.message =~ reg }
     end
 
     def self.build(column, klass, exception)

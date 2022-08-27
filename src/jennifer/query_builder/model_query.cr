@@ -70,6 +70,53 @@ module Jennifer
         add_preloaded(results)
       end
 
+      # Finds the first record with the given attributes, or creates a record with the attributes and yields it to
+      # the given block if one is not found:
+      #
+      # ```
+      # User.find_or_create_by({:first_name => 'Penelope'}) do |record|
+      #   record.id # => nil
+      #   record.last_name = 'Doe'
+      # end
+      # record.id # => Int64
+      # ```
+      def find_or_create_by(attributes : Hash(String | Symbol, _), &block) : T
+        find_by(attributes) || T.create(attributes) { |record| yield record }
+      end
+
+      # Finds the first record with the given attributes, or creates a record with the attributes if one is not found:
+      def find_or_create_by(attributes : Hash(String | Symbol, _)) : T
+        find_by(attributes) || T.create(attributes)
+      end
+
+      # Similar to `#find_or_create_by, but calls `.create!` instead of `.create`.
+      def find_or_create_by!(attributes : Hash(String | Symbol, _), &block) : T
+        find_by(attributes) || T.create!(attributes) { |record| yield record }
+      end
+
+      # Finds the first record with the given attributes, or creates a record with the attributes if one is not found:
+      def find_or_create_by!(attributes : Hash(String | Symbol, _)) : T
+        find_by(attributes) || T.create!(attributes)
+      end
+
+      # Similar to `#find_or_create_by, but calls `.new` instead of `.create`.
+      #
+      # ```
+      # User.find_or_initialize_by(first_name: 'Penelope') do |record|
+      #   record.id # => nil
+      #   record.last_name = 'Doe'
+      # end
+      # record.id # => Int64
+      # ```
+      def find_or_initialize_by(attributes : Hash(String | Symbol, _), &block) : T
+        find_by(attributes) || T.new(attributes).tap { |record| yield record }
+      end
+
+      # Finds the first record with the given attributes, or creates a record with the attributes if one is not found:
+      def find_or_initialize_by(attributes : Hash(String | Symbol, _)) : T
+        find_by(attributes) || T.new(attributes)
+      end
+
       # Executes request and maps result set to objects with loading any requested related objects
       def to_a
         return [] of T if do_nothing?

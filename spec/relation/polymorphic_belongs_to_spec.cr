@@ -169,7 +169,7 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
     context "with valid polymorphic type" do
       it "destroys record" do
         c = Factory.create_contact
-        n = note_class.build(text: "test", notable_type: contact_class.to_s, notable_id: c.id)
+        n = note_class.new({text: "test", notable_type: contact_class.to_s, notable_id: c.id})
 
         count = contact_class.all.count
         example_relation.destroy(n)
@@ -191,7 +191,7 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
 
       context "with blank foreign field" do
         it do
-          n = note_class.build(text: "test")
+          n = note_class.new({text: "test"})
           example_relation.destroy(n).should be_nil
         end
       end
@@ -199,7 +199,7 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
 
     context "with invalid polymorphic type" do
       it do
-        n = note_class.build(text: "test", notable_type: "Contact", notable_id: 1)
+        n = note_class.new({text: "test", notable_type: "Contact", notable_id: 1})
         expect_raises(Jennifer::BaseException) do
           example_relation.destroy(n)
         end
@@ -252,7 +252,7 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
       it "raises exception if object is already assigned" do
         c1 = contact_class.find!(Factory.create_contact.id)
         c2 = contact_class.find!(Factory.create_contact.id)
-        n = note_class.build(text: "some text")
+        n = note_class.new({text: "some text"})
         n = c2.add_notes(n)[0]
         expect_raises(Jennifer::BaseException) do
           example_relation.insert(n, c1)
@@ -277,7 +277,7 @@ describe Jennifer::Relation::IPolymorphicBelongsTo do
   describe "#remove" do
     it do
       c = contact_class.find!(Factory.create_contact.id)
-      n = c.add_notes(note_class.build(text: "some text"))[0]
+      n = c.add_notes(note_class.new({text: "some text"}))[0]
 
       example_relation.remove(n)
       n.reload

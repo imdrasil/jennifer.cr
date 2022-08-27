@@ -83,7 +83,7 @@ module Jennifer
       # Specified block should return `OrderExpression | Array(OrderExpression)`.
       # To convert `Criteria` or `RawSql` to order item call `#asc` or `#desc`.
       def order(&block)
-        order(with @expression yield)
+        order(with @expression yield @expression)
       end
 
       # Replace an existing order with the newly specified.
@@ -122,7 +122,7 @@ module Jennifer
       end
 
       def reorder(&block)
-        reorder(with @expression yield)
+        reorder(with @expression yield @expression)
       end
 
       # Show whether order is specified.

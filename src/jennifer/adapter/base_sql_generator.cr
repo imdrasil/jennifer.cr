@@ -187,17 +187,18 @@ module Jennifer
       def self.from_clause(io : String::Builder, query)
         _from = query._from
         if _from
-          io << "FROM ( " <<
-            if _from.is_a?(String)
-              _from
-            else
+          io << "FROM "
+          if _from.is_a?(String)
+            io << _from
+          else
+            io << "( " <<
               if query.is_a?(QueryBuilder::ModelQuery)
                 self.select(_from)
               else
                 self.select(_from.as(QueryBuilder::Query))
               end
-            end
-          io << " ) "
+            io << " ) "
+          end
         elsif !query._table.empty?
           from_clause(io, quote_table(query.table))
         end

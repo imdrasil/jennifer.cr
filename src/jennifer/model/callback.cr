@@ -170,7 +170,7 @@ module Jennifer
         %}
       end
 
-      # Defines callbacks which are called after `Base.build` call.
+      # Defines callbacks which are called after `Base.new` call.
       macro after_initialize(*names)
         {%
           names.reduce(CALLBACKS[:initialize][:after]) do |array, name|

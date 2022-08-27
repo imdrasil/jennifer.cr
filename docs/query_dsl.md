@@ -1,10 +1,10 @@
 # Query DSL
 
-My favorite part. Jennifer allows you to build lazy evaluated queries with chaining syntax. But some of them could be only at the and of a chain (such as `#first`, `#find` or `#pluck`).
+My favorite part. Jennifer allows you to build lazy evaluated queries with chaining syntax. But some of them could be only at the and of a chain (such as `#first`, `#find` or `#pluck`) because they trigger request.
 
 ## WHERE
 
-`.all` creates empty request for model it is invoked on.
+`.all` creates empty request for a model it is invoked on.
 
 ```crystal
 Contact.all
@@ -12,14 +12,14 @@ Contact.all
 
 Specifying where clause is really flexible. Method accepts block which presents `WHERE` clause of request (or it's part - you can chain several `#where` and they will be concatenated using `AND`).
 
-To specify field use `#c` method which accepts string as field name. As I've mentioned after declaring model attributes, you can use their names inside of block: `_field_name` if it is for current table and `ModelName._field_name` if for another model. Also there you can specify attribute of some model or table using underscores: `_some_model_or_table_name__field_name` - model/table name is separated from field name by "__". You can specify relation in space of which you want to declare condition using double `_` at the beginning and block. Several examples:
+To specify table column use `#c` method which accepts string parameter as a name. As it was mentioned earlier after declaring model attributes, you can use their names inside of block: `_field_name` if it is for current table and `ModelName._field_name` if you need to reference a column `field_name` of the table related to `ModelName` model. Also there you can specify attribute of some model or table using underscores: `_some_model_or_table_name__field_name` - model/table name is separated from field name by `__`. You can specify relation in space of which you want to declare condition using double `_` at the beginning and block. Several examples:
 
 ```crystal
 Contact.where { c("id") == 1 }
 Contact.where { _id == 1 }
-Contact.all.join(Address) { Contact._id == _contact_id }
-Contact.all.relation(:addresses).where { __addresses { _id > 1 } }
-Contact.all.where { _contacts__id == 1 }
+Contact.join(Address) { Contact._id == _contact_id }
+Contact.relation(:addresses).where { __addresses { _id > 1 } }
+Contact.where { _contacts__id == 1 }
 ```
 
 Also you can use `primary` to mention primary field:
@@ -46,9 +46,9 @@ Supported operators:
 Also there are shortcuts for `AND`, `OR` and `XOR` operators to emit extra brackets around operands and wraps the result into them:
 
 ```crystal
-Post.all.where { _active & (_likes > 10) } # WHERE posts.active AND users.likes > 10
+Post.where { _active & (_likes > 10) } # WHERE posts.active AND users.likes > 10
 
-Post.all.where { and(_active, _likes > 10) } # WHERE (posts.active AND users.likes > 10)
+Post.where { and(_active, _likes > 10) } # WHERE (posts.active AND users.likes > 10)
 ```
 
 Operator-like methods:
@@ -74,6 +74,12 @@ Postgres specific:
 | `overlap` | `&&` |
 
 Also Jennifer supports json field path methods for criteria: `Criteria#take` (also accessible as `Criteria#[]`) and `Criteria#path`.
+
+If you need to fetch the first matched record
+
+```crystal
+Contact.find_by!({:name => "John", :surname => "Doe"}) # #<Contact name: "John", surname: "Doe">
+```
 
 ### MySQL
 
@@ -120,8 +126,8 @@ where { _field_name.take(1) }
 Several examples:
 
 ```crystal
-Contact.all.where { (_id > 40) & _name.regexp("^[a-d]") }
-Contact.all.where { and(_id > 40, _name.regexp("^[a-d]")) }
+Contact.where { (_id > 40) & _name.regexp("^[a-d]") }
+Contact.where { and(_id > 40, _name.regexp("^[a-d]")) }
 
 Address.where { _contact_id.is(nil) }
 
@@ -137,7 +143,7 @@ To specify exact SQL query use `#sql` method:
 
 ```crystal
 # it behaves like regular criterion
-Contact.all.where { sql("age > ?",  [15]) & (_name == "Stephan") }
+Contact.where { sql("age > ?",  [15]) & (_name == "Stephan") }
 ```
 
 Query will be inserted "as is". Prefer to avoid such usage but it allows to use database specific functions and features. By default given SQL statement is surrounded with brackets, to avoid them - pass `false` as 2nd (or 3rd) argument.
@@ -161,7 +167,7 @@ WHERE contacts.name = lower($1)
 To design some complex logical expression like `a & (b | c) & d` use `ExpressionBuilder#g` method:
 
 ```crystal
-Contact.all.where do
+Contact.where do
   (_id > 0) & g(_name.like("%asd%") | _age > 15) & (id < 100)
 end
 ```
@@ -217,7 +223,6 @@ Raw SQL for `SELECT` clause could be passed into `#select` method. This have the
 
 ```crystal
 Contact
-  .all
   .select("COUNT(id) AS count")
   .group("name")
   .having { sql("COUNT(id)") > 1 }
@@ -228,14 +233,13 @@ Also `#select` accepts block where all fields could be specified and aliased:
 
 ```crystal
 Contact
-  .all
   .select { [sql("COUNT(id)").alias("count")] }
   .group("name")
   .having { sql("count") > 1 }
   .pluck(:count)
 ```
 
-It is important to note that currently it is impossible to pass `Jennifer::QueryBuilder::Condition` to `#select`. In other words `Contact.all.select { [(_age * 2).alias("age")] }` isn't allowed. As a workaround you can temporary use `#sql`: `Contact.all.select { [sql("age * 2").alias("age")] }`.
+It is important to note that currently it is impossible to pass `Jennifer::QueryBuilder::Condition` to `#select`. In other words `Contact.select { [(_age * 2).alias("age")] }` isn't allowed. As a workaround you can temporary use `#sql`: `Contact.select { [sql("age * 2").alias("age")] }`.
 
 ## JOIN
 
@@ -244,7 +248,7 @@ To join another table you can use `join` method passing model class or table nam
 ```crystal
 field = "contact_id"
 table = "passports"
-Contact.all.join(Address) { Contact._id == _contact_id }.join(table) { c(field) == _id }
+Contact.join(Address) { Contact._id == _contact_id }.join(table) { c(field) == _id }
 ```
 
 Query, built inside of block, will passed to `ON` section of `JOIN`. Current context of block is joined table.
@@ -252,8 +256,8 @@ Query, built inside of block, will passed to `ON` section of `JOIN`. Current con
 Also there is two shortcuts for left and right joins:
 
 ```crystal
-Contact.all.left_join(Address) { _contacts__id == _contact_id }
-Contact.all.right_join("addresses") { _contacts__id == c("contact_id") }
+Contact.left_join(Address) { _contacts__id == _contact_id }
+Contact.right_join("addresses") { _contacts__id == c("contact_id") }
 ```
 
 > For now Jennifer provide manual aliasing as second argument for `#join` and automatic when using `#eager_load` and `#with` methods. For details check out the code.
@@ -263,7 +267,7 @@ Contact.all.right_join("addresses") { _contacts__id == c("contact_id") }
 To join model relation (has_many, belongs_to and has_one) pass it's name and join type:
 
 ```crystal
-Contact.all.relation("addresses").relation(:passport, type: :left)
+Contact.relation("addresses").relation(:passport, type: :left)
 ```
 
 ### Relation eager loading
@@ -273,7 +277,7 @@ Contact.all.relation("addresses").relation(:passport, type: :left)
 To automatically join some relation and get it from db use `#eager_load` and pass relation name:
 
 ```crystal
-Contact.all.eager_load("addresses")
+Contact.eager_load("addresses")
 ```
 
 If there are several eager_load with same table - Jennifer will auto alias tables.
@@ -283,20 +287,19 @@ If there are several eager_load with same table - Jennifer will auto alias table
 To load all related objects after main query being executed use `#includes` method (or it's alias `#preload`):
 
 ```crystal
-Contact.all.includes(:addresses)
+Contact.includes(:addresses)
 ```
 
 ## GROUP BY
 
 ```crystal
-Contact.all.group("name", "id").pluck(:name, :id)
+Contact.group("name", "id").pluck(:name, :id)
 ```
 
 `#group` allows to add columns for `GROUP BY` section. If passing arguments are tuple of strings or just one string - all columns will be parsed as current table columns. If there is a need to group on joined table or using fields from several tables use next:
 
 ```crystal
 Contact
-  .all
   .select { [_addresses__street, _contacts__name] }
   .relation("addresses")
   .group(addresses: ["street"], contacts: ["name"])
@@ -306,7 +309,7 @@ Contact
 ## HAVING
 
 ```crystal
-Contact.all.group("name").having { _age > 15 }
+Contact.group("name").having { _age > 15 }
 ```
 
 `#having` allows to add `HAVING` part of query. It accepts block same way as `#where` does.
@@ -324,7 +327,7 @@ Contact.where { _age > 42 }.exists? # returns true or false
 Adds `DISTINCT` keyword of at the very beginning of `SELECT` statement
 
 ```crystal
-Contact.all.distinct # Array(Contact) with unique attributes (all)
+Contact.distinct # Array(Contact) with unique attributes (all)
 ```
 
 ## UNION
@@ -333,12 +336,10 @@ To make common SQL `UNION` you can use `#union` method which accepts other query
 
 ```crystal
 Address
-  .all
   .select(:contact_id)
   .where { _street.like("%St. Paul%") }
   .union(
     Profile
-      .all
       .select(:contact_id)
       .where { _login.in(["login1", "login2"]) }
   )

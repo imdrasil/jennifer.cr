@@ -1,6 +1,7 @@
 require "./scoping"
 require "./translation"
 require "./relation_definition"
+require "./querying"
 require "../macros"
 
 module Jennifer
@@ -106,6 +107,7 @@ module Jennifer
       end
 
       extend AbstractClassMethods
+      extend Querying
       include Translation
       include Scoping
       include RelationDefinition
@@ -297,23 +299,6 @@ module Jennifer
         {% begin %}
           QueryBuilder::ModelQuery({{@type}}).build(table_name, adapter)
         {% end %}
-      end
-
-      # Is a shortcut for `.all.where` call.
-      #
-      # ```
-      # User.where { _name == "John" }
-      # ```
-      def self.where(&block)
-        ac = all
-        tree = with ac.expression_builder yield ac.expression_builder
-        ac.set_tree(tree)
-        ac
-      end
-
-      # :ditto:
-      def self.where(conditions : Hash(Symbol, _))
-        all.where(conditions)
       end
 
       # Starts database transaction.

@@ -45,7 +45,7 @@ module Jennifer
             next unless pfv
 
             # Row has primary field -> it is not empty
-            stack[0] = h_result[pfv] ||= T.build(current_attributes, false).as(T)
+            stack[0] = h_result[pfv] ||= T.new(current_attributes, false).as(T)
             models.each_with_index do |model, i|
               read_relation(rs, model, i, stack, column_index, existence, repo)
               column_index += model.actual_table_field_count

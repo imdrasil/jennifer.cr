@@ -4,7 +4,7 @@
 
 To create new object there are several ways:
 
-- create it passing arguments to `#create` method
+- create it passing arguments to `.create` method
 
 ```crystal
 Contact.create(name: "John", age: 18)
@@ -13,26 +13,32 @@ Contact.create(name: "John", age: 18)
 - building it and saving manually
 
 ```crystal
-c = Contact.build({:name => "Horus", :age => 4000})
+c = Contact.new({:name => "Horus", :age => 4000})
 c.age = 18
 c.save
 ```
 
-> Any `::create` and `#save` method call by default process under a transaction. If transaction is already started will not create new one.
+> Any `.create` and `#save` method call by default process under a transaction. If transaction is already started will not create new one.
 
-To insert multiple records at once use `::import`:
+To insert multiple records at once use `.import`:
 
 ```crystal
 objects = [Contact.new({name: "Tom", age: 18}), Contact.new({name: "Jerry", age: 16})]
 Contact.import(objects)
 ```
 
+Other useful methods:
+
+- `.find_or_create_by`
+- `.find_or_create_by!`
+- `.find_or_initialize_by`
+
 #### Read
 
 Object could be retrieved by id using `#find` (returns `T?`) and `#find!` (returns `T` or raises `RecordNotFound` exception) methods.
 
 ```crystal
-Contact.find!(1)
+Contact.find!(1) # #<Contact id: 1>
 ```
 
 Also there is flexible DSL for building queries. To check out other supported methods see [query SQL](./query_dsl.md) section.
@@ -78,7 +84,7 @@ To destroy object use `#delete` (is called without callbacks) or `#destroy`. To 
 ids = [1, 20, 18]
 Contact.destroy(ids)
 Address.delete(1)
-Country.delete(1,2,3)
+Country.delete([1, 2, 3])
 ```
 
 To stop deleting from a callback just add some error:

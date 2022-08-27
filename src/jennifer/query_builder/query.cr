@@ -321,7 +321,7 @@ module Jennifer
       # Jennifer::Query["contacts"].where({:name => "test", :age => 23})
       # # SELECT contacts.* FROM contacts WHERE (contacts.name = 'test' AND contacts.age = 23)
       # ```
-      def where(conditions : Hash(Symbol, _))
+      def where(conditions : Hash(Symbol | String, _))
         array = conditions.map { |field, value| @expression.c(field.to_s).equal(value) }
         set_tree(@expression.and(array))
         self
@@ -360,7 +360,9 @@ module Jennifer
       end
 
       def select(&block)
-        fields = with @expression yield
+        fields = with @expression yield @expression
+        raise ArgumentError.new("returned value is not an array") unless fields.is_a?(Array)
+
         fields.each do |f|
           f.as(RawSql).without_brackets if f.is_a?(RawSql)
         end
@@ -395,9 +397,9 @@ module Jennifer
 
       # Allows to specify a HAVING clause.
       #
-      # Note that you can’t use HAVING without also specifying a GROUP clause.
+      # Note that you can’t use HAVING without specifying a GROUP clause.
       def having
-        other = with @expression yield
+        other = with @expression yield @expression
         if @having.nil?
           @having = other
         else
@@ -464,7 +466,9 @@ module Jennifer
       end
 
       def group(&block)
-        fields = with @expression yield
+        fields = with @expression yield @expression
+        raise ArgumentError.new("returned value is not an array") unless fields.is_a?(Array)
+
         fields.each { |f| f.as(RawSql).without_brackets if f.is_a?(RawSql) }
         _groups!.concat(fields)
         self

@@ -61,7 +61,7 @@ describe Jennifer::Relation::PolymorphicHasMany do
     context "with object" do
       it do
         p = profile.find!(Factory.create_facebook_profile.id)
-        n = note.build(text: "some text")
+        n = note.new({text: "some text"})
         n = example_class.new(relation_name, nil, nil, NoteWithCallback.all, nil, :notable).insert(p, n)
         n.notable_id.should eq(p.id)
         n.notable_type.should eq(profile.to_s)
@@ -72,7 +72,7 @@ describe Jennifer::Relation::PolymorphicHasMany do
   describe "#remove" do
     it do
       p = profile.find!(Factory.create_facebook_profile.id)
-      n = p.add_notes(note.build(text: "some text"))[0]
+      n = p.add_notes(note.new({text: "some text"}))[0]
 
       example_class.new(relation_name, nil, nil, NoteWithCallback.all, nil, :notable).remove(p, n)
       n.reload

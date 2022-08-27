@@ -66,6 +66,28 @@ module Jennifer
         result
       end
 
+      # Finds the first record matching the specified conditions.
+      #
+      # If no record is found, returns `nil`.
+      #
+      # ```
+      # Jennifer::Query["contacts"].find_by({:id => -1}) # => nil
+      # Jennifer::Query["contacts"].find_by({:id => 1})  # => Jennifer::Record
+      # ```
+      def find_by(conditions : Hash(Symbol | String, _))
+        where(conditions).first
+      end
+
+      # Like `#find_by`, except that if no record is found, raises an `Jennifer::RecordNotFound` error.
+      #
+      # ```
+      # Jennifer::Query["contacts"].find_by!({:id => -1}) # Jennifer::RecordNotFound
+      # Jennifer::Query["contacts"].find_by!({:id => 1})  # => Jennifer::Record
+      # ```
+      def find_by!(conditions : Hash(Symbol | String, _))
+        where(conditions).first!
+      end
+
       # Returns array of given field values.
       #
       # This method allows you load only those fields you need without loading records.

@@ -48,7 +48,7 @@ The following validations are added automatically:
 If password confirmation validation is not needed, simply leave out the value for password_confirmation (i.e. don't provide a form field for it). When this attribute has a nil value, the validation will not be triggered.
 
 ```crystal
-user = User.build(name: "david")
+user = User.new(name: "david")
 user.password = ""
 user.password_confirmation = "nomatch"
 user.save # => false, password required

@@ -2,7 +2,7 @@ module Jennifer
   module Model
     # Includes localization methods.
     #
-    # Depends of parent class `::lookup_ancestors` and `::i18n_scope` methods.
+    # Depends of parent class `.lookup_ancestors` and `.i18n_scope` methods.
     module Translation
       module ClassMethods
         # Search translation for given attribute name.

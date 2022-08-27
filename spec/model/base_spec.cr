@@ -132,6 +132,12 @@ describe Jennifer::Model::Base do
         c.id.should_not be_nil
         c.name.should be_nil
       end
+
+      it "builds new object passing it to block" do
+        c = ContactWithNotStrictMapping.create(&.name = "John")
+        c.id.should_not be_nil
+        c.name.should eq("John")
+      end
     end
 
     context "from hash" do
@@ -141,6 +147,12 @@ describe Jennifer::Model::Base do
           contact.id.should_not be_nil
           match_fields(contact, name: "Deepthi", age: 18, gender: "female")
         end
+
+        it "builds new object passing it to block" do
+          c = Contact.create({"name" => "Deepthi", "age" => 18}) { |r| r.gender = "female" }
+          c.id.should_not be_nil
+          match_fields(c, name: "Deepthi", age: 18, gender: "female")
+        end
       end
 
       context "with symbol keys" do
@@ -148,6 +160,12 @@ describe Jennifer::Model::Base do
           contact = Contact.create({:name => "Deepthi", :age => 18, :gender => "female"})
           contact.id.should_not be_nil
           match_fields(contact, name: "Deepthi", age: 18, gender: "female")
+        end
+
+        it "builds new object passing it to block" do
+          c = Contact.create({:name => "Deepthi", :age => 18}) { |r| r.gender = "female" }
+          c.id.should_not be_nil
+          match_fields(c, name: "Deepthi", age: 18, gender: "female")
         end
       end
     end
@@ -163,6 +181,12 @@ describe Jennifer::Model::Base do
         contact = Contact.create(name: "Deepthi", age: 18, gender: "female")
         contact.id.should_not be_nil
         match_fields(contact, name: "Deepthi", age: 18, gender: "female")
+      end
+
+      it "builds new object passing it to block" do
+        c = Contact.create(name: "Deepthi", age: 18) { |r| r.gender = "female" }
+        c.id.should_not be_nil
+        match_fields(c, name: "Deepthi", age: 18, gender: "female")
       end
     end
 
@@ -209,16 +233,9 @@ describe Jennifer::Model::Base do
 
     context "model has column aliases" do
       it "correctly maps column aliases" do
-        a = Author.create(
-          name1: "Samply",
-          name2: "Examplary"
-        )
+        a = Author.create(name1: "Samply", name2: "Examplary")
 
-        Author
-          .where { _first_name == "Samply" }
-          .first!
-          .id
-          .should eq(a.id)
+        Author.all.find_by!({:first_name => "Samply"}).id.should eq(a.id)
       end
     end
 
@@ -243,6 +260,12 @@ describe Jennifer::Model::Base do
         c.id.should_not be_nil
         c.name.should be_nil
       end
+
+      it "builds new object passing it to block" do
+        c = ContactWithNotStrictMapping.create!(&.name = "John")
+        c.id.should_not be_nil
+        c.name.should eq("John")
+      end
     end
 
     context "from hash" do
@@ -252,6 +275,12 @@ describe Jennifer::Model::Base do
           contact.id.should_not be_nil
           match_fields(contact, name: "Deepthi", age: 18, gender: "female")
         end
+
+        it "builds new object passing it to block" do
+          c = Contact.create!({"name" => "Deepthi", "age" => 18}) { |r| r.gender = "female" }
+          c.id.should_not be_nil
+          match_fields(c, name: "Deepthi", age: 18, gender: "female")
+        end
       end
 
       context "with symbol keys" do
@@ -259,6 +288,12 @@ describe Jennifer::Model::Base do
           contact = Contact.create!({:name => "Deepthi", :age => 18, :gender => "female"})
           contact.id.should_not be_nil
           match_fields(contact, name: "Deepthi", age: 18, gender: "female")
+        end
+
+        it "builds new object passing it to block" do
+          c = Contact.create!({:name => "Deepthi", :age => 18}) { |r| r.gender = "female" }
+          c.id.should_not be_nil
+          match_fields(c, name: "Deepthi", age: 18, gender: "female")
         end
       end
     end
@@ -274,6 +309,12 @@ describe Jennifer::Model::Base do
         contact = Contact.create!(name: "Deepthi", age: 18, gender: "female")
         contact.id.should_not be_nil
         match_fields(contact, name: "Deepthi", age: 18, gender: "female")
+      end
+
+      it "builds new object passing it to block" do
+        c = Contact.create!(name: "Deepthi", age: 18) { |r| r.gender = "female" }
+        c.id.should_not be_nil
+        match_fields(c, name: "Deepthi", age: 18, gender: "female")
       end
     end
   end
@@ -406,13 +447,6 @@ describe Jennifer::Model::Base do
         end
         Contact.all.count.should eq(0)
       end
-    end
-  end
-
-  describe ".where" do
-    it "returns query" do
-      res = Contact.where { _id == 1 }
-      res.should be_a(::Jennifer::QueryBuilder::ModelQuery(Contact))
     end
   end
 

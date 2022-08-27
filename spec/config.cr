@@ -62,6 +62,7 @@ def set_default_configuration
   Jennifer::Config.configure do |conf|
     conf.read(File.join(__DIR__, "../scripts/database.yml"), Spec.adapter)
     conf.logger = Spec.logger
+    # conf.logger.level = :debug
     conf.user = ENV["DB_USER"] if ENV["DB_USER"]?
     conf.password = ENV["DB_PASSWORD"] if ENV["DB_PASSWORD"]?
     conf.verbose_migrations = false

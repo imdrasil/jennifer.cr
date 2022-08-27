@@ -12,7 +12,7 @@ class User < Jennifer::Model::Base
   validates_length :login, in: 8..16
 end
 
-user = User.build(login: "login")
+user = User.new(login: "login")
 user.validate!
 user.valid? # false
 user.login = "longlogin"
@@ -64,7 +64,7 @@ Each record has a container to hold error messages - `Accord::ErrorList`. To ret
 By it own `#errors` doesn't trigger validation so first of all you need to perform it explicitly by listed upper methods or using `#validate!` method:
 
 ```crystal
-user = User.build(login: "login")
+user = User.new(login: "login")
 user.errors.any? # false
 user.validate!
 user.errors.any? # true

@@ -93,7 +93,7 @@ describe Jennifer::View::Mapping do
           Factory.create_contact(gender: "male", name: "John")
           count = 0
           MaleContact.all.each_result_set do |rs|
-            record = MaleContact.build(rs)
+            record = MaleContact.new(rs)
             record.gender.should eq("male")
             record.name.should eq("John")
             count += 1
@@ -113,7 +113,7 @@ describe Jennifer::View::Mapping do
 
           count = 0
           PrintPublication.all.each_result_set do |rs|
-            record = PrintPublication.build(rs)
+            record = PrintPublication.new(rs)
             record.title.should eq "ItsNoFunTillSomeoneDies"
             record.v.should eq 11235
             record.pages.should eq 10000
@@ -127,19 +127,19 @@ describe Jennifer::View::Mapping do
 
       describe "from hash" do
         it "creates object" do
-          MaleContact.build({"name" => "Deepthi", "age" => 18, "gender" => "female"})
-          MaleContact.build({:name => "Deepthi", :age => 18, :gender => "female"})
+          MaleContact.new({"name" => "Deepthi", "age" => 18, "gender" => "female"})
+          MaleContact.new({:name => "Deepthi", :age => 18, :gender => "female"})
         end
 
         it "maps aliased columns" do
-          PrintPublication.build({
+          PrintPublication.new({
             "title"     => "OverthinkingOveranalying",
             "v"         => 4,
             "publisher" => "SeparatesTheBodyFromTheMind",
             "pages"     => 924,
             "type"      => "Book",
           })
-          PrintPublication.build({
+          PrintPublication.new({
             :title     => "OverthinkingOveranalying",
             :v         => 4,
             :publisher => "SeparatesTheBodyFromTheMind",
@@ -151,11 +151,11 @@ describe Jennifer::View::Mapping do
 
       describe "from named tuple" do
         it "creates object" do
-          MaleContact.build({name: "Deepthi", age: 18, gender: "female"})
+          MaleContact.new({name: "Deepthi", age: 18, gender: "female"})
         end
 
         it "maps aliased columns" do
-          PrintPublication.build({
+          PrintPublication.new({
             title:     "AndTheWind",
             v:         2,
             publisher: "ShallScreamMyName",
@@ -191,7 +191,7 @@ describe Jennifer::View::Mapping do
       context "mismatching data type during loading from hash" do
         it "raises DataTypeCasting exception" do
           expect_raises(::Jennifer::DataTypeCasting, "Column MaleContact.name can't be casted from Nil to it's type - String") do
-            MaleContact.build({gender: nil})
+            MaleContact.new({gender: nil})
           end
         end
       end
@@ -263,13 +263,13 @@ describe Jennifer::View::Mapping do
         end
 
         it "provides getters for aliased columns" do
-          pb = PrintPublication.build(
-            title: "PrintPublicationsAreTheFutureOfTheInternet",
-            v: 71,
+          pb = PrintPublication.new({
+            title:     "PrintPublicationsAreTheFutureOfTheInternet",
+            v:         71,
             publisher: "AVerySeriousProvider",
-            pages: 13,
-            type: "Article"
-          )
+            pages:     13,
+            type:      "Article",
+          })
 
           pb.title.should eq "PrintPublicationsAreTheFutureOfTheInternet"
           pb.v.should eq 71
@@ -284,13 +284,13 @@ describe Jennifer::View::Mapping do
         end
 
         it "provides setters for aliased columns" do
-          pb = PrintPublication.build(
-            title: "PrintPublicationsAreTheFutureOfTheInternet",
-            v: 71,
+          pb = PrintPublication.new({
+            title:     "PrintPublicationsAreTheFutureOfTheInternet",
+            v:         71,
             publisher: "AVerySeriousProvider",
-            pages: 13,
-            type: "Article"
-          )
+            pages:     13,
+            type:      "Article",
+          })
 
           pb.title = "ProbablyALittleOverexaggerated"
           pb.title.should eq "ProbablyALittleOverexaggerated"
@@ -334,13 +334,13 @@ describe Jennifer::View::Mapping do
       end
 
       it "returns attribute values of mapped fields" do
-        pb = PrintPublication.build(
-          title: "PrintPublicationsAreTheFutureOfTheInternet",
-          v: 71,
+        pb = PrintPublication.new({
+          title:     "PrintPublicationsAreTheFutureOfTheInternet",
+          v:         71,
           publisher: "AVerySeriousProvider",
-          pages: 13,
-          type: "Article"
-        )
+          pages:     13,
+          type:      "Article",
+        })
         pb.attribute("v").should eq 71
         pb.attribute(:v).should eq 71
       end
@@ -392,13 +392,13 @@ describe Jennifer::View::Mapping do
       pending "returns attribute values of mapped fields by the given name" do
         # TODO this does not work since Article#name is mapped to Article#title
         # and PrintPublication does not know about this mapping
-        pb = PrintPublication.build(
-          Article.build(
-            name: "PrintPublicationsAreTheFutureOfTheInternet",
-            version: 71,
+        pb = PrintPublication.new(
+          Article.new({
+            name:      "PrintPublicationsAreTheFutureOfTheInternet",
+            version:   71,
             publisher: "AVerySeriousProvider",
-            pages: 13,
-          ).to_h
+            pages:     13,
+          }).to_h
         )
         pb.attribute("v").should eq 71
         pb.attribute(:v).should eq 71

@@ -37,8 +37,8 @@ describe Jennifer::Record do
       end
     end
 
-    it "raises KeyError if no key is defined" do
-      expect_raises(KeyError) do
+    it "raises Jennifer::BaseException if no key is defined" do
+      expect_raises(Jennifer::BaseException) do
         get_record.unknown_field
       end
     end

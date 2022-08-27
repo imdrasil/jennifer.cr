@@ -63,6 +63,7 @@ Spec.after_each do
   Jennifer::Adapter.default_adapter.rollback_transaction
   pair_only { PAIR_ADAPTER.rollback_transaction }
   Spec.file_system.clean
+  # puts Spec.logger_backend.entries.map(&.data.first).flatten
   Jennifer::Adapter::ICommandShell.stub = false
 end
 

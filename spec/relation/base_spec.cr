@@ -98,7 +98,7 @@ describe Jennifer::Relation::Base do
     context "with object" do
       it do
         p = profile.find!(Factory.create_facebook_profile.id)
-        n = note.build(text: "some text")
+        n = note.new({text: "some text"})
         n = example_relation.insert(p, n)
         n.notable_id.should eq(p.id)
       end

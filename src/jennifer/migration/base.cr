@@ -12,14 +12,14 @@ module Jennifer
     # ```
     # class AddMainFlagToContacts < Jennifer::Migration::Base
     #   def up
-    #     create_table(::contacts) do |t|
+    #     create_table(:contacts) do |t|
     #       t.string :name
     #       t.string :number, {:null => false}
     #     end
     #   end
     #
     #   def down
-    #     drop_table(::contacts)
+    #     drop_table(:contacts)
     #   end
     # end
     # ```
@@ -45,13 +45,13 @@ module Jennifer
     #
     # class AddMainFlagToContacts < Jennifer::Migration::Base
     #   def up
-    #     change_table(::contacts) do |t|
+    #     change_table(:contacts) do |t|
     #       t.add_column :main, :bool, default: true
     #     end
     #   end
     #
     #   def down
-    #     change_table(::contacts) do |t|
+    #     change_table(:contacts) do |t|
     #       t.drop_column :main if column_exists?(:contacts, :main)
     #     end
     #   end
@@ -68,25 +68,25 @@ module Jennifer
     #
     # class AddMainFlagToContacts < Jennifer::Migration::Base
     #   def up
-    #     change_table(::contacts) do |t|
+    #     change_table(:contacts) do |t|
     #       t.add_column :main, :bool, default: true
     #     end
     #   end
     #
     #   def after_up_failure
-    #     change_table(::contacts) do |t|
+    #     change_table(:contacts) do |t|
     #       t.drop_column :main if column_exists?(:contacts, :main)
     #     end
     #   end
     #
     #   def down
-    #     change_table(::contacts) do |t|
+    #     change_table(:contacts) do |t|
     #       t.drop_column :main
     #     end
     #   end
     #
     #   def after_down_failure
-    #     change_table(::contacts) do |t|
+    #     change_table(:contacts) do |t|
     #       t.add_column :main, :bool, default: true unless column_exists?(:contacts, :main)
     #     end
     #   end

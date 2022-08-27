@@ -18,7 +18,7 @@ User.human(count: 2) # Customers
 
 ### Attribute translation lookup
 
-`::human_attribute_name` will use following lookup:
+`.human_attribute_name` will use following lookup:
 
 - `jennifer.attributes.[model_name].attributes.attribute_name`
 - `jennifer.attributes.[parent_model_name].attributes.attribute_name` and so on for all ancestors

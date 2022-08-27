@@ -99,7 +99,7 @@ module Jennifer
     macro method_missing(call)
       {% if call.args.size == 0 %}
         def {{call.name.id}}
-          @attributes[{{call.name.id.stringify}}]
+          attribute({{call.name.id.stringify}})
         end
       {% elsif call.args.size == 1 %}
         def {{call.name.id}}(type : T.class) : T forall T

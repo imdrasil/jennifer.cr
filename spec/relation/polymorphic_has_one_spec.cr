@@ -63,7 +63,7 @@ describe Jennifer::Relation::PolymorphicHasOne do
     context "with object" do
       it do
         p = profile.find!(Factory.create_facebook_profile.id)
-        n = note.build(text: "some text")
+        n = note.new({text: "some text"})
         n = example_relation.insert(p, n)
         n.notable_id.should eq(p.id)
         n.notable_type.should eq(profile.to_s)
@@ -72,7 +72,7 @@ describe Jennifer::Relation::PolymorphicHasOne do
       it "raises exception if related object is already assigned" do
         p1 = profile.find!(Factory.create_facebook_profile.id)
         p2 = profile.find!(Factory.create_facebook_profile.id)
-        n = note.build(text: "some text")
+        n = note.new({text: "some text"})
         n = p2.add_note(n)
         expect_raises(Jennifer::BaseException) do
           example_relation.insert(p1, n)
@@ -85,7 +85,7 @@ describe Jennifer::Relation::PolymorphicHasOne do
     context "with given object" do
       it do
         p = profile.find!(Factory.create_facebook_profile.id)
-        n = p.add_note(note.build(text: "some text"))
+        n = p.add_note(note.new({text: "some text"}))
 
         example_relation.remove(p, n)
         n.reload
@@ -97,7 +97,7 @@ describe Jennifer::Relation::PolymorphicHasOne do
     context "without related object" do
       it do
         p = profile.find!(Factory.create_facebook_profile.id)
-        n = p.add_note(note.build(text: "some text"))
+        n = p.add_note(note.new({text: "some text"}))
 
         example_relation.remove(p)
         n.reload

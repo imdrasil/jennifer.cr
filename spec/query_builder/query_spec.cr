@@ -178,8 +178,15 @@ describe Jennifer::QueryBuilder::Query do
       q1.tree.to_s.should eq(%(#{quote_identifier("contacts.name")} = %s AND (age > %s)))
     end
 
-    it "generates correct request for given hash arguments" do
+    it "generates correct request for given symbol-key hash" do
       q1 = Query["contacts"].where({:name => "John", :age => 12})
+      q1.tree.to_s
+        .should eq(%((#{quote_identifier("contacts.name")} = %s AND #{quote_identifier("contacts.age")} = %s)))
+      q1.tree.not_nil!.sql_args.should eq(db_array("John", 12))
+    end
+
+    it "generates correct request for given string-key hash" do
+      q1 = Query["contacts"].where({"name" => "John", "age" => 12})
       q1.tree.to_s
         .should eq(%((#{quote_identifier("contacts.name")} = %s AND #{quote_identifier("contacts.age")} = %s)))
       q1.tree.not_nil!.sql_args.should eq(db_array("John", 12))
@@ -283,8 +290,8 @@ describe Jennifer::QueryBuilder::Query do
 
   describe "#from" do
     it "accepts plain query" do
-      Factory.build_query(table: "contacts").from("select * from contacts where id > 2").as_sql
-        .should eq(%(SELECT #{quote_identifier("contacts")}.* FROM ( select * from contacts where id > 2 ) ))
+      Factory.build_query(table: "contacts").from("( select * from contacts where id > 2 )").as_sql
+        .should eq(%(SELECT #{quote_identifier("contacts")}.* FROM ( select * from contacts where id > 2 )))
     end
 
     it "accepts query object" do

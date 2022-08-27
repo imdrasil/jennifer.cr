@@ -64,7 +64,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     end
 
     context "with query that has FROM set to string" do
-      it { sb { |io| described_class.from_clause(io, Contact.all.from("here")) }.should eq("FROM ( here ) ") }
+      it { sb { |io| described_class.from_clause(io, Contact.all.from("here")) }.should eq("FROM here") }
     end
 
     context "with query that has FROM set to query" do

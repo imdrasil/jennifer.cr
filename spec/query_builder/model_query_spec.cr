@@ -41,7 +41,8 @@ describe Jennifer::QueryBuilder::ModelQuery do
     pair_only do
       it "respects read/write adapters" do
         Query["addresses", PAIR_ADAPTER].insert({:id => 1, :street => "asd"})
-        Query["addresses", adapter].insert({:id => 1, :street => "asd", :created_at => Time.utc, :updated_at => Time.utc})
+        Query["addresses", adapter]
+          .insert({:id => 1, :street => "asd", :created_at => Time.utc, :updated_at => Time.utc})
         Query["addresses", PAIR_ADAPTER].count.should eq(1)
         Query["addresses"].count.should eq(1)
         WriteAddress.all.destroy
@@ -67,7 +68,8 @@ describe Jennifer::QueryBuilder::ModelQuery do
     pair_only do
       it "respects read/write adapters" do
         Query["addresses", PAIR_ADAPTER].insert({:id => 1, :street => "asd"})
-        Query["addresses", adapter].insert({:id => 1, :street => "asd", :created_at => Time.utc, :updated_at => Time.utc})
+        Query["addresses", adapter]
+          .insert({:id => 1, :street => "asd", :created_at => Time.utc, :updated_at => Time.utc})
         Query["addresses", PAIR_ADAPTER].count.should eq(1)
         Query["addresses"].count.should eq(1)
         WriteAddress.all.patch(street: "qwe")
@@ -268,6 +270,110 @@ describe Jennifer::QueryBuilder::ModelQuery do
         Query["addresses"].count.should eq(0)
         WriteAddress.all.find_by_sql("select * from addresses").size.should eq(0)
       end
+    end
+  end
+
+  describe "#find_or_create_by" do
+    it "finds record by given attributes" do
+      record = Factory.create_contact(name: "John", age: 14)
+      Contact.all.find_or_create_by({:name => "John", :age => 14}).id.should eq(record.id)
+    end
+
+    it "accepts string-key hash" do
+      record = Factory.create_contact(name: "John", age: 14)
+      Contact.all.find_or_create_by({"name" => "John", "age" => 14}).id.should eq(record.id)
+    end
+
+    it "respects existing query" do
+      record = Factory.create_contact(name: "John", age: 14)
+      Factory.create_contact(name: "John", age: 15)
+      Contact.where({:age => 14}).order({:age => :desc}).find_or_create_by({:name => "John"}).id.should eq(record.id)
+    end
+
+    it "creates new record based on given hash" do
+      Contact.all.find_or_create_by({:name => "John", :age => 14}).persisted?.should be_true
+    end
+
+    it "creates new record based on given block" do
+      record = Contact.all.find_or_create_by({:name => "John"}) do |object|
+        object.age = 13
+      end
+      record.persisted?.should be_true
+      record.age.should eq(13)
+      record.name.should eq("John")
+    end
+
+    it "does not raise validation error" do
+      Contact.all.find_or_create_by({:name => "John", :age => 12}).persisted?.should be_false
+    end
+  end
+
+  describe "#find_or_create_by!" do
+    it "finds record by given attributes" do
+      record = Factory.create_contact(name: "John", age: 14)
+      Contact.all.find_or_create_by!({:name => "John", :age => 14}).id.should eq(record.id)
+    end
+
+    it "accepts string-key hash" do
+      record = Factory.create_contact(name: "John", age: 14)
+      Contact.all.find_or_create_by!({"name" => "John", "age" => 14}).id.should eq(record.id)
+    end
+
+    it "respects existing query" do
+      record = Factory.create_contact(name: "John", age: 14)
+      Factory.create_contact(name: "John", age: 15)
+      Contact.where({:age => 14}).order({:age => :desc}).find_or_create_by!({:name => "John"}).id.should eq(record.id)
+    end
+
+    it "creates new record based on given hash" do
+      Contact.all.find_or_create_by!({:name => "John", :age => 14}).persisted?.should be_true
+    end
+
+    it "creates new record based on given block" do
+      record = Contact.all.find_or_create_by!({:name => "John"}) do |object|
+        object.age = 13
+      end
+      record.persisted?.should be_true
+      record.age.should eq(13)
+      record.name.should eq("John")
+    end
+
+    it "raises validation error" do
+      expect_raises(Jennifer::RecordInvalid) do
+        Contact.all.find_or_create_by!({:name => "John", :age => 12})
+      end
+    end
+  end
+
+  describe "#find_or_initialize_by" do
+    it "finds record by given attributes" do
+      record = Factory.create_contact(name: "John", age: 14)
+      Contact.all.find_or_initialize_by({:name => "John", :age => 14}).id.should eq(record.id)
+    end
+
+    it "accepts string-key hash" do
+      record = Factory.create_contact(name: "John", age: 14)
+      Contact.all.find_or_initialize_by({"name" => "John", "age" => 14}).id.should eq(record.id)
+    end
+
+    it "respects existing query" do
+      record = Factory.create_contact(name: "John", age: 14)
+      Factory.create_contact(name: "John", age: 15)
+      Contact.where({:age => 14}).order({:age => :desc}).find_or_initialize_by({:name => "John"}).id
+        .should eq(record.id)
+    end
+
+    it "initializes new record based on given hash" do
+      Contact.all.find_or_initialize_by({:name => "John", :age => 14}).persisted?.should be_false
+    end
+
+    it "creates new record based on given block" do
+      record = Contact.all.find_or_initialize_by({:name => "John"}) do |object|
+        object.age = 13
+      end
+      record.persisted?.should be_false
+      record.age.should eq(13)
+      record.name.should eq("John")
     end
   end
 

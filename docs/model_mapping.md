@@ -169,7 +169,7 @@ Also `#{{field_name}}?` predicate method for the case when it is boolean.
 
 All allowed types are listed on the [Migration](https://imdrasil.github.io/jennifer.cr/docs/migration) page.
 
-All defined mapping properties are accessible via `COLUMNS_METADATA` constant and `::columns_tuple` method.
+All defined mapping properties are accessible via `COLUMNS_METADATA` constant and `.columns_tuple` method.
 
 It may be useful to have one parent class for all your models - just make it abstract and everything will work well:
 

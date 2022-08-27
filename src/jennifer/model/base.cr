@@ -145,6 +145,20 @@ module Jennifer
         o
       end
 
+      # Similar to `.create` but yields initialized object to the block before save it.
+      #
+      # ```
+      # User.create({:first_name => "Jennifer"}) do |user|
+      #   user.last_name = "Doe"
+      # end
+      # ```
+      def self.create(values : Hash | NamedTuple, &block)
+        o = new(values)
+        yield o
+        o.save
+        o
+      end
+
       # Creates an object based on an empty hash and saves it to the database, if validation pass.
       #
       # The resulting object is return whether it was saved to the database or not.
@@ -158,6 +172,20 @@ module Jennifer
         o
       end
 
+      # Similar to `.create` but yields initialized object to the block before save it.
+      #
+      # ```
+      # User.create do |user|
+      #   user.last_name = "Doe"
+      # end
+      # ```
+      def self.create(&block)
+        o = new({} of String => DBAny)
+        yield o
+        o.save
+        o
+      end
+
       # Creates an object based on `values` and saves it to the database, if validation pass.
       #
       # The resulting object is return whether it was saved to the database or not.
@@ -167,6 +195,20 @@ module Jennifer
       # ```
       def self.create(**values)
         o = new(values)
+        o.save
+        o
+      end
+
+      # Similar to `.create` but yields initialized object to the block before save it.
+      #
+      # ```
+      # User.create(name: "Jennifer") do |user|
+      #   user.last_name = "Doe"
+      # end
+      # ```
+      def self.create(**values, &block)
+        o = new(values)
+        yield o
         o.save
         o
       end
@@ -185,6 +227,20 @@ module Jennifer
         o
       end
 
+      # Similar to `.create!` but yields initialized object to the block before save it.
+      #
+      # ```
+      # User.create!({:name => "Jennifer"}) do |user|
+      #   user.last_name = "Doe"
+      # end
+      # ```
+      def self.create!(values : Hash | NamedTuple, &block)
+        o = new(values)
+        yield o
+        o.save!
+        o
+      end
+
       # Creates an object based on empty hash and saves it to the database, if validation pass.
       #
       # Raises an `RecordInvalid` error if validation fail, unlike `.create`.
@@ -198,6 +254,20 @@ module Jennifer
         o
       end
 
+      # Similar to `.create!` but yields initialized object to the block before save it.
+      #
+      # ```
+      # User.create! do |user|
+      #   user.last_name = "Doe"
+      # end
+      # ```
+      def self.create!(&block)
+        o = new({} of Symbol => DBAny)
+        yield o
+        o.save!
+        o
+      end
+
       # Creates an object based on `values` and saves it to the database, if validation pass.
       #
       # Raises an `RecordInvalid` error if validation fail, unlike `.create`.
@@ -207,6 +277,20 @@ module Jennifer
       # ```
       def self.create!(**values)
         o = new(values)
+        o.save!
+        o
+      end
+
+      # Similar to `.create!` but yields initialized object to the block before save it.
+      #
+      # ```
+      # User.create!(name: "Jennifer") do |user|
+      #   user.last_name = "Doe"
+      # end
+      # ```
+      def self.create!(**values, &block)
+        o = new(values)
+        yield o
         o.save!
         o
       end

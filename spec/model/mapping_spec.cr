@@ -1051,7 +1051,7 @@ describe Jennifer::Model::Mapping do
       end
 
       it "raises an exception if column name is used instead of field name" do
-        a = Author.build(name1: "TheO", name2: "TheExample")
+        a = Author.new({name1: "TheO", name2: "TheExample"})
         a.attribute("name1").should eq("TheO")
         a.attribute(:name2).should eq("TheExample")
         expect_raises(::Jennifer::UnknownAttribute) do
@@ -1078,7 +1078,7 @@ describe Jennifer::Model::Mapping do
       end
 
       it "raises an exception if column name is used instead of field name" do
-        a = Author.build(name1: "TheO", name2: "TheExample")
+        a = Author.new({name1: "TheO", name2: "TheExample"})
         a.attribute_before_typecast("name1").should eq("TheO")
         a.attribute_before_typecast(:name2).should eq("TheExample")
         expect_raises(::Jennifer::UnknownAttribute) do
@@ -1157,7 +1157,7 @@ describe Jennifer::Model::Mapping do
 
       it "returns aliased columns" do
         r = Author
-          .build(name1: "Prob", name2: "AblyTheLast")
+          .new({name1: "Prob", name2: "AblyTheLast"})
           .arguments_to_insert
         r[:args].should match_array(db_array("Prob", "AblyTheLast"))
         r[:fields].should match_array(%w(first_name last_name))
@@ -1178,7 +1178,7 @@ describe Jennifer::Model::Mapping do
       end
 
       it "doesn't include generated columns" do
-        tuple = Author.build(name1: "NoIt", name2: "SNot").arguments_to_insert
+        tuple = Author.new({name1: "NoIt", name2: "SNot"}).arguments_to_insert
         tuple[:fields].should eq(%w(first_name last_name))
       end
     end
@@ -1202,7 +1202,7 @@ describe Jennifer::Model::Mapping do
       end
 
       it "creates hash with symbol keys that does not contain the column names" do
-        hash = Author.build(name1: "IsThi", name2: "SFinallyOver").to_h
+        hash = Author.new({name1: "IsThi", name2: "SFinallyOver"}).to_h
         hash.keys.should eq(%i(id name1 name2 full_name))
       end
     end
@@ -1215,7 +1215,7 @@ describe Jennifer::Model::Mapping do
       end
 
       it "creates hash with string keys that does not contain the column names" do
-        hash = Author.build(name1: "NoIt", name2: "SNot").to_str_h
+        hash = Author.new({name1: "NoIt", name2: "SNot"}).to_str_h
         hash.keys.should eq(%w(id name1 name2 full_name))
       end
     end

@@ -35,6 +35,32 @@ describe Jennifer::QueryBuilder::Executables do
     end
   end
 
+  describe "#find_by" do
+    it "returns matched record" do
+      record = Factory.create_contact(name: "John", age: 14)
+      Factory.create_contact(name: "John", age: 13)
+      Query["contacts"].find_by({:name => "John", :age => 14}).not_nil!.id.should eq(record.id)
+    end
+
+    it "returns nil if nothing matches" do
+      Query["contacts"].find_by({:name => "John", :age => 14}).should be_nil
+    end
+  end
+
+  describe "#find_by!" do
+    it "returns matched record" do
+      record = Factory.create_contact(name: "John", age: 14)
+      Factory.create_contact(name: "John", age: 13)
+      Query["contacts"].find_by!({:name => "John", :age => 14}).id.should eq(record.id)
+    end
+
+    it "raises an exception if no record found" do
+      expect_raises(Jennifer::RecordNotFound, /There is no record by given query/) do
+        Query["contacts"].find_by!({:name => "John", :age => 14})
+      end
+    end
+  end
+
   describe "#last" do
     it "inverse all orders" do
       c1 = Factory.create_contact(age: 15)

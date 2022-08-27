@@ -71,7 +71,7 @@ The following methods trigger callbacks:
 - update
 - update!
 
-The `after_initialize` callback is triggered each time record is initialized using method `::build`.
+The `after_initialize` callback is triggered each time record is initialized using method `.new`.
 
 ## Skipping callbacks
 

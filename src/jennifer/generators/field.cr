@@ -22,7 +22,8 @@ module Jennifer
         "timestamp" => "Time",
         "date_time" => "Time",
 
-        "json" => "JSON::Any",
+        "json"  => "JSON::Any",
+        "jsonb" => "JSON::Any",
 
         REFERENCE_TYPE => "Int64",
       }

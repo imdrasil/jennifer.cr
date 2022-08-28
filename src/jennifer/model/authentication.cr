@@ -25,6 +25,8 @@ module Jennifer
           validates_with_method :validate_{{password.id}}_presence
         {% end %}
 
+        after_initialize :initialize_{{password_hash.id}}
+
         def authenticate(given_password)
           self if Crypto::Bcrypt::Password.new({{password_hash.id}}).verify given_password
         end
@@ -52,6 +54,13 @@ module Jennifer
 
         private def validate_{{password.id}}_presence
           errors.add(:{{password.id}}, :blank) if {{password_hash.id}}.blank?
+        end
+
+        private def initialize_{{password_hash.id}}
+          return unless new_record? && {{password.id}}.present?
+
+          self.{{password.id}}= {{password.id}}
+          true
         end
       end
     end

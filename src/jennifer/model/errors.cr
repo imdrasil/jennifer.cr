@@ -120,11 +120,13 @@ module Jennifer
       #
       # More than one error can be added to the same `attribute`.
       # If no `message` is supplied, `:invalid` is assumed.
-      def add(attribute : Symbol, message : String | Symbol = :invalid, count : Int? = nil, options : Hash = {} of String => String)
+      def add(attribute : Symbol, message : String | Symbol | Proc(Translation, String, String) = :invalid,
+              count : Int? = nil, options : Hash = {} of String => String)
         messages[attribute] << generate_message(attribute, message, count, options)
       end
 
-      def add(attribute : Symbol, message : String | Symbol = :invalid, options : Hash = {} of String => String)
+      def add(attribute : Symbol, message : String | Symbol | Proc(Translation, String, String) = :invalid,
+              options : Hash = {} of String => String)
         add(attribute, message, nil, options)
       end
 
@@ -163,16 +165,23 @@ module Jennifer
         @base.class.lookup_ancestors do |ancestor|
           path = "#{prefix}#{ancestor.i18n_key}.attributes.#{attribute}.#{message}"
           return I18n.translate(path, **opts) if I18n.exists?(path, count: count)
+
           path = "#{prefix}#{ancestor.i18n_key}.#{message}"
           return I18n.translate(path, **opts) if I18n.exists?(path, count: count)
         end
 
         path = "#{prefix}#{attribute}.#{message}"
         return I18n.translate(path, **opts) if I18n.exists?(path, count: count)
+
         path = "#{prefix}messages.#{message}"
         return I18n.translate(path, **opts) if I18n.exists?(path, count: count)
 
         Inflector.humanize(message).downcase
+      end
+
+      # Translates an error message in its default scope
+      def generate_message(attribute : Symbol, message : Proc(Translation, String, String), count, options : Hash)
+        message.call(base, attribute.to_s)
       end
 
       def generate_message(attribute : Symbol, message : String, count, options : Hash)

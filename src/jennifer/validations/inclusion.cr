@@ -9,7 +9,9 @@ module Jennifer
         value = opts[:value]
         allow_blank = opts[:allow_blank]
         with_blank_validation(record, field, value, allow_blank) do
-          record.errors.add(field, :inclusion) unless opts[:collection]?.not_nil!.includes?(value.not_nil!)
+          unless opts[:collection]?.not_nil!.includes?(value.not_nil!)
+            record.errors.add(field, opts[:message]? || :inclusion)
+          end
         end
       end
     end

@@ -11,24 +11,24 @@ class User < Jennifer::Model::Base
 
   validates_length :login, in: 8..16
 end
-
-user = User.new(login: "login")
-user.validate!
-user.valid? # false
-user.login = "longlogin"
-user.validate!
-user.valid? # true
 ```
+
+```crystal
+User.create({login: "login"}).valid? # => false
+User.create({login: "loginlogin"}).valid? # => true
+```
+
+As you can see, our validation lets us know that our `User` is not valid with a too short login attribute. Once we set long enough value `User` will not be persisted to the database.
 
 ## Trigger validation
 
 The following model methods triggers validations in a scope of own execution:
 
+- `.create`
+- `.create!`
 - `#validate`
 - `#validate!`
 - `#valid?`
-- `.create`
-- `.create!`
 - `#save`
 - `#save_without_transaction`
 - `#save!`
@@ -57,71 +57,11 @@ Some methods skip validation on invocation:
 
 > NOTE: `#invalid?` method will only check if `#errors` is empty.
 
-## Accessing errors list
-
-Each record has a container to hold error messages - `Accord::ErrorList`. To retrieve it use `#errors` method.
-
-By it own `#errors` doesn't trigger validation so first of all you need to perform it explicitly by listed upper methods or using `#validate!` method:
-
-```crystal
-user = User.new(login: "login")
-user.errors.any? # false
-user.validate!
-user.errors.any? # true
-```
-
-### `errors[]`
-
-To check whether or not a particular attribute of an object is valid you can use  `#errors[:attribute]`. It returns an array of error messages for `:attribute`. If there is no error - empty array will be returned.
-
-### `#errors.add`
-
-This methods let you add an error message related to a particular attribute. It takes as arguments tre attribute and the error message.
-
-```crystal
-user = User.create(login: "login")
-user.errors.add(:login, "Some custom message")
-```
-
-### `errors.clear!`
-
-The `#clear!` method is used when all error messages should be removed. It is automatically invoked by `#validate!`.
-
-### Non-model usage
-
-It is possible to use `Jennifer::Model::Errors` for handling errors of any class that includes `Jennifer::Model::Translation` and implements `.superclass` method.
-
-```crystal
-class Post
-  include Jennifer::Model::Translation
-
-  property title : String?
-  getter errors
-
-  def initialize
-    @errors = Jennifer::Model::Errors.new(self)
-  end
-
-  def validate
-    errors.clear
-    errors.add(:title, :blank) if title.nil?
-  end
-
-  # The following method is needed to be minimally implemented
-
-  def self.superclass; end
-end
-
-post = Post.new
-post.validate
-post.errors[:title] # "can't be blank"
-```
-
 ## Validation macros
 
 Please take into account that all validators described below implement singleton pattern - there is only one instance of each of them in application.
 
-### `acceptance`
+### `validates_acceptance`
 
 This macro validates that a given field equals to true or be one of given values. This is useful for validating checkbox value:
 
@@ -141,7 +81,7 @@ end
 
 By default `"1"` and `true` is recognized as accepted values, but, as described, this behavior could be override by passing `accept` option with array.
 
-### `confirmation`
+### `validates_confirmation`
 
 This validation helps to check if confirmation field was filled with same value as specified.
 
@@ -164,7 +104,7 @@ If confirmation is nil - this validation will be skipped. Such behavior allows t
 
 To make comparison case insensitive - specify second argument as `true`.
 
-### `exclusion`
+### `validates_exclusion`
 
 This macro validates that the attribute's value aren't included in a given set. This could be any object which responds to `#includes?` method.
 
@@ -179,7 +119,7 @@ class Country < Jennifer::Base::Model
 end
 ```
 
-### `format`
+### `validates_format`
 
 This macro validates that the attribute's value satisfies given regular expression.
 
@@ -194,7 +134,7 @@ class Contact < Jennifer::Model::Base
 end
 ```
 
-### `inclusion`
+### `validates_inclusion`
 
 This macro validates that the attribute's value are included in the set. This could be any object which responds to `#includes?` method.
 
@@ -209,7 +149,7 @@ class User < Jennifer::Base::Model
 end
 ```
 
-### `length`
+### `validates_length`
 
 This macro validates the attribute's value length. There are a lot of options so constraint can be specified in different ways.
 
@@ -232,7 +172,7 @@ The possible constraints are:
 - `in` - length must be included in given **interval**
 - `is` - length must be same as specified
 
-### `numericality`
+### `validates_numericality`
 
 This macro validates if given number field satisfies specified constraints.
 
@@ -258,7 +198,7 @@ This macro accepts following constraints:
 - `odd`
 - `even`
 
-### `presence_of`
+### `validates_presence`
 
 This macro validates that attribute's value is not empty. It uses `#blank?` method from the core pact of [Ifrit](https://github.com/imdrasil/ifrit#core).
 
@@ -273,7 +213,7 @@ class User < Jennifer::Model::Base
 end
 ```
 
-### `absence`
+### `validates_absence`
 
 This validates that attribute's value is blank. It uses `#blank?` method from Ifrit as well as `presence` validation.
 
@@ -287,7 +227,7 @@ class SuperUser < User
 end
 ```
 
-### `uniqueness`
+### `validates_uniqueness`
 
 This validates that the attribute's value is unique right before object gets validated. It doesn't create any db constraint so it doesn't totally guaranty that another another application instance creates record with save value in overlapping time. **Don't use** this validation for sensitive data. On the other hand this could help in generating readable error messages.
 
@@ -347,18 +287,6 @@ class User < Jennifer::Model::Base
 end
 ```
 
-### `allow_blank` validation option
-
-This option skip validation if attribute's value is `nil`. All validation methods accepts this except:
-
-- `uniqueness`
-- `presence`
-- `absence`
-- `acceptance`
-- `confirmation`
-
-By default it is set to `false`.
-
 ### `if` validation option
 
 Sometimes it will make sense to validate an object only when a given predicate is satisfied. You can do that by using the :if option, which can take a symbol or an expression. You may use the :if option when you want to specify when the validation should happen.
@@ -388,6 +316,88 @@ class Player < Jennifer::Model::Base
   )
 
   validates_numericality :health, greater_than: 0, if: !undead
+end
+```
+
+## Common validation options
+
+These are common validation options:
+
+### `allow_blank`
+
+This option skip validation if attribute's value is `nil`. All validation methods accepts this except following:
+
+- `uniqueness`
+- `presence`
+- `absence`
+- `acceptance`
+- `confirmation`
+
+By default it is set to `false`.
+
+### `if`
+
+Sometimes it will make sense to validate an object only when a given predicate is satisfied. You can do that by using the :if option, which can take a symbol or an expression. You may use the :if option when you want to specify when the validation should happen.
+
+The symbol value of :if options corresponds to the method name that will get called right before validation happens.
+
+```crystal
+class Player < Jennifer::Model::Base
+  mapping(
+    # ...
+    health: Float64,
+    live_creature: {type: Bool, default: true, virtual: true}
+  )
+
+  validates_numericality :health, greater_than: 0, if: :live_creature
+end
+```
+
+An expression may be used to simulate *unless* behavior of simple condition without wrapping it into a method.
+
+```crystal
+class Player < Jennifer::Model::Base
+  mapping(
+    # ...
+    health: Float64,
+    undead: {type: Bool, default: false, virtual: true}
+  )
+
+  validates_numericality :health, greater_than: 0, if: !undead
+end
+```
+
+### `message`
+
+the `message` option lets you specify the message that will be added to the errors collection when validation fails. When this option is not used,respective default error message for each validation is used. The `message` option accepts a `String`, `Symbol` or `Proc`.
+
+A `String` `message` value is used as a validation error message as-is.
+
+A `Proc` `message` value is given two arguments: the object being validated and a field name.
+
+A `Symbol` `message` is used as a message name and Jennifer will try to find it for model-attribute combination using default message resolving hierarchy. For more information about this read [Internationalization](./internationalization.md) section.
+
+```crystal
+class Person < Jennifer::Model::Base
+  mapping(
+    id: Primary64,
+    name: String?,
+    age: Int32?,
+    username: String?
+  )
+
+  # Hard-coded message
+  validates_presence :name, message: "must be given please"
+
+  # Message i18n name.
+  validates_numericality :age, greater_than: 18, message: :invalid
+
+  # Proc
+  validates_uniqueness :username,
+    message: ->(object : Jennifer::Model::Translation, field : String) do
+      record = object.as(Person)
+      "Hey #{record.name}, #{record.attribute(field)} is already taken."
+    end
 end
 ```
 
@@ -446,4 +456,64 @@ class CustomValidator < Jennifer::Validations::Validator
   def validate(record)
   end
 end
+```
+
+## Accessing errors list
+
+Each record has a container to hold error messages - `Accord::ErrorList`. To retrieve it use `#errors` method.
+
+By it own `#errors` doesn't trigger validation so first of all you need to perform it explicitly by listed upper methods or using `#validate!` method:
+
+```crystal
+user = User.new(login: "login")
+user.errors.any? # false
+user.validate!
+user.errors.any? # true
+```
+
+### `errors[]`
+
+To check whether or not a particular attribute of an object is valid you can use  `#errors[:attribute]`. It returns an array of error messages for `:attribute`. If there is no error - empty array will be returned.
+
+### `#errors.add`
+
+This methods let you add an error message related to a particular attribute. It takes as arguments tre attribute and the error message.
+
+```crystal
+user = User.create(login: "login")
+user.errors.add(:login, "Some custom message")
+```
+
+### `errors.clear!`
+
+The `#clear!` method is used when all error messages should be removed. It is automatically invoked by `#validate!`.
+
+### Non-model usage
+
+It is possible to use `Jennifer::Model::Errors` for handling errors of any class that includes `Jennifer::Model::Translation` and implements `.superclass` method.
+
+```crystal
+class Post
+  include Jennifer::Model::Translation
+
+  property title : String?
+  getter errors
+
+  def initialize
+    @errors = Jennifer::Model::Errors.new(self)
+  end
+
+  def validate
+    errors.clear
+    errors.add(:title, :blank) if title.nil?
+  end
+
+  # The following method is needed to be minimally implemented
+
+  def self.superclass; end
+end
+
+post = Post.new
+post.validate
+post.errors[:title] # "can't be blank"
 ```

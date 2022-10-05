@@ -13,9 +13,10 @@ module Jennifer
         value = opts[:value]
         with_blank_validation(record, field, value, false) do
           return true if value.not_nil!.compare(confirmation.not_nil!, !opts[:case_sensitive]?.not_nil!) == 0
+
           record.errors.add(
             field,
-            :confirmation,
+            opts[:message]? || :confirmation,
             options: {:attribute => record.class.human_attribute_name(field)}
           )
         end

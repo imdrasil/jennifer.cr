@@ -173,6 +173,24 @@ module Spec
     end
   end
 
+  struct ValidationMessageExpectation
+    def initialize(@field : Symbol, @message : String?)
+    end
+
+    def match(record)
+      errors = (record.errors[@field]? || %w[])
+      @message.nil? ? !errors.empty? : errors.includes?(@message)
+    end
+
+    def failure_message(record)
+      "Expected record to have validation message `#{@message}` for `#{@field}` in `#{record.errors[@field]}`"
+    end
+
+    def negative_failure_message(record)
+      "Expected record not to have validation message `#{@message}` for `#{@field}` in `#{record.errors[@field]}`"
+    end
+  end
+
   module Expectations
     macro expect_queries_to_be_executed(amount)
       %count = query_count
@@ -219,6 +237,10 @@ module Spec
 
     def match_array(expected)
       MatchArrayExpectation.new(expected)
+    end
+
+    def has_error_message(field : Symbol, message : String? = nil)
+      ValidationMessageExpectation.new(field, message)
     end
   end
 end

@@ -9,7 +9,7 @@ module Jennifer
         value = opts[:value]
         allow_blank = opts[:allow_blank]
         with_blank_validation(record, field, value, allow_blank) do
-          record.errors.add(field, :invalid) unless opts[:format]?.not_nil! =~ value
+          record.errors.add(field, opts[:message]? || :invalid) unless opts[:format]?.not_nil! =~ value
         end
       end
     end

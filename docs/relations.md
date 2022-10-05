@@ -1,43 +1,199 @@
-# Relations
+# Relationships
 
-There are 4 types of relations: `has_many`, `has_and_belongs_to_many`, `belongs_to` and `has_one`. All of them have same semantic but generate slightly different methods.
+A relationship is a connection between two models. They make common operations simpler and easier in your code. For example, consider a simple application that includes a model for authors and a model for books. Each author can have many books. Without relations, the model declarations would look like this:
 
-They takes next arguments:
+```crystal
+class Author < Jennifer::Model::Base
+  mapping(
+    id: Primary64,
+  )
+end
+
+class Book < Jennifer::Model::Base
+  mapping(
+    id: Primary64,
+    author_id: Int64?,
+    title: String
+  )
+end
+```
+
+Now, suppose we wanted to add a new book for an existing author. We'd need to do something like this:
+
+```crystal
+author = Author.first!
+book = Book.create({author_id: author.id, title: "Kobzar"})
+```
+
+Or consider deleting an author, and ensuring that all of its books get deleted as well:
+
+```crystal
+books = Book.where(author_id: author.id)
+books.each(&.destroy)
+author.destroy
+```
+
+With relations we can simplify such kind of operations by defining that there is a connection between the two models. Here's the revised code for setting up authors and books:
+
+```crystal
+class Author < Jennifer::Model::Base
+  mapping(
+    id: Primary64,
+  )
+
+  has_many :books, Book, dependent: :destroy
+end
+
+class Book < Jennifer::Model::Base
+  mapping(
+    id: Primary64,
+    author_id: Int64?,
+    title: String
+  )
+
+  belongs_to :author, Author
+end
+```
+
+With this change, creating a new book for a particular author is easier:
+
+
+```crystal
+book = author.add_book({title: "Kobzar"})
+```
+
+Deleting an author and all of its books is much easier:
+
+```crystal
+author.destroy
+```
+
+## Types of Relationships
+
+There are 4 types of relations: `has_many`, `has_and_belongs_to_many`, `belongs_to` and `has_one`.
+
+They take the next list of arguments:
 
 - `name` - relation name
 - `klass` - target class
 - `request` - additional request (will be used inside of where clause) - optional
 - `foreign` - name of foreign key - optional; by default use singularized table name + "_id"
 - `primary` - primary field name - optional;  by default it uses default primary field of class.
+- other
 
-has_and_belongs_to_many also accepts extra 2 arguments and use regular arguments slightly in another way:
+### `belongs_to`
 
-- `join_table` - join table name; be default relation table names in alphabetic order joined by underscore is used
-- `join_foreign` - foreign key for current model (left foreign key of join table)
-- `foreign` - used as right foreign key
-- `primary` - used as primary field of current table; for now it properly works only if both models in this relation has primary field named `id`
+In database terms, the `belongs_to` association says that this model's table contains a column which represents a reference to another table. This can be used to set up one-to-one or one-to-many relations.
 
-All relation macros provide next methods:
+The next methods are automatically generated when you use `belongs_to` relation:
 
-- `#{{relation_name}}` - cache relation object (or array of them) and returns it;
-- `#{{relation_name}}_reload` - reload relation and returns it;
-- `#{{relation_name}}_query` - returns query which is used to get objects of this object relation entities form db.
-- `#remove_{{relation_name}}` - removes given object from relation
-- `#add_{{relation_name}}` - adds given object to relation or builds it from hash and then adds
+- `#relation` - cache relation object;
+- `#relation_reload` - reload relation and returns it;
+- `#relation_query` - returns query which is used to get objects of this object relation entities form db.
+- `#remove_relation` - removes given object from relation
+- `#add_relation` - adds given object to relation or builds it from hash and then adds
+- `#relation!` - calls `#relation` with a `nil` assertion
 
-This allows dynamically adds objects to relations with automatically setting foreign id:
+Supports following extra options:
+
+- `dependent` - defines extra callback for cleaning up related data after destroying parent one
+- `polymorphic` - passing true indicates that this is a polymorphic association
+- `foreign_type` - specifies the column used to store the associated object's type; can be used for a polymorphic relation
+- `required` - passing `true` will validate presence of related object; by default it is `false`
+
+#### `dependent`
+
+Allowed values are:
+
+- `none` - will do nothing; default
+- `delete` - deletes all related objects
+- `destroy` - destroys all related objects
+- `restrict_with_exception` - will raise `Jennifer::RecordExists` exception if there is any related object
+
+#### `required`
+
+Besides `true`/`false` values it also accepts same values supported by `message` option of validation macro (read more in [validation](./validation.md) section).
 
 ```crystal
-contact = Contact.all.find!
-contact.add_addresses({:main => true, :street => "some street", :details => nil})
+class Post < Jennifer::Model::Base
+  mapping(
+    id: Primary64,
+    title: String?,
+    user_id: Int64?
+  )
 
-address = contact.addresses.last
-contact.remove_addresses(address)
+  belongs_to :user, User, required: ->(object : Jennifer::Model::Translation, _field : String) do
+      record = object.as(Post)
+      "Post #{record.title} isn't attached to any user"
+    end
+end
 ```
 
-`belongs_to` and `has_one` add extra method `#relation_name!` which also adds assertion for `nil` inside of it.
+### `has_one`
 
-`%has_and_belongs_to_many` relation allows to define many-to-many relationship between 2 models. By given parameters could be specified field names described on the next schema:
+The `has_one` relation creates a one-to-one match with another model. In database terms, this relationship says that the other class contains the foreign key. If this class contains the foreign key, then you should use `belongs_to` instead.
+
+The next methods are automatically generated when you use `has_one` relation:
+
+- `#relation` - cache relation object;
+- `#relation_reload` - reload relation and returns it;
+- `#relation_query` - returns query which is used to get objects of this object relation entities form db.
+- `#remove_relation` - removes given object from relation
+- `#add_relation` - adds given object to relation or builds it from hash and then adds
+- `#relation!` - calls `#relation` with a `nil` assertion
+
+Supports following extra options:
+
+- `dependent` - defines extra callback for cleaning up related data after destroying parent one
+- `polymorphic` - passing true indicates that this is a polymorphic association
+- `foreign_type` - specifies the column used to store the associated object's type; can be used for a polymorphic relation
+- `inverse_of` - specifies the name of the `belongs_to` association that is the inverse of this relationship
+
+#### `dependent`
+
+Allowed values are:
+
+- `nullify` - sets foreign key to `null`; default
+- `none` - will do nothing
+- `delete` - deletes all related objects
+- `destroy` - destroys all related objects
+- `restrict_with_exception` - will raise `Jennifer::RecordExists` exception if there is any related object
+
+### `has_many`
+
+The `has_many` relationship creates a one-to-many relationship with another model. In database terms, this relationship says that the other class will have a foreign key that refers to instances of this class.
+
+The next methods are automatically generated when you use `has_many` relation:
+
+- `#relation` - cache relationship collection;
+- `#relation_reload` - reload relation and returns it;
+- `#relation_query` - returns query which is used to get objects of this object relation entities form db.
+- `#remove_relation` - removes given object from relation
+- `#add_relation` - adds given object to relation or builds it from hash and then adds
+- `#relation_reload` - reloads related objects from the DB
+
+Supports following extra options:
+
+- `dependent` - defines extra callback for cleaning up related data after destroying parent one
+- `polymorphic` - passing true indicates that this is a polymorphic association
+- `foreign_type` - specifies the column used to store the associated object's type; can be used for a polymorphic relation
+- `inverse_of` - specifies the name of the `belongs_to` association that is the inverse of this relationship
+
+#### `dependent`
+
+Allowed values are:
+
+- `nullify` - sets foreign key to `null`; default
+- `none` - will do nothing
+- `delete` - deletes all related objects
+- `destroy` - destroys all related objects
+- `restrict_with_exception` - will raise `Jennifer::RecordExists` exception if there is any related object
+
+### `has_and_belongs_to_many`
+
+The `has_and_belongs_to_many` association creates a many-to-many relationship with another model. In database terms, this associates two classes via an intermediate join table that includes foreign keys referring to each of the classes.
+
+By given parameters could be specified field names described on the next schema:
 
 ```text
 | "Model A" |   | "Join Table" (join_table) |       | "Model B"               |
@@ -48,48 +204,89 @@ contact.remove_addresses(address)
 
 As you can see primary field of related model can't be specified - defined primary key (in the mapping) will be got.
 
-Also `has_many`, `belongs_to` and `has_one` relations have `dependent` parameter - defines extra callback for cleaning up related data after destroying parent one. Allowed types are:
+The next methods are automatically generated when you use `has_many` relation:
 
-- `nullify` - sets foreign key to `null` (`belongs_to` doesn't support it) - default for `has_many` and `has_one`
-- `delete` - deletes all related objects
-- `destroy` - destroys all related objects
-- `restrict_with_exception` - will raise `Jennifer::RecordExists` exception if there is any related object
-- `none` - will do nothing - default for `belongs_to`
+- `#relation` - cache relationship collection;
+- `#relation_reload` - reload relation and returns it;
+- `#relation_query` - returns query which is used to get objects of this object relation entities form db.
+- `#remove_relation` - removes given object from relation
+- `#add_relation` - adds given object to relation or builds it from hash and then adds
+- `#relation_reload` - reloads related objects from the DB
+
+Supports following extra options:
+
+- `join_table` - specifies the name of the join table if the default based on lexical order isn't what you want
+- `association_foreign` - specifies the foreign key used for the association on the receiving side of the association
 
 ## Inverse of
 
-`has_many` and `has_one` relations also accepts `inverse_of` option which presents inverse relation name. Specifying this option will automatically load owner object during any relation loading (because of `ModelQuery#includes` or `ModelQuery#eager_load` or even plaint `SomeModel#relation_name` method call).
+Active Record provides the :inverse_of option so you can explicitly declare bi-directional associations:
 
-## Polymorphic Relations
-
-Polymorphic relation can be easily configured:
+`has_many` and `has_one` relations accepts `inverse_of` option so you can explicitly declare bi-directional associations:
 
 ```crystal
-class Photo < Jennifer::Model::Base
-  mapping(
-    # ...
-    attachable_type: String?,
-    attachable_id: int32?
-  )
+class Author < Jennifer::Model::Base
+  mapping(id: Primary64)
 
-  # klass options specifies the exact union of models allowed to use this one
-  belongs_to :attachable, Union(Post | Comment), polymorphic: true
+  has_many :books, Book, dependent: :destroy, inverse_of: :writer
 end
 
-class Post < Jennifer::Model::Base
-  # ...
+class Book < Jennifer::Model::Base
+  mapping(
+    id: Primary64,
+    author_id: Int64?
+  )
 
-  # The :inverse_of option here specifies the polymorphic interface and is required
-  has_many :photos, Photo, polymorphic: true, inverse_of: :attachable
+  belongs_to :writer, Author, foreign: :author_id
 end
 ```
 
-This works by using a type column in addition to a foreign key to specify the associated record. In the `Photo` example, you'd need an `attachable_id` integer column and an `attachable_type` string column.
-
-**Important restriction**: Polymorphic belongs_to relation can't be loaded dynamically. E.g., based on the previous example:
+By including the `:inverse_of` option in the `has_many` association declaration, Jennifer will now recognize the bi-directional association:
 
 ```crystal
-Photo.all.includes(:attachable) # This is forbidden
-# and
-photo.attachable_query # => Jennifer::QueryBuilder::Query instead of Jennifer::QueryBuilder::ModelQuery
+author = Author.first!
+book = author.books.first!
+author.object_id == book.writer.object_id # => true
+```
+
+## Polymorphic Relations
+
+With polymorphic relations, a model can belong to more than one other model, on a single association. For example, you might have a picture model that belongs to either an employee model or a product model. Here's how this could be declared:
+
+```crystal
+class Picture < Jennifer::Model::Base
+  mapping(
+    id: Primary64,
+    imageable_type: String?,
+    imageable_id: Int64?
+  )
+
+  belongs_to :imageable, Union(Employee | Product) polymorphic: true
+end
+
+class Employee < Jennifer::Model::Base
+  mapping(
+    id: Primary64
+  )
+
+  has_many :pictures, Picture, polymorphic: true, inverse_of: :imageable
+end
+
+class Product < Jennifer::Model::Base
+  mapping(
+    id: Primary64
+  )
+
+  has_many :pictures, Picture, polymorphic: true, inverse_of: :imageable
+end
+```
+
+You can think of a polymorphic `belongs_to` declaration as setting up an interface that any other model can use. From an instance of the `Employee` model, you can retrieve a collection of pictures: `employee.pictures`.
+
+Similarly, you can retrieve `product.pictures`.
+
+**Important restriction**: Polymorphic `belongs_to` relation can't be loaded dynamically. E.g., based on the previous example:
+
+```crystal
+Picture.includes(:imageable) # This is forbidden
 ```

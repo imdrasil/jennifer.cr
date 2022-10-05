@@ -104,6 +104,35 @@ class CustomValidatorModel < ApplicationRecord
   validates_with ValidatorWithOptions, field: :name, message: "Custom Message"
 end
 
+class SymbolMessageValidationModel < ApplicationRecord
+  mapping({
+    id:   Primary64,
+    name: String,
+  })
+
+  validates_format :name, /qwe/, message: :present
+end
+
+class StringMessageValidationModel < ApplicationRecord
+  mapping({
+    id:   Primary64,
+    name: String,
+  })
+
+  validates_length :name, is: 3, message: "String message"
+end
+
+class ProcMessageValidationModel < ApplicationRecord
+  mapping({
+    id:   Primary64,
+    name: String,
+  })
+
+  validates_length :name, is: 3, message: ->(record : Jennifer::Model::Translation, _field : String) do
+    record.as(ProcMessageValidationModel).name
+  end
+end
+
 describe Jennifer::Model::Validation do
   describe "if option" do
     context "with negative response" do
@@ -122,6 +151,23 @@ describe Jennifer::Model::Validation do
         c.age = 14
         c.should_not be_valid
       end
+    end
+  end
+
+  describe "message option" do
+    it "uses string value as a complete message" do
+      record = StringMessageValidationModel.new({name: "1234"})
+      record.should validate(:name).with("String message")
+    end
+
+    it "uses symbol message as a key for message translation lookup" do
+      record = SymbolMessageValidationModel.new({name: "1234"})
+      record.should validate(:name).with("must be blank")
+    end
+
+    it "uses proc message to generate message dynamically" do
+      record = ProcMessageValidationModel.new({name: "1234"})
+      record.should validate(:name).with("1234")
     end
   end
 

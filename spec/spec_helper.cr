@@ -72,15 +72,27 @@ end
 UTC    = Time::Location.load("UTC")
 BERLIN = Time::Location.load("Europe/Berlin")
 
-macro validated_by_record(type, value, field = :age, allow_blank = true)
-  Factory.build_contact.tap do |record|
+macro validated_by_record(field, value, opts = {} of Void => Void)
+  begin
+    allow_blank = {{opts[:allow_blank]}} || true
+    __record__ =
+      {% if !opts[:record] %}
+        Factory.build_contact
+      {% else %}
+        {{opts[:record]}}
+      {% end %}
     described_class.instance.validate(
-      record,
+      __record__,
       field: {{field}},
       value: {{value}},
-      allow_blank: {{allow_blank}},
-      {{type.stringify[1...-1].id}}
+      allow_blank: allow_blank,
+      {% for key, value in opts %}
+        {% if key != :allow_blank && key != :record %}
+          {{key.id}}: {{value}},
+        {% end %}
+      {% end %}
     )
+    __record__
   end
 end
 

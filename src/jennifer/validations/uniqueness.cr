@@ -13,7 +13,7 @@ module Jennifer
           _query = opts[:query]?.not_nil!.clone
           _query.where { primary != record.primary } unless record.new_record?
 
-          record.errors.add(field, :taken) if _query.exists?
+          record.errors.add(field, opts[:message]? || :taken) if _query.exists?
         end
       end
     end

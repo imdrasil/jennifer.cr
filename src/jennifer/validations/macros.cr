@@ -63,7 +63,7 @@ module Jennifer
       #   validates_inclusion :code, in: Country::KNOWN_COUNTRIES
       # end
       # ```
-      macro validates_inclusion(field, in in_value, allow_blank = false, if if_value = nil)
+      macro validates_inclusion(field, in in_value, allow_blank = false, if if_value = nil, message = nil)
         validates_with_method(%validate_method, if: {{if_value}})
 
         # :nodoc:
@@ -73,7 +73,8 @@ module Jennifer
             field: {{field}},
             value: {{field.id}},
             allow_blank: {{allow_blank}},
-            collection: {{in_value}}
+            collection: {{in_value}},
+            message: {{message}}
           )
         end
       end
@@ -90,7 +91,7 @@ module Jennifer
       #   validates_exclusion :code, in: %w(AA DD)
       # end
       # ```
-      macro validates_exclusion(field, in in_value, allow_blank = false, if if_value = nil)
+      macro validates_exclusion(field, in in_value, allow_blank = false, if if_value = nil, message = nil)
         validates_with_method(%validate_method, if: {{if_value}})
 
         # :nodoc:
@@ -100,7 +101,8 @@ module Jennifer
             field: {{field}},
             value: {{field.id}},
             allow_blank: {{allow_blank}},
-            collection: {{in_value}}
+            collection: {{in_value}},
+            message: {{message}}
           )
         end
       end
@@ -118,7 +120,7 @@ module Jennifer
       #   validates_format :street, /st\.|street/i
       # end
       # ```
-      macro validates_format(field, value, allow_blank = false, if if_value = nil)
+      macro validates_format(field, value, allow_blank = false, if if_value = nil, message = nil)
         validates_with_method(%validate_method, if: {{if_value}})
 
         # :nodoc:
@@ -128,7 +130,8 @@ module Jennifer
             field: {{field}},
             value: {{field.id}},
             allow_blank: {{allow_blank}},
-            format: {{value}}
+            format: {{value}},
+            message: {{message}}
           )
         end
       end
@@ -151,7 +154,7 @@ module Jennifer
       #   validates_length :uid, is: 16
       # end
       # ```
-      macro validates_length(field, if if_value = nil, **options)
+      macro validates_length(field, if if_value = nil, message = nil, **options)
         {% options[:allow_blank] = options[:allow_blank] == nil ? false : options[:allow_blank] %}
         validates_with_method(%validate_method, if: {{if_value}})
 
@@ -161,6 +164,7 @@ module Jennifer
             self,
             field: {{field}},
             value: {{field.id}},
+            message: {{message}},
             {{**options}}
           )
         end
@@ -181,7 +185,7 @@ module Jennifer
       #   validate_uniqueness :code
       # end
       # ```
-      macro validates_uniqueness(*fields, allow_blank allow_blank_value = false, if if_value = nil)
+      macro validates_uniqueness(*fields, allow_blank allow_blank_value = false, if if_value = nil, message = nil)
         # raise a compile time error if a uniqueness validator is specified
         # that does not define any properties
         {% raise "A uniqueness check requires at least one field" if fields.empty? %}
@@ -207,6 +211,7 @@ module Jennifer
             # pass on nil here to signal nil values in record
             value: {{normalized_fields}}.all?(&.nil?) ? nil : {{normalized_fields}},
             allow_blank: {{allow_blank_value}},
+            message: {{message}},
             query: self.class{{fields_condition.id}}
           )
         end
@@ -224,12 +229,17 @@ module Jennifer
       #   validates_presence :email
       # end
       # ```
-      macro validates_presence(field, if if_value = nil)
+      macro validates_presence(field, if if_value = nil, message = nil)
         validates_with_method(%validate_method, if: {{if_value}})
 
         # :nodoc:
         def %validate_method
-          ::Jennifer::Validations::Presence.instance.validate(self, field: {{field}}, value: {{field.id}})
+          ::Jennifer::Validations::Presence.instance.validate(
+            self,
+            field: {{field}},
+            value: {{field.id}},
+            message: {{message}}
+          )
         end
       end
 
@@ -243,12 +253,17 @@ module Jennifer
       #   validates_absence :title
       # end
       # ```
-      macro validates_absence(field, if if_value = nil)
+      macro validates_absence(field, if if_value = nil, message = nil)
         validates_with_method(%validate_method, if: {{if_value}})
 
         # :nodoc:
         def %validate_method
-          ::Jennifer::Validations::Absence.instance.validate(self, field: {{field}}, value: {{field.id}})
+          ::Jennifer::Validations::Absence.instance.validate(
+            self,
+            field: {{field}},
+            value: {{field.id}},
+            message: {{message}}
+          )
         end
       end
 
@@ -273,7 +288,7 @@ module Jennifer
       #   validates_numericality :health, greater_than: 0
       # end
       # ```
-      macro validates_numericality(field, if if_value = nil, **options)
+      macro validates_numericality(field, if if_value = nil, message = nil, **options)
         {% options[:allow_blank] = options[:allow_blank] == nil ? false : options[:allow_blank] %}
         validates_with_method(%validate_method, if: {{if_value}})
 
@@ -283,6 +298,7 @@ module Jennifer
             self,
             field: {{field}},
             value: {{field.id}},
+            message: {{message}},
             {{**options}}
           )
         end
@@ -305,7 +321,7 @@ module Jennifer
       #   validates_acceptance :eula, accept: %w(true accept yes)
       # end
       # ```
-      macro validates_acceptance(field, accept = nil, if if_value = nil)
+      macro validates_acceptance(field, accept = nil, if if_value = nil, message = nil)
         validates_with_method(%validate_method, if: {{if_value}})
 
         # :nodoc:
@@ -314,7 +330,8 @@ module Jennifer
             self,
             field: {{field}},
             value: {{field.id}},
-            accept: {{accept}}
+            accept: {{accept}},
+            message: {{message}}
           )
         end
       end
@@ -335,7 +352,7 @@ module Jennifer
       #   validates_confirmation :address, case_insensitive: true
       # end
       # ```
-      macro validates_confirmation(field, case_sensitive = true, if if_value = nil)
+      macro validates_confirmation(field, case_sensitive = true, if if_value = nil, message = nil)
         validates_with_method(%validate_method, if: {{if_value}})
 
         # :nodoc:
@@ -345,7 +362,8 @@ module Jennifer
             field: {{field}},
             value: {{field.id}},
             confirmation: {{field.id}}_confirmation,
-            case_sensitive: {{case_sensitive}}
+            case_sensitive: {{case_sensitive}},
+            message: {{message}}
           )
         end
       end

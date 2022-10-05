@@ -28,6 +28,28 @@ module Jennifer::Model
     actual_table_field_count
   end
 
+  class NoteWithRequiredDependency < Base
+    include Note::Mapping
+
+    self.table_name "notes"
+
+    belongs_to :notable, Union(User | FacebookProfile), dependent: :destroy, polymorphic: true, required: true
+    actual_table_field_count
+  end
+
+  class NoteWithRequiredDependencyProcMessage < Base
+    include Note::Mapping
+
+    self.table_name "notes"
+
+    belongs_to :notable,
+      Union(User | FacebookProfile),
+      dependent: :destroy,
+      polymorphic: true,
+      required: ->(_record : Jennifer::Model::Translation, _field : String) { "notable is missing" }
+    actual_table_field_count
+  end
+
   describe RelationDefinition do
     describe "%nullify_dependency" do
       it "adds before_destroy callback" do
@@ -250,6 +272,8 @@ module Jennifer::Model
       describe "#add_/relation_name/" do
         it "creates new objects depending on given hash" do
           c = Factory.create_contact
+          c.addresses.size.should eq(0)
+
           c.add_addresses({:main => true, :street => "some street", :details => nil})
           c.addresses.size.should eq(1)
           c.addresses[0].street.should eq("some street")
@@ -527,6 +551,22 @@ module Jennifer::Model
             n.notable_id.should be_nil
             n.notable_type.should be_nil
           end
+        end
+      end
+
+      describe "optional" do
+        it "adds validation message when relation is required" do
+          n = NoteWithRequiredDependency.find!(Factory.create_note.id)
+          n.should validate(:notable).with("must exist")
+          n.add_notable(Factory.create_facebook_profile)
+          n.valid?.should be_true
+        end
+
+        it "allows to use custom validation message" do
+          n = NoteWithRequiredDependencyProcMessage.find!(Factory.create_note.id)
+          n.should validate(:notable).with("notable is missing")
+          n.add_notable(Factory.create_facebook_profile)
+          n.valid?.should be_true
         end
       end
     end

@@ -16,7 +16,7 @@ module Jennifer
           else
             !accept.not_nil!.includes?(value)
           end
-        record.errors.add(opts[:field], :accepted) if invalid
+        record.errors.add(opts[:field], opts[:message]? || :accepted) if invalid
       end
     end
   end

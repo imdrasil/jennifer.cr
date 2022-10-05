@@ -151,7 +151,7 @@ module Jennifer
         Values.new(field)
       end
 
-      # Cases *expression* to the given *type*.
+      # Casts *expression* to the given *type*.
       #
       # *type* field is pasted as-is.
       #

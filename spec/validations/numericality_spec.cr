@@ -10,27 +10,27 @@ describe Jennifer::Validations::Numericality do
       {% definition = {greater_than: 12} %}
 
       describe "Int32" do
-        it { validated_by_record({{definition}}, 13).should_not be_invalid }
-        it { validated_by_record({{definition}}, 12).should be_invalid }
+        it { validated_by_record(:age, 13, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 12, {{definition}}).should be_invalid }
       end
 
       describe "Int16" do
-        it { validated_by_record({{definition}}, 13i64).should_not be_invalid }
-        it { validated_by_record({{definition}}, 12i64).should be_invalid }
+        it { validated_by_record(:age, 13i64, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 12i64, {{definition}}).should be_invalid }
       end
 
       describe "Float64" do
-        it { validated_by_record({{definition}}, 13.0).should_not be_invalid }
-        it { validated_by_record({{definition}}, 12.0).should be_invalid }
+        it { validated_by_record(:age, 13.0, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 12.0, {{definition}}).should be_invalid }
       end
 
       describe "Float32" do
-        it { validated_by_record({{definition}}, 13.0f32).should_not be_invalid }
-        it { validated_by_record({{definition}}, 12.0f32).should be_invalid }
+        it { validated_by_record(:age, 13.0f32, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 12.0f32, {{definition}}).should be_invalid }
       end
 
       describe "Nil" do
-        it { validated_by_record({{definition}}, nil).should_not be_invalid }
+        it { validated_by_record(:age, nil, {{definition}}).should_not be_invalid }
       end
     end
 
@@ -38,27 +38,27 @@ describe Jennifer::Validations::Numericality do
       {% definition = {greater_than_or_equal_to: 12} %}
 
       describe "Int32" do
-        it { validated_by_record({{definition}}, 12).should_not be_invalid }
-        it { validated_by_record({{definition}}, 11).should be_invalid }
+        it { validated_by_record(:age, 12, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 11, {{definition}}).should be_invalid }
       end
 
       describe "Int16" do
-        it { validated_by_record({{definition}}, 12i64).should_not be_invalid }
-        it { validated_by_record({{definition}}, 11i64).should be_invalid }
+        it { validated_by_record(:age, 12i64, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 11i64, {{definition}}).should be_invalid }
       end
 
       describe "Float64" do
-        it { validated_by_record({{definition}}, 12.0).should_not be_invalid }
-        it { validated_by_record({{definition}}, 11.0).should be_invalid }
+        it { validated_by_record(:age, 12.0, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 11.0, {{definition}}).should be_invalid }
       end
 
       describe "Float32" do
-        it { validated_by_record({{definition}}, 12.0f32).should_not be_invalid }
-        it { validated_by_record({{definition}}, 11.0f32).should be_invalid }
+        it { validated_by_record(:age, 12.0f32, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 11.0f32, {{definition}}).should be_invalid }
       end
 
       describe "Nil" do
-        it { validated_by_record({{definition}}, nil).should_not be_invalid }
+        it { validated_by_record(:age, nil, {{definition}}).should_not be_invalid }
       end
     end
 
@@ -66,31 +66,31 @@ describe Jennifer::Validations::Numericality do
       {% definition = {equal_to: 12} %}
 
       describe "Int32" do
-        it { validated_by_record({{definition}}, 12).should_not be_invalid }
-        it { validated_by_record({{definition}}, 11).should be_invalid }
-        it { validated_by_record({{definition}}, 13).should be_invalid }
+        it { validated_by_record(:age, 12, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 11, {{definition}}).should be_invalid }
+        it { validated_by_record(:age, 13, {{definition}}).should be_invalid }
       end
 
       describe "Int16" do
-        it { validated_by_record({{definition}}, 12i64).should_not be_invalid }
-        it { validated_by_record({{definition}}, 11i64).should be_invalid }
-        it { validated_by_record({{definition}}, 13i64).should be_invalid }
+        it { validated_by_record(:age, 12i64, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 11i64, {{definition}}).should be_invalid }
+        it { validated_by_record(:age, 13i64, {{definition}}).should be_invalid }
       end
 
       describe "Float64" do
-        it { validated_by_record({{definition}}, 12.0).should_not be_invalid }
-        it { validated_by_record({{definition}}, 11.0).should be_invalid }
-        it { validated_by_record({{definition}}, 13.0).should be_invalid }
+        it { validated_by_record(:age, 12.0, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 11.0, {{definition}}).should be_invalid }
+        it { validated_by_record(:age, 13.0, {{definition}}).should be_invalid }
       end
 
       describe "Float32" do
-        it { validated_by_record({{definition}}, 12.0f32).should_not be_invalid }
-        it { validated_by_record({{definition}}, 11.0f32).should be_invalid }
-        it { validated_by_record({{definition}}, 13.0f32).should be_invalid }
+        it { validated_by_record(:age, 12.0f32, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 11.0f32, {{definition}}).should be_invalid }
+        it { validated_by_record(:age, 13.0f32, {{definition}}).should be_invalid }
       end
 
       describe "Nil" do
-        it { validated_by_record({{definition}}, nil).should_not be_invalid }
+        it { validated_by_record(:age, nil, {{definition}}).should_not be_invalid }
       end
     end
 
@@ -98,31 +98,31 @@ describe Jennifer::Validations::Numericality do
       {% definition = {other_than: 12} %}
 
       describe "Int32" do
-        it { validated_by_record({{definition}}, 12).should be_invalid }
-        it { validated_by_record({{definition}}, 11).should_not be_invalid }
-        it { validated_by_record({{definition}}, 13).should_not be_invalid }
+        it { validated_by_record(:age, 12, {{definition}}).should be_invalid }
+        it { validated_by_record(:age, 11, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 13, {{definition}}).should_not be_invalid }
       end
 
       describe "Int16" do
-        it { validated_by_record({{definition}}, 12i64).should be_invalid }
-        it { validated_by_record({{definition}}, 11i64).should_not be_invalid }
-        it { validated_by_record({{definition}}, 13i64).should_not be_invalid }
+        it { validated_by_record(:age, 12i64, {{definition}}).should be_invalid }
+        it { validated_by_record(:age, 11i64, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 13i64, {{definition}}).should_not be_invalid }
       end
 
       describe "Float64" do
-        it { validated_by_record({{definition}}, 12.0).should be_invalid }
-        it { validated_by_record({{definition}}, 11.0).should_not be_invalid }
-        it { validated_by_record({{definition}}, 13.0).should_not be_invalid }
+        it { validated_by_record(:age, 12.0, {{definition}}).should be_invalid }
+        it { validated_by_record(:age, 11.0, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 13.0, {{definition}}).should_not be_invalid }
       end
 
       describe "Float32" do
-        it { validated_by_record({{definition}}, 12.0f32).should be_invalid }
-        it { validated_by_record({{definition}}, 11.0f32).should_not be_invalid }
-        it { validated_by_record({{definition}}, 13.0f32).should_not be_invalid }
+        it { validated_by_record(:age, 12.0f32, {{definition}}).should be_invalid }
+        it { validated_by_record(:age, 11.0f32, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 13.0f32, {{definition}}).should_not be_invalid }
       end
 
       describe "Nil" do
-        it { validated_by_record({{definition}}, nil).should_not be_invalid }
+        it { validated_by_record(:age, nil, {{definition}}).should_not be_invalid }
       end
     end
 
@@ -130,27 +130,27 @@ describe Jennifer::Validations::Numericality do
       {% definition = {less_than: 12} %}
 
       describe "Int32" do
-        it { validated_by_record({{definition}}, 11).should_not be_invalid }
-        it { validated_by_record({{definition}}, 12).should be_invalid }
+        it { validated_by_record(:age, 11, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 12, {{definition}}).should be_invalid }
       end
 
       describe "Int16" do
-        it { validated_by_record({{definition}}, 11i64).should_not be_invalid }
-        it { validated_by_record({{definition}}, 12i64).should be_invalid }
+        it { validated_by_record(:age, 11i64, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 12i64, {{definition}}).should be_invalid }
       end
 
       describe "Float64" do
-        it { validated_by_record({{definition}}, 11.0).should_not be_invalid }
-        it { validated_by_record({{definition}}, 12.0).should be_invalid }
+        it { validated_by_record(:age, 11.0, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 12.0, {{definition}}).should be_invalid }
       end
 
       describe "Float32" do
-        it { validated_by_record({{definition}}, 11.0f32).should_not be_invalid }
-        it { validated_by_record({{definition}}, 12.0f32).should be_invalid }
+        it { validated_by_record(:age, 11.0f32, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 12.0f32, {{definition}}).should be_invalid }
       end
 
       describe "Nil" do
-        it { validated_by_record({{definition}}, nil).should_not be_invalid }
+        it { validated_by_record(:age, nil, {{definition}}).should_not be_invalid }
       end
     end
 
@@ -158,27 +158,27 @@ describe Jennifer::Validations::Numericality do
       {% definition = {less_than_or_equal_to: 12} %}
 
       describe "Int32" do
-        it { validated_by_record({{definition}}, 12).should_not be_invalid }
-        it { validated_by_record({{definition}}, 13).should be_invalid }
+        it { validated_by_record(:age, 12, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 13, {{definition}}).should be_invalid }
       end
 
       describe "Int16" do
-        it { validated_by_record({{definition}}, 12i64).should_not be_invalid }
-        it { validated_by_record({{definition}}, 13i64).should be_invalid }
+        it { validated_by_record(:age, 12i64, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 13i64, {{definition}}).should be_invalid }
       end
 
       describe "Float64" do
-        it { validated_by_record({{definition}}, 12.0).should_not be_invalid }
-        it { validated_by_record({{definition}}, 13.0).should be_invalid }
+        it { validated_by_record(:age, 12.0, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 13.0, {{definition}}).should be_invalid }
       end
 
       describe "Float32" do
-        it { validated_by_record({{definition}}, 12.0f32).should_not be_invalid }
-        it { validated_by_record({{definition}}, 13.0f32).should be_invalid }
+        it { validated_by_record(:age, 12.0f32, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 13.0f32, {{definition}}).should be_invalid }
       end
 
       describe "Nil" do
-        it { validated_by_record({{definition}}, nil).should_not be_invalid }
+        it { validated_by_record(:age, nil, {{definition}}).should_not be_invalid }
       end
     end
 
@@ -186,69 +186,79 @@ describe Jennifer::Validations::Numericality do
       {% definition = {odd: true} %}
 
       describe "Int32" do
-        it { validated_by_record({{definition}}, 13).should_not be_invalid }
-        it { validated_by_record({{definition}}, 14).should be_invalid }
+        it { validated_by_record(:age, 13, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 14, {{definition}}).should be_invalid }
       end
 
       describe "Int16" do
-        it { validated_by_record({{definition}}, 13i64).should_not be_invalid }
-        it { validated_by_record({{definition}}, 14i64).should be_invalid }
+        it { validated_by_record(:age, 13i64, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 14i64, {{definition}}).should be_invalid }
       end
 
       describe "Float64" do
-        it { validated_by_record({{definition}}, 13.0).should_not be_invalid }
-        it { validated_by_record({{definition}}, 14.0).should be_invalid }
+        it { validated_by_record(:age, 13.0, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 14.0, {{definition}}).should be_invalid }
       end
 
       describe "Float32" do
-        it { validated_by_record({{definition}}, 13.0f32).should_not be_invalid }
-        it { validated_by_record({{definition}}, 14.0f32).should be_invalid }
+        it { validated_by_record(:age, 13.0f32, {{definition}}).should_not be_invalid }
+        it { validated_by_record(:age, 14.0f32, {{definition}}).should be_invalid }
       end
 
       describe "String" do
         it do
           expect_raises(ArgumentError) do
-            validated_by_record({{definition}}, "13").should_not be_invalid
+            validated_by_record(:age, "13", {{definition}}).should_not be_invalid
           end
         end
       end
 
       describe "Nil" do
-        it { validated_by_record({{definition}}, nil).should_not be_invalid }
+        it { validated_by_record(:age, nil, {{definition}}).should_not be_invalid }
       end
     end
 
     describe "even" do
       describe "Int32" do
-        it { validated_by_record({even: true}, 14).should_not be_invalid }
-        it { validated_by_record({even: true}, 13).should be_invalid }
+        it { validated_by_record(:age, 14, {even: true}).should_not be_invalid }
+        it { validated_by_record(:age, 13, {even: true}).should be_invalid }
       end
 
       describe "Int16" do
-        it { validated_by_record({even: true}, 14i64).should_not be_invalid }
-        it { validated_by_record({even: true}, 13i64).should be_invalid }
+        it { validated_by_record(:age, 14i64, {even: true}).should_not be_invalid }
+        it { validated_by_record(:age, 13i64, {even: true}).should be_invalid }
       end
 
       describe "Float64" do
-        it { validated_by_record({even: true}, 14.0).should_not be_invalid }
-        it { validated_by_record({even: true}, 13.0).should be_invalid }
+        it { validated_by_record(:age, 14.0, {even: true}).should_not be_invalid }
+        it { validated_by_record(:age, 13.0, {even: true}).should be_invalid }
       end
 
       describe "Float32" do
-        it { validated_by_record({even: true}, 14.0f32).should_not be_invalid }
-        it { validated_by_record({even: true}, 13.0f32).should be_invalid }
+        it { validated_by_record(:age, 14.0f32, {even: true}).should_not be_invalid }
+        it { validated_by_record(:age, 13.0f32, {even: true}).should be_invalid }
       end
 
       describe "String" do
         it do
           expect_raises(ArgumentError) do
-            validated_by_record({even: true}, "14").should_not be_invalid
+            validated_by_record(:age, "14", {even: true}).should_not be_invalid
           end
         end
       end
 
       describe "Nil" do
-        it { validated_by_record({even: true}, nil).should_not be_invalid }
+        it { validated_by_record(:age, nil, {even: true}).should_not be_invalid }
+      end
+    end
+
+    describe "message" do
+      it do
+        proc = ->(record : Jennifer::Model::Translation, field : String) do
+          "#{record.as(Contact).attribute(field)} #{field} invalid"
+        end
+        validated_by_record(:age, 11, {less_than: 3, message: proc})
+          .should has_error_message(:age, "28 age invalid")
       end
     end
 

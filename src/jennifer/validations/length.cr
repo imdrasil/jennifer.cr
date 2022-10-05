@@ -4,7 +4,7 @@ module Jennifer
     #
     # For more details see `Macros.validates_length`.
     class Length < Validator
-      def validate(record, **opts)
+      def validate(record, **opts) # ameba:disable Metrics/CyclomaticComplexity
         field = opts[:field]
         value = opts[:value]
         allow_blank = opts[:allow_blank]
@@ -18,16 +18,16 @@ module Jennifer
           errors = record.errors
           if in_value
             if in_value.max < size
-              errors.add(field, :too_long, in_value.max)
+              errors.add(field, opts[:message]? || :too_long, in_value.max)
             elsif in_value.min > size
-              errors.add(field, :too_short, in_value.min)
+              errors.add(field, opts[:message]? || :too_short, in_value.min)
             end
           elsif is && is != size
-            errors.add(field, :wrong_length, is)
+            errors.add(field, opts[:message]? || :wrong_length, is)
           elsif minimum && minimum > size
-            errors.add(field, :too_short, minimum)
+            errors.add(field, opts[:message]? || :too_short, minimum)
           elsif maximum && maximum < size
-            errors.add(field, :too_long, maximum)
+            errors.add(field, opts[:message]? || :too_long, maximum)
           end
         end
       end

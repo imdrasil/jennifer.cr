@@ -903,7 +903,6 @@ describe Jennifer::Model::Mapping do
     describe "#initialize" do
       it "reads generated column" do
         Author.create!({:name1 => "First", :name2 => "Last"})
-        puts Author.all.pluck(:full_name)
         Author.all.last!.full_name.should eq("First Last")
       end
     end

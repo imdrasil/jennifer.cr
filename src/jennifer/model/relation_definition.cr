@@ -395,9 +395,10 @@ module Jennifer
       # - *primary* - specify the name of the column to use as the primary key for the relation
       # - *dependent* - specify the destroy strategy of the associated objects when their owner is destroyed;
       # available options are: `destroy`, `delete`, `nullify` (exception is polymorphic relation), `restrict_with_exception`
-      # - *polymorphic* - specifies that this relation is a polymorphic
-      # - *foreign_type* - specify the column used to store  the associated object's type,
+      # - *polymorphic* - passing `true` indicates that this is a polymorphic association
+      # - *foreign_type* - specify the column used to store the associated object's type,
       # if this is a polymorphic relation
+      # - *required* - passing `true` will validate presence of related object; by default it is `false`
       #
       # Methods will be added for retrieval and query for a single associated object, for which this object holds an id:
       #
@@ -416,9 +417,14 @@ module Jennifer
       #
       # - `#association_class_name` - returns casted related object to `ClassName`
       # - `#association_class_name?` - returns whether related object is a `ClassName`
-      macro belongs_to(name, klass, request = nil, foreign = nil, primary = nil, dependent = :none, polymorphic = false, foreign_type = nil)
+      macro belongs_to(name, klass, request = nil, foreign = nil, primary = nil, dependent = :none, polymorphic = false, foreign_type = nil, required = false)
         {{"{% RELATION_NAMES << #{name.id.stringify} %}".id}}
         ::Jennifer::Model::RelationDefinition.declare_dependent({{name}}, {{dependent}}, :belongs_to, {{polymorphic}})
+
+        {% if required %}
+          {% message = required.is_a?(BoolLiteral) ? :required : required %}
+          validates_presence :{{name.id}}, message: {{message}}
+        {% end %}
 
         @[JSON::Field(ignore: true)]
         @{{name.id}} : {{klass}}?
@@ -510,14 +516,14 @@ module Jennifer
       # - *request* - extra request scope to retrieve a specific set of records when access the associated collection
       # (ATM only `WHERE` conditions are respected)
       # - *foreign* - specify the foreign key used for the association
-      # - *foreign_type* - specify the column used to store  the associated object's type,
+      # - *foreign_type* - specify the column used to store the associated object's type,
       # if this is a polymorphic relation
       # - *primary* - specify the name of the column to use as the primary key for the relation
       # - *dependent* - specify the destroy strategy of the associated objects when their owner is destroyed;
       # available options are: `destroy`, `delete`, `nullify`, `restrict_with_exception`
       # - *inverse_of* - specifies the name of the `belongs_to` relation on the associated object that is the inverse of this relation;
       # required for polymorphic relation
-      # - *polymorphic* - specifies that this relation is a polymorphic
+      # - *polymorphic* - passing `true` indicates that this is a polymorphic association
       #
       # The following methods for retrieval and query of a single associated object will be added:
       #

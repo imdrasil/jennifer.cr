@@ -7,7 +7,7 @@ jennifer:
       exclusion: "is reserved"
       invalid: "is invalid"
       taken: "has already been taken"
-      # required: "must exist"
+      required: "must exist"
       confirmation: "doesn't match %{attribute}"
       accepted: "must be accepted"
       empty: "can't be empty"

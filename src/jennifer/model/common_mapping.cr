@@ -53,7 +53,10 @@ module Jennifer::Model
             hash = adapter.result_to_hash(values)
             case hash["type"]
             when "", nil, "{{@type}}"
-              new(hash, false)
+              instance = allocate
+              instance.initialize(hash, false)
+              instance.__after_initialize_callback
+              instance
             {% for klass in klasses %}
             when "{{klass}}"
               {{klass}}.new(hash, false)
@@ -72,41 +75,70 @@ module Jennifer::Model
       end
 
       # Accepts symbol hash or named tuple, stringify it and calls constructor with string-based keys hash.
-      def initialize(values : Hash(Symbol, AttrType) | NamedTuple)
-        initialize(Ifrit.stringify_hash(values, AttrType))
+      def initialize(values : Hash(Symbol, AttrType) | NamedTuple, @new_record)
+        initialize(Ifrit.stringify_hash(values, AttrType), @new_record)
       end
 
       # :nodoc:
-      def self.new(values : Hash(Symbol, AttrType) | NamedTuple)
-        instance = allocate
-        instance.initialize(values)
-        instance.__after_initialize_callback
-        instance
+      def self.new(values : Hash(Symbol, AttrType) | NamedTuple, new_record = true)
+        {% verbatim do %}
+        {% begin %}
+          {% klasses = @type.all_subclasses.select { |s| s.constant("STI") == true } %}
+          {% if !klasses.empty? %}
+            case values[:type]?
+            when "", nil, "{{@type}}"
+              instance = allocate
+              instance.initialize(values, new_record)
+              instance.__after_initialize_callback
+              instance
+            {% for klass in klasses %}
+            when "{{klass}}"
+              {{klass}}.new(values, new_record)
+            {% end %}
+            else
+              raise ::Jennifer::UnknownSTIType.new(self, values[:type])
+            end
+          {% else %}
+            instance = allocate
+            instance.initialize(values, new_record)
+            instance.__after_initialize_callback
+            instance
+          {% end %}
+        {% end %}
+        {% end %}
       end
 
-      def initialize(values : Hash(String, AttrType))
+      def initialize(values : Hash(String, AttrType), @new_record)
         {{properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
       end
 
       # :nodoc:
-      def self.new(values : Hash(String, AttrType))
-        instance = allocate
-        instance.initialize(values)
-        instance.__after_initialize_callback
-        instance
-      end
-
-      # :nodoc:
-      def initialize(values : Hash | NamedTuple, @new_record)
-        initialize(values)
-      end
-
-      # :nodoc:
-      def self.new(values : Hash | NamedTuple, new_record : Bool)
-        instance = allocate
-        instance.initialize(values, new_record)
-        instance.__after_initialize_callback
-        instance
+      def self.new(values : Hash(String, AttrType), new_record = true)
+        {% verbatim do %}
+        {% begin %}
+          {% klasses = @type.all_subclasses.select { |s| s.constant("STI") == true } %}
+          {% if !klasses.empty? %}
+            case values["type"]?
+            when "", nil, "{{@type}}"
+              instance = allocate
+              instance.initialize(values, new_record)
+              instance.__after_initialize_callback
+              instance
+            {% for klass in klasses %}
+            when "{{klass}}"
+              {{klass}}.new(values, new_record)
+            {% end %}
+            else
+              raise ::Jennifer::UnknownSTIType.new(self, values["type"])
+            end
+          {% else %}
+            instance = allocate
+            instance.initialize(values, new_record)
+            instance.__after_initialize_callback
+            instance
+          {% end %}
+        {% end %}
+        {% end %}
       end
 
       # :nodoc:

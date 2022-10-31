@@ -249,6 +249,21 @@ describe Jennifer::QueryBuilder::EagerLoading do
       end
     end
 
+    it "loads STI record" do
+      c = ContactWithDependencies.create!({name: "test name", description: "description"})
+      profile1 = Factory.create_facebook_profile(contact_id: c.id)
+      profile2 = Factory.create_twitter_profile(contact_id: c.id)
+      ContactWithDependencies.eager_load(:profiles).order(Profile._id.asc).each do |contact|
+        contact.id.should eq(c.id)
+        contact.profiles.size.should eq(2)
+        contact.profiles[0].should be_a(FacebookProfile)
+        contact.profiles[0].as(FacebookProfile).uid.should eq(profile1.uid)
+
+        contact.profiles[1].should be_a(TwitterProfile)
+        contact.profiles[1].as(TwitterProfile).email.should eq(profile2.email)
+      end
+    end
+
     context "with defined inverse_of" do
       it "sets owner during building collection" do
         c = Factory.create_contact

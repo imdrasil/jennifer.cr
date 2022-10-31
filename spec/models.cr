@@ -138,7 +138,7 @@ end
 
 class FacebookProfile < Profile
   mapping(
-    uid: String?, # for testing purposes
+    uid: String?,
     virtual_child_field: {type: Int32?, virtual: true}
   )
 
@@ -157,7 +157,7 @@ end
 
 class TwitterProfile < Profile
   mapping(
-    email: {type: String, null: true} # for testing purposes
+    email: {type: String, null: true}
   )
 end
 
@@ -479,6 +479,7 @@ class ContactWithDependencies < Jennifer::Model::Base
   has_many :facebook_profiles, FacebookProfile, dependent: :nullify, foreign: :contact_id
   has_many :passports, Passport, dependent: :destroy, foreign: :contact_id
   has_many :twitter_profiles, TwitterProfile, dependent: :restrict_with_exception, foreign: :contact_id
+  has_many :profiles, Profile, foreign: :contact_id, dependent: :restrict_with_exception
   has_and_belongs_to_many :u_countries, Country, {where { _name.like("U%") }}, foreign: :contact_id
 
   validates_length :name, minimum: 2
@@ -563,12 +564,12 @@ class FacebookProfileWithDestroyNotable < Jennifer::Model::Base
   module Mapping
     macro included
       mapping({
-        id: Primary64,
-        login: String,
+        id:         Primary64,
+        login:      String,
         contact_id: Int64?,
-        type: String,
-        uid: String?
-    }, false)
+        type:       String,
+        uid:        String?,
+      }, false)
     end
   end
 

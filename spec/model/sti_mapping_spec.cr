@@ -136,6 +136,36 @@ describe Jennifer::Model::STIMapping do
         f.uid.should eq("uid")
       end
 
+      it "builds proper subclass from symbol hash" do
+        f = Profile.new({:login => "asd", :uid => "uid", :type => "FacebookProfile"})
+        f.should be_a(FacebookProfile)
+
+        f = f.as(FacebookProfile)
+        f.type.should eq("FacebookProfile")
+        f.login.should eq("asd")
+        f.uid.should eq("uid")
+      end
+
+      it "builds proper subclass from string hash" do
+        f = Profile.new({"login" => "asd", "uid" => "uid", "type" => "FacebookProfile"})
+        f.should be_a(FacebookProfile)
+
+        f = f.as(FacebookProfile)
+        f.type.should eq("FacebookProfile")
+        f.login.should eq("asd")
+        f.uid.should eq("uid")
+      end
+
+      it "builds proper subclass from named tuple" do
+        f = Profile.new({login: "asd", email: "test@email.co", type: "TwitterProfile"})
+        f.should be_a(TwitterProfile)
+
+        f = f.as(TwitterProfile)
+        f.type.should eq("TwitterProfile")
+        f.login.should eq("asd")
+        f.email.should eq("test@email.co")
+      end
+
       it "properly loads aliased columns in superclass" do
         b = Book.new({
           :name      => "HowToMapDbStuff?",

@@ -419,7 +419,7 @@ module Jennifer
                 {% if value[:converter] %}
                   {{value[:converter]}}.from_hash(values, {{column1}}, self.class.columns_tuple[:{{key.id}}])
                 {% else %}
-                  values[{{column1}}]
+                  {{@type}}.read_adapter.coerce_database_value(values[{{column1}}], {{value[:type]}})
                 {% end %}
             {% if column2 %}
               elsif values.has_key?({{column2}})
@@ -427,7 +427,7 @@ module Jennifer
                   {% if value[:converter] %}
                     {{value[:converter]}}.from_hash(values, {{column2}}, self.class.columns_tuple[:{{key.id}}])
                   {% else %}
-                    values[{{column2}}]
+                    {{@type}}.read_adapter.coerce_database_value(values[{{column2}}], {{value[:type]}})
                   {% end %}
             {% end %}
             end

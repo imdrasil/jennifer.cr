@@ -113,14 +113,14 @@ module Jennifer
                 {% if value[:converter] %}
                   {{value[:converter]}}.from_hash(values, {{column1}}, self.class.columns_tuple[:{{key.id}}])
                 {% else %}
-                  values[{{column1}}]
+                  {{@type}}.read_adapter.coerce_database_value(values[{{column1}}], {{value[:type]}})
                 {% end %}
             elsif values.has_key?({{column2}})
               %var{key.id} =
                 {% if value[:converter] %}
                   {{value[:converter]}}.from_hash(values, {{column2}}, self.class.columns_tuple[:{{key.id}}])
                 {% else %}
-                  values[{{column2}}]
+                  {{@type}}.read_adapter.coerce_database_value(values[{{column2}}], {{value[:type]}})
                 {% end %}
             else
               %found{key.id} = false
@@ -165,38 +165,27 @@ module Jennifer
           {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(%pull)
         end
 
-        def self.new(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-          instance = allocate
-          instance.initialize(values)
-          instance.__after_initialize_callback
-          instance
-        end
-
-        def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple)
-          initialize(Ifrit.stringify_hash(values, Jennifer::DBAny))
-        end
-
-        def self.new(values : Hash(String, ::Jennifer::DBAny))
-          instance = allocate
-          instance.initialize(values)
-          instance.__after_initialize_callback
-          instance
-        end
-
-        def initialize(values : Hash(String, ::Jennifer::DBAny))
-          values["type"] = "{{@type.id}}" if values["type"]?.nil?
-          {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
-        end
-
-        def self.new(values : Hash | NamedTuple, new_record : Bool)
+        def self.new(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple, new_record = true)
           instance = allocate
           instance.initialize(values, new_record)
           instance.__after_initialize_callback
           instance
         end
 
-        def initialize(values : Hash | NamedTuple, @new_record)
-          initialize(values)
+        def initialize(values : Hash(Symbol, ::Jennifer::DBAny) | NamedTuple, @new_record)
+          initialize(Ifrit.stringify_hash(values, Jennifer::DBAny), @new_record)
+        end
+
+        def self.new(values : Hash(String, ::Jennifer::DBAny), new_record = true)
+          instance = allocate
+          instance.initialize(values, new_record)
+          instance.__after_initialize_callback
+          instance
+        end
+
+        def initialize(values : Hash(String, ::Jennifer::DBAny), @new_record)
+          values["type"] = "{{@type.id}}" if values["type"]?.nil?
+          {{all_properties.keys.map { |key| "@#{key.id}" }.join(", ").id}} = _extract_attributes(values)
         end
 
         # :nodoc:
@@ -204,7 +193,7 @@ module Jennifer
 
         {% if add_default_constructor %}
           def initialize
-            initialize({ "type" => {{@type.stringify}} } of String => ::Jennifer::DBAny)
+            initialize({ "type" => {{@type.stringify}} } of String => ::Jennifer::DBAny, true)
           end
         {% end %}
 

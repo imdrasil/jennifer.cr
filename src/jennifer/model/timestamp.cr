@@ -5,6 +5,7 @@ module Jennifer::Model
 
     macro included
       def track_timestamps_on_update; end
+
       def track_timestamps_on_create; end
     end
 

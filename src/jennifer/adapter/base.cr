@@ -208,6 +208,10 @@ module Jennifer
         sql_generator.parse_query(q)
       end
 
+      def coerce_database_value(value, target_class)
+        value
+      end
+
       def max_bind_vars_count
         Config.instance.max_bind_vars_count || self.class.default_max_bind_vars_count
       end

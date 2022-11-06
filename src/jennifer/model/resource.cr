@@ -118,7 +118,7 @@ module Jennifer
 
       # :nodoc:
       def self.table_prefix
-        Inflector.underscore(to_s).split('/')[0...-1].join("_") + "_" if to_s.includes?(':')
+        Wordsmith::Inflector.underscore(to_s).split('/')[0...-1].join("_") + "_" if to_s.includes?(':')
       end
 
       @@expression_builder : QueryBuilder::ExpressionBuilder?
@@ -259,10 +259,10 @@ module Jennifer
         @@table_name ||=
           begin
             name = ""
-            class_name = Inflector.demodulize(to_s)
+            class_name = Wordsmith::Inflector.demodulize(to_s)
             prefix = table_prefix
             name = prefix.to_s if prefix
-            Inflector.pluralize(name + class_name.underscore)
+            Wordsmith::Inflector.pluralize(name + class_name.underscore)
           end
       end
 

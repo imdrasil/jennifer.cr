@@ -91,7 +91,7 @@ module Jennifer
         # reference :taggable, {:polymorphic => true}
         # ```
         def reference(name, type : Symbol = :bigint, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
-          column = Inflector.foreign_key(name)
+          column = Wordsmith::Inflector.foreign_key(name)
           is_null = options.has_key?(:null) ? options[:null] : true
 
           field_internal_type = options.has_key?(:sql_type) ? nil : type
@@ -102,7 +102,7 @@ module Jennifer
             string("#{name}_type", {:null => is_null})
           else
             foreign_key(
-              (options[:to_table]? || Inflector.pluralize(name)).as(String | Symbol),
+              (options[:to_table]? || Wordsmith::Inflector.pluralize(name)).as(String | Symbol),
               options[:column]?.as(String | Symbol?),
               options[:primary_key]?.as(String | Symbol?),
               options[:key_name]?.as(String?),

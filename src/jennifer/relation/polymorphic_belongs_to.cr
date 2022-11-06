@@ -7,7 +7,7 @@ module Jennifer
 
       def initialize(@name, foreign : String | Symbol?, primary : String | Symbol?, foreign_type : String | Symbol?)
         @foreign_type = foreign_type ? foreign_type.to_s : "#{name}_type"
-        @foreign = foreign ? foreign.to_s : Inflector.foreign_key(name)
+        @foreign = foreign ? foreign.to_s : Wordsmith::Inflector.foreign_key(name)
         @primary = primary ? primary.to_s : DEFAULT_PRIMARY_FIELD
       end
 

@@ -113,7 +113,7 @@ module Jennifer
         # add_reference :taggable, {:polymorphic => true}
         # ```
         def add_reference(name, type : Symbol = :bigint, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
-          column = Inflector.foreign_key(name)
+          column = Wordsmith::Inflector.foreign_key(name)
           is_null = options.has_key?(:null) ? options[:null] : true
           field_internal_type = options.has_key?(:sql_type) ? nil : type
 
@@ -122,7 +122,7 @@ module Jennifer
             add_column("#{name}_type", :string, {:null => is_null})
           else
             add_foreign_key(
-              (options[:to_table]? || Inflector.pluralize(name)).as(String | Symbol),
+              (options[:to_table]? || Wordsmith::Inflector.pluralize(name)).as(String | Symbol),
               options[:column]?.as(String | Symbol?),
               options[:primary_key]?.as(String | Symbol?),
               options[:key_name]?.as(String?),
@@ -138,7 +138,7 @@ module Jennifer
         # *options* can include `:polymorphic`, `:to_table` and `:column` options. For more details see
         # `#add_reference`.
         def drop_reference(name, options : Hash(Symbol, AAllowedTypes) = DbOptions.new)
-          column = Inflector.foreign_key(name)
+          column = Wordsmith::Inflector.foreign_key(name)
           if options[:polymorphic]?
             drop_column("#{name}_type")
             drop_column(column)
@@ -146,7 +146,7 @@ module Jennifer
             @commands << DropReference.new(
               @adapter,
               @name,
-              (options[:to_table]? || Inflector.pluralize(name)).to_s,
+              (options[:to_table]? || Wordsmith::Inflector.pluralize(name)).to_s,
               options[:column]?.as(String | Symbol?)
             )
           end

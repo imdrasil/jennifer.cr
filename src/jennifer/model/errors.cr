@@ -176,7 +176,7 @@ module Jennifer
         path = "#{prefix}messages.#{message}"
         return I18n.translate(path, **opts) if I18n.exists?(path, count: count)
 
-        Inflector.humanize(message).downcase
+        Wordsmith::Inflector.humanize(message).downcase
       end
 
       # Translates an error message in its default scope

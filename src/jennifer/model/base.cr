@@ -104,7 +104,7 @@ module Jennifer
 
       # Returns model foreign key name.
       def self.foreign_key_name
-        @@foreign_key_name ||= Inflector.singularize(table_name) + "_id"
+        @@foreign_key_name ||= Wordsmith::Inflector.singularize(table_name) + "_id"
       end
 
       # Initializes new object based on given arguments.

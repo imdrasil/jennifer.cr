@@ -31,7 +31,7 @@ module Jennifer
 
         # :nodoc:
         def self.column_name(to_table, name) : String
-          (name || Inflector.foreign_key(Inflector.singularize(to_table))).not_nil!.to_s
+          (name || Wordsmith::Inflector.foreign_key(Wordsmith::Inflector.singularize(to_table))).not_nil!.to_s
         end
 
         private def self.hexdigest(text)

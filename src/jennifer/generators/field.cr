@@ -42,7 +42,7 @@ module Jennifer
       end
 
       def field_name
-        reference? ? Inflector.foreign_key(name) : name
+        reference? ? Wordsmith::Inflector.foreign_key(name) : name
       end
 
       def cr_type

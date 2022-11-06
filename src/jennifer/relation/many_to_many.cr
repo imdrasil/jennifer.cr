@@ -69,7 +69,7 @@ module Jennifer
       end
 
       def association_foreign_key
-        @association_foreign || Inflector.foreign_key(T.to_s)
+        @association_foreign || Wordsmith::Inflector.foreign_key(T.to_s)
       end
 
       def preload_relation(collection, out_collection : Array(Model::Resource), pk_repo)

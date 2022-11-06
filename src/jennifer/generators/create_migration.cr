@@ -11,7 +11,7 @@ module Jennifer
       end
 
       def table_name
-        Inflector.pluralize(model_name.downcase)
+        Wordsmith::Inflector.pluralize(model_name.downcase)
       end
 
       def name

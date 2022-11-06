@@ -16,7 +16,7 @@ module Jennifer
 
           path = "#{prefix}.#{name}"
           return I18n.translate(path) if I18n.exists?(path)
-          Inflector.humanize(name)
+          Wordsmith::Inflector.humanize(name)
         end
 
         # Returns localized model name.
@@ -28,8 +28,8 @@ module Jennifer
             return I18n.translate(path, count: count) if I18n.exists?(path, count: count)
           end
 
-          name = Inflector.humanize(i18n_key)
-          name = Inflector.pluralize(name) if count && count > 1
+          name = Wordsmith::Inflector.humanize(i18n_key)
+          name = Wordsmith::Inflector.pluralize(name) if count && count > 1
           name
         end
 
@@ -41,7 +41,7 @@ module Jennifer
         # Presents key which be used to search any related to current class localization information.
         def i18n_key
           return @@i18n_key unless @@i18n_key.empty?
-          @@i18n_key = Inflector.underscore(Inflector.demodulize(to_s)).downcase
+          @@i18n_key = Wordsmith::Inflector.underscore(Wordsmith::Inflector.demodulize(to_s)).downcase
         end
 
         # Yields all ancestors until `Base`.

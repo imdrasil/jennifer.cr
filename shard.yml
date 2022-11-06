@@ -28,9 +28,9 @@ development_dependencies:
     github: "amberframework/micrate"
     version: "= 0.12.0"
 dependencies:
-  inflector:
-    github: phoffer/inflector.cr
-    version: "~> 1.0.0"
+  wordsmith:
+    github: luckyframework/wordsmith
+    version: ">= 0.3.0"
   ifrit:
     github: imdrasil/ifrit
     version: "= 0.1.3"

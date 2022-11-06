@@ -241,8 +241,8 @@ module Jennifer
       # ```
       def create_join_table(table1 : String | Symbol, table2 : String | Symbol, table_name : String? = nil)
         create_table(table_name || adapter.class.join_table_name(table1, table2), false) do |tb|
-          tb.bigint(Inflector.foreign_key(Inflector.singularize(table1.to_s)))
-          tb.bigint(Inflector.foreign_key(Inflector.singularize(table2.to_s)))
+          tb.bigint(Wordsmith::Inflector.foreign_key(Wordsmith::Inflector.singularize(table1.to_s)))
+          tb.bigint(Wordsmith::Inflector.foreign_key(Wordsmith::Inflector.singularize(table2.to_s)))
           yield tb
         end
       end
@@ -522,7 +522,7 @@ module Jennifer
       #
       # Arguments:
       # - *column* - the foreign key column name on current_table; defaults to
-      # `Inflector.foreign_key(Inflector.singularize(to_table));
+      # `Wordsmith::Inflector.foreign_key(Wordsmith::Inflector.singularize(to_table));
       # - *primary_key* - the primary key column name on *to_table*. Defaults to `"id"`;
       # - *name* - the constraint name. Defaults to `"fc_cr_<identifier>".
       #

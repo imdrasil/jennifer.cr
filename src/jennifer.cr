@@ -3,7 +3,7 @@ require "yaml"
 require "log"
 require "uuid"
 
-require "inflector"
+require "wordsmith"
 require "ifrit/converter"
 require "ifrit/core"
 require "i18n"

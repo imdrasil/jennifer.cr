@@ -4,7 +4,7 @@ There are multiple approaches to implement model serialization to a required for
 
 ## General
 
-Jennifer defines some hidden instance attributes in defined models for own use. Sometimes we would like to operate with a class where we have full access to all defined attributes/methods. For this case the easiest way is to use [JenniferTwin](https://github.com/imdrasil/jennifer_twin) lib. Using it you can dump Jennifer model instance to a separate object that is totally under your control. One of the cases when this approach may come in handy when ther is a need to use attribute annotations, like [MessagePack::Serializable](https://github.com/crystal-community/msgpack-crystal) or [JSON::Serializable](https://crystal-lang.org/api/0.31.1/JSON/Serializable.html).
+Jennifer defines some hidden instance attributes in defined models for own use. Sometimes we would like to operate with a class where we have full access to all defined attributes/methods. For this case the easiest way is to use [JenniferTwin](https://github.com/imdrasil/jennifer_twin) lib. Using it you can dump Jennifer model instance to a separate object that is totally under your control. One of the cases when this approach may come in handy when ther is a need to use attribute annotations, like [MessagePack::Serializable](https://github.com/crystal-community/msgpack-crystal) or [JSON::Serializable](https://crystal-lang.org/api/latest/JSON/Serializable.html).
 
 ```crystal
 class User < Jennifer::Model::Base

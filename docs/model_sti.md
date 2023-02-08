@@ -31,8 +31,8 @@ end
 
 Requirements:
 
-- created table for STI should include **all** fields of all subclasses (that's why it is cold STI);
-- STI table has to have field named as `type` of any string type which will be able to store class name of child models;
+- The created table for STI should include **all** fields of all subclasses (that's why it is called Single Table Inheritance);
+- STI table has to have field named as `type` of any `String` type which will be able to store class name of child models;
 - parent class should have definition for `type` field;
 
 To extract from DB several subclasses in one request - just use parent class to query:
@@ -41,4 +41,4 @@ To extract from DB several subclasses in one request - just use parent class to 
 Profile.all.where { _login.like("%eter%") }
 ```
 
-Each retrieved object will respect values in `type` field and appropriate class object will be builded (including invoking of `after_initialize` callbacks).
+Each retrieved object will respect values in `type` field and appropriate class object will be built (including invoking of `after_initialize` callbacks).

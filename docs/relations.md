@@ -46,7 +46,7 @@ contact.remove_addresses(address)
                 | association_foreign       |--/
 ```
 
-As you can see primary field of related model can't be specified - defined primary key (in the mapping) will be got.
+As you can see primary field of related model can't be specified so the defined primary key (in the mapping) will be used.
 
 Also `has_many`, `belongs_to` and `has_one` relations have `dependent` parameter - defines extra callback for cleaning up related data after destroying parent one. Allowed types are:
 
@@ -62,7 +62,7 @@ Also `has_many`, `belongs_to` and `has_one` relations have `dependent` parameter
 
 ## Examples of non-standard relationships
 
-Sometimes relationships between tables use non-standard attributes or may require more than a single field as keys for the relationship. In situations like this you can use the `request` parameter on the relationship. This parameter takes a block using the `where` statement syntax, and can even use the parent model
+Sometimes relationships between tables use non-standard attributes or may require more than a single field as keys for the relationship. In situations like this you can use the `request` parameter on the relationship. This parameter takes a block using the `where` statement syntax, and can even use the other model column as a reference.
 
 ```crystal
 class Address < Jennifer::Model::Base
@@ -100,7 +100,7 @@ class Person < Jennifer::Model::Base
 end
 ```
 
-With this setup, using `person.addresses` will return an array of `Address`es. Doing `person.mailing_address` will return a single `Address` object if it exists.
+With this setup, using `person.addresses` will return an array of `Address`es. Doing `person.mailing_address` will return a single `Address` object, or `nil` if no record was found.
 
 ## Polymorphic Relations
 

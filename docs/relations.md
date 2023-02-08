@@ -60,6 +60,48 @@ Also `has_many`, `belongs_to` and `has_one` relations have `dependent` parameter
 
 `has_many` and `has_one` relations also accepts `inverse_of` option which presents inverse relation name. Specifying this option will automatically load owner object during any relation loading (because of `ModelQuery#includes` or `ModelQuery#eager_load` or even plaint `SomeModel#relation_name` method call).
 
+## Examples of non-standard relationships
+
+Sometimes relationships between tables use non-standard attributes or may require more than a single field as keys for the relationship. In situations like this you can use the `request` parameter on the relationship. This parameter takes a block using the `where` statement syntax, and can even use the parent model
+
+```crystal
+class Address < Jennifer::Model::Base
+  with_timestamps
+
+  belongs_to :person, foreign: :guid, primary: guid
+
+  # In this example model, the `type` field is a string of "mailing_address" or "physical_address"
+  mapping(
+    id: Primary64,
+    guid: String,
+    address1: String,
+    type: String,
+    created_at: Time,
+    updated_at: Time
+  )
+end
+
+
+class Person < Jennifer::Model::Base
+  with_timestamps
+
+  has_many :addresses, foreign: guid, primary: guid
+  has_one :mailing_address, request: { Address._type == "mailing_address" }, foreign: :guid, primary: :guid
+  has_one :physical_address, request: { Address._type == "physical_address" }, foreign: :guid, primary: :guid
+
+  mapping(
+    id: Primary64,
+    guid: String,
+    first_name: String,
+    last_name: String,
+    updated_at: Time,
+    created_at: Time
+  )
+end
+```
+
+With this setup, using `person.addresses` will return an array of `Address`es. Doing `person.mailing_address` will return a single `Address` object if it exists.
+
 ## Polymorphic Relations
 
 Polymorphic relation can be easily configured:

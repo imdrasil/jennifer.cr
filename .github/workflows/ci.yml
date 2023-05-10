@@ -94,34 +94,34 @@ jobs:
             db_user: dbuser
             db_password: dbpassword
             os: ubuntu-22.04
-          - crystal_version: 1.8.1
+          - crystal_version: 1.8.2
             DB: mysql
             integration: true
             linter: true
             db_user: root
             db_password:
             os: ubuntu-22.04
-          - crystal_version: 1.8.1
+          - crystal_version: 1.8.2
             DB: postgres
             integration: true
             linter: true
             db_user: dbuser
             db_password: dbpassword
             os: ubuntu-22.04
-          - crystal_version: 1.8.1
+          - crystal_version: 1.8.2
             DB: postgres
             db_user: dbuser
             db_password: dbpassword
             other: MT=1
             os: ubuntu-22.04
-          - crystal_version: 1.8.1
+          - crystal_version: 1.8.2
             DB: postgres
             pair: true
             db_user: dbuser
             db_password: dbpassword
             other: PAIR_DB_USER=root PAIR_DB_PASSWORD=
             os: ubuntu-22.04
-          - crystal_version: 1.8.1
+          - crystal_version: 1.8.2
             DB: mysql
             pair: true
             db_user: root
@@ -156,7 +156,7 @@ jobs:
       - name: Install dependencies
         run: |
           function version { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
-          if [ $(version '${{ matrix.crystal_version }}') -lt $(version '1.8.1') ]; then
+          if [ $(version '${{ matrix.crystal_version }}') -lt $(version '1.8.2') ]; then
             cp .github/shard_1_3_2.yml shard.yml
           fi
           shards install

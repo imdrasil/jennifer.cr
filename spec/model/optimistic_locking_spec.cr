@@ -11,6 +11,15 @@ describe Jennifer::Model::OptimisticLocking do
       c1.lock_version.should eq(1)
     end
 
+    it "does not reset lock version when it's not changed" do
+      c1 = Factory.create_city(name: "Old")
+      c1.lock_version.should eq(0)
+      expect_raises(Exception, /name can't be blank/) do
+        c1.update!({:name => ""})
+      end
+      c1.lock_version.should eq(0)
+    end
+
     it "raises stale object error" do
       c1 = Factory.create_city(name: "Old")
       c2 = City.find!(c1.id)

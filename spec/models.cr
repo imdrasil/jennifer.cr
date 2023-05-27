@@ -208,6 +208,12 @@ class City < ApplicationRecord
     country_id: Int64
   )
 
+  before_update :validate_name
+
+  def validate_name
+    raise "name can't be blank!" if @name.blank?
+  end
+
   belongs_to :country, Country
 end
 

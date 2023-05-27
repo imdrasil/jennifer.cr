@@ -22,7 +22,7 @@ end
       Jennifer::Migration::Runner.create
       Jennifer::Migration::Runner.create(PAIR_ADAPTER)
       Jennifer::Migration::TableBuilder::CreateTable.new(PAIR_ADAPTER, "addresses").tap do |t|
-        t.integer :id, { :primary => true, :auto_increment => true }
+        t.integer :id, {:primary => true, :auto_increment => true}
         t.json :details
         t.string :street
         t.integer :number

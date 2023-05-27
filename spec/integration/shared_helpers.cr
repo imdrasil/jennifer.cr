@@ -20,7 +20,7 @@ module Spec
     config_jennifer { }
   end
 
-  def self.config_jennifer(&block)
+  def self.config_jennifer(&)
     Jennifer::Config.reset_config
 
     Jennifer::Config.configure do |conf|

@@ -51,6 +51,12 @@ module Jennifer
         abstract def columns_tuple
 
         abstract def coercer
+
+        # Return `Jennifer::QueryBuilder::Criteria` for primary column or raises a `Jennifer::AbstractMethod`
+        abstract def primary
+
+        # Return primary field name or raises a `Jennifer::AbstractMethod`
+        abstract def primary_field_name
       end
 
       extend AbstractClassMethods
@@ -324,6 +330,16 @@ module Jennifer
         Coercer
       end
 
+      # Return `Jennifer::QueryBuilder::Criteria` for primary column or raises a `Jennifer::AbstractMethod`
+      def self.primary
+        raise AbstractMethod.new(:primary, {{@type}})
+      end
+
+      # Return primary field name or raises a `Jennifer::AbstractMethod`
+      def self.primary_field_name
+        raise AbstractMethod.new(:primary_field_name, {{@type}})
+      end
+
       # Sets *name* field with *value*
       #
       # ```
@@ -379,6 +395,12 @@ module Jennifer
       abstract def changes_before_typecast : Hash(String, Jennifer::DBAny)
 
       abstract def destroy_without_transaction
+
+      # Return primary field value or raises a `Jennifer::AbstractMethod`
+      abstract def primary
+
+      # :nodoc:
+      abstract def init_primary_field(value)
 
       private abstract def save_record_under_transaction(skip_validation)
       private abstract def init_attributes(values : Hash)

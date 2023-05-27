@@ -18,13 +18,13 @@ def execute(command, options)
   {status, io.to_s}
 end
 
-def clean(type = DatabaseSeeder.default_interface)
+def clean(type = DatabaseSeeder.default_interface, &)
   yield
 ensure
   DatabaseSeeder.drop(type)
 end
 
-def with_connection
+def with_connection(&)
   Spec.config_jennifer
   yield
 ensure

@@ -27,6 +27,7 @@ defaults : &defaults
   user: developer
   password: 1qazxsw2
   migration_files_path: ./any/path/migrations # ./db/migrations by default
+  pool_size: 5
 
 development:
   db: jennifer_develop
@@ -56,6 +57,7 @@ Jennifer::Config.configure do |conf|
   conf.adapter = "mysql"
   conf.db = "crystal"
   conf.migration_files_path = "./any/path/migrations"
+  conf.pool_size = (ENV["DB_CONNECTION_POOL"]? || 5).to_i
 end
 ```
 

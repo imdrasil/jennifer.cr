@@ -1,7 +1,7 @@
 class AlterAddress20170326172700458 < Jennifer::Migration::Base
   def up
     change_table(:contacts) do |t|
-      t.change_column(:age, :integer, { :default => 0 })
+      t.change_column(:age, :integer, {:default => 0})
       t.add_column(:description, :text)
       t.add_index(:description, :uniq, order: :asc, length: 10)
     end

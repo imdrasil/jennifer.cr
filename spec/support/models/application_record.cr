@@ -1,5 +1,5 @@
 abstract class ApplicationRecord < Jennifer::Model::Base
-  getter super_class_callback_called = false
+  getter? super_class_callback_called = false
 
   before_create :before_abstract_create
 

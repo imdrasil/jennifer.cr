@@ -27,12 +27,12 @@ require "../scripts/migrations/20170119011451314_create_contacts"
 require "../scripts/migrations/20180909200027509_create_notes"
 
 class Jennifer::Adapter::ICommandShell
-  class_property stub = false
+  class_property? stub = false
 end
 
 class Jennifer::Adapter::Bash < Jennifer::Adapter::ICommandShell
   private def invoke(string, options)
-    if Jennifer::Adapter::ICommandShell.stub
+    if Jennifer::Adapter::ICommandShell.stub?
       {result: 0, output: [string, options]}
     else
       super
@@ -42,7 +42,7 @@ end
 
 class Jennifer::Adapter::Docker < Jennifer::Adapter::ICommandShell
   private def invoke(string, options)
-    if Jennifer::Adapter::ICommandShell.stub
+    if Jennifer::Adapter::ICommandShell.stub?
       {result: 0, output: [string, options]}
     else
       super
@@ -150,7 +150,7 @@ def local_time_zone
   Jennifer::Config.local_time_zone
 end
 
-def with_time_zone(zone_name : String)
+def with_time_zone(zone_name : String, &)
   old_zone = Jennifer::Config.local_time_zone_name
   begin
     Jennifer::Config.local_time_zone_name = zone_name
@@ -173,7 +173,7 @@ end
 
 # SQL query clauses =============
 
-def sb
+def sb(&)
   String.build { |io| yield io }
 end
 

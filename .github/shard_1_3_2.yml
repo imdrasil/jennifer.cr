@@ -1,6 +1,6 @@
 # NOTE: the only difference from 1.4.1 is missing ameba
 name: jennifer
-version: 0.12.0
+version: 0.13.0
 
 authors:
   - Roman Kalnytskyi <moranibaca@gmail.com>

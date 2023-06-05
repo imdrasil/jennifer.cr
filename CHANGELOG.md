@@ -1,5 +1,69 @@
 # Changelog
 
+## 0.13.0 (05-06-2023)
+
+**General**
+
+* address "positional parameter of the overridden method, which has a different name and may affect named argument passing" crystal `1.5.0` warning (for full list see [MR](https://github.com/imdrasil/jennifer.cr/pull/413))
+* upgrade supported mysql driver version to `0.14.0`
+* upgrade supported pg driver version to `0.26.0`
+* add `jsonb` type support for model and migration generators
+* replace `phoffer/inflector.cr` inflector library with `luckyframework/wordsmith`
+
+**QueryBuilder**
+
+* `Query.count` returns `Int64` instead of `Int32`
+* `Query.offset` accepts `Int32` or `Int64` as input instead of only `Int32`
+* `#group`, `#select` raise an `ArgumentError` if block returns anything except array
+* `#having`, `#reorder`, `#order` raises `ExpressionBuilder` as a block argument
+* `#where` accepts hash with string keys as well
+* added `#find_or_create_by`, `#find_or_create_by!`, `#find_or_initialize_by` to create/instantiate a record if nothing was found in the DB
+* added `#find_by` and `#find_by!` as a shortcut for `.where().first` and `.where().first!`
+
+**Model**
+
+* change default `id` attribute type from `Int32` to `Int64`
+* generate a setter method for a `Int64` attribute that calls `#to_i64` on `Int32` value
+* in mapping automatically assign `null: true` if `null` property is missing and field is primary
+* enhance type coercion on initializing instance from hash
+* change return type of `.ids` to `Array(Int64)`
+* `Model.count` returns `Int64` instead of `Int32`
+* add support for `JSON::PullParser` attribute class
+* model class responds to: `#here`, `#select`, `#from`, `#union`, `#distinct`, `#order`, `#group`, `#with`, `#merge`, `#limit`, `#offset`, `#lock`, `#reorder`, `#count`, `#max`, `#min`, `#sum`, `#avg`, `#group_count`, `#group_max`, `#group_min`, `#group_sum`, `#group_avg`, `#with_relation`, `#includes`, `#preload`, `#eager_load`, `#last`, `#last!`, `#first`, `#first!`, `#find_by`, `#find_by!`, `#pluck`, `#exists?`, `#increment`, `#decrement`, `#ids`, `#find_records_by_sql`, `#find_in_batches`, `#find_each`, `#join`, `#right_join`, `#left_join`, `#lateral_join`
+* adds `.create` and `.create!` that accepts block
+* fix a bug when password digest wasn't generated when password was set by passing it to a constructor
+* add missing STI initialization to constructors accepting a hash or named tuple
+* use `Adapter::Base.coerce_database_value` in constructors accepting a hash or named tuple to coerce values for columns that don't have specified converter
+* Fix the issue of `Jennifer::Model::OptimisticLocking#reset_lock_version` decreasing lock version column when it's not changed
+
+**Validation**
+
+* add `jennifer.errors.messages.required` message in locale yaml file
+* `Jennifer::Model::Errors#add` accepts `String | Symbol | Proc(Translation, String, String)` for `message` argument
+* `validates_inclusion`, `validates_exclusion`, `validates_format`, `validates_length`, `validates_uniqueness`, `validates_presence`, `validates_absence`, `validates_numericality`, `validates_acceptance` & `validates_confirmation` validation macros accepts `message` option that allows to specify validation message
+
+**Relation**
+
+* `belongs_to` relation macro accepts `required` option to validate existence of relation on save
+
+**View**
+
+* model class responds to: `#here`, `#select`, `#from`, `#union`, `#distinct`, `#order`, `#group`, `#with`, `#merge`, `#limit`, `#offset`, `#lock`, `#reorder`, `#count`, `#max`, `#min`, `#sum`, `#avg`, `#group_count`, `#group_max`, `#group_min`, `#group_sum`, `#group_avg`, `#with_relation`, `#includes`, `#preload`, `#eager_load`, `#last`, `#last!`, `#first`, `#first!`, `#find_by`, `#find_by!`, `#pluck`, `#exists?`, `#increment`, `#decrement`, `#ids`, `#find_records_by_sql`, `#find_in_batches`, `#find_each`, `#join`, `#right_join`, `#left_join`, `#lateral_join`
+
+**Adapter**
+
+* remove `id` column from the `versions` table schema
+* change default `id` column type from `int` to `bigint`
+* add `Base.coerce_database_value` method to provide interface to perform coercing from default database type used to read column to hash to a desired model attribute type
+
+**SqlGenerator**
+
+* fix invalid SQL generating for `FROM` clause when string value is given for `#from`
+
+**Record**
+
+* now calling a `#foo_bar` method on a record that is missing raises `ArgumentError` instead of `KeyError`
+
 ## 0.12.0 (15-12-2021)
 
 **General**

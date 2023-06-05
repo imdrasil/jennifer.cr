@@ -211,7 +211,7 @@ If it is more convenient to you to store migrations in a plain SQL it is possibl
 dependencies:
   micrate:
     github: "amberframework/micrate"
-    version: "= 0.12.0"
+    version: "= 0.15.0"
 ```
 - add an override for a `crystal-db` to enforce latest version
 

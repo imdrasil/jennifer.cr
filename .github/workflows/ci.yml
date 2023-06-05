@@ -76,7 +76,7 @@ jobs:
       DB: ${{ matrix.DB }}
       PAIR: ${{ matrix.pair }}
       DB_USER: root
-      DB_PASSWORD: dbpassword
+      DB_PASSWORD: ${{ matrix.DB == 'mysql' && null || 'dbpassword' }}
 
     steps:
       - name: Export rest variables

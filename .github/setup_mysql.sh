@@ -10,7 +10,7 @@ sudo service mysql stop
 docker pull ${MYSQL}
 
 docker run -itd --name=mysqld \
-    -e MYSQL_ROOT_PASSWORD=dbpassword \
+    -e MYSQL_ALLOW_EMPTY_PASSWORD=yes \
     -p 127.0.0.1:3306:3306 \
     ${MYSQL} \
     --default-authentication-plugin=mysql_native_password

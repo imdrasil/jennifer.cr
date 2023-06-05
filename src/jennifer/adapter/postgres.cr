@@ -244,7 +244,7 @@ module Jennifer
         # NOTE: any pg enum field must be converted back to string from slice in bulk insert
         klass.columns_tuple.each do |field, properties|
           if properties.has_key?(:converter) && properties.dig(:converter) == ::Jennifer::Model::PgEnumConverter
-            enum_fields << {fields.index!(field.to_s), field}
+            enum_fields << {fields.index(field.to_s).not_nil!, field} # ameba:disable Lint/NotNilAfterNoBang
           end
         end
 

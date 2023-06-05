@@ -1,0 +1,10 @@
+# NOTE: this is configure to connect to the database running on the host machine. This will be improved later on by owner
+version: '2'
+services:
+  spec:
+    ports:
+      - 3035:3035
+      - 5432:5432
+    build: .
+    environment:
+      DB: mysql

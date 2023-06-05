@@ -172,12 +172,12 @@ describe Jennifer::Model::Callback do
             fb = nil
             FacebookProfile.transaction do
               fb = Factory.create_facebook_profile(name: "name")
-              fb.commit_callback_called.should be_false
-              fb.fb_commit_callback_called.should be_false
+              fb.commit_callback_called?.should be_false
+              fb.fb_commit_callback_called?.should be_false
             end
             fb = fb.not_nil!
-            fb.commit_callback_called.should be_true
-            fb.fb_commit_callback_called.should be_true
+            fb.commit_callback_called?.should be_true
+            fb.fb_commit_callback_called?.should be_true
           end
         end
       end
@@ -435,7 +435,7 @@ describe Jennifer::Model::Callback do
 
   context "inherited" do
     it "is also invoked" do
-      Factory.create_contact.super_class_callback_called.should be_true
+      Factory.create_contact.super_class_callback_called?.should be_true
     end
   end
 end

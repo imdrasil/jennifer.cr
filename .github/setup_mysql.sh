@@ -6,10 +6,15 @@ MYSQL="mysql:8.0"
 tries=0
 
 sudo service mysql stop
-docker pull ${MYSQL}
-RUN_MYSQL="docker run -it --name=mysqld -d -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -p 3306:3306"
 
-${RUN_MYSQL} ${MYSQL} --default-authentication-plugin=mysql_native_password
+docker pull ${MYSQL}
+
+docker run -itd \
+    --name=mysqld \
+    -e MYSQL_ALLOW_EMPTY_PASSWORD=yes \
+    -p 3306:3306 \
+    ${MYSQL} \
+    --default-authentication-plugin=mysql_native_password
 
 while ! docker exec mysqld mysqladmin ping --host localhost --silent &> /dev/null ; do
     echo "Waiting for database connection..."

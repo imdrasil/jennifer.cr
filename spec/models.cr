@@ -116,7 +116,7 @@ class Profile < ApplicationRecord
 
   @@destroy_counter = 0
 
-  getter commit_callback_called = false
+  getter? commit_callback_called = false
 
   belongs_to :contact, Contact
 
@@ -142,7 +142,7 @@ class FacebookProfile < Profile
     virtual_child_field: {type: Int32?, virtual: true}
   )
 
-  getter fb_commit_callback_called = false
+  getter? fb_commit_callback_called = false
 
   validates_length :uid, is: 4
 

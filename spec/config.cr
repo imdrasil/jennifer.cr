@@ -67,6 +67,7 @@ def set_default_configuration
     conf.password = ENV["DB_PASSWORD"] if ENV["DB_PASSWORD"]?
     conf.verbose_migrations = false
     conf.local_time_zone_name = "Europe/Kiev"
+    conf.pool_size = (ENV["DB_CONNECTION_POOL"]? || 1).to_i
   end
 
   Log.setup "db", :debug, Spec.logger_backend

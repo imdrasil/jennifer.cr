@@ -9,7 +9,41 @@ on:
     - cron: "0 7 * * 1"
 
 jobs:
+  lint:
+    strategy:
+      matrix:
+        include:
+          - DB: mysql
+          - DB: postgres
+
+    runs-on: ubuntu-22.04
+
+    env:
+      DB: ${{ matrix.DB }}
+
+    steps:
+      - name: Install Crystal
+        uses: oprypin/install-crystal@v1
+        with:
+          crystal: 1.8.2
+
+      - name: Donwload sources
+        uses: actions/checkout@v2
+
+      - name: Check formatting
+        if: ${{ matrix.linter }}
+        run: make format
+
+      - name: Install dependencies
+        run: shards install
+
+      - name: Run linter
+        if: ${{ matrix.linter }}
+        run: make lint
+
   test:
+    needs: lint
+
     strategy:
       fail-fast: false
       matrix:
@@ -52,20 +86,24 @@ jobs:
             DB: postgres
           - crystal_version: 1.8.2
             DB: mysql
+          - crystal_version: 1.8.2
+            DB: postgres
+          - crystal_version: 1.9.2
+            DB: mysql
             integration: true
             linter: true
-          - crystal_version: 1.8.2
+          - crystal_version: 1.9.2
             DB: postgres
             integration: true
             linter: true
-          - crystal_version: 1.8.2
+          - crystal_version: 1.9.2
             DB: postgres
             other: MT=1
-          - crystal_version: 1.8.2
+          - crystal_version: 1.9.2
             DB: postgres
             pair: true
             other: PAIR_DB_USER=root PAIR_DB_PASSWORD=
-          - crystal_version: 1.8.2
+          - crystal_version: 1.9.2
             DB: mysql
             pair: true
             other: PAIR_DB_USER=dbuser PAIR_DB_PASSWORD=dbpassword
@@ -90,10 +128,6 @@ jobs:
       - name: Donwload sources
         uses: actions/checkout@v2
 
-      - name: Check formatting
-        if: ${{ matrix.linter }}
-        run: make format
-
       - name: Install dependencies
         run: |
           function version { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
@@ -101,10 +135,6 @@ jobs:
             cp .github/shard_1_3_2.yml shard.yml
           fi
           shards install
-
-      - name: Run linter
-        if: ${{ matrix.linter }}
-        run: make lint
 
       - name: 'Install MySQL'
         if: ${{ matrix.DB == 'mysql' || matrix.pair }}

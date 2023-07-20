@@ -886,6 +886,7 @@ describe Jennifer::Model::Base do
 
   describe "#to_json" do
     it "works with all possible column types" do
+      puts AllTypeModel.new.to_json
       AllTypeModel.new.to_json.should eq(
         db_specific(
           mysql: ->do
@@ -901,7 +902,7 @@ describe Jennifer::Model::Base do
             "double_f":null,"string_f":null,"varchar_f":null,"text_f":null,"timestamp_f":null,
             "date_time_f":null,"date_f":null,"json_f":null,"decimal_f":null,"oid_f":null,"char_f":null,
             "uuid_f":null,"timestamptz_f":null,"bytea_f":null,"jsonb_f":null,"xml_f":null,"point_f":null,
-            "lseg_f":null,"path_f":null,"box_f":null}
+            "lseg_f":null,"path_f":null,"box_f":null,"array_int32_f":null,"array_string_f":null,"array_time_f":null}
             JSON
           end
         ).gsub('\n', "")

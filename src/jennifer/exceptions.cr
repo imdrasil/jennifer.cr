@@ -137,7 +137,7 @@ module Jennifer
   end
 
   class DataTypeCasting < BaseException
-    EXTRACT_WORDS_REG = /cast from (.+) to (.+) failed/
+    EXTRACT_WORDS_REG = /[Cc]ast from (.+) to (.+) failed/
 
     def initialize(column, klass, exception)
       match = EXTRACT_WORDS_REG.match(exception.message.to_s).not_nil!

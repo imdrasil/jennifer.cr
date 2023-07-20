@@ -71,7 +71,7 @@ PostgreSQL specific datatypes:
 | `#line` | `LINE` | `PG::Geo::Line` |
 | `#circle` | `CIRCLE` | `PG::Geo::Circle` |
 
-Also if you use postgres array types are available as well: `Array(Int32)`, `Array(Char)`, `Array(Float32)`,  `Array(Float64)`, `Array(Int16)`, `Array(Int32)`, `Array(Int64)`, `Array(String)`.
+Also if you use postgres array types are available as well: `Array(Int32)`, `Array(Char)`, `Array(Float32)`,  `Array(Float64)`, `Array(Int16)`, `Array(Int32)`, `Array(Int64)`, `Array(String)`, `Array(Time)`, `Array(UUID)`. Currently only plain (1 dimensional) arrays are supported. Also take into account that to be able to use `Array(String)` you need to use `text :my_column, {:array => true}` in your migration.
 
 All those methods accepts additional options:
 

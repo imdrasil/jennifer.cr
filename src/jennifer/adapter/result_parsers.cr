@@ -35,6 +35,10 @@ module Jennifer
         value = rs.read.as(DBAny)
         return value unless value.is_a?(Time)
 
+        set_time_column_zone(value)
+      end
+
+      private def set_time_column_zone(value)
         if Config.time_zone_aware_attributes
           value.in(Config.local_time_zone)
         else

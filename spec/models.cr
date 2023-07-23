@@ -75,6 +75,7 @@ class User < ApplicationRecord
   validates_uniqueness :email
 
   has_many :contacts, Contact, inverse_of: :user
+  has_many :all_types_records, AllTypeModel, foreign: :bigint_f
 
   def self.password_digest_cost
     4
@@ -261,7 +262,10 @@ class AllTypeModel < ApplicationRecord
         point_f: PG::Geo::Point?,
         lseg_f: PG::Geo::LineSegment?,
         path_f: PG::Geo::Path?,
-        box_f: PG::Geo::Box?
+        box_f: PG::Geo::Box?,
+        array_int32_f: Array(Int32)?,
+        array_string_f: Array(String)?,
+        array_time_f: Array(Time)?
       )
     {% else %}
       mapping(
@@ -292,6 +296,8 @@ class AllTypeModel < ApplicationRecord
     date_f: Time?,
     json_f: JSON::Any?
   )
+
+  belongs_to :user, User, foreign: :bigint_f
 end
 
 {% if env("PAIR") == "1" %}

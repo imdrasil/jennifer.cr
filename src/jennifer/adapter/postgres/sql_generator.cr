@@ -129,6 +129,7 @@ module Jennifer
         arr = Array(String).new(args.size)
         args.each_with_index do |arg, i|
           args[i] = arg.to_utc if arg.is_a?(Time)
+          arg.map!(&.to_utc) if arg.is_a?(Array(Time))
           arr << "$#{i + 1}"
         end
         {query % arr, args}

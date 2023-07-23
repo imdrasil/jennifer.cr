@@ -66,7 +66,7 @@ module Jennifer
       rescue e : BaseException
         BadQuery.prepend_information(e, query, args)
         raise e
-      rescue e : DB::Error
+      rescue e : DB::Error | TypeCastError
         raise e
       rescue e : Exception
         raise BadQuery.new(e.message, query, args)
@@ -77,7 +77,7 @@ module Jennifer
       rescue e : BaseException
         BadQuery.prepend_information(e, query, args)
         raise e
-      rescue e : DB::Error
+      rescue e : DB::Error | TypeCastError
         raise e
       rescue e : Exception
         raise BadQuery.new(e.message, query, args)
@@ -88,7 +88,7 @@ module Jennifer
       rescue e : BaseException
         BadQuery.prepend_information(e, query, args)
         raise e
-      rescue e : DB::Error
+      rescue e : DB::Error | TypeCastError
         raise e
       rescue e : Exception
         raise BadQuery.new(e.message, query, args)

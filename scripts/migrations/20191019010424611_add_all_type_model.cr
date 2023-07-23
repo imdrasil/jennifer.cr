@@ -29,6 +29,9 @@ class AddAllTypeModel < Jennifer::Migration::Base
         t.lseg :lseg_f
         t.path :path_f
         t.box :box_f
+        t.integer :array_int32_f, {:array => true}
+        t.text :array_string_f, {:array => true}
+        t.timestamp :array_time_f, {:array => true}
       {% else %}
         # t.enum
         t.blob :blob_f

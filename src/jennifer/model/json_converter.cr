@@ -19,6 +19,8 @@ module Jennifer::Model
       case value
       when String
         JSON.parse(value)
+      when JSON::PullParser
+        JSON::Any.new(value)
       else
         value
       end

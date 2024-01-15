@@ -6,7 +6,7 @@ module Jennifer
       @locks = {} of UInt64 => TransactionObserver
 
       # Yields current connection or checkout a new one.
-      def with_connection(&block)
+      def with_connection(&)
         if under_transaction?
           yield @locks[fiber_id].connection
         else
@@ -15,7 +15,7 @@ module Jennifer
       end
 
       # Yields new checkout connection.
-      def with_manual_connection(&block)
+      def with_manual_connection(&)
         db.retry do
           db.using_connection do |conn|
             yield conn
@@ -34,7 +34,7 @@ module Jennifer
       end
 
       # Starts a transaction and yields it to the given block.
-      def transaction(&block)
+      def transaction(&)
         previous_transaction = current_transaction
         res = nil
         with_transactionable do |conn|
@@ -102,7 +102,7 @@ module Jennifer
       end
 
       # Yields current transaction or starts a new one.
-      private def with_transactionable(&block)
+      private def with_transactionable(&)
         if under_transaction?
           yield @locks[fiber_id].transaction
         else

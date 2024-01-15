@@ -80,7 +80,7 @@ module Jennifer
       # end
       # record.id # => Int64
       # ```
-      def find_or_create_by(attributes : Hash(String | Symbol, _), &block) : T
+      def find_or_create_by(attributes : Hash(String | Symbol, _), &) : T
         find_by(attributes) || T.create(attributes) { |record| yield record }
       end
 
@@ -90,7 +90,7 @@ module Jennifer
       end
 
       # Similar to `#find_or_create_by, but calls `.create!` instead of `.create`.
-      def find_or_create_by!(attributes : Hash(String | Symbol, _), &block) : T
+      def find_or_create_by!(attributes : Hash(String | Symbol, _), &) : T
         find_by(attributes) || T.create!(attributes) { |record| yield record }
       end
 
@@ -108,7 +108,7 @@ module Jennifer
       # end
       # record.id # => Int64
       # ```
-      def find_or_initialize_by(attributes : Hash(String | Symbol, _), &block) : T
+      def find_or_initialize_by(attributes : Hash(String | Symbol, _), &) : T
         find_by(attributes) || T.new(attributes).tap { |record| yield record }
       end
 

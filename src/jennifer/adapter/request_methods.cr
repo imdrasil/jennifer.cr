@@ -61,7 +61,7 @@ module Jennifer
         result
       end
 
-      def select(q)
+      def select(q, &)
         body = sql_generator.select(q)
         args = q.sql_args
         query(*parse_query(body, args)) { |rs| yield rs }

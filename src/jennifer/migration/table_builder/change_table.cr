@@ -223,10 +223,10 @@ module Jennifer
 
         def process
           high_priority_commands.each(&.process)
-          @drop_columns.each { |c| schema_processor.drop_column(@name, c) }
-          @new_columns.each { |n, opts| schema_processor.add_column(@name, n, opts) }
-          @changed_columns.each do |n, opts|
-            schema_processor.change_column(@name, n, opts[:new_name].as(String | Symbol), opts)
+          @drop_columns.each { |name| schema_processor.drop_column(@name, name) }
+          @new_columns.each { |new_name, opts| schema_processor.add_column(@name, new_name, opts) }
+          @changed_columns.each do |old_name, opts|
+            schema_processor.change_column(@name, old_name, opts[:new_name].as(String | Symbol), opts)
           end
           low_priority_commands.each(&.process)
 

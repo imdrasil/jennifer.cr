@@ -5,14 +5,14 @@ module Jennifer
     class SQLGenerator < Adapter::BaseSQLGenerator
       def self.insert(obj : Model::Base)
         opts = obj.arguments_to_insert
-        String.build do |s|
-          s << "INSERT INTO " << quote_identifier(obj.class.table_name)
+        String.build do |io|
+          io << "INSERT INTO " << quote_identifier(obj.class.table_name)
           if opts[:fields].empty?
-            s << " VALUES ()"
+            io << " VALUES ()"
           else
-            s << "("
-            quote_identifiers(opts[:fields]).join(s, ", ")
-            s << ") VALUES (" << escape_string(opts[:fields].size) << ") "
+            io << "("
+            quote_identifiers(opts[:fields]).join(io, ", ")
+            io << ") VALUES (" << escape_string(opts[:fields].size) << ") "
           end
         end
       end
@@ -21,19 +21,19 @@ module Jennifer
       # joins inside of query.
       def self.update(query, options : Hash)
         esc = escape_string(1)
-        String.build do |s|
-          s << "UPDATE " << quote_identifier(query.table)
-          s << ' '
+        String.build do |io|
+          io << "UPDATE " << quote_identifier(query.table)
+          io << ' '
           _joins = query._joins?
 
           unless _joins.nil?
-            where_clause(s, _joins[0].on)
-            _joins[1..-1].join(s, " ") { |e| s << e.as_sql(self) }
+            where_clause(io, _joins[0].on)
+            _joins[1..-1].join(io, " ") { |e| io << e.as_sql(self) }
           end
-          s << " SET "
-          options.join(s, ", ") { |(k, _)| s << quote_identifier(k) << " = " << esc }
-          s << " "
-          where_clause(s, query.tree)
+          io << " SET "
+          options.join(io, ", ") { |(k, _)| io << quote_identifier(k) << " = " << esc }
+          io << " "
+          where_clause(io, query.tree)
         end
       end
 

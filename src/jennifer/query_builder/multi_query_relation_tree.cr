@@ -13,7 +13,7 @@ module Jennifer
       def preload(collection)
         repo = Array(Array(Model::Resource)).new(@bucket.size + 1)
         (@bucket.size + 1).times { repo << [] of Model::Resource }
-        collection.each { |c| repo[0] << c }
+        collection.each { |record| repo[0] << record }
 
         pk_repo = Array(Hash(DBAny, Array(DBAny))).new(@bucket.size + 1)
         (@bucket.size + 1).times { pk_repo << {} of DBAny => Array(DBAny) }

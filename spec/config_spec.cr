@@ -37,9 +37,9 @@ describe Jennifer::Config do
       end
 
       expect_raises(Jennifer::InvalidConfig, /No adapter configured/) do
-        described_class.configure do |c|
-          c.db = "somedb"
-          c.adapter = ""
+        described_class.configure do |conf|
+          conf.db = "somedb"
+          conf.adapter = ""
         end
       end
     end

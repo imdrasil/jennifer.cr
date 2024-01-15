@@ -63,7 +63,7 @@ module Jennifer
     # Returns a JSON string representing data set.
     #
     # For more details see `Resource#to_json`.
-    def to_json(only : Array(String)? = nil, except : Array(String)? = nil, &block)
+    def to_json(only : Array(String)? = nil, except : Array(String)? = nil, &)
       JSON.build do |json|
         to_json(json, only, except) { yield json, self }
       end
@@ -73,7 +73,7 @@ module Jennifer
       to_json(json) { }
     end
 
-    def to_json(json : JSON::Builder, only : Array(String)? = nil, except : Array(String)? = nil, &block)
+    def to_json(json : JSON::Builder, only : Array(String)? = nil, except : Array(String)? = nil, &)
       json.object do
         field_names =
           if only

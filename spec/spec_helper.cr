@@ -18,9 +18,6 @@ end
 
 require "spec"
 require "factory"
-require "./config"
-require "./models"
-require "./factories"
 require "./support/*"
 
 require "../scripts/migrations/20170119011451314_create_contacts"
@@ -178,7 +175,7 @@ def sb(&)
 end
 
 def select_clause(query)
-  sb { |s| sql_generator.select_clause(s, query) }
+  sb { |io| sql_generator.select_clause(io, query) }
 end
 
 def join_clause(query)

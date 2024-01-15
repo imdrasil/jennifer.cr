@@ -1,9 +1,9 @@
 require "./views"
-require "../src/jennifer/model/authentication"
+require "../../src/jennifer/model/authentication"
 # NOTE: some models are moved to the separate files to simulate common usage
-require "./support/models/application_record"
-require "./support/models/contact"
-require "./support/models/address"
+require "./models/application_record"
+require "./models/contact"
+require "./models/address"
 
 class JohnyQuery < Jennifer::QueryBuilder::QueryObject
   def call

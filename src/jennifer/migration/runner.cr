@@ -5,7 +5,9 @@ module Jennifer
     module Runner
       @@pending_versions = [] of String
 
-      # Invokes migrations. *count* with negative or zero value will invoke all pending migrations.
+      # Invokes migrations.
+      #
+      # *count* with negative or zero value will invoke all pending migrations.
       def self.migrate(count : Int = -1)
         performed = false
         default_adapter.ready_to_migrate!
@@ -142,7 +144,7 @@ module Jennifer
         raise e
       end
 
-      private def self.process_with_announcement(migration, direction)
+      private def self.process_with_announcement(migration, direction, &)
         words =
           case direction
           when :up
@@ -170,7 +172,7 @@ module Jennifer
         MESSAGE
       end
 
-      private def self.optional_transaction(migration)
+      private def self.optional_transaction(migration, &)
         if migration.class.with_transaction?
           Model::Base.transaction { yield }
         else

@@ -3,7 +3,7 @@ require "../spec_helper"
 macro validation_class_generator(klass, name, **options)
   class {{klass}} < AbstractContactModel
     {{yield}}
-    validates_numericality {{name}}, {{**options}}
+    validates_numericality {{name}}, {{options.double_splat}}
   end
 end
 

@@ -72,7 +72,7 @@ module Jennifer
         raise BadQuery.new(e.message, query, args)
       end
 
-      def query(query : String, args : ArgsType = [] of DBAny)
+      def query(query : String, args : ArgsType = [] of DBAny, &)
         with_connection { |conn| log_query(query, args) { conn.query(query, args: args) { |rs| yield rs } } }
       rescue e : BaseException
         BadQuery.prepend_information(e, query, args)
@@ -163,7 +163,7 @@ module Jennifer
         exec(*parse_query(query, args))
       end
 
-      def log_query(query : String, args : Enumerable)
+      def log_query(query : String, args : Enumerable, &)
         time = Time.monotonic
         res = yield
         time = Time.monotonic - time
@@ -175,7 +175,7 @@ module Jennifer
         res
       end
 
-      def log_query(query : String)
+      def log_query(query : String, &)
         time = Time.monotonic
         res = yield
         time = Time.monotonic - time
@@ -237,7 +237,7 @@ module Jennifer
       end
 
       # Yields to block connection to the database main schema.
-      def db_connection
+      def db_connection(&)
         DB.open(connection_string(:root)) do |db|
           yield(db)
         end

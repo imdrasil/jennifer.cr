@@ -19,7 +19,7 @@ module Jennifer
       # Contact.all.join(Address, "some_table") { |t| _contact_id == t._id }
       # # => JOIN addresses some_table ON some_table.contact_id = contacts.id
       # ```
-      def join(source : Class, table_alias : String? = nil, type = :inner, relation : String? = nil)
+      def join(source : Class, table_alias : String? = nil, type = :inner, relation : String? = nil, &)
         eb = joined_context(source, relation, table_alias)
         with_relation! if relation
         other = with eb yield @expression, eb
@@ -33,7 +33,7 @@ module Jennifer
       # Contact.all.join("addresses") { |t| _contact_id == t._id }
       # # => JOIN addresses ON addresses.contact_id = contacts.id
       # ```
-      def join(source : String, table_alias : String? = nil, type = :inner, relation : String? = nil)
+      def join(source : String, table_alias : String? = nil, type = :inner, relation : String? = nil, &)
         eb = joined_context(source, relation, table_alias)
         with_relation! if relation
         other = with eb yield @expression, eb
@@ -47,7 +47,7 @@ module Jennifer
       # Contact.all.join(Address.all, "some_table") { |t| _contact_id == t._id }
       # # => JOIN (SELECT addresses.* FROM addresses) some_table ON some_table.contact_id = contacts.id
       # ```
-      def join(source : Query, table_alias : String, type = :inner)
+      def join(source : Query, table_alias : String, type = :inner, &)
         eb = joined_context(source, table_alias)
         other = with eb yield @expression, eb
         _joins! << Join.new(source, other, type, table_alias)
@@ -60,7 +60,7 @@ module Jennifer
       # Contact.all.lateral_join(Address.all, "some_table") { |t| _contact_id == t._id }
       # # => JOIN LATERAL (SELECT addresses.* FROM addresses) some_table ON some_table.contact_id = contacts.id
       # ```
-      def lateral_join(source : Query, table_alias : String, type = :inner)
+      def lateral_join(source : Query, table_alias : String, type = :inner, &)
         eb = joined_context(source, table_alias)
         other = with eb yield @expression, eb
         _joins! << LateralJoin.new(source, other, type, table_alias)
@@ -70,28 +70,28 @@ module Jennifer
       # Adds `LEFT JOIN` of the *source*'s class table to the request.
       #
       # Alias for `join(source, table_alias, :left)`.
-      def left_join(source : Class, table_alias : String? = nil)
+      def left_join(source : Class, table_alias : String? = nil, &)
         join(source, table_alias, :left) { |own_table, joined_table| with joined_table yield own_table, joined_table }
       end
 
       # Adds `LEFT JOIN` of *source* table to the request.
       #
       # Alias for `join(source, table_alias, :left)`.
-      def left_join(source : String, table_alias : String? = nil)
+      def left_join(source : String, table_alias : String? = nil, &)
         join(source, table_alias, :left) { |own_table, joined_table| with joined_table yield own_table, joined_table }
       end
 
       # Adds `RIGHT JOIN` of the *source*'s class table to the request.
       #
       # Alias for `join(source, table_alias, :right)`.
-      def right_join(source : Class, table_alias : String? = nil)
+      def right_join(source : Class, table_alias : String? = nil, &)
         join(source, table_alias, :right) { |own_table, joined_table| with joined_table yield own_table, joined_table }
       end
 
       # # Adds `RIGHT JOIN` of *source* table to the request.
       #
       # Alias for `join(source, table_alias, :right)`.
-      def right_join(source : String, table_alias : String? = nil)
+      def right_join(source : String, table_alias : String? = nil, &)
         join(source, table_alias, :right) { |own_table, joined_table| with joined_table yield own_table, joined_table }
       end
 

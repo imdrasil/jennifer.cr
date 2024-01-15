@@ -8,4 +8,6 @@ end
 
 Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::Adapter::DBFormatter)
 
-Sam.help
+if SemanticVersion.parse(Sam::VERSION) < SemanticVersion.new(0, 5, 0)
+  Sam.help
+end

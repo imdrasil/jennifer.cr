@@ -47,7 +47,8 @@ module Jennifer
 
         # :nodoc:
         def %validate_method
-          {{klass}}.instance.validate(self{% if args.size > 0 %}, {{*args}} {% end %}{% if options.size > 0 %}, {{**options}} {% end %})
+          {{klass}}.instance
+            .validate(self{% if args.size > 0 %}, {{*args}} {% end %}{% if options.size > 0 %}, {{options.double_splat}} {% end %})
         end
       end
 
@@ -165,7 +166,7 @@ module Jennifer
             field: {{field}},
             value: {{field.id}},
             message: {{message}},
-            {{**options}}
+            {{options.double_splat}}
           )
         end
       end
@@ -299,7 +300,7 @@ module Jennifer
             field: {{field}},
             value: {{field.id}},
             message: {{message}},
-            {{**options}}
+            {{options.double_splat}}
           )
         end
       end

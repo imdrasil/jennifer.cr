@@ -220,7 +220,7 @@ module Jennifer
         query_array("SELECT unnest(enum_range(NULL::#{name})::varchar[])", String).map { |array| array[0] }
       end
 
-      def with_table_lock(table : String, type : String = "default", &block : DB::Transaction -> Void)
+      def with_table_lock(table : String, type : String = "default", & : DB::Transaction -> Void)
         transaction do |t|
           exec "LOCK TABLE #{table} IN #{TABLE_LOCK_TYPES[type]} MODE"
           yield t

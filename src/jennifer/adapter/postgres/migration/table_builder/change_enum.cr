@@ -31,10 +31,10 @@ module Jennifer
               temp_name = "#{@name}_temp"
               schema_processor.define_enum(temp_name, new_values)
               @effected_tables.each do |row|
-                query = String.build do |s|
-                  s << "ALTER TABLE " << row[0]
-                  s << " ALTER COLUMN " << row[1] << " TYPE " << temp_name
-                  s << " USING (" << row[1] << "::text::" << temp_name << ")"
+                query = String.build do |io|
+                  io << "ALTER TABLE " << row[0]
+                  io << " ALTER COLUMN " << row[1] << " TYPE " << temp_name
+                  io << " USING (" << row[1] << "::text::" << temp_name << ")"
                 end
                 @adapter.exec query
 

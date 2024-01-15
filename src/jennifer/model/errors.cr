@@ -73,7 +73,7 @@ module Jennifer
       #
       # Yields the attribute and the error for that attribute. If the attribute
       # has more than one error message, yields once for each error message.
-      def each
+      def each(&)
         messages.each_key do |attribute|
           messages[attribute].each { |error| yield attribute, error }
         end

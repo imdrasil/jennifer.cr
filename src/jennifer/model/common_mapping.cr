@@ -48,7 +48,7 @@ module Jennifer::Model
       def self.new(values : DB::ResultSet)
         {% verbatim do %}
         {% begin %}
-          {% klasses = @type.all_subclasses.select { |s| s.constant("STI") == true } %}
+          {% klasses = @type.all_subclasses.select { |klass| klass.constant("STI") == true } %}
           {% if !klasses.empty? %}
             hash = adapter.result_to_hash(values)
             case hash["type"]
@@ -83,7 +83,7 @@ module Jennifer::Model
       def self.new(values : Hash(Symbol, AttrType) | NamedTuple, new_record = true)
         {% verbatim do %}
         {% begin %}
-          {% klasses = @type.all_subclasses.select { |s| s.constant("STI") == true } %}
+          {% klasses = @type.all_subclasses.select { |klass| klass.constant("STI") == true } %}
           {% if !klasses.empty? %}
             case values[:type]?
             when "", nil, "{{@type}}"
@@ -116,7 +116,7 @@ module Jennifer::Model
       def self.new(values : Hash(String, AttrType), new_record = true)
         {% verbatim do %}
         {% begin %}
-          {% klasses = @type.all_subclasses.select { |s| s.constant("STI") == true } %}
+          {% klasses = @type.all_subclasses.select { |klass| klass.constant("STI") == true } %}
           {% if !klasses.empty? %}
             case values["type"]?
             when "", nil, "{{@type}}"

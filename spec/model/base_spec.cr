@@ -149,7 +149,7 @@ describe Jennifer::Model::Base do
         end
 
         it "builds new object passing it to block" do
-          c = Contact.create({"name" => "Deepthi", "age" => 18}) { |r| r.gender = "female" }
+          c = Contact.create({"name" => "Deepthi", "age" => 18}) { |obj| obj.gender = "female" }
           c.id.should_not be_nil
           match_fields(c, name: "Deepthi", age: 18, gender: "female")
         end
@@ -163,7 +163,7 @@ describe Jennifer::Model::Base do
         end
 
         it "builds new object passing it to block" do
-          c = Contact.create({:name => "Deepthi", :age => 18}) { |r| r.gender = "female" }
+          c = Contact.create({:name => "Deepthi", :age => 18}) { |obj| obj.gender = "female" }
           c.id.should_not be_nil
           match_fields(c, name: "Deepthi", age: 18, gender: "female")
         end
@@ -184,7 +184,7 @@ describe Jennifer::Model::Base do
       end
 
       it "builds new object passing it to block" do
-        c = Contact.create(name: "Deepthi", age: 18) { |r| r.gender = "female" }
+        c = Contact.create(name: "Deepthi", age: 18) { |obj| obj.gender = "female" }
         c.id.should_not be_nil
         match_fields(c, name: "Deepthi", age: 18, gender: "female")
       end
@@ -277,7 +277,7 @@ describe Jennifer::Model::Base do
         end
 
         it "builds new object passing it to block" do
-          c = Contact.create!({"name" => "Deepthi", "age" => 18}) { |r| r.gender = "female" }
+          c = Contact.create!({"name" => "Deepthi", "age" => 18}) { |obj| obj.gender = "female" }
           c.id.should_not be_nil
           match_fields(c, name: "Deepthi", age: 18, gender: "female")
         end
@@ -291,7 +291,7 @@ describe Jennifer::Model::Base do
         end
 
         it "builds new object passing it to block" do
-          c = Contact.create!({:name => "Deepthi", :age => 18}) { |r| r.gender = "female" }
+          c = Contact.create!({:name => "Deepthi", :age => 18}) { |obj| obj.gender = "female" }
           c.id.should_not be_nil
           match_fields(c, name: "Deepthi", age: 18, gender: "female")
         end
@@ -312,7 +312,7 @@ describe Jennifer::Model::Base do
       end
 
       it "builds new object passing it to block" do
-        c = Contact.create!(name: "Deepthi", age: 18) { |r| r.gender = "female" }
+        c = Contact.create!(name: "Deepthi", age: 18) { |obj| obj.gender = "female" }
         c.id.should_not be_nil
         match_fields(c, name: "Deepthi", age: 18, gender: "female")
       end
@@ -547,7 +547,7 @@ describe Jennifer::Model::Base do
     context "with custom primary key" do
       it "imports objects" do
         objects = [Factory.build_address(enn: "qwer"), Factory.build_address(enn: "zxcc")]
-        objects.each { |o| o.created_at = o.updated_at = Time.local }
+        objects.each { |obj| obj.created_at = obj.updated_at = Time.local }
         Address.import(objects)
         Address.all.count.should eq(2)
       end

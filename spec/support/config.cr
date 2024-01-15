@@ -1,4 +1,4 @@
-require "./support/file_system"
+require "./file_system"
 
 module Spec
   class_property adapter = ""
@@ -7,13 +7,13 @@ module Spec
   class_getter logger = Log.for("db", Log::Severity::Debug)
 end
 
-Spec.file_system.tap do |fs|
-  fs.watch "scripts/models"
-  fs.watch "scripts/migrations"
+Spec.file_system.tap do |file_system|
+  file_system.watch "scripts/models"
+  file_system.watch "scripts/migrations"
 end
 
-require "../src/jennifer"
-require "../src/jennifer/generators/*"
+require "../../src/jennifer"
+require "../../src/jennifer/generators/*"
 require "sam"
 
 class Jennifer::Generators::Base
@@ -23,20 +23,20 @@ end
 CONFIG_PATH = File.join(__DIR__, "..", "scripts", "database.yml")
 
 {% if env("DB") == "mysql" %}
-  require "../src/jennifer/adapter/mysql"
+  require "../../src/jennifer/adapter/mysql"
   Spec.adapter = "mysql"
 {% else %}
-  require "../src/jennifer/adapter/postgres"
+  require "../../src/jennifer/adapter/postgres"
   Spec.adapter = "postgres"
 {% end %}
 
 {% if env("PAIR") == "1" %}
   # Additionally loads opposite adapter
   {% if env("DB") == "mysql" %}
-    require "../src/jennifer/adapter/postgres"
+    require "../../src/jennifer/adapter/postgres"
     EXTRA_ADAPTER_NAME = "postgres"
   {% else %}
-    require "../src/jennifer/adapter/mysql"
+    require "../../src/jennifer/adapter/mysql"
     EXTRA_ADAPTER_NAME = "mysql"
   {% end %}
 
@@ -60,7 +60,7 @@ def set_default_configuration
   Jennifer::Config.reset_config
 
   Jennifer::Config.configure do |conf|
-    conf.read(File.join(__DIR__, "../scripts/database.yml"), Spec.adapter)
+    conf.read(File.join(__DIR__, "../../scripts/database.yml"), Spec.adapter)
     conf.logger = Spec.logger
     # conf.logger.level = :debug
     conf.user = ENV["DB_USER"] if ENV["DB_USER"]?

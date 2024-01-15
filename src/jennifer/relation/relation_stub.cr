@@ -15,7 +15,7 @@ module Jennifer
       raise "stubbed relation"
     end
 
-    def join_condition(query, type, &block)
+    def join_condition(query, type, &_block)
       raise "stubbed relation"
     end
 

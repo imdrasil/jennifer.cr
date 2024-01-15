@@ -28,7 +28,7 @@ mysql_only do
     describe ".lock_clause" do
       it "render custom query part if specified" do
         query = Contact.all.lock("LOCK IN SHARE MODE")
-        sb { |s| described_class.lock_clause(s, query) }.should match(/LOCK IN SHARE MODE/)
+        sb { |io| described_class.lock_clause(io, query) }.should match(/LOCK IN SHARE MODE/)
       end
     end
 

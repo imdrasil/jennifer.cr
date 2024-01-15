@@ -224,7 +224,7 @@ module Jennifer
       # ```
       #
       # For more details about new  table definition see `TableBuilder::CreateTable`.
-      def create_table(name : String | Symbol, id : Bool = true)
+      def create_table(name : String | Symbol, id : Bool = true, &)
         tb = TableBuilder::CreateTable.new(adapter, name)
         tb.bigint(:id, {:primary => true, :auto_increment => true}) if id
         yield tb
@@ -239,11 +239,11 @@ module Jennifer
       # # Creates a table called 'addresses_contacts'
       # create_join_table(:contacts, :addresses)
       # ```
-      def create_join_table(table1 : String | Symbol, table2 : String | Symbol, table_name : String? = nil)
-        create_table(table_name || adapter.class.join_table_name(table1, table2), false) do |tb|
-          tb.bigint(Wordsmith::Inflector.foreign_key(Wordsmith::Inflector.singularize(table1.to_s)))
-          tb.bigint(Wordsmith::Inflector.foreign_key(Wordsmith::Inflector.singularize(table2.to_s)))
-          yield tb
+      def create_join_table(table1 : String | Symbol, table2 : String | Symbol, table_name : String? = nil, &)
+        create_table(table_name || adapter.class.join_table_name(table1, table2), false) do |t|
+          t.bigint(Wordsmith::Inflector.foreign_key(Wordsmith::Inflector.singularize(table1.to_s)))
+          t.bigint(Wordsmith::Inflector.foreign_key(Wordsmith::Inflector.singularize(table2.to_s)))
+          yield t
         end
       end
 
@@ -262,7 +262,7 @@ module Jennifer
       # ```
       #
       # For more details see `TableBuilder::ChangeTable`.
-      def change_table(table : String | Symbol, &block)
+      def change_table(table : String | Symbol, &)
         tb = TableBuilder::ChangeTable.new(adapter, table)
         yield tb
         process_builder(tb)

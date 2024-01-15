@@ -1,6 +1,6 @@
 module DB
   abstract class Statement
-    protected def around_query_or_exec(args : Enumerable)
+    protected def around_query_or_exec(args : Enumerable, &)
       yield
     end
   end
@@ -15,7 +15,7 @@ module DB
 
     # :ditto:
     def self.arg_to_log(arg : Enumerable) : ::Log::Metadata::Value
-      ::Log::Metadata::Value.new(arg.to_a.map { |a| arg_to_log(a).as(::Log::Metadata::Value) })
+      ::Log::Metadata::Value.new(arg.to_a.map { |item| arg_to_log(item).as(::Log::Metadata::Value) })
     end
 
     # :ditto:

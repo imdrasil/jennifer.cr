@@ -52,59 +52,59 @@ module Jennifer
       # =========== overrides
 
       def add_index(table, name, fields : Array, type : Symbol? = nil, order : Hash? = nil, length : Hash? = nil)
-        query = String.build do |s|
-          s << "CREATE "
+        query = String.build do |io|
+          io << "CREATE "
 
-          s << index_type_translate(type) if type
+          io << index_type_translate(type) if type
 
-          s << "INDEX " << name << " ON " << table
-          # s << " USING " << options[:using] if options.has_key?(:using)
-          s << " ("
-          fields.each_with_index do |f, i|
-            s << "," if i != 0
-            s << f
-            s << " " << order[f].to_s.upcase if order && order[f]?
+          io << "INDEX " << name << " ON " << table
+          # io << " USING " << options[:using] if options.has_key?(:using)
+          io << " ("
+          fields.each_with_index do |field, i|
+            io << "," if i != 0
+            io << field
+            io << " " << order[field].to_s.upcase if order && order[field]?
           end
-          s << ")"
-          # s << " " << options[:partial] if options.has_key?(:partial)
+          io << ")"
+          # io << " " << options[:partial] if options.has_key?(:partial)
         end
         adapter.exec query
       end
 
       def change_column(table, old_name, new_name, opts)
         column_name_part = " ALTER COLUMN #{old_name} "
-        query = String.build do |s|
-          s << "ALTER TABLE " << table
+        query = String.build do |io|
+          io << "ALTER TABLE " << table
           if opts[:type]?
-            s << column_name_part << " TYPE "
-            change_column_type_definition(opts, s)
-            s << ","
+            io << column_name_part << " TYPE "
+            change_column_type_definition(opts, io)
+            io << ","
           end
           if opts[:null]?
-            s << column_name_part
-            s << opts[:null] ? " DROP" : " SET"
-            s << " NOT NULL,"
+            io << column_name_part
+            io << opts[:null] ? " DROP" : " SET"
+            io << " NOT NULL,"
           end
           if opts.has_key?(:default)
-            s << column_name_part
+            io << column_name_part
             if opts[:default].is_a?(Symbol) && opts[:default].as(Symbol) == :drop
-              s << "DROP DEFAULT "
+              io << "DROP DEFAULT "
             else
-              s << "SET DEFAULT " << adapter_class.t(opts[:default])
+              io << "SET DEFAULT " << adapter_class.t(opts[:default])
             end
-            s << ","
+            io << ","
           end
           if old_name.to_s != new_name.to_s
-            s << " RENAME COLUMN " << old_name << " TO " << new_name
-            s << ","
+            io << " RENAME COLUMN " << old_name << " TO " << new_name
+            io << ","
           end
         end
         adapter.exec query[0...-1]
       end
 
       def drop_foreign_key(from_table, _to_table, name)
-        query = String.build do |s|
-          s << "ALTER TABLE " <<
+        query = String.build do |io|
+          io << "ALTER TABLE " <<
             from_table <<
             " DROP CONSTRAINT " <<
             name

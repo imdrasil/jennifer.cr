@@ -158,7 +158,7 @@ module Jennifer
       #   user.last_name = "Doe"
       # end
       # ```
-      def self.create(values : Hash | NamedTuple, &block)
+      def self.create(values : Hash | NamedTuple, &)
         o = new(values)
         yield o
         o.save
@@ -185,7 +185,7 @@ module Jennifer
       #   user.last_name = "Doe"
       # end
       # ```
-      def self.create(&block)
+      def self.create(&)
         o = new({} of String => DBAny)
         yield o
         o.save
@@ -212,7 +212,7 @@ module Jennifer
       #   user.last_name = "Doe"
       # end
       # ```
-      def self.create(**values, &block)
+      def self.create(**values, &)
         o = new(values)
         yield o
         o.save
@@ -240,7 +240,7 @@ module Jennifer
       #   user.last_name = "Doe"
       # end
       # ```
-      def self.create!(values : Hash | NamedTuple, &block)
+      def self.create!(values : Hash | NamedTuple, &)
         o = new(values)
         yield o
         o.save!
@@ -267,7 +267,7 @@ module Jennifer
       #   user.last_name = "Doe"
       # end
       # ```
-      def self.create!(&block)
+      def self.create!(&)
         o = new({} of Symbol => DBAny)
         yield o
         o.save!
@@ -294,7 +294,7 @@ module Jennifer
       #   user.last_name = "Doe"
       # end
       # ```
-      def self.create!(**values, &block)
+      def self.create!(**values, &)
         o = new(values)
         yield o
         o.save!
@@ -308,7 +308,7 @@ module Jennifer
       # ```
       def self.models
         {% begin %}
-          {% models = @type.all_subclasses.select { |m| !m.abstract? } %}
+          {% models = @type.all_subclasses.select { |klass| !klass.abstract? } %}
           {% if !models.empty? %}
             [
               {% for model in models %}
@@ -562,7 +562,7 @@ module Jennifer
       end
 
       # Starts a transaction and locks current object.
-      def with_lock(type : String | Bool = true)
+      def with_lock(type : String | Bool = true, &)
         self.class.transaction do |t|
           self.lock!(type)
           yield(t)
@@ -615,7 +615,7 @@ module Jennifer
       end
 
       # Performs table lock for current model's table.
-      def self.with_table_lock(type : String | Symbol, &block)
+      def self.with_table_lock(type : String | Symbol, &)
         write_adapter.with_table_lock(table_name, type.to_s) { |t| yield t }
       end
 
@@ -709,7 +709,7 @@ module Jennifer
         write_adapter.upsert(collection, unique_fields)
       end
 
-      def self.upsert(collection : Array(self), unique_fields = %w[], &block)
+      def self.upsert(collection : Array(self), unique_fields = %w[], &)
         definition = (with context yield context)
         write_adapter.upsert(collection, unique_fields, definition)
       end

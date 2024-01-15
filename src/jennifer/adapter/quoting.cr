@@ -100,7 +100,7 @@ module Jennifer
       end
 
       def filter_out(arg : Array, single : Bool = true)
-        single ? escape_string : arg.join(", ") { |a| filter_out(a) }
+        single ? escape_string : arg.join(", ") { |item| filter_out(item) }
       end
 
       def filter_out(arg : QueryBuilder::SQLNode)

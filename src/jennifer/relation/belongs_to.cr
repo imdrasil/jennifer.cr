@@ -29,10 +29,10 @@ module Jennifer
         end
       end
 
-      def join_condition(query, type, &block)
+      def join_condition(query, type, &)
         this = self
-        query.join(model_class, type: type, relation: @name) do |eb|
-          this.condition_clause.not_nil! & (yield eb)
+        query.join(model_class, type: type, relation: @name) do |table|
+          this.condition_clause.not_nil! & (yield table)
         end
       end
 

@@ -220,7 +220,7 @@ module Jennifer
       #   {:value => values(:value) + _value}
       # end
       # ```
-      def upsert(fields : Array(String), values : Array(Array(DBAny)), unique_fields : Array, &block)
+      def upsert(fields : Array(String), values : Array(Array(DBAny)), unique_fields : Array, &)
         return if do_nothing? || values.empty?
 
         definition = (with @expression yield @expression)
@@ -234,7 +234,7 @@ module Jennifer
       # ```
       # Contact.all.where { and(_name == "Jon", age > 100) }.update { {:name => "John", :age => _age - 15} }
       # ```
-      def update
+      def update(&)
         definition = (with @expression yield)
         return DB::ExecResult.new(0i64, 0i64) if do_nothing?
 
@@ -344,12 +344,12 @@ module Jennifer
       #
       # To iterate over records they are loaded from the DB so this may effect memory usage.
       # Prefer #find_each.
-      def each
+      def each(&)
         to_a.each { |e| yield e }
       end
 
       # Yields each result set object to a block.
-      def each_result_set(&block)
+      def each_result_set(&)
         return if do_nothing?
 
         read_adapter.select(self) do |rs|
@@ -377,16 +377,16 @@ module Jennifer
       # NOTE: any given ordering will be ignored and query will be reordered based on the
       # *primary_key* and *direction*.
       def find_in_batches(primary_key : String, batch_size : Int32 = 1000, start : Int32? = nil,
-                          direction : String | Symbol = "asc", &block)
+                          direction : String | Symbol = "asc", &)
         find_in_batches(@expression.c(primary_key.not_nil!), batch_size, start, direction) { |records| yield records }
       end
 
-      def find_in_batches(batch_size : Int32 = 1000, start : Int32 = 0, &block)
+      def find_in_batches(batch_size : Int32 = 1000, start : Int32 = 0, &)
         find_in_batches(nil, batch_size, start) { |records| yield records }
       end
 
       def find_in_batches(primary_key : Criteria, batch_size : Int32 = 1000, start = nil,
-                          direction : String | Symbol = "asc", &block)
+                          direction : String | Symbol = "asc", &)
         if ordered?
           Config.logger.warn { "#find_in_batches is invoked with already ordered query - it will be reordered" }
         end
@@ -403,7 +403,7 @@ module Jennifer
         end
       end
 
-      def find_in_batches(primary_key : Nil, batch_size : Int32 = 1000, start : Int32 = 0, &block)
+      def find_in_batches(primary_key : Nil, batch_size : Int32 = 1000, start : Int32 = 0, &)
         if ordered?
           Config.logger.warn { "#find_in_batches is invoked with already ordered query - it will be reordered" }
         end
@@ -436,27 +436,27 @@ module Jennifer
       # end
       # ```
       def find_each(primary_key : String, batch_size : Int32 = 1000, start = nil,
-                    direction : String | Symbol = "asc", &block)
+                    direction : String | Symbol = "asc", &)
         find_in_batches(primary_key, batch_size, start, direction) do |records|
           records.each { |rec| yield rec }
         end
       end
 
       def find_each(primary_key : Criteria, batch_size : Int32 = 1000, start = nil,
-                    direction : String | Symbol = "asc", &block)
+                    direction : String | Symbol = "asc", &)
         find_in_batches(primary_key, batch_size, start, direction) do |records|
           records.each { |rec| yield rec }
         end
       end
 
       def find_each(primary_key : Nil, batch_size : Int32 = 1000, start : Int32 = 0,
-                    direction : String | Symbol = "asc", &block)
+                    direction : String | Symbol = "asc", &)
         find_in_batches(batch_size, start) do |records|
           records.each { |rec| yield rec }
         end
       end
 
-      def find_each(batch_size : Int32 = 1000, start : Int32 = 0, direction : String | Symbol = "asc", &block)
+      def find_each(batch_size : Int32 = 1000, start : Int32 = 0, direction : String | Symbol = "asc", &)
         find_in_batches(batch_size, start) do |records|
           records.each { |rec| yield rec }
         end

@@ -83,14 +83,14 @@ module Jennifer
           existence[i][pfv] = Set(DBAny){related_context.primary}
           stack[i + 1] =
             repo[i][pfv] =
-              related_context.append_relation(relation.name, current_attributes).not_nil!
+              related_context.append_relation(relation.name, current_attributes)
         elsif existence[i][pfv]?.try(&.includes?(related_context.primary))
           # Such primary key has been already retrieved for current context -> change context and do nothing
           stack[i + 1] = repo[i][pfv]
         else
           # Such primary key has been already retrieved for current context -> use it and change context
           existence[i][pfv] << related_context.primary
-          stack[i + 1] = related_context.append_relation(relation.name, repo[i][pfv]).not_nil!
+          stack[i + 1] = related_context.append_relation(relation.name, repo[i][pfv])
         end
         # TODO: move this outside of retrieving objects
         # Mark relation as retrieved one

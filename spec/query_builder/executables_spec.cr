@@ -385,8 +385,8 @@ describe Jennifer::QueryBuilder::Executables do
       Factory.create_contact(name: "a", age: 13)
       Factory.create_contact(name: "b", age: 14)
       i = 13
-      Contact.all.order(age: :asc).each do |c|
-        c.age.should eq(i)
+      Contact.all.order(age: :asc).each do |record|
+        record.age.should eq(i)
         i += 1
       end
       i.should eq(15)

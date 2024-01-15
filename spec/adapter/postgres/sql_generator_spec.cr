@@ -28,7 +28,7 @@ postgres_only do
     describe ".lock_clause" do
       it "render custom query part if specified" do
         query = Contact.all.lock("FOR NO KEY UPDATE")
-        sb { |s| described_class.lock_clause(s, query) }.should match(/FOR NO KEY UPDATE/)
+        sb { |io| described_class.lock_clause(io, query) }.should match(/FOR NO KEY UPDATE/)
       end
     end
 

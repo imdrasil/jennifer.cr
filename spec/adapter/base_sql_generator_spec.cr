@@ -229,7 +229,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
     end
 
     it "returns all orders" do
-      sb { |s| described_class.order_clause(s, Contact.all.order(age: :desc, name: :asc)) }
+      sb { |io| described_class.order_clause(io, Contact.all.order(age: :desc, name: :asc)) }
         .should match(/ORDER BY #{reg_quote_identifier("contacts.age")} DESC, #{reg_quote_identifier("contacts.name")} ASC/)
     end
   end
@@ -237,31 +237,31 @@ describe Jennifer::Adapter::BaseSQLGenerator do
   describe ".lock_clause" do
     it "renders default lock if @lock is true" do
       query = Contact.all.lock
-      sb { |s| described_class.lock_clause(s, query) }.should match(/FOR UPDATE/)
+      sb { |io| described_class.lock_clause(io, query) }.should match(/FOR UPDATE/)
     end
 
     it "renders nothing if not specified" do
       query = Contact.all
-      sb { |s| described_class.lock_clause(s, query) }.should eq("")
+      sb { |io| described_class.lock_clause(io, query) }.should eq("")
     end
   end
 
   describe ".union_clause" do
     describe "ALL" do
       it do
-        sb { |s| described_class.union_clause(s, Query["contacts"].union(Query["users"], true)) }
+        sb { |io| described_class.union_clause(io, Query["contacts"].union(Query["users"], true)) }
           .should match(/UNION ALL /)
       end
     end
 
     it "add keyword" do
-      sb { |s| described_class.union_clause(s, Jennifer::Query["users"].union(Jennifer::Query["contacts"])) }
+      sb { |io| described_class.union_clause(io, Jennifer::Query["users"].union(Jennifer::Query["contacts"])) }
         .should match(/UNION/)
     end
 
     it "adds next query to current one" do
       query = Jennifer::Query["contacts"].union(Jennifer::Query["users"])
-      sb { |s| described_class.union_clause(s, query) }
+      sb { |io| described_class.union_clause(io, query) }
         .should match(Regex.new(sql_generator.select(Jennifer::Query["users"])))
     end
   end
@@ -319,7 +319,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
       it do
         query = Jennifer::Query["contacts"].with("test", Contact.all, true)
         expected_sql = "WITH RECURSIVE test AS (SELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")} ) "
-        sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
+        sb { |io| described_class.with_clause(io, query) }.should eq(expected_sql)
       end
     end
 
@@ -327,7 +327,7 @@ describe Jennifer::Adapter::BaseSQLGenerator do
       it do
         query = Jennifer::Query["contacts"].with("test", Contact.all, true).with("test2", Address.all, true)
         expected_sql = %(WITH RECURSIVE test AS (SELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")} ) , test2 AS (SELECT #{quote_identifier("addresses")}.* FROM #{quote_identifier("addresses")} ) )
-        sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
+        sb { |io| described_class.with_clause(io, query) }.should eq(expected_sql)
       end
     end
 
@@ -336,14 +336,14 @@ describe Jennifer::Adapter::BaseSQLGenerator do
         query = Jennifer::Query["contacts"].with("test", Contact.all).with("test 2", Contact.all)
         expected_sql = "WITH test AS (SELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")} ) , " \
                        "test 2 AS (SELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")} ) "
-        sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
+        sb { |io| described_class.with_clause(io, query) }.should eq(expected_sql)
       end
 
       it "hoists the RECURSIVE keyword to the query beginning" do
         query = Jennifer::Query["contacts"].with("test", Contact.all).with("test 2", Contact.all, true)
         expected_sql = "WITH RECURSIVE test AS (SELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")} ) , " \
                        "test 2 AS (SELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")} ) "
-        sb { |s| described_class.with_clause(s, query) }.should eq(expected_sql)
+        sb { |io| described_class.with_clause(io, query) }.should eq(expected_sql)
       end
     end
   end

@@ -23,48 +23,48 @@ module Jennifer
 
       # Generates insert query
       def self.insert(table, hash)
-        String.build do |s|
-          s << "INSERT INTO " << quote_identifier(table) << "("
-          quote_identifiers(hash.keys).join(s, ", ")
-          s << ") VALUES (" << escape_string(hash.size) << ")"
+        String.build do |io|
+          io << "INSERT INTO " << quote_identifier(table) << "("
+          quote_identifiers(hash.keys).join(io, ", ")
+          io << ") VALUES (" << escape_string(hash.size) << ")"
         end
       end
 
       def self.bulk_insert(table : String, field_names : Array(String), rows : Int32)
-        String.build do |s|
-          s << "INSERT INTO " << quote_identifier(table) << "("
-          quote_identifiers(field_names).join(s, ", ") { |e| s << e }
-          s << ") VALUES "
+        String.build do |io|
+          io << "INSERT INTO " << quote_identifier(table) << "("
+          quote_identifiers(field_names).join(io, ", ") { |e| io << e }
+          io << ") VALUES "
           escaped_row = "(" + escape_string(field_names.size) + ")"
-          rows.times.join(s, ", ") { s << escaped_row }
+          rows.times.join(io, ", ") { io << escaped_row }
         end
       end
 
       def self.bulk_insert(table : String, field_names : Array(String), rows : Array)
-        String.build do |s|
-          s << "INSERT INTO " << quote_identifier(table) << "("
-          quote_identifiers(field_names).join(s, ", ") { |e| s << e }
-          s << ") VALUES "
+        String.build do |io|
+          io << "INSERT INTO " << quote_identifier(table) << "("
+          quote_identifiers(field_names).join(io, ", ") { |e| io << e }
+          io << ") VALUES "
 
           rows.each_with_index do |row, index|
-            s << ',' if index != 0
-            s << '('
+            io << ',' if index != 0
+            io << '('
             row.each_with_index do |col, col_index|
-              s << ',' if col_index != 0
-              s << quote(col)
+              io << ',' if col_index != 0
+              io << quote(col)
             end
-            s << ')'
+            io << ')'
           end
         end
       end
 
       # Generates common select SQL request
       def self.select(query, exact_fields : Array = [] of String)
-        String.build do |s|
-          with_clause(s, query)
-          select_clause(s, query, exact_fields)
-          from_clause(s, query)
-          body_section(s, query)
+        String.build do |io|
+          with_clause(io, query)
+          select_clause(io, query, exact_fields)
+          from_clause(io, query)
+          body_section(io, query)
         end
       end
 
@@ -73,60 +73,60 @@ module Jennifer
       end
 
       def self.delete(query)
-        String.build do |s|
-          s << "DELETE "
-          from_clause(s, query)
-          body_section(s, query)
+        String.build do |io|
+          io << "DELETE "
+          from_clause(io, query)
+          body_section(io, query)
         end
       end
 
       def self.exists(query)
-        String.build do |s|
-          with_clause(s, query)
-          s << "SELECT EXISTS(SELECT 1 "
-          from_clause(s, query)
-          body_section(s, query)
-          s << ")"
+        String.build do |io|
+          with_clause(io, query)
+          io << "SELECT EXISTS(SELECT 1 "
+          from_clause(io, query)
+          body_section(io, query)
+          io << ")"
         end
       end
 
       def self.count(query)
-        String.build do |s|
-          with_clause(s, query)
-          s << "SELECT COUNT(*) "
-          from_clause(s, query)
-          body_section(s, query)
+        String.build do |io|
+          with_clause(io, query)
+          io << "SELECT COUNT(*) "
+          from_clause(io, query)
+          body_section(io, query)
         end
       end
 
       def self.update(obj : Model::Base)
         esc = escape_string(1)
-        String.build do |s|
-          s << "UPDATE " << quote_identifier(obj.class.table_name) << " SET "
-          obj.arguments_to_save[:fields].map { |f| "#{quote_identifier(f)}= #{esc}" }.join(s, ", ")
-          s << " WHERE " << quote_identifier(obj.class.primary_field_name) << " = " << esc
+        String.build do |io|
+          io << "UPDATE " << quote_identifier(obj.class.table_name) << " SET "
+          obj.arguments_to_save[:fields].map { |field| "#{quote_identifier(field)}= #{esc}" }.join(io, ", ")
+          io << " WHERE " << quote_identifier(obj.class.primary_field_name) << " = " << esc
         end
       end
 
       def self.update(query, options : Hash)
         esc = escape_string(1)
-        String.build do |s|
-          s << "UPDATE " << quote_table(query.table) << " SET "
-          options.map { |k, _| "#{quote_identifier(k)}= #{esc}" }.join(s, ", ")
-          s << ' '
-          body_section(s, query)
+        String.build do |io|
+          io << "UPDATE " << quote_table(query.table) << " SET "
+          options.map { |k, _| "#{quote_identifier(k)}= #{esc}" }.join(io, ", ")
+          io << ' '
+          body_section(io, query)
         end
       end
 
       def self.modify(q, modifications : Hash)
-        String.build do |s|
-          s << "UPDATE " << quote_table(q.table) << " SET "
+        String.build do |io|
+          io << "UPDATE " << quote_table(q.table) << " SET "
           modifications.each_with_index do |(field, value), i|
-            s << ", " if i != 0
-            s << field_assign_statement(field.to_s, value)
+            io << ", " if i != 0
+            io << field_assign_statement(field.to_s, value)
           end
-          s << ' '
-          body_section(s, q)
+          io << ' '
+          body_section(io, q)
         end
       end
 
@@ -170,9 +170,9 @@ module Jennifer
         else
           table = quote_table(query.table)
           if exact_fields.empty? || !query._select_fields!.empty?
-            query._select_fields.join(io, ", ") { |f| io << f.definition(self) }
+            query._select_fields.join(io, ", ") { |field| io << field.definition(self) }
           else
-            exact_fields.join(io, ", ") { |f| io << "#{table}.#{quote_identifier(f)}" }
+            exact_fields.join(io, ", ") { |field| io << "#{table}.#{quote_identifier(field)}" }
           end
         end
         io << ' '
@@ -209,7 +209,7 @@ module Jennifer
         return unless query._groups?
 
         io << "GROUP BY "
-        query._groups!.each.join(io, ", ") { |c| io << c.as_sql(self) }
+        query._groups!.each.join(io, ", ") { |criterion| io << criterion.as_sql(self) }
         io << ' '
       end
 

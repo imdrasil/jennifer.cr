@@ -29,8 +29,8 @@ module Jennifer
               puts "String was used for describing source request of materialized  view. Use QueryBuilder::Query instead"
               @query.as(String)
             else
-              String.build do |s|
-                s <<
+              String.build do |io|
+                io <<
                   "CREATE MATERIALIZED VIEW " <<
                   @name <<
                   " AS " <<

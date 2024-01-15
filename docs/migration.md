@@ -257,3 +257,7 @@ After this all migration files located in the specified directory is accessible 
 ```sh
 $ crystal micrate.cr -- up
 ```
+
+## Running migration
+
+The most convenient way to apply written migrations is using Sam task. Sam file is created automatically after installation but you need to modify it to load all necessary code (configurations, migrations) and library's predefined tasks.

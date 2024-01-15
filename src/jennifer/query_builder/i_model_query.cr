@@ -68,7 +68,7 @@ module Jennifer
       #
       # NOTE: any given ordering will be ignored and query will be reordered based on the
       # *primary_key* and *direction*.
-      def find_in_batches(batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
+      def find_in_batches(batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &)
         super(model_class.primary, batch_size, start, direction) { |records| yield records }
       end
 
@@ -83,7 +83,7 @@ module Jennifer
       #   puts contact.id
       # end
       # ```
-      def find_each(batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &block)
+      def find_each(batch_size : Int32 = 1000, start = nil, direction : String | Symbol = "asc", &)
         super(model_class.primary, batch_size, start, direction) { |record| yield record }
       end
 

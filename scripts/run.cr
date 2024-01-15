@@ -1,5 +1,5 @@
-require "../spec/config"
-require "../spec/models"
+require "../spec/support/config"
+require "../spec/support/models"
 require "./migrations/*"
 require "../src/jennifer/sam"
 
@@ -38,4 +38,6 @@ end
   end
 {% end %}
 
-Sam.help
+if SemanticVersion.parse(Sam::VERSION) < SemanticVersion.new(0, 5, 0)
+  Sam.help
+end

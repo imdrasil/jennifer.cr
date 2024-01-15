@@ -70,19 +70,19 @@ module Jennifer
         regexp(value)
       end
 
-      def ==(value : Symbol)
+      def ==(value : Symbol) # ameba:disable Naming/BinaryOperatorParameterName
         equal(value.to_s)
       end
 
-      def ==(value : Rightable)
+      def ==(value : Rightable) # ameba:disable Naming/BinaryOperatorParameterName
         equal(value)
       end
 
-      def !=(value : Symbol)
+      def !=(value : Symbol) # ameba:disable Naming/BinaryOperatorParameterName
         not_equal(value.to_s)
       end
 
-      def !=(value : Rightable)
+      def !=(value : Rightable) # ameba:disable Naming/BinaryOperatorParameterName
         not_equal(value)
       end
 

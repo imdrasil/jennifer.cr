@@ -45,7 +45,7 @@ module Jennifer
         end
 
         # Yields all ancestors until `Base`.
-        def lookup_ancestors(&block)
+        def lookup_ancestors(&)
           klass = self
           while klass
             yield klass
@@ -61,7 +61,7 @@ module Jennifer
       GLOBAL_SCOPE = "jennifer"
 
       # Delegates the call to `self.class`.
-      def lookup_ancestors(&block)
+      def lookup_ancestors(&)
         self.class.lookup_ancestors { |ancestor| yield ancestor }
       end
 

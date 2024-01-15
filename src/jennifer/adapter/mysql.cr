@@ -122,7 +122,7 @@ module Jennifer
           .exists?
       end
 
-      def with_table_lock(table : String, type : String = "default", &block)
+      def with_table_lock(table : String, type : String = "default", &)
         transaction do |t|
           config.logger.debug do
             "MySQL doesn't support manual locking table from prepared statement. " \

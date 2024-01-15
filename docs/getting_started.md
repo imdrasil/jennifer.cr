@@ -113,10 +113,6 @@ To be able to use CLI install [sam](https://github.com/imdrasil/sam.cr) task man
 require "./your_configuration_folder/*" # here load jennifer and all required configurations
 require "sam"
 load_dependencies "jennifer"
-
-# ...
-
-Sam.help
 ```
 
 Now you can invoke `$ crystal sam.cr -- help` to get list of all available tasks. Also you can generate makefile shorthand for this - just invoke `$ crystal sam.cr -- generate:makefile`. Now you are able to invoke Sam tasks by `make` - `$make sam help`.
@@ -180,10 +176,6 @@ require "./your_configuration_folder/*" # here load jennifer and all required co
 require "sam"
 require "./db/migrations/*"
 load_dependencies "jennifer"
-
-# ...
-
-Sam.help
 ```
 
 To be able to use our new model we need to populate schema changes to the database. For this invoke next commands:

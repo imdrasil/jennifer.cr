@@ -115,6 +115,10 @@ jobs:
             DB: mysql
             pair: true
             other: PAIR_DB_USER=dbuser PAIR_DB_PASSWORD=dbpassword
+          - crystal_version: 1.11.2
+            DB: mysql
+          - crystal_version: 1.11.2
+            DB: postgres
 
     runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
 

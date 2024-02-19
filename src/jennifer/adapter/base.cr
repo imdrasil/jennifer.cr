@@ -264,7 +264,7 @@ module Jennifer
           config.port.try(&.>(0)) ? config.port : nil,
           type.db? ? config.db : "",
           connection_query,
-          config.user,
+          config.user.blank? ? nil : config.user,
           config.password && !config.password.empty? ? config.password : nil
         ).to_s
       end

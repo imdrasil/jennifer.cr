@@ -151,10 +151,6 @@ You can easily configure error message generated for certain validation violatio
 Jennifer uses a [standard](https://crystal-lang.org/api/latest/Log.html) Crystal logging mechanism so you could specify your own logger, backend and formatter:
 
 ```crystal
-# This is the default logger configuration
-Jennifer::Config.configure do |conf|
-  conf.logger = Log.for("db", :debug)
-end
 Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::Adapter::DBFormatter)
 ```
 

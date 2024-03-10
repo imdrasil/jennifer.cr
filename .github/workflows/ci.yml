@@ -164,7 +164,7 @@ jobs:
 
       - name: Run specs
         run: |
-          if [ $MT == '1' ]
+          if [ "$MT" = "1" ]
           then
             crystal spec -Dpreview_mt
           else

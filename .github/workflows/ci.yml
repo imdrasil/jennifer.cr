@@ -96,22 +96,22 @@ jobs:
             DB: mysql
           - crystal_version: 1.10.1
             DB: postgres
-          - crystal_version: 1.11.1
+          - crystal_version: 1.11.2
             DB: mysql
             integration: true
             linter: true
-          - crystal_version: 1.11.1
+          - crystal_version: 1.11.2
             DB: postgres
             integration: true
             linter: true
-          - crystal_version: 1.11.1
+          - crystal_version: 1.11.2
             DB: postgres
             other: MT=1
-          - crystal_version: 1.11.1
+          - crystal_version: 1.11.2
             DB: postgres
             pair: true
             other: PAIR_DB_USER=root PAIR_DB_PASSWORD=
-          - crystal_version: 1.11.1
+          - crystal_version: 1.11.2
             DB: mysql
             pair: true
             other: PAIR_DB_USER=dbuser PAIR_DB_PASSWORD=dbpassword

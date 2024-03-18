@@ -2,7 +2,7 @@
 
 set -exo pipefail
 
-if [ $DB == 'postgres' ]
+if [ "$DB" == "postgres" ]
 then
   sudo apt-get install postgresql-client -y
 fi

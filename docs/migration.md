@@ -170,8 +170,6 @@ exec("ALTER TABLE addresses CHANGE street st VARCHAR(20)")
 
 All changes are executed one by one so you also could add data changes here (in `#up` and/or `#down`).
 
-To be sure that your db is up to date, add `Jennifer::Migration::Runner.migrate` in `spec_helper.cr`.
-
 #### Enum
 
 Now enums are supported as well but each adapter has own implementation. For mysql is enough just write down all values:

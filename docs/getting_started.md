@@ -51,6 +51,7 @@ Create `./config` folder - it will contain all your configurations. Also create 
 require "jennifer"
 require "jennifer/adapter/postgres" # for PostgreSQL
 # require "jennifer/adapter/mysql" for MySQL
+require "jennifer/adapter/db_colorized_formatter"
 
 APP_ENV = ENV["APP_ENV"]? || "development"
 
@@ -59,7 +60,11 @@ Jennifer::Config.configure do |conf|
   conf.from_uri(ENV["DATABASE_URI"]) if ENV.has_key?("DATABASE_URI")
 end
 
-Log.setup "db", APP_ENV == "development" ? :debug : :error, Log::IOBackend.new(formatter: Jennifer::Adapter::DBFormatter)
+if APP_ENV == "development"
+  Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::Adapter::DBColorizedFormatter)
+else
+  Log.setup "db", :error, Log::IOBackend.new(formatter: Jennifer::Adapter::DBFormatter)
+end
 ```
 
 This allows you to put all database related configuration to structured yml file and override it with custom database connection URI passing it in `DATABASE_URI`.
@@ -187,4 +192,28 @@ Now we are able to use our model:
 ```crystal
 user = User.create({name: "New User", age: 100})
 puts user.inspect
+```
+
+## Tests
+
+To make you test cases isolated you need to wrap them in a transaction. To do so use `Jennifer::Adapter.default_adapter`:
+
+```crystal
+# spec_helper.cr
+
+Spec.before_each do
+  Jennifer::Adapter.default_adapter.begin_transaction
+end
+
+Spec.after_each do
+  Jennifer::Adapter.default_adapter.rollback_transaction
+end
+```
+
+To be sure that your test database has all latest migration ran add this to your `spec_helper.cr`:
+
+```crystal
+require "../db/migrations/*" # you need to load all your migrations
+
+Jennifer::Migration::Runner.migrate
 ```

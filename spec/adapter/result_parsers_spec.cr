@@ -34,7 +34,7 @@ describe Jennifer::Adapter::ResultParsers do
 
       describe "DATE" do
         it "correctly saves and loads" do
-          AllTypeModel.create!(date_f: Time.utc(2016, 2, 15, 10, 20, 30))
+          AllTypeModel.create!({:date_f => Time.utc(2016, 2, 15, 10, 20, 30)})
           executed = false
           AllTypeModel.all.each_result_set do |rs|
             executed = true

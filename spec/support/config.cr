@@ -17,6 +17,7 @@ end
 
 require "../../src/jennifer"
 require "../../src/jennifer/generators/*"
+require "../../src/jennifer/adapter/db_colorized_formatter"
 require "sam"
 
 class Jennifer::Generators::Base
@@ -58,6 +59,12 @@ CONFIG_PATH = File.join(__DIR__, "..", "scripts", "database.yml")
     end
 {% end %}
 
+Jennifer::Adapter::DBColorizedFormatter.colors = {
+  namespace: :red,
+  query:     :blue,
+  args:      :yellow,
+}
+
 def set_default_configuration
   Jennifer::Config.reset_config
 
@@ -70,8 +77,12 @@ def set_default_configuration
     conf.pool_size = (ENV["DB_CONNECTION_POOL"]? || 1).to_i
   end
 
-  Log.setup "db", :debug, Spec.logger_backend
-  # Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::DBFormat)
+  Log.setup do |c|
+    c.bind "db", :debug, Spec.logger_backend
+    c.bind "db",
+      ENV["STD_LOGS"]? == "1" ? Log::Severity::Debug : Log::Severity::None,
+      Log::IOBackend.new(formatter: Jennifer::Adapter::DBColorizedFormatter)
+  end
 end
 
 set_default_configuration

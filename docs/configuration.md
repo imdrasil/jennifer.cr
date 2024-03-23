@@ -115,6 +115,12 @@ Jennifer::Config.from_uri(db)
 Jennifer uses [standard](https://crystal-lang.org/api/latest/Log.html) Crystal logging mechanism so you could specify your own logger:
 
 ```crystal
+require "jennifer/adapter/db_colorized_formatter"
+
+Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::Adapter::DBColorizedFormatter)
+
+# or colorless
+
 Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::Adapter::DBFormatter)
 ```
 

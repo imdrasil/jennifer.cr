@@ -4,8 +4,8 @@ require "./migrations/*"
 require "../src/jennifer/sam"
 
 Log.setup "db",
-  :debug,
-  # :error,
+  # :debug,
+  :error,
   Log::IOBackend.new(formatter: Jennifer::Adapter::DBFormatter)
 
 Sam.namespace "script" do

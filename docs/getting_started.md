@@ -119,7 +119,7 @@ require "sam"
 load_dependencies "jennifer"
 ```
 
-Now you can invoke `$ crystal sam.cr -- help` to get list of all available tasks. Also you can generate makefile shorthand for this - just invoke `$ crystal sam.cr -- generate:makefile`. Now you are able to invoke Sam tasks by `make` - `$make sam help`.
+Now you can invoke `$ crystal sam.cr help` to get list of all available tasks. Also you can generate makefile shorthand for this - just invoke `$ crystal sam.cr generate:makefile`. Now you are able to invoke Sam tasks by `make` - `$make sam help`.
 
 ## Usage
 

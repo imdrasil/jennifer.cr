@@ -1,0 +1,40 @@
+# Differences from a shard.yml:
+# - missing ameba
+# - uncommetned micrate
+# - crystal-mysql and crystal-pg have lower versions to support micrate
+name: jennifer
+version: 0.13.0
+
+authors:
+  - Roman Kalnytskyi <moranibaca@gmail.com>
+
+crystal: ">= 0.36.0"
+
+license: MIT
+
+development_dependencies:
+  mysql:
+    github: crystal-lang/crystal-mysql
+    version: "= 0.14.0"
+  pg:
+    github: will/crystal-pg
+    version: "= 0.26.0"
+  factory:
+    github: imdrasil/factory
+    version: "~> 0.1.5"
+  sam:
+    github: imdrasil/sam.cr
+    version: "~> 0.5.0"
+  micrate:
+    github: "amberframework/micrate"
+    version: "= 0.15.1"
+dependencies:
+  wordsmith:
+    github: luckyframework/wordsmith
+    version: ">= 0.3.0"
+  ifrit:
+    github: imdrasil/ifrit
+    version: "= 0.1.3"
+  i18n:
+    github: crimson-knight/i18n.cr
+    version: "~> 0.4.1"

@@ -16,8 +16,9 @@ dependencies:
 ### Requirements
 
 - you need to choose one of the existing drivers for your DB: [mysql](https://github.com/crystal-lang/crystal-mysql) or [postgres](https://github.com/will/crystal-pg); sqlite3 adapter automatically installs required driver for it;
-  - MySQL <= 8.0.35 is supported
 - crystal `>= 1.0.0`.
+
+> MySQL `8.0.36` and above isn't supported at the moment
 
 ## Usage
 
@@ -34,7 +35,7 @@ Jennifer has built-in database migration management system. Migrations allow you
 To start using Jennifer you'll first need to generate a migration:
 
 ```shell
-$ crystal sam.cr -- generate:migration CreateContact
+$ crystal sam.cr generate:migration CreateContact
 ```
 
 then fill the created migration file with content:
@@ -63,7 +64,7 @@ end
 and run
 
 ```shell
-$ crystal sam.cr -- db:setup
+$ crystal sam.cr db:setup
 ```
 
 to create the database and run the newly created migration.

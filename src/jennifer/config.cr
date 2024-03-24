@@ -144,7 +144,7 @@ module Jennifer
     # `Log` instance.
     #
     # Default is `Log.for("db")`
-    property logger : Log
+    getter logger : Log
 
     # Whether Jennifer should convert time objects to UTC and back to application time zone when store/load them
     # from a database.
@@ -183,6 +183,11 @@ module Jennifer
       @logger = Log.for(LOG_CONTEXT)
 
       @max_bind_vars_count = nil
+    end
+
+    @[Deprecated("Use Log.setup(\"db\", severity) instead of assigning custom logger")]
+    def logger=(value)
+      @logger = value
     end
 
     # Sets `max_pool_size`, `max_idle_pool_size` and `initial_pool_size` to the given *value*.

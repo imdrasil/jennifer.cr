@@ -461,6 +461,15 @@ describe Jennifer::Adapter::Base do
         adapter.connection_string(:root).should match(connection_string)
       end
     end
+
+    context "without username or password" do
+      it do
+        config.user = ""
+        config.password = ""
+        connection_string = /^#{adapter.class.protocol}\:\/\/#{config.host}/
+        adapter.connection_string(:root).should match(connection_string)
+      end
+    end
   end
 
   describe "#query_array" do

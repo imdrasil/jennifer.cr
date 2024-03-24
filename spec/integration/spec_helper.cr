@@ -83,10 +83,10 @@ class DatabaseSeeder
     case Spec.adapter
     when POSTGRES_DB
       common_command = "docker exec -i -e PGPASSWORD=#{Spec.db_password} #{Spec.settings["docker_container"]} dropdb #{Spec.db} -U#{Spec.db_user}"
-      common_command = "sudo #{common_command}" if Spec.settings["command_shell_sudo"]?
+      common_command = "#{common_command}" if Spec.settings["command_shell_sudo"]?
       common_command
     when MYSQL_DB
-      common_command = "echo \"drop database #{Spec.db};\" | sudo docker exec -i #{Spec.settings["docker_container"]} mysql -u#{Spec.db_user}"
+      common_command = "echo \"drop database #{Spec.db};\" | docker exec -i #{Spec.settings["docker_container"]} mysql -u#{Spec.db_user}"
       common_command += " -p#{Spec.db_password}" unless Spec.db_password.empty?
       common_command
     else

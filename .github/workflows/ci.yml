@@ -140,7 +140,8 @@ jobs:
         run: |
           function version { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
           if [ $(version '${{ matrix.crystal_version }}') -lt $(version '1.8.2') ]; then
-            cp .github/shard_1_3_2.yml shard.yml
+            cp .github/shard_simple.yml shard.yml
+            cp .github/shard.override.yml shard.override.yml
           fi
           shards install
 

@@ -3,12 +3,10 @@ require "../spec/support/models"
 require "./migrations/*"
 require "../src/jennifer/sam"
 
-# ameba:disable Lint/UnusedArgument
-Jennifer::Config.configure do |conf|
-  # conf.logger.level = :error
-end
-
-Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::Adapter::DBFormatter)
+Log.setup "db",
+  # :debug,
+  :error,
+  Log::IOBackend.new(formatter: Jennifer::Adapter::DBFormatter)
 
 Sam.namespace "script" do
   task "drop_models" do

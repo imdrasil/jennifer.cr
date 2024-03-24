@@ -18,7 +18,7 @@ load_dependencies "jennifer"
 Creates database described in the configuration.
 
 ```shell
-$ crystal sam.cr -- db:create
+$ crystal sam.cr db:create
 ```
 
 > Will create only **one** database. This means that for test environment (and for any extra environment you want) this command should be invoked separately. This is common for all commands in this section.
@@ -30,7 +30,7 @@ If database is already exists - successfully finishes (returns code 0).
 Drops database described in the configuration.
 
 ```shell
-$ crystal sam.cr -- db:drop
+$ crystal sam.cr db:drop
 ```
 
 ### db:setup
@@ -38,7 +38,7 @@ $ crystal sam.cr -- db:drop
 Creates database, invokes all pending migrations and populate database with seeds.
 
 ```shell
-$ crystal sam.cr -- db:setup
+$ crystal sam.cr db:setup
 ```
 
 ### db:migrate
@@ -46,7 +46,7 @@ $ crystal sam.cr -- db:setup
 Runs all pending migrations and stores them in the `versions` table. After execution of new migrations database schema is dumped to the `structure.sql` file.
 
 ```shell
-$ crystal sam.cr -- db:migrate
+$ crystal sam.cr db:migrate
 ```
 
 ### db:step
@@ -54,8 +54,8 @@ $ crystal sam.cr -- db:migrate
 Runs exact count of migrations (1 by default).
 
 ```shell
-$ crystal sam.cr -- db:step
-$ crystal sam.cr -- db:step <count>
+$ crystal sam.cr db:step
+$ crystal sam.cr db:step <count>
 ```
 
 ### db:rollback
@@ -63,19 +63,19 @@ $ crystal sam.cr -- db:step <count>
 Rollbacks the last run migration
 
 ```shell
-$ crystal sam.cr -- db:rollback
+$ crystal sam.cr db:rollback
 ```
 
 To rollbacks specific count of migrations:
 
 ```shell
-$ crystal sam.cr -- db:rollback <count>
+$ crystal sam.cr db:rollback <count>
 ```
 
 To rollback to the specific version:
 
 ```shell
-$ crystal sam.cr -- db:rollback -v <migration_version>
+$ crystal sam.cr db:rollback -v <migration_version>
 ```
 
 ### db:version
@@ -83,7 +83,7 @@ $ crystal sam.cr -- db:rollback -v <migration_version>
 Outputs current database version.
 
 ```shell
-$ crystal sam.cr -- db:version
+$ crystal sam.cr db:version
 ```
 
 ### db:seed
@@ -92,7 +92,7 @@ Populates database with seeds. By default this task is empty and should be defin
 bases.
 
 ```shell
-$ crystal sam.cr -- db:seed
+$ crystal sam.cr db:seed
 ```
 
 ### db:schema:load
@@ -100,7 +100,7 @@ $ crystal sam.cr -- db:seed
 Creates database from the `structure.sql` file.
 
 ```shell
-$ crystal sam.cr -- db:schema:load
+$ crystal sam.cr db:schema:load
 ```
 
 > Running migration after this may cause error messages because of missing any information about run migrations in scope of current schema generating.
@@ -112,13 +112,13 @@ $ crystal sam.cr -- db:schema:load
 Generates model and related migration based on the given definition.
 
 ```shell
-$ crystal sam.cr -- generate:model <ModelName> [field1:type] ... [fieldN:type?]
+$ crystal sam.cr generate:model <ModelName> [field1:type] ... [fieldN:type?]
 ```
 
 Example:
 
 ```shell
-$ crystal sam.cr -- generate:model Article title:string text:text? author:reference
+$ crystal sam.cr generate:model Article title:string text:text? author:reference
 ```
 
 ```crystal
@@ -182,5 +182,5 @@ The `?` symbol at the end of type name means that this field is nilable.
 Generates simple migration template.
 
 ```shell
-$ crystal sam.cr -- generate:migration CreateArticles
+$ crystal sam.cr generate:migration CreateArticles
 ```

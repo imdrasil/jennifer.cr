@@ -4,7 +4,10 @@ module Spec
   class_property adapter = ""
   class_getter file_system = FileSystem.new("./")
   class_getter logger_backend = Log::MemoryBackend.new
-  class_getter logger = Log.for("db", Log::Severity::Debug)
+
+  def self.logger
+    Jennifer::Config.instance.logger
+  end
 end
 
 Spec.file_system.tap do |file_system|
@@ -14,6 +17,7 @@ end
 
 require "../../src/jennifer"
 require "../../src/jennifer/generators/*"
+require "../../src/jennifer/adapter/db_colorized_formatter"
 require "sam"
 
 class Jennifer::Generators::Base
@@ -41,7 +45,6 @@ CONFIG_PATH = File.join(__DIR__, "..", "scripts", "database.yml")
   {% end %}
 
   EXTRA_SETTINGS = Jennifer::Config.new.read(CONFIG_PATH, EXTRA_ADAPTER_NAME).tap do |conf|
-    conf.logger = Spec.logger
     conf.user = ENV["PAIR_DB_USER"] if ENV["PAIR_DB_USER"]?
     conf.password = ENV["PAIR_DB_PASSWORD"] if ENV["PAIR_DB_PASSWORD"]?
     conf.verbose_migrations = false
@@ -56,13 +59,17 @@ CONFIG_PATH = File.join(__DIR__, "..", "scripts", "database.yml")
     end
 {% end %}
 
+Jennifer::Adapter::DBColorizedFormatter.colors = {
+  namespace: :red,
+  query:     :blue,
+  args:      :yellow,
+}
+
 def set_default_configuration
   Jennifer::Config.reset_config
 
   Jennifer::Config.configure do |conf|
     conf.read(File.join(__DIR__, "../../scripts/database.yml"), Spec.adapter)
-    conf.logger = Spec.logger
-    # conf.logger.level = :debug
     conf.user = ENV["DB_USER"] if ENV["DB_USER"]?
     conf.password = ENV["DB_PASSWORD"] if ENV["DB_PASSWORD"]?
     conf.verbose_migrations = false
@@ -70,8 +77,12 @@ def set_default_configuration
     conf.pool_size = (ENV["DB_CONNECTION_POOL"]? || 1).to_i
   end
 
-  Log.setup "db", :debug, Spec.logger_backend
-  # Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::DBFormat)
+  Log.setup do |c|
+    c.bind "db", :debug, Spec.logger_backend
+    c.bind "db",
+      ENV["STD_LOGS"]? == "1" ? Log::Severity::Debug : Log::Severity::None,
+      Log::IOBackend.new(formatter: Jennifer::Adapter::DBColorizedFormatter)
+  end
 end
 
 set_default_configuration

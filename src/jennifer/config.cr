@@ -15,7 +15,6 @@ module Jennifer
   # * `structure_folder` parent folder of `migration_files_path`
   # * `host = "localhost"`
   # * `port = -1`
-  # * `logger = Log.for("db", :debug)`
   # * `schema = "public"`
   # * `user`
   # * `password`
@@ -144,8 +143,8 @@ module Jennifer
 
     # `Log` instance.
     #
-    # Default is `Log.for("db", Log::Severity::Debug)`
-    property logger : Log
+    # Default is `Log.for("db")`
+    getter logger : Log
 
     # Whether Jennifer should convert time objects to UTC and back to application time zone when store/load them
     # from a database.
@@ -181,9 +180,14 @@ module Jennifer
 
       @command_shell = "bash"
       @migration_failure_handler_method = MigrationFailureHandler::None
-      @logger = Log.for(LOG_CONTEXT, Log::Severity::Debug)
+      @logger = Log.for(LOG_CONTEXT)
 
       @max_bind_vars_count = nil
+    end
+
+    @[Deprecated("Use Log.setup(\"db\", severity) instead of assigning custom logger")]
+    def logger=(value)
+      @logger = value
     end
 
     # Sets `max_pool_size`, `max_idle_pool_size` and `initial_pool_size` to the given *value*.
@@ -219,11 +223,11 @@ module Jennifer
 
     # Delegates call to #read.
     def self.read(*args, **opts)
-      config.read(*args, **opts)
+      instance.read(*args, **opts)
     end
 
     def self.read(*args, **opts, &)
-      config.read(*args, **opts) { |document| yield document }
+      instance.read(*args, **opts) { |document| yield document }
     end
 
     # Returns maximum size of the pool.

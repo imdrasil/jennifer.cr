@@ -67,38 +67,17 @@ If your configurations aren't stored on the top level - you can manipulate which
 Jennifer::Config.read("./spec/fixtures/database.yml", &.["database"]["development"])
 ```
 
-Also configuration can be parsed directly from URI:
+Also some configuration can be parsed directly from a URI:
 
 ```crystal
 db_uri = "mysql://root@somehost/some_database?max_pool_size=111&initial_pool_size=222&max_idle_pool_size=333&retry_attempts=444&checkout_timeout=555&retry_delay=666"
 Jennifer::Config.from_uri(db)
 ```
 
-Take into account - some configs can't be initialized using URI or yaml file but all of them always can be initialized using `Jennifer::Config.configure`. Here is the list of such configs:
-
-| Config | YAML | URI |
-| --- | --- | --- |
-| `logger` | ❌ | ❌ |
-| `migration_files_path` | ✔ | ❌ |
-| `verbose_migrations` | ✔ | ❌ |
-| `model_files_path` | ✔ | ❌ |
-| `local_time_zone_name` | ✔ | ❌ |
-| `schema` | ✔ | ❌ |
-| `structure_folder` | ✔ | ❌ |
-| `skip_dumping_schema_sql` | ✔ | ❌ |
-| `docker_container` | ✔ | ❌ |
-| `docker_source_location` | ✔ | ❌ |
-| `command_shell_sudo` | ✔ | ❌ |
-| `migration_failure_handler_method` | ✔ | ❌ |
-| `allow_outdated_pending_migration` | ✔ | ❌ |
-| `max_bind_vars_count` | ✔ | ❌ |
-| `time_zone_aware_attributes` | ✔ | ❌ |
-
 ## Supported configuration options
 
 * `host` - database host; default: `"localhost"`
 * `port` - database port; default: `-1` (`-1` value makes adapter to skip port in building connection URL, specify required port number)
-* `logger` - logger instance; default: `Log.for("db", :debug)`
 * `schema` - PostgreSQL database schema name; default: `"public"`
 * `user` - database user name used to connect to the database
 * `password` - database user password used to connect to the database (if not specified - connection URL will specify only user name)
@@ -136,15 +115,12 @@ Take into account - some configs can't be initialized using URI or yaml file but
 Jennifer uses [standard](https://crystal-lang.org/api/latest/Log.html) Crystal logging mechanism so you could specify your own logger:
 
 ```crystal
-# This is default logger configuration
-Jennifer::Config.configure do |conf|
-  conf.logger = Log.for("db", :debug)
-end
-```
+require "jennifer/adapter/db_colorized_formatter"
 
-As a default formatter `Jennifer::Adapter::DBFormatter` could be used:
+Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::Adapter::DBColorizedFormatter)
 
-```crystal
+# or colorless
+
 Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::Adapter::DBFormatter)
 ```
 

@@ -2,7 +2,7 @@
 
 set -exo pipefail
 
-MYSQL="mysql:8.0.30"
+MYSQL="mysql:8.0.35"
 tries=0
 
 sudo service mysql stop

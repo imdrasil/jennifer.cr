@@ -50,9 +50,9 @@ end
 # Callbacks =======================
 
 Spec.before_each do
-  set_default_configuration
+  set_default_configuration # NOTE: this allows to test configs changes in tests
   Spec.logger_backend.entries.clear
-  Jennifer::Adapter.default_adapter.begin_transaction
+  Jennifer::Adapter.default_adapter.begin_transaction # NOTE: wraps everything in a transaction
   pair_only { PAIR_ADAPTER.begin_transaction }
 end
 

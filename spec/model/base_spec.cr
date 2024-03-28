@@ -886,7 +886,6 @@ describe Jennifer::Model::Base do
 
   describe "#to_json" do
     it "works with all possible column types" do
-      puts AllTypeModel.new.to_json
       AllTypeModel.new.to_json.should eq(
         db_specific(
           mysql: ->do

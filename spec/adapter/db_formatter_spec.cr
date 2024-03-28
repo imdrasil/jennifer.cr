@@ -10,7 +10,7 @@ describe Jennifer::Adapter::DBFormatter do
       io = IO::Memory.new
       described_class.format(entry, io)
       io.to_s
-        .should match(/^[\d\-.:TZ]+\s* INFO - db: #{Regex.escape(metadata[:time].to_s)} μs #{Regex.escape(metadata[:query])} \| #{Regex.escape(metadata[:args])}$/)
+        .should match(/^[\d\-.:TZ]+\s* INFO - db: #{Regex.escape(metadata[:time].to_s)} ms #{Regex.escape(metadata[:query])} \| #{Regex.escape(metadata[:args])}$/)
     end
   end
 end

@@ -170,7 +170,7 @@ module Jennifer
         Config.logger.debug &.emit(
           query: query,
           args: DB::MetadataValueConverter.arg_to_log(args),
-          time: time.nanoseconds / 1000
+          time: (time.nanoseconds / 1000000).round(1)
         )
         res
       end
@@ -179,7 +179,7 @@ module Jennifer
         time = Time.monotonic
         res = yield
         time = Time.monotonic - time
-        Config.logger.debug &.emit(query: query, time: time.nanoseconds / 1000)
+        Config.logger.debug &.emit(query: query, time: (time.nanoseconds / 1000000).round(1))
         res
       end
 

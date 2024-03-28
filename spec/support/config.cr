@@ -60,9 +60,13 @@ CONFIG_PATH = File.join(__DIR__, "..", "scripts", "database.yml")
 {% end %}
 
 Jennifer::Adapter::DBColorizedFormatter.colors = {
-  namespace: :red,
-  query:     :blue,
-  args:      :yellow,
+  source:       Colorize::ColorRGB.new(17, 120, 100),
+  args:         :yellow,
+  query_insert: :green,
+  query_delete: Colorize::ColorRGB.new(236, 88, 0),
+  query_update: :red,
+  query_select: :cyan,
+  query_other:  :magenta,
 }
 
 def set_default_configuration
@@ -77,9 +81,9 @@ def set_default_configuration
     conf.pool_size = (ENV["DB_CONNECTION_POOL"]? || 1).to_i
   end
 
-  Log.setup do |c|
-    c.bind "db", :debug, Spec.logger_backend
-    c.bind "db",
+  Log.setup do |conf|
+    conf.bind "db", :debug, Spec.logger_backend
+    conf.bind "db",
       ENV["STD_LOGS"]? == "1" ? Log::Severity::Debug : Log::Severity::None,
       Log::IOBackend.new(formatter: Jennifer::Adapter::DBColorizedFormatter)
   end

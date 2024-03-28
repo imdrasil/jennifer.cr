@@ -233,6 +233,8 @@ In case you need to set the database user or password, use:
 $ DB_USER=user DB_PASSWORD=pass crystal spec
 ```
 
+To see query logs set `STD_LOGS=1`.
+
 #### Testing multiadapter support
 
 To run tests with multiple adapter involved you should create and migrate database with `PAIR=1` environment variable defined. For testing purpose `mysql` adapter will be created when `postgres` one is used as a main one and vice verse. Therefore both databases should be available to receive connections.

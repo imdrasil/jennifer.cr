@@ -104,8 +104,8 @@ Jennifer::Config.from_uri(db)
   * `"reverse_direction"` - invokes an opposite method to migration direction (`#down` for an up-migration)
   * `"callback"` - invokes `#after_up_failure` on a failed up-migration and `#after_down_failure` on a failed down-migration
 * `migration_files_path` - path to the location with migration files; default: `"./db/migrations"`
-* `verbose_migrations` - outputs basic invoked migration information if set to `true`; default: `true`
-* `model_files_path` - path to the models locations; is used by model and migration generators; default: `"./src/models"`
+* `verbose_migrations` - outputs basic information about invoked migrations; default: `true`
+* `model_files_path` - path to the models location; is used by model and migration generators; default: `"./src/models"`
 * `structure_folder` - path to the database structure file location; if set to empty string - parent folder of `migration_files_path` is used; default: `""`
 * `max_bind_vars_count` - maximum allowed count of bind variables; if nothing specified - used adapter's default value; default: `nil`
 * `time_zone_aware_attributes` - whether Jennifer should convert time objects to UTC and back to application time zone when store/load them from a database; default: `true`

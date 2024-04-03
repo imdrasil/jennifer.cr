@@ -60,8 +60,11 @@ Jennifer::Config.configure do |conf|
   conf.from_uri(ENV["DATABASE_URI"]) if ENV.has_key?("DATABASE_URI")
 end
 
-if APP_ENV == "development"
+case APP_ENV
+when "development"
   Log.setup "db", :debug, Log::IOBackend.new(formatter: Jennifer::Adapter::DBColorizedFormatter)
+when "test"
+  Log.setup "db", :none, Log::IOBackend.new
 else
   Log.setup "db", :error, Log::IOBackend.new(formatter: Jennifer::Adapter::DBFormatter)
 end
@@ -216,4 +219,14 @@ To be sure that your test database has all latest migration ran add this to your
 require "../db/migrations/*" # you need to load all your migrations
 
 Jennifer::Migration::Runner.migrate
+```
+
+To suppress all logs:
+
+```crystal
+Log.setup "db", :none, Log::IOBackend.new
+
+Jennifer::Config.configure do |conf|
+  conf.verbose_migrations = false
+end
 ```

@@ -8,7 +8,7 @@ describe Jennifer::Generators::Model do
       args = Sam::Args.new({} of String => String, %w(Article title:string text:text?))
 
       it "creates model" do
-        described_class.new(args).render
+        described_class.new(args.raw).render
         expected_content = File.read("./spec/fixtures/generators/model.cr")
         model_path = "./scripts/models/article.cr"
         File.exists?(model_path).should be_true
@@ -16,12 +16,13 @@ describe Jennifer::Generators::Model do
       end
 
       it "creates migration" do
-        described_class.new(args).render
+        described_class.new(args.raw).render
         expected_content = File.read("./spec/fixtures/generators/create_migration.cr")
         migration_path = Dir["./scripts/migrations/*.cr"].sort.last
 
         migration_path.should match(/\d{16}_create_articles\.cr/)
-        Time.parse(File.basename(migration_path), "%Y%m%d%H%M%S%L", Time::Location.local).should be_close(Time.local, 1.seconds)
+        Time.parse(File.basename(migration_path), "%Y%m%d%H%M%S%L", Time::Location.local)
+          .should be_close(Time.local, 1.seconds)
         File.read(migration_path).should eq(expected_content)
       end
     end
@@ -30,7 +31,7 @@ describe Jennifer::Generators::Model do
       args = Sam::Args.new({} of String => String, %w(Article title:string text:text? author:reference))
 
       it "creates model" do
-        described_class.new(args).render
+        described_class.new(args.raw).render
         expected_content = File.read("./spec/fixtures/generators/model_with_references.cr")
         model_path = "./scripts/models/article.cr"
         File.exists?(model_path).should be_true
@@ -38,7 +39,7 @@ describe Jennifer::Generators::Model do
       end
 
       it "creates migration" do
-        described_class.new(args).render
+        described_class.new(args.raw).render
         expected_content = File.read("./spec/fixtures/generators/create_migration_with_references.cr")
         migration_path = Dir["./scripts/migrations/*.cr"].sort.last
 

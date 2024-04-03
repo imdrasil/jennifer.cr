@@ -1,5 +1,6 @@
 require "spec"
 require "../support/matchers"
+require "../support/file_system"
 require "./shared_helpers"
 
 macro jennifer_adapter
@@ -8,6 +9,15 @@ macro jennifer_adapter
   {% else %}
     Jennifer::Adapter.default_adapter.as(Jennifer::Mysql::Adapter)
   {% end %}
+end
+
+module Spec
+  class_getter file_system = FileSystem.new("./")
+end
+
+Spec.file_system.tap do |file_system|
+  file_system.watch "scripts/models"
+  file_system.watch "scripts/migrations"
 end
 
 def execute(command, options)
@@ -22,6 +32,7 @@ def clean(type = DatabaseSeeder.default_interface, &)
   yield
 ensure
   DatabaseSeeder.drop(type)
+  Spec.file_system.clean
 end
 
 def with_connection(&)

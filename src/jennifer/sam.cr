@@ -65,11 +65,11 @@ end
 Sam.namespace "generate" do
   desc "Generates migration template. Usage - generate:migration <migration_name>"
   task "migration" do |_, args|
-    Jennifer::Generators::Migration.new(args).render
+    Jennifer::Generators::Migration.new(args.raw).render
   end
 
-  desc "Generates model and migrations template. Usage - generate:model <ModelName>"
+  desc "Generates model and migrations template. Usage - generate:model <ModelName> <optional fields definition>"
   task "model" do |_, args|
-    Jennifer::Generators::Model.new(args).render
+    Jennifer::Generators::Model.new(args.raw).render
   end
 end

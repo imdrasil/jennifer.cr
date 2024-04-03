@@ -38,4 +38,42 @@ describe "Blank application" do
       end
     end
   end
+
+  describe "generate:model" do
+    it "generates model and migration classes" do
+      clean do
+        execute(
+          "crystal spec/integration/sam/blank_application.cr",
+          ["generate:model", "Article", "title:string", "text:text?"]
+        ).should succeed
+
+        model_path = "./scripts/models/article.cr"
+        File.exists?(model_path).should be_true
+        File.read(model_path).should eq(File.read("./spec/fixtures/generators/model.cr"))
+
+        migration_path = Dir["./scripts/migrations/*.cr"].sort.last
+        migration_path.should match(/\d{16}_create_articles\.cr/)
+        Time.parse(File.basename(migration_path), "%Y%m%d%H%M%S%L", Time::Location.local)
+          .should be_close(Time.local, 1.seconds)
+        File.read(migration_path).should eq(File.read("./spec/fixtures/generators/create_migration.cr"))
+      end
+    end
+  end
+
+  describe "generate:migration" do
+    it "generates migration class" do
+      clean do
+        execute(
+          "crystal spec/integration/sam/blank_application.cr",
+          ["generate:migration", "CreateArticles"]
+        ).should succeed
+
+        migration_path = Dir["./scripts/migrations/*.cr"].sort.last
+        migration_path.should match(/\d{16}_create_articles\.cr/)
+        Time.parse(File.basename(migration_path), "%Y%m%d%H%M%S%L", Time::Location.local)
+          .should be_close(Time.local, 1.seconds)
+        File.read(migration_path).should eq(File.read("./spec/fixtures/generators/migration.cr"))
+      end
+    end
+  end
 end

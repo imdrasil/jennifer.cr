@@ -3,7 +3,7 @@ require "ecr"
 module Jennifer
   module Generators
     abstract class Base
-      getter name : String, args : Sam::Args
+      getter name : String, args : Array(Float64 | Int32 | String)
 
       def initialize(@args)
         @name = @args[0].as(String)
@@ -21,7 +21,7 @@ module Jennifer
       end
 
       private def definitions
-        args.raw[1..-1]
+        args[1..-1]
       end
     end
   end

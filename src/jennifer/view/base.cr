@@ -50,8 +50,8 @@ module Jennifer
       end
 
       # Alias for `.new`.
-      def self.build(pull : DB::ResultSet)
-        new(pull)
+      def self.build(values : DB::ResultSet)
+        new(values)
       end
 
       # :ditto:

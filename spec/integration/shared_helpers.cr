@@ -6,15 +6,7 @@ POSTGRES_DB                 = "postgres"
 MYSQL_DB                    = "mysql"
 
 module Spec
-  @@adapter = ""
-
-  def self.adapter
-    @@adapter
-  end
-
-  def self.adapter=(v)
-    @@adapter = v
-  end
+  class_property adapter = ""
 
   def self.config_jennifer
     config_jennifer { }

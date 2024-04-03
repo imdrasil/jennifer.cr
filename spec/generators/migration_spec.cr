@@ -7,7 +7,7 @@ describe Jennifer::Generators::Migration do
     args = Sam::Args.new({} of String => String, %w(CreateArticles))
 
     it "creates migration" do
-      described_class.new(args).render
+      described_class.new(args.raw).render
       expected_content = File.read("./spec/fixtures/generators/migration.cr")
       migration_path = Dir["./scripts/migrations/*.cr"].sort.last
 

@@ -265,7 +265,7 @@ module Jennifer
           type.db? ? config.db : "",
           connection_query,
           config.user.blank? ? nil : config.user,
-          config.password && !config.password.empty? ? config.password : nil
+          config.password.blank? ? nil : config.password
         ).to_s
       end
 

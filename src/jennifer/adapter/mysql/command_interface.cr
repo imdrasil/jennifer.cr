@@ -16,9 +16,8 @@ module Jennifer
       end
 
       def generate_schema
-        options = ["-u", config.user, "--no-data", "-h", config.host, "--skip-lock-tables", config.db]
-        options += ["--password='#{config.password}'"] unless config.password.empty?
-        options += ["--port=#{config.port}"] if config.port > -1
+        options = default_options
+        options += ["--no-data", "--skip-lock-tables", config.db]
         command = Command.new(
           executable: "mysqldump",
           options: options,
@@ -28,15 +27,22 @@ module Jennifer
       end
 
       def load_schema
-        options = ["-u", config.user, "-h", config.host, config.db, "-B", "-s"]
-        options += ["--password='#{config.password}'"] unless config.password.empty?
-        options += ["--port=#{config.port}"] if config.port > -1
+        options = default_options
+        options += [config.db, "-B", "-s"]
         command = Command.new(
           executable: "mysql",
           options: options,
           in_stream: "cat #{config.structure_path} |"
         )
         execute(command)
+      end
+
+      private def default_options
+        options = ["-h", config.host] of Command::Option
+        options += ["-u", config.user] unless config.user.empty?
+        options += ["--password='#{config.password}'"] unless config.password.empty?
+        options += ["--port=#{config.port}"] if config.port > -1
+        options
       end
     end
   end

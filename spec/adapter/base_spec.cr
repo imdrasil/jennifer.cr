@@ -462,7 +462,7 @@ describe Jennifer::Adapter::Base do
       end
     end
 
-    context "without username or password" do
+    context "without username and password" do
       it do
         config.user = ""
         config.password = ""

@@ -1,4 +1,4 @@
-class Article < Jennifer::Model::Base
+class PublicArticle < Jennifer::Model::Base
   with_timestamps
 
   mapping(

@@ -1,6 +1,6 @@
-class CreateArticles < Jennifer::Migration::Base
+class CreatePublicArticles < Jennifer::Migration::Base
   def up
-    create_table :articles do |t|
+    create_table :public_articles do |t|
       t.string :title, {:null => false}
       t.text :text
 
@@ -9,6 +9,6 @@ class CreateArticles < Jennifer::Migration::Base
   end
 
   def down
-    drop_table :articles if table_exists? :articles
+    drop_table :public_articles if table_exists? :public_articles
   end
 end

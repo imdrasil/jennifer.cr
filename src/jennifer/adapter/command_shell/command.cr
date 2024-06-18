@@ -1,3 +1,5 @@
+require "../../exceptions.cr"
+
 module Jennifer
   module Adapter
     abstract class ICommandShell

@@ -7,7 +7,7 @@ module Jennifer::Model
   # class Order < Jennifer::Model::Base
   #   mapping(
   #     id: Primary32,
-  #     total: {type: Float64?, converter: Jennifer::Model::NumericToFloat64Converter}
+  #     total: {type: Float64?, converter: ::Jennifer::Model::NumericToFloat64Converter}
   #   )
   # end
   # ```

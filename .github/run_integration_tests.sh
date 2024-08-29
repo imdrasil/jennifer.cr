@@ -7,6 +7,8 @@ then
   sudo apt-get install postgresql-client -y
 fi
 
+sudo apt-get install libsqlite3-dev
+
 # === general tests ===
 
 crystal spec spec/integration/sam_test.cr

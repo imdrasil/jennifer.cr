@@ -8,7 +8,7 @@ module Jennifer
     # ```
     abstract def attribute(name : String | Symbol, raise_exception : Bool = true)
     # Returns container with object's validation errors.
-    abstract def errors : Jennifer::Model::Errors
+    abstract def errors : ::Jennifer::Model::Errors
     # Returns human readable attribute name based on translations.
     abstract def human_attribute_name(name : String | Symbol)
     # Returns field *name* metadata or raises `ArgumentError`.

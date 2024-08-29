@@ -10,7 +10,7 @@ module Jennifer::Model
   # class Post < Jennifer::Model::Base
   #   mapping(
   #     # ...
-  #     category: {type: Category, converter: Jennifer::Model::EnumConverter(Category)}
+  #     category: {type: Category, converter: ::Jennifer::Model::EnumConverter(Category)}
   #   )
   # end
   # ```

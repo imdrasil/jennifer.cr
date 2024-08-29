@@ -19,7 +19,7 @@ describe Jennifer::Validations::Uniqueness do
     describe "message" do
       it do
         Factory.create_contact(description: "test")
-        proc = ->(record : Jennifer::Model::Translation, field : String) do
+        proc = ->(record : ::Jennifer::Model::Translation, field : String) do
           "#{record.as(Contact).attribute(field).inspect} #{field} invalid"
         end
         validated_by_record(:description, "test", {message: proc, query: Contact.where { _description == "test" }})

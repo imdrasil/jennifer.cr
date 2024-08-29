@@ -5,7 +5,7 @@ private def config
 end
 
 private def adapter
-  Jennifer::Adapter.default_adapter_class.not_nil!.new(Jennifer::Config.instance)
+  Jennifer::Adapter.default_adapter_class.not_nil!.new(::Jennifer::Config.instance)
 end
 
 default_adapter = Jennifer::Adapter.default_adapter

@@ -11,7 +11,7 @@ class NoteWithEnumText < Jennifer::Model::Base
 
   mapping({
     id:         Primary64,
-    text:       {type: Category?, converter: Jennifer::Model::EnumConverter(Category)},
+    text:       {type: Category?, converter: ::Jennifer::Model::EnumConverter(Category)},
     created_at: Time?,
     updated_at: Time?,
   }, false)

@@ -13,7 +13,7 @@ module Jennifer::Model
   #   mapping(
   #     id: Primary32,
   #     # for MySQL use Float64
-  #     total: {type: BigDecimal?, converter: Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2}
+  #     total: {type: BigDecimal?, converter: ::Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2}
   #   )
   # end
   # ```

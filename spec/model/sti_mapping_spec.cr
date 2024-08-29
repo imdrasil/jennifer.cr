@@ -15,7 +15,7 @@ end
 
 class ProfileWithConverter < SimplifiedProfile
   mapping(
-    details: {type: JSON::Any, convert: Jennifer::Model::JSONConverter}
+    details: {type: JSON::Any, convert: ::Jennifer::Model::JSONConverter}
   )
 end
 

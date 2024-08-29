@@ -10,7 +10,7 @@ describe Jennifer::Validations::Absence do
 
     describe "message" do
       it do
-        proc = ->(record : Jennifer::Model::Translation, field : String) { "#{record.as(Address).attribute(field).inspect} #{field} invalid" }
+        proc = ->(record : ::Jennifer::Model::Translation, field : String) { "#{record.as(Address).attribute(field).inspect} #{field} invalid" }
         validated_by_record(:contact_id, 1, {message: proc, record: Factory.build_address})
           .should has_error_message(:contact_id, "nil contact_id invalid")
       end

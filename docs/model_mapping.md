@@ -242,7 +242,7 @@ end
 
 class Note < Jennifer::Model::Base
   mapping(
-    category: {type: Category?, converter: Jennifer::Model::EnumConverter(Category)}
+    category: {type: Category?, converter: ::Jennifer::Model::EnumConverter(Category)}
   )
 end
 ```
@@ -259,7 +259,7 @@ It expects next options to be specified in a field mapping:
 class Order < Jennifer::Model::Base
    mapping(
     # ...
-    total: { type: BigDecimal?, converter: Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2 }
+    total: { type: BigDecimal?, converter: ::Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2 }
      # for MySQL use Float64
    )
 end
@@ -280,7 +280,7 @@ end
 class User < Jennifer::Model::Base
   mapping(
     # ...
-    location: { type: Location, converter: Jennifer::Model::JSONSerializableConverter(Location) }
+    location: { type: Location, converter: ::Jennifer::Model::JSONSerializableConverter(Location) }
    )
 end
 ```

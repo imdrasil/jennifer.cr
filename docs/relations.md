@@ -122,7 +122,7 @@ class Post < Jennifer::Model::Base
     user_id: Int64?
   )
 
-  belongs_to :user, User, required: ->(object : Jennifer::Model::Translation, _field : String) do
+  belongs_to :user, User, required: ->(object : ::Jennifer::Model::Translation, _field : String) do
       record = object.as(Post)
       "Post #{record.title} isn't attached to any user"
     end

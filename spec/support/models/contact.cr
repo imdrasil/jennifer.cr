@@ -8,7 +8,7 @@ class Contact < ApplicationRecord
         name: String,
         ballance: PG::Numeric?,
         age: {type: Int32, default: 10},
-        gender: {type: String?, default: "male", converter: Jennifer::Model::PgEnumConverter},
+        gender: {type: String?, default: "male", converter: ::Jennifer::Model::PgEnumConverter},
         description: String?,
         created_at: Time?,
         updated_at: Time?,

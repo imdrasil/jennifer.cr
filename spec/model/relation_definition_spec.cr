@@ -46,7 +46,7 @@ module Jennifer::Model
       Union(User | FacebookProfile),
       dependent: :destroy,
       polymorphic: true,
-      required: ->(_record : Jennifer::Model::Translation, _field : String) { "notable is missing" }
+      required: ->(_record : ::Jennifer::Model::Translation, _field : String) { "notable is missing" }
     actual_table_field_count
   end
 

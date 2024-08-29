@@ -20,7 +20,7 @@ class AddressWithSerializable < Jennifer::Model::Base
 
   mapping({
     id:         Primary64,
-    details:    {type: Location?, converter: Jennifer::Model::JSONSerializableConverter(Location)},
+    details:    {type: Location?, converter: ::Jennifer::Model::JSONSerializableConverter(Location)},
     created_at: Time?,
     updated_at: Time?,
   }, false)

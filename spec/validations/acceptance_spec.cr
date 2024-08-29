@@ -11,7 +11,7 @@ describe Jennifer::Validations::Acceptance do
 
     describe "message" do
       it do
-        proc = ->(record : Jennifer::Model::Translation, field : String) do
+        proc = ->(record : ::Jennifer::Model::Translation, field : String) do
           "#{record.as(Contact).attribute(field)} #{field} invalid"
         end
         validated_by_record(:name, "no", {message: proc, accept: %w[yes]})

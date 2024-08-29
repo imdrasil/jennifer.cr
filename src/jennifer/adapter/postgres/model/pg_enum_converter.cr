@@ -10,7 +10,7 @@ module Jennifer::Model
   #   mapping(
   #     id: Primary32,
   #     title: String,
-  #     status: {type: String?, default: "draft", converter: Jennifer::Model::PgEnumConverter}
+  #     status: {type: String?, default: "draft", converter: ::Jennifer::Model::PgEnumConverter}
   #   )
   # end
   # ```

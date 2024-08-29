@@ -176,7 +176,7 @@ module Jennifer
         end
 
         # :nodoc:
-        def append_{{name.id}}(rel : Jennifer::Model::Resource)
+        def append_{{name.id}}(rel : ::Jennifer::Model::Resource)
           obj = rel.as({{klass}})
           set_{{name.id}}_relation(obj)
           obj
@@ -302,7 +302,7 @@ module Jennifer
         end
 
         # :nodoc:
-        def append_{{name.id}}(rel : Jennifer::Model::Resource)
+        def append_{{name.id}}(rel : ::Jennifer::Model::Resource)
           set_{{name.id}}_relation(rel.as({{klass}}))
           rel
         end
@@ -451,7 +451,7 @@ module Jennifer
         end
 
         # :nodoc:
-        def append_{{name.id}}(rel : Jennifer::Model::Resource)
+        def append_{{name.id}}(rel : ::Jennifer::Model::Resource)
           @__{{name.id}}_retrieved = true
           @{{name.id}} = rel.as({{klass}})
         end
@@ -608,7 +608,7 @@ module Jennifer
         end
 
         # :nodoc:
-        def append_{{name.id}}(rel : Jennifer::Model::Resource)
+        def append_{{name.id}}(rel : ::Jennifer::Model::Resource)
           @__{{name.id}}_retrieved = true
           @{{name.id}} = rel.as({{klass}})
         end

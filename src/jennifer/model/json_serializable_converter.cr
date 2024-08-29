@@ -12,7 +12,7 @@ module Jennifer::Model
   # class User < Jennifer::Model::Base
   #   mapping(
   #     # ...
-  #     location: {type: Location, converter: Jennifer::Model::JSONSerializableConverter(Location)}
+  #     location: {type: Location, converter: ::Jennifer::Model::JSONSerializableConverter(Location)}
   #   )
   # end
   # ```

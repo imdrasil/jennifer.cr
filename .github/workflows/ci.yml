@@ -14,21 +14,23 @@ jobs:
       matrix:
         include:
           - DB: mysql
+            linter: true
           - DB: postgres
+            linter: true
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     env:
       DB: ${{ matrix.DB }}
 
     steps:
       - name: Install Crystal
-        uses: oprypin/install-crystal@v1
+        uses: crystal-lang/install-crystal@v1
         with:
-          crystal: 1.8.2
+          crystal: latest
 
       - name: Donwload sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Check formatting
         if: ${{ matrix.linter }}
@@ -98,23 +100,47 @@ jobs:
             DB: postgres
           - crystal_version: 1.11.2
             DB: mysql
-            integration: true
-            linter: true
           - crystal_version: 1.11.2
             DB: postgres
+          - crystal_version: 1.12.2
+            DB: mysql
+          - crystal_version: 1.12.2
+            DB: postgres
+          - crystal_version: 1.13.2
+            DB: mysql
+            os: ubuntu-24.04
             integration: true
             linter: true
-          - crystal_version: 1.11.2
+          - crystal_version: 1.13.2
             DB: postgres
+            pg_version: '16'
+            os: ubuntu-24.04
+            integration: true
+            linter: true
+          - crystal_version: 1.13.2
+            DB: postgres
+            pg_version: '16'
+            os: ubuntu-24.04
             other: MT=1
-          - crystal_version: 1.11.2
+          - crystal_version: 1.13.2
             DB: postgres
+            pg_version: '16'
+            os: ubuntu-24.04
             pair: true
             other: PAIR_DB_USER=root PAIR_DB_PASSWORD=
-          - crystal_version: 1.11.2
+          - crystal_version: 1.13.2
             DB: mysql
+            pg_version: '16'
+            os: ubuntu-24.04
             pair: true
             other: PAIR_DB_USER=dbuser PAIR_DB_PASSWORD=dbpassword
+          - crystal_version: nightly
+            DB: mysql
+            os: ubuntu-24.04
+          - crystal_version: nightly
+            DB: postgres
+            pg_version: '16'
+            os: ubuntu-24.04
 
     runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
 
@@ -129,12 +155,12 @@ jobs:
         run: export ${{ matrix.other }}
 
       - name: Install Crystal
-        uses: oprypin/install-crystal@v1
+        uses: crystal-lang/install-crystal@v1
         with:
           crystal: ${{matrix.crystal_version}}
 
       - name: Donwload sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
@@ -153,7 +179,7 @@ jobs:
         if: ${{ matrix.DB == 'postgres' || matrix.pair }}
         uses: Daniel-Marynicz/postgresql-action@master
         with:
-          postgres_image_tag: '12'
+          postgres_image_tag: ${{ matrix.pg_version || '12' }}
           postgres_user: ${{ env.DB_USER }}
           postgres_password: ${{ env.DB_PASSWORD }}
 

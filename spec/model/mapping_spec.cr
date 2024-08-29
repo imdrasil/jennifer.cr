@@ -14,7 +14,7 @@ postgres_only do
     mapping({
       id:       Primary64,
       name:     String,
-      ballance: {type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2},
+      ballance: {type: BigDecimal, converter: ::Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2},
     }, false)
   end
 end
@@ -26,7 +26,7 @@ mysql_only do
     mapping({
       id:       Primary64,
       name:     String,
-      ballance: {type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(Float64), scale: 2},
+      ballance: {type: BigDecimal, converter: ::Jennifer::Model::BigDecimalConverter(Float64), scale: 2},
     }, false)
   end
 end
@@ -77,7 +77,7 @@ class UserWithConverter < Jennifer::Model::Base
 
   mapping(
     id: Primary64,
-    name: {type: JSON::Any, converter: Jennifer::Model::JSONConverter}
+    name: {type: JSON::Any, converter: ::Jennifer::Model::JSONConverter}
   )
 end
 

@@ -26,7 +26,7 @@ describe Jennifer::Validations::Inclusion do
 
     describe "message" do
       it do
-        proc = ->(record : Jennifer::Model::Translation, field : String) do
+        proc = ->(record : ::Jennifer::Model::Translation, field : String) do
           "#{record.as(Contact).attribute(field)} #{field} invalid"
         end
         validated_by_record(:name, 2, {collection: [1], message: proc})

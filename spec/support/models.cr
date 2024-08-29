@@ -335,7 +335,7 @@ class Publication < Jennifer::Model::Base
       name: {type: String, column: :title},
       version: Int32,
       publisher: String,
-      type: {type: String, converter: Jennifer::Model::PgEnumConverter}
+      type: {type: String, converter: ::Jennifer::Model::PgEnumConverter}
     )
   {% else %}
     mapping(
@@ -475,7 +475,7 @@ class ContactWithDependencies < Jennifer::Model::Base
       name:        String?,
       description: String?,
       age:         {type: Int32, default: 10},
-      gender:      {type: String?, default: "male", converter: Jennifer::Model::PgEnumConverter},
+      gender:      {type: String?, default: "male", converter: ::Jennifer::Model::PgEnumConverter},
     }, false)
   {% else %}
     mapping({
@@ -539,7 +539,7 @@ end
 
     mapping({
       id:       Primary64,
-      ballance: {type: Float64?, converter: Jennifer::Model::NumericToFloat64Converter},
+      ballance: {type: Float64?, converter: ::Jennifer::Model::NumericToFloat64Converter},
     }, false)
   end
 {% end %}

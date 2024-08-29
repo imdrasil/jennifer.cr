@@ -168,9 +168,9 @@ module Jennifer
             if options[:converter] == nil
               union_types = options[:type].resolve.union_types
               if union_types.includes?(JSON::Any)
-                options[:converter] = ::Jennifer::Model::JSONConverter
+                options[:converter] = "::Jennifer::Model::JSONConverter".id
               elsif union_types.includes?(Time)
-                options[:converter] = ::Jennifer::Model::TimeZoneConverter
+                options[:converter] = "::Jennifer::Model::TimeZoneConverter".id
               end
             end
             options[:parsed_type] = stringified_type

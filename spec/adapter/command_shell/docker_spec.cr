@@ -4,7 +4,7 @@ def prepare_docker_config
   Jennifer::Config.configure do |conf|
     conf.docker_container = "some_container"
   end
-  Jennifer::Adapter::Docker.new(Jennifer::Config.instance)
+  Jennifer::Adapter::Docker.new(::Jennifer::Config.instance)
 end
 
 describe Jennifer::Adapter::Docker do

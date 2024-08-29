@@ -20,7 +20,7 @@ module Jennifer
     #   end
     # end
     # ```
-    abstract class Base < Model::Resource
+    abstract class Base < ::Jennifer::Model::Resource
       include Mapping
 
       @[JSON::Field(ignore: true)]
@@ -120,7 +120,7 @@ module Jennifer
 
         # :nodoc:
         def self.superclass
-          {{@type.superclass}}
+          {{"::#{@type.superclass}".id}}
         end
 
         macro finished

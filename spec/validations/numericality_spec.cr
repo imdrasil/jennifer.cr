@@ -254,7 +254,7 @@ describe Jennifer::Validations::Numericality do
 
     describe "message" do
       it do
-        proc = ->(record : Jennifer::Model::Translation, field : String) do
+        proc = ->(record : ::Jennifer::Model::Translation, field : String) do
           "#{record.as(Contact).attribute(field)} #{field} invalid"
         end
         validated_by_record(:age, 11, {less_than: 3, message: proc})

@@ -12,7 +12,7 @@ describe Jennifer::Validations::Format do
 
     describe "message" do
       it do
-        proc = ->(record : Jennifer::Model::Translation, field : String) do
+        proc = ->(record : ::Jennifer::Model::Translation, field : String) do
           "#{record.as(Contact).attribute(field)} #{field} invalid"
         end
         validated_by_record(:name, "John", {message: proc, format: /jon/})

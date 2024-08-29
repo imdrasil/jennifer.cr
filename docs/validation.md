@@ -394,7 +394,7 @@ class Person < Jennifer::Model::Base
 
   # Proc
   validates_uniqueness :username,
-    message: ->(object : Jennifer::Model::Translation, field : String) do
+    message: ->(object : ::Jennifer::Model::Translation, field : String) do
       record = object.as(Person)
       "Hey #{record.name}, #{record.attribute(field)} is already taken."
     end

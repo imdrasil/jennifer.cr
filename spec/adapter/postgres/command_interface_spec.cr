@@ -5,7 +5,7 @@ postgres_only do
     described_class = Jennifer::Postgres::CommandInterface
 
     describe "#database_exists?" do
-      it { described_class.new(Jennifer::Config.config).database_exists?.should be_true }
+      it { described_class.new(::Jennifer::Config.config).database_exists?.should be_true }
 
       it do
         config = Jennifer::Config.config

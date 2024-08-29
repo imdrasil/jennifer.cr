@@ -35,7 +35,7 @@ class JoinFactory < Factory::Base
 end
 
 class ExpressionFactory < Factory::Base
-  describe_class Jennifer::QueryBuilder::ExpressionBuilder
+  describe_class ::Jennifer::QueryBuilder::ExpressionBuilder
   skip_all_constructors
 
   attr :table, "tests"
@@ -46,7 +46,7 @@ class ExpressionFactory < Factory::Base
 end
 
 class QueryFactory < Factory::Base
-  describe_class Jennifer::QueryBuilder::Query
+  describe_class ::Jennifer::QueryBuilder::Query
   skip_all_constructors
 
   attr :table, "tests"

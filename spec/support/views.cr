@@ -19,7 +19,7 @@ class MaleContact < Jennifer::View::Base
     mapping({
       id:         Primary64,
       name:       String,
-      gender:     {type: String, converter: Jennifer::Model::PgEnumConverter},
+      gender:     {type: String, converter: ::Jennifer::Model::PgEnumConverter},
       age:        Int32,
       created_at: Time?,
     }, false)
@@ -49,7 +49,7 @@ class FakeFemaleContact < Jennifer::View::Base
     mapping({
       id:         Primary64,
       name:       String,
-      gender:     {type: String, converter: Jennifer::Model::PgEnumConverter},
+      gender:     {type: String, converter: ::Jennifer::Model::PgEnumConverter},
       age:        Int32,
       created_at: Time?,
     }, false)
@@ -106,7 +106,7 @@ class PrintPublication < Jennifer::View::Base
       publisher: String,
       pages: Int32?,
       url: String?,
-      type: {type: String, converter: Jennifer::Model::PgEnumConverter}
+      type: {type: String, converter: ::Jennifer::Model::PgEnumConverter}
     )
   {% else %}
     mapping(

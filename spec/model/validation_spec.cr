@@ -23,7 +23,7 @@ postgres_only do
 
     mapping({
       id:       Primary64,
-      ballance: {type: BigDecimal, converter: Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2},
+      ballance: {type: BigDecimal, converter: ::Jennifer::Model::BigDecimalConverter(PG::Numeric), scale: 2},
     }, false)
 
     validates_numericality :ballance, greater_than: 20
@@ -128,7 +128,7 @@ class ProcMessageValidationModel < ApplicationRecord
     name: String,
   })
 
-  validates_length :name, is: 3, message: ->(record : Jennifer::Model::Translation, _field : String) do
+  validates_length :name, is: 3, message: ->(record : ::Jennifer::Model::Translation, _field : String) do
     record.as(ProcMessageValidationModel).name
   end
 end

@@ -386,7 +386,7 @@
 **Model**
 
 * Add `EnumConverter` converter for Postgre `ENUM` field convert
-* (pg only) field presenting `ENUM` field should explicitly specify `converter: Jennifer::Model::EnumConverter`
+* (pg only) field presenting `ENUM` field should explicitly specify `converter: ::Jennifer::Model::EnumConverter`
 
 **Adapter**
 

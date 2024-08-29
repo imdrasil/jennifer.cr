@@ -723,7 +723,7 @@ module Jennifer
 
         # :nodoc:
         def self.superclass
-          {{@type.superclass}}
+          {{"::#{@type.superclass}".id}}
         end
 
         macro finished

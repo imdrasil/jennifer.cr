@@ -1,6 +1,6 @@
 describe Jennifer::QueryBuilder::MultiQueryRelationTree do
   query = Contact.all
-  builder = ->{ Jennifer::QueryBuilder::MultiQueryRelationTree.new(Contact) }
+  builder = -> { Jennifer::QueryBuilder::MultiQueryRelationTree.new(Contact) }
 
   describe "#add_relation" do
     context "with defined query, relation, klass and index" do

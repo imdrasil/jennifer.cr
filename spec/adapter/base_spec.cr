@@ -241,7 +241,7 @@ describe Jennifer::Adapter::Base do
     end
 
     context "with array of hashes" do
-      argument_regex = db_specific(mysql: ->{ /\(\?/ }, postgres: ->{ /\(\$\d/ })
+      argument_regex = db_specific(mysql: -> { /\(\?/ }, postgres: -> { /\(\$\d/ })
       amount = 4681
       fields = %w(name ballance age description created_at updated_at user_id)
       values = ["Deepthi", nil, 28, nil, nil, nil, nil] of Jennifer::DBAny
@@ -314,7 +314,7 @@ describe Jennifer::Adapter::Base do
     end
 
     context "with array of hashes" do
-      argument_regex = db_specific(mysql: ->{ /\(\?/ }, postgres: ->{ /\(\$\d/ })
+      argument_regex = db_specific(mysql: -> { /\(\?/ }, postgres: -> { /\(\$\d/ })
       amount = 4681
       fields = %w(name ballance age description created_at updated_at user_id)
       values = ["Deepthi", nil, 28, nil, nil, nil, nil] of Jennifer::DBAny

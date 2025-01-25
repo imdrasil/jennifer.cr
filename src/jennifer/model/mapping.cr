@@ -196,10 +196,10 @@ module Jennifer
           {{
             new_props.map { |field, mapping|
               "#{field}: {#{
-                mapping.map { |key, value|
-                  "#{key}: #{value.is_a?(TypeNode) ? "::#{value}".id : value }"
-                }.join(", ").id
-              }}"
+  mapping.map { |key, value|
+      "#{key}: #{value.is_a?(TypeNode) ? "::#{value}".id : value}"
+    }.join(", ").id
+}}"
             }.join(",").id
           }}
         }

@@ -23,7 +23,7 @@ class JoinFactory < Factory::Base
   argument_type String | Symbol | Criteria | Condition | Query?
 
   attr :table, "tests"
-  attr :on, ->{ Factory.build_criteria == 1 }
+  attr :on, -> { Factory.build_criteria == 1 }
   attr :type, :inner
   attr :aliass, nil
 
@@ -109,7 +109,7 @@ end
 
 class CityFactory < Factory::Jennifer::Base
   attr :name, "Guda"
-  attr :country_id, ->{ Factory.create_country.id }, Int64
+  attr :country_id, -> { Factory.create_country.id }, Int64
   attr :optimistic_lock, 0
 end
 
@@ -139,7 +139,7 @@ class MaleContactFactory < Factory::Jennifer::Base
   attr :name, "Raphael"
   attr :age, 21
   attr :gender, "male"
-  attr :created_at, ->{ Time.utc }
+  attr :created_at, -> { Time.utc }
 end
 
 class NoteFactory < Factory::Jennifer::Base
@@ -150,12 +150,12 @@ class NoteFactory < Factory::Jennifer::Base
   attr :notable_type, nil
 
   trait :with_user do
-    attr :notable_id, ->{ Factory.create_user([:with_valid_password]).id }, Int64
+    attr :notable_id, -> { Factory.create_user([:with_valid_password]).id }, Int64
     attr :notable_type, "User"
   end
 
   trait :with_contact do
-    attr :notable_id, ->{ Factory.create_contact.id }, Int64
+    attr :notable_id, -> { Factory.create_contact.id }, Int64
     attr :notable_type, "Contact"
   end
 end

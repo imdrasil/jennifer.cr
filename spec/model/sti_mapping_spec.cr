@@ -590,8 +590,8 @@ describe Jennifer::Model::STIMapping do
       r[:fields].should match_array(%w(title version publisher type pages))
       expected =
         db_specific(
-          mysql: ->{ db_array("MyNameIsDonnieSmith", 5, "PTA", "Article", 1) },
-          postgres: ->{ db_array("MyNameIsDonnieSmith", 5, "PTA", Bytes[65, 114, 116, 105, 99, 108, 101], 1) }
+          mysql: -> { db_array("MyNameIsDonnieSmith", 5, "PTA", "Article", 1) },
+          postgres: -> { db_array("MyNameIsDonnieSmith", 5, "PTA", Bytes[65, 114, 116, 105, 99, 108, 101], 1) }
         )
       r[:args].should match_array(expected)
     end

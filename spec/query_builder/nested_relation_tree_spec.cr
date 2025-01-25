@@ -1,5 +1,5 @@
 describe Jennifer::QueryBuilder::NestedRelationTree do
-  builder = ->{ Jennifer::QueryBuilder::NestedRelationTree.new(Contact) }
+  builder = -> { Jennifer::QueryBuilder::NestedRelationTree.new(Contact) }
 
   describe "#add_relation" do
     context "with defined query, relation, klass and index" do

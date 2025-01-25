@@ -411,8 +411,8 @@ describe Jennifer::Model::Mapping do
     describe ".field_count" do
       it "returns correct number of model fields" do
         proper_count = db_specific(
-          mysql: ->{ 10 },
-          postgres: ->{ 11 }
+          mysql: -> { 10 },
+          postgres: -> { 11 }
         )
         Contact.field_count.should eq(proper_count)
       end
@@ -703,7 +703,7 @@ describe Jennifer::Model::Mapping do
       context "mismatching data type" do
         it "raises DataTypeMismatch exception" do
           ContactWithNillableName.create({name: nil})
-          expected_type = db_specific(mysql: ->{ "String" }, postgres: ->{ "(Slice(UInt8) | String)" })
+          expected_type = db_specific(mysql: -> { "String" }, postgres: -> { "(Slice(UInt8) | String)" })
           expect_raises(::Jennifer::DataTypeMismatch, "Column ContactWithCustomField.name is expected to be a #{expected_type} but got Nil.") do
             ContactWithCustomField.all.last!
           end

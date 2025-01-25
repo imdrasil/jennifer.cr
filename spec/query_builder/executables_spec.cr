@@ -27,7 +27,7 @@ describe Jennifer::QueryBuilder::Executables do
     end
 
     it "raises error if there is no such records" do
-      arg = db_specific(mysql: ->{ "?" }, postgres: ->{ "$1" })
+      arg = db_specific(mysql: -> { "?" }, postgres: -> { "$1" })
       message = %(There is no record by given query:\nSELECT #{quote_identifier("contacts")}.* FROM #{quote_identifier("contacts")} WHERE #{quote_identifier("contacts.id")} > #{arg}  | [2])
       expect_raises(Jennifer::RecordNotFound, message) do
         Contact.all.where { _id > 2 }.first!
@@ -125,8 +125,8 @@ describe Jennifer::QueryBuilder::Executables do
         Factory.create_address(details: JSON.parse({:city => "Duplin"}.to_json))
         value = Query["addresses"].pluck(:details)[0]
         db_specific(
-          mysql: ->{ value.should be_a(JSON::Any) },
-          postgres: ->{ value.should be_a(JSON::PullParser) }
+          mysql: -> { value.should be_a(JSON::Any) },
+          postgres: -> { value.should be_a(JSON::PullParser) }
         )
       end
 
@@ -548,7 +548,7 @@ describe Jennifer::QueryBuilder::Executables do
     it "accepts arguments" do
       Factory.create_contact(age: 21)
       Factory.create_contact(age: 20)
-      placeholder = db_specific(postgres: ->{ "$1" }, mysql: ->{ "?" })
+      placeholder = db_specific(postgres: -> { "$1" }, mysql: -> { "?" })
       res = Query["contacts"].find_records_by_sql(
         "SELECT * FROM contacts WHERE age > #{placeholder}",
         [20]

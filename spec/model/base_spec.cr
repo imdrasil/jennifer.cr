@@ -507,8 +507,8 @@ describe Jennifer::Model::Base do
   end
 
   describe ".import" do
-    argument_regex = db_specific(mysql: ->{ /\(\?/ }, postgres: ->{ /\(\$\d/ })
-    amount = db_specific(mysql: ->{ 3641 }, postgres: ->{ 3277 })
+    argument_regex = db_specific(mysql: -> { /\(\?/ }, postgres: -> { /\(\$\d/ })
+    amount = db_specific(mysql: -> { 3641 }, postgres: -> { 3277 })
 
     context "with autoincrementable primary key" do
       context "when count of fields doesn't exceed limit" do
@@ -888,14 +888,14 @@ describe Jennifer::Model::Base do
     it "works with all possible column types" do
       AllTypeModel.new.to_json.should eq(
         db_specific(
-          mysql: ->do
+          mysql: -> do
             <<-JSON
             {"id":null,"bool_f":null,"bigint_f":null,"integer_f":null,"short_f":null,"float_f":null,
             "double_f":null,"string_f":null,"varchar_f":null,"text_f":null,"timestamp_f":null,
             "date_time_f":null,"date_f":null,"json_f":null,"tinyint_f":null,"decimal_f":null,"blob_f":null}
             JSON
           end,
-          postgres: ->do
+          postgres: -> do
             <<-JSON
             {"id":null,"bool_f":null,"bigint_f":null,"integer_f":null,"short_f":null,"float_f":null,
             "double_f":null,"string_f":null,"varchar_f":null,"text_f":null,"timestamp_f":null,

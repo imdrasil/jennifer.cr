@@ -120,7 +120,7 @@ module Jennifer
 
         # :nodoc:
         def self.superclass
-          {{@type.superclass}}
+          ::{{@type.superclass}}
         end
 
         macro finished

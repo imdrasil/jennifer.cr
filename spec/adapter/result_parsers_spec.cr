@@ -54,11 +54,11 @@ describe Jennifer::Adapter::ResultParsers do
             executed = true
             value = adapter.result_to_hash(rs)["json_f"]
             db_specific(
-              mysql: ->do
+              mysql: -> do
                 value.is_a?(JSON::Any).should be_true
                 value.should eq(JSON.parse(%({"a": 2})))
               end,
-              postgres: ->do
+              postgres: -> do
                 value.is_a?(JSON::PullParser).should be_true
                 JSON::Any.new(value.as(JSON::PullParser)).should eq(JSON.parse(%({"a": 2})))
               end

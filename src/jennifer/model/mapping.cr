@@ -192,7 +192,17 @@ module Jennifer
         %}
 
         # :nodoc:
-        COLUMNS_METADATA = { {{new_props.map { |field, mapping| "#{field}: #{mapping}" }.join(", ").id}} }
+        COLUMNS_METADATA = {
+          {{
+            new_props.map { |field, mapping|
+              "#{field}: {#{
+                mapping.map { |key, value|
+                  "#{key}: #{value.is_a?(TypeNode) ? "::#{value}".id : value }"
+                }.join(", ").id
+              }}"
+            }.join(",").id
+          }}
+        }
 
         alias AttrType = ::Jennifer::DBAny | {{new_props.map { |field, mapping| mapping[:parsed_type] }.join(" | ").id}}
       end

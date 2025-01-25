@@ -13,7 +13,7 @@ describe Jennifer::Model::Timestamp do
   it "changes updated_at on update" do
     c = Factory.create_contact
     c.updated_at.should eq(c.created_at)
-    sleep(0.1)
+    sleep(0.1.seconds)
     c.name = "new name"
     c.save!
     (c.updated_at! > c.created_at!).should be_true
@@ -22,7 +22,7 @@ describe Jennifer::Model::Timestamp do
   it "doesn't trigger update if nothing changed" do
     c = Factory.create_contact
     c.updated_at.should eq(c.created_at)
-    sleep(0.1)
+    sleep(0.1.seconds)
     c.save!
     c.updated_at.should eq(c.created_at)
   end
